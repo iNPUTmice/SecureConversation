@@ -706,7 +706,7 @@ public class XmppConnectionService extends Service {
 							listener.phoneContactsMerged();
 						}
 					}
-				});
+				}, true);
 	}
 
 	public List<Conversation> getConversations() {
