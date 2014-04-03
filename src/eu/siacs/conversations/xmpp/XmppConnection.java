@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
@@ -32,7 +34,6 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
 import android.util.Log;
 import eu.siacs.conversations.entities.Account;
@@ -64,7 +65,7 @@ public class XmppConnection implements Runnable {
 	private Socket socket;
 	private XmlReader tagReader;
 	private TagWriter tagWriter;
-
+	
 	private boolean shouldBind = true;
 	private boolean shouldAuthenticate = true;
 	private Element streamFeatures;
@@ -121,6 +122,7 @@ public class XmppConnection implements Runnable {
 			tagWriter = new TagWriter();
 			packetCallbacks.clear();
 			this.changeStatus(Account.STATUS_CONNECTING);
+						
 			Bundle namePort = DNSHelper.getSRVRecord(account.getServer());
 			if ("timeout".equals(namePort.getString("error"))) {
 				Log.d(LOGTAG,account.getJid()+": dns timeout");
@@ -130,20 +132,40 @@ public class XmppConnection implements Runnable {
 			String srvRecordServer = namePort.getString("name");
 			String srvIpServer = namePort.getString("ipv4");
 			int srvRecordPort = namePort.getInt("port");
+			
+			if (account.useProxy())
+			{
+				socket = new Socket(account.getProxy());
+			}
+			
 			if (srvRecordServer != null) {
 				if (srvIpServer != null) {
 					Log.d(LOGTAG, account.getJid() + ": using values from dns "
 						+ srvRecordServer + "[" + srvIpServer + "]:"
 						+ srvRecordPort);
-					socket = new Socket(srvIpServer, srvRecordPort);
+					
+					if (socket == null)
+						socket = new Socket(srvIpServer, srvRecordPort);
+					else						
+						socket.connect(new InetSocketAddress(srvIpServer, srvRecordPort));
+					
 				} else {
 					Log.d(LOGTAG, account.getJid() + ": using values from dns "
 						+ srvRecordServer + ":" + srvRecordPort);
-					socket = new Socket(srvRecordServer, srvRecordPort);
+					
+					if (socket == null)
+						socket = new Socket(srvRecordServer, srvRecordPort);
+					else
+						socket.connect(new InetSocketAddress(srvRecordServer, srvRecordPort));
 				}
 			} else {
-				socket = new Socket(account.getServer(), 5222);
-			}
+				
+				if (socket == null)
+					socket = new Socket(account.getServer(), 5222);
+				else
+					socket.connect(new InetSocketAddress(account.getServer(), 5222));
+			}			
+			
 			OutputStream out = socket.getOutputStream();
 			tagWriter.setOutputStream(out);
 			InputStream in = socket.getInputStream();
