@@ -80,6 +80,7 @@ public class XmppConnectionService extends Service {
 	private static final int PING_MIN_INTERVAL = 10;
 	private static final int PING_TIMEOUT = 5;
 	private static final int CONNECT_TIMEOUT = 60;
+	private static final long CARBON_GRACE_PERIOD = 60000L;
 
 	private List<Account> accounts;
 	private List<Conversation> conversations = null;
@@ -95,6 +96,8 @@ public class XmppConnectionService extends Service {
 	}
 
 	private Random mRandom = new Random(System.currentTimeMillis());
+
+	private long lastCarbonMessageReceived = -CARBON_GRACE_PERIOD;
 
 	private ContentObserver contactObserver = new ContentObserver(null) {
 		@Override
@@ -115,6 +118,12 @@ public class XmppConnectionService extends Service {
 				MessagePacket packet) {
 			Message message = null;
 			boolean notify = true;
+			if(PreferenceManager
+					.getDefaultSharedPreferences(getApplicationContext())
+					.getBoolean("notification_grace_period_after_carbon_received", true)){
+				notify=(SystemClock.elapsedRealtime() - lastCarbonMessageReceived) > CARBON_GRACE_PERIOD;
+			}
+
 			if ((packet.getType() == MessagePacket.TYPE_CHAT)) {
 				String pgpBody = MessageParser.getPgpBody(packet);
 				if (pgpBody != null) {
@@ -138,6 +147,7 @@ public class XmppConnectionService extends Service {
 							service);
 					if (message != null) {
 						if (message.getStatus() == Message.STATUS_SEND) {
+							lastCarbonMessageReceived = SystemClock.elapsedRealtime();
 							notify = false;
 							message.getConversation().markRead();
 						} else {
