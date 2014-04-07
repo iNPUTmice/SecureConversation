@@ -16,7 +16,6 @@ import org.openintents.openpgp.util.OpenPgpServiceConnection;
 import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
-
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.crypto.PgpEngine.OpenPgpException;
 import eu.siacs.conversations.entities.Account;
@@ -52,8 +51,10 @@ import eu.siacs.conversations.xmpp.stanzas.jingle.JinglePacket;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.database.DatabaseUtils;
@@ -80,6 +81,8 @@ public class XmppConnectionService extends Service {
 	private static final int PING_MIN_INTERVAL = 10;
 	private static final int PING_TIMEOUT = 5;
 	private static final int CONNECT_TIMEOUT = 60;
+
+	private long lastTick = 0l;
 
 	private List<Account> accounts;
 	private List<Conversation> conversations = null;
@@ -444,16 +447,35 @@ public class XmppConnectionService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		this.wakeLock.acquire();
-		// Log.d(LOGTAG,"calling start service. caller was:"+intent.getAction());
-		ConnectivityManager cm = (ConnectivityManager) getApplicationContext()
-				.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-		boolean isConnected = activeNetwork != null
-				&& activeNetwork.isConnected();
+		checkAccounts();
+		getApplicationContext().registerReceiver(new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				long uptime = SystemClock.elapsedRealtime() / 1000;
+				if (uptime - lastTick < 50) {
+					return;
+				}
+				lastTick = uptime;
+				Log.d(LOGTAG, "TIME_TICK, checking accounts");
+				checkAccounts();
+			}
+		}, new IntentFilter(Intent.ACTION_TIME_TICK));
+		return START_STICKY;
+	}
 
-		for (Account account : accounts) {
-			if (!account.isOptionSet(Account.OPTION_DISABLED)) {
+	public void checkAccounts() {
+		this.wakeLock.acquire();
+		try {
+			ConnectivityManager cm = (ConnectivityManager) getApplicationContext()
+					.getSystemService(Context.CONNECTIVITY_SERVICE);
+			NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+			boolean isConnected = activeNetwork != null
+					&& activeNetwork.isConnected();
+
+			for (Account account : accounts) {
+				if (account.isOptionSet(Account.OPTION_DISABLED)) {
+					continue;
+				}
 				if (!isConnected) {
 					account.setStatus(Account.STATUS_NO_INTERNET);
 					if (statusListener != null) {
@@ -462,6 +484,9 @@ public class XmppConnectionService extends Service {
 				} else {
 					if (account.getStatus() == Account.STATUS_NO_INTERNET) {
 						account.setStatus(Account.STATUS_OFFLINE);
+						if (account.getXmppConnection() != null) {
+							account.getXmppConnection().reconnectCounter = 0;
+						}
 						if (statusListener != null) {
 							statusListener.onStatusChanged(account);
 						}
@@ -480,20 +505,52 @@ public class XmppConnectionService extends Service {
 									.elapsedRealtime();
 							this.scheduleWakeupCall(2, false);
 						}
-					} else if (account.getStatus() == Account.STATUS_OFFLINE) {
-						if (account.getXmppConnection() == null) {
-							account.setXmppConnection(this
-									.createConnection(account));
-						}
-						account.getXmppConnection().lastPingSent = SystemClock
-								.elapsedRealtime();
-						new Thread(account.getXmppConnection()).start();
 					} else if ((account.getStatus() == Account.STATUS_CONNECTING)
 							&& ((SystemClock.elapsedRealtime() - account
 									.getXmppConnection().lastConnect) / 1000 >= CONNECT_TIMEOUT)) {
 						Log.d(LOGTAG, account.getJid()
 								+ ": time out during connect reconnecting");
 						reconnectAccount(account, true);
+					} else if (
+							account.getStatus() == Account.STATUS_OFFLINE ||
+							account.getStatus() == Account.STATUS_SERVER_NOT_FOUND ||
+							account.getStatus() == Account.STATUS_SERVER_REQUIRES_TLS ||
+							account.getStatus() == Account.STATUS_TLS_ERROR ||
+							account.getStatus() == Account.STATUS_UNAUTHORIZED) {
+						// some kind of wiredness, we should check if we
+						// have a connection and either connect or check the
+						// last connect attempt vs. session time
+
+						if (account.getXmppConnection() == null) {
+							account.setXmppConnection(this
+									.createConnection(account));
+							account.getXmppConnection().lastPingSent = SystemClock
+									.elapsedRealtime();
+							new Thread(account.getXmppConnection()).start();
+						} else {
+							// check if we should try a reconnect
+							XmppConnection con = account.getXmppConnection();
+
+							long now = SystemClock.elapsedRealtime();
+							long lastSuccess =
+									Math.max(con.lastSessionStarted, con.instanceCreated);
+
+							long age = (now - lastSuccess) / 1000 / 60;
+
+							Log.d(LOGTAG, "minutes since last connect: " + age);
+							Log.d(LOGTAG, account.getJid() + ": status=" + account.getStatus());
+							Log.d(LOGTAG, account.getJid() + ": reconnect counter =" + con.reconnectCounter);
+							Log.d(LOGTAG, account.getJid() + ": checking if we should reconnect");
+
+							if (age >= con.reconnectCounter) {
+								Log.d(LOGTAG,
+										account.getJid() + ": reconnect!");
+								con.reconnectCounter += 1 + con.reconnectCounter / 2;
+								account.getXmppConnection().lastPingSent = SystemClock
+										.elapsedRealtime();
+								new Thread(account.getXmppConnection()).start();
+							}
+						}
 					} else {
 						Log.d(LOGTAG,
 								"seconds since last connect:"
@@ -502,21 +559,18 @@ public class XmppConnectionService extends Service {
 						Log.d(LOGTAG,
 								account.getJid() + ": status="
 										+ account.getStatus());
-						// TODO notify user of ssl cert problem or auth problem
-						// or what ever
 					}
-					// in any case. reschedule wakup call
-					this.scheduleWakeupCall(PING_MAX_INTERVAL, true);
 				}
 				if (accountChangedListener != null) {
 					accountChangedListener.onAccountListChangedListener();
 				}
 			}
+		} finally {
+			this.scheduleWakeupCall(PING_MAX_INTERVAL, true);
+			if (wakeLock.isHeld()) {
+				wakeLock.release();
+			}
 		}
-		if (wakeLock.isHeld()) {
-			wakeLock.release();
-		}
-		return START_STICKY;
 	}
 
 	@Override
