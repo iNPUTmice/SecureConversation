@@ -84,6 +84,10 @@ public class XmppConnection implements Runnable {
 	public long lastConnect = 0;
 	public long lastSessionStarted = 0;
 
+	public int reconnectCounter = 0;
+
+	public final long instanceCreated;
+
 	private static final int PACKET_IQ = 0;
 	private static final int PACKET_MESSAGE = 1;
 	private static final int PACKET_PRESENCE = 2;
@@ -101,6 +105,7 @@ public class XmppConnection implements Runnable {
 		this.account = account;
 		this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,account.getJid());
 		tagWriter = new TagWriter();
+		instanceCreated = SystemClock.elapsedRealtime();
 	}
 
 	protected void changeStatus(int nextStatus) {
@@ -253,6 +258,7 @@ public class XmppConnection implements Runnable {
 			} else if (nextTag.isStart("resumed")) {
 				tagReader.readElement(nextTag);
 				sendPing();
+				reconnectCounter = 0;
 				changeStatus(Account.STATUS_ONLINE);
 				Log.d(LOGTAG,account.getJid()+": session resumed");
 			} else if (nextTag.isStart("r")) {
@@ -646,6 +652,7 @@ public class XmppConnection implements Runnable {
 				sendInitialPresence();
 				sendServiceDiscoveryInfo();
 				sendServiceDiscoveryItems();
+				reconnectCounter = 0;
 				if (bindListener !=null) {
 					bindListener.onBind(account);
 				}
