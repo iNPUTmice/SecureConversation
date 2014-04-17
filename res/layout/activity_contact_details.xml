@@ -42,7 +42,7 @@
                 android:layout_height="wrap_content"
                 android:paddingLeft="8dp"
                 android:singleLine="true"
-                android:text="something@jabber.example.com"
+                android:text="something@example.com"
                 android:textColor="#5b5b5b"
                 android:textSize="18sp" />
 
@@ -70,7 +70,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:paddingLeft="8dp"
-        android:text="julia@jabber.example.com"
+        android:text="julia@example.com"
         android:textSize="18sp"
         android:textColor="#5b5b5b" />
    <TextView
