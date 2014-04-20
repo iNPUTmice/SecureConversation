@@ -1,5 +1,6 @@
 package eu.siacs.conversations.entities;
 
+import java.net.InetSocketAddress;
 import java.security.interfaces.DSAPublicKey;
 
 import net.java.otr4j.crypto.OtrCryptoEngineImpl;
@@ -8,11 +9,12 @@ import net.java.otr4j.crypto.OtrCryptoException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import eu.siacs.conversations.crypto.OtrEngine;
-import eu.siacs.conversations.xmpp.XmppConnection;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import java.net.Proxy;
+import eu.siacs.conversations.crypto.OtrEngine;
+import eu.siacs.conversations.xmpp.XmppConnection;
 
 public class Account  extends AbstractEntity{
 
@@ -25,7 +27,8 @@ public class Account  extends AbstractEntity{
 	public static final String PASSWORD = "password";
 	public static final String OPTIONS = "options";
 	public static final String ROSTERVERSION = "rosterversion";
-	public static final String KEYS = "keys";
+	public static final String KEYS = "keys";	
+	public static final String PROXY = "proxy";
 	
 	public static final int OPTION_USETLS = 0;
 	public static final int OPTION_DISABLED = 1;
@@ -57,6 +60,11 @@ public class Account  extends AbstractEntity{
 	protected int status = -1;
 	protected JSONObject keys = new JSONObject();
 	
+	protected boolean useProxy = false;
+	protected String proxyHost = null;
+	protected int proxyPort = -1;
+	protected Proxy.Type proxyType = null;
+	
 	protected boolean online = false;
 	
 	transient OtrEngine otrEngine = null;
@@ -70,9 +78,9 @@ public class Account  extends AbstractEntity{
 	}
 	
 	public Account(String username, String server, String password) {
-		this(java.util.UUID.randomUUID().toString(),username,server,password,0,null,"");
+		this(java.util.UUID.randomUUID().toString(),username,server,password,0,null,"","");
 	}
-	public Account(String uuid, String username, String server,String password, int options, String rosterVersion, String keys) {
+	public Account(String uuid, String username, String server,String password, int options, String rosterVersion, String keys, String proxy) {
 		this.uuid = uuid;
 		this.username = username;
 		this.server = server;
@@ -84,6 +92,17 @@ public class Account  extends AbstractEntity{
 		} catch (JSONException e) {
 			
 		}
+		
+		if (proxy != null && proxy.length() > 0)
+		{
+			String[] proxyParts = proxy.split(":");
+			useProxy = true;
+			if (proxyParts[0].equalsIgnoreCase("socks"))
+				proxyType = Proxy.Type.SOCKS;
+			proxyHost = proxyParts[1];
+			proxyPort = Integer.parseInt(proxyParts[2]);
+		}
+		
 	}
 	
 	public boolean isOptionSet(int option) {
@@ -189,6 +208,12 @@ public class Account  extends AbstractEntity{
 		values.put(OPTIONS,options);
 		values.put(KEYS,this.keys.toString());
 		values.put(ROSTERVERSION,rosterVersion);
+		
+		if (useProxy)
+			values.put(PROXY, proxyType.name()+':'+proxyHost+':'+proxyPort);
+		else
+			values.put(PROXY,"");
+		
 		return values;
 	}
 	
@@ -199,7 +224,8 @@ public class Account  extends AbstractEntity{
 				cursor.getString(cursor.getColumnIndex(PASSWORD)),
 				cursor.getInt(cursor.getColumnIndex(OPTIONS)),
 				cursor.getString(cursor.getColumnIndex(ROSTERVERSION)),
-				cursor.getString(cursor.getColumnIndex(KEYS))
+				cursor.getString(cursor.getColumnIndex(KEYS)),
+				cursor.getString(cursor.getColumnIndex(PROXY))
 				);
 	}
 
@@ -274,5 +300,28 @@ public class Account  extends AbstractEntity{
 
 	public int countPresences() {
 		return this.presences.size();
+	}
+	
+	public boolean useProxy ()
+	{
+		return useProxy;
+	}
+	
+	public void setProxy (Proxy.Type proxyType, String proxyHost, int proxyPort)
+	{
+		useProxy = true;
+		this.proxyType = proxyType;
+		this.proxyHost = proxyHost;
+		this.proxyPort = proxyPort;
+	}
+	
+	public Proxy getProxy ()
+	{
+		if (useProxy)
+		{
+			return new Proxy(proxyType, new InetSocketAddress(proxyHost, proxyPort));
+		}
+		else
+			return null;
 	}
 }
