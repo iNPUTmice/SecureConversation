@@ -172,9 +172,6 @@ public class XmppConnectionService extends Service {
 							if ( xmlns != null && xmlns.equals( "urn:xmpp:receipts" )) {
 								Log.d(LOGTAG, "message has request with xmlns = urn:xmpp:receipts (XEP-0184). from: " + packet.getFrom());
 
-								final Message received_message = new Message( message.getConversation(), "", Message.ENCRYPTION_NONE );
-								message.setType(Message.TYPE_TEXT);
-								message.setStatus(Message.STATUS_RECIEVED);
 								MessagePacket received_packet = new MessagePacket();
 								received_packet.setType(MessagePacket.TYPE_UNKNOWN);
 								received_packet.setTo(message.getCounterpart());
