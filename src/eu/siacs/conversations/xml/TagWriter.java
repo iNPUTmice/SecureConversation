@@ -1,5 +1,6 @@
 package eu.siacs.conversations.xml;
 
+import android.util.Log;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
@@ -23,6 +24,7 @@ public class TagWriter {
 				}
 				try {
 					AbstractStanza output = writeQueue.take();
+					//Log.d("TagWriter", "Sending:\n" + output.toString() );
 					outputStream.write(output.toString());
 					outputStream.flush();
 				} catch (IOException e) {
