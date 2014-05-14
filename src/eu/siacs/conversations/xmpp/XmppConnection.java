@@ -757,10 +757,6 @@ public class XmppConnection implements Runnable {
 		this.sendPacket(packet, callback);
 	}
 
-	public void sendReceivedPacket(MessagePacket packet) {
-		tagWriter.writeStanzaAsync(packet);
-	}
-
 	public void sendMessagePacket(MessagePacket packet) {
 		this.sendPacket(packet, null);
 	}
