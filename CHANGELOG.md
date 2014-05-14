@@ -1,9 +1,14 @@
 ###Changelog
 
+####Version 0.2.1
+* Various bug fixes
+* Updated Translations
+
 ####Version 0.2
 * Image file transfer
 * Better integration with OpenKeychain (PGP encryption)
 * Nicer conversation tiles for conferences
+* Ability to clear conversation history
 * A lot of bug fixes and code clean up
 
 ####Version 0.1.3

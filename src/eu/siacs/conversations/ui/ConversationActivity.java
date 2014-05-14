@@ -6,20 +6,19 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
-import org.openintents.openpgp.OpenPgpError;
-
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.crypto.OnPgpEngineResult;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.services.ImageProvider;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.app.PendingIntent;
@@ -66,9 +65,12 @@ public class ConversationActivity extends XmppActivity {
 	public static final int REQUEST_SEND_MESSAGE = 0x75441;
 	public static final int REQUEST_DECRYPT_PGP = 0x76783;
 	private static final int REQUEST_ATTACH_FILE_DIALOG = 0x48502;
+	private static final int REQUEST_IMAGE_CAPTURE = 0x33788;
 	private static final int REQUEST_SEND_PGP_IMAGE = 0x53883;
-	private static final int REQUEST_ATTACH_FILE = 0x73824;
 	public static final int REQUEST_ENCRYPT_MESSAGE = 0x378018;
+	
+	private static final int ATTACHMENT_CHOICE_CHOOSE_IMAGE = 0x92734;
+	private static final int ATTACHMENT_CHOICE_TAKE_PHOTO = 0x84123;
 
 	protected SlidingPaneLayout spl;
 
@@ -120,6 +122,10 @@ public class ConversationActivity extends XmppActivity {
 
 	public Conversation getSelectedConversation() {
 		return this.selectedConversation;
+	}
+	
+	public void setSelectedConversation(Conversation conversation) {
+		this.selectedConversation = conversation;
 	}
 
 	public ListView getConversationListView() {
@@ -236,8 +242,8 @@ public class ConversationActivity extends XmppActivity {
 			public void onItemClick(AdapterView<?> arg0, View clickedView,
 					int position, long arg3) {
 				paneShouldBeOpen = false;
-				if (selectedConversation != conversationList.get(position)) {
-					selectedConversation = conversationList.get(position);
+				if (getSelectedConversation() != conversationList.get(position)) {
+					setSelectedConversation(conversationList.get(position));
 					swapConversationFragment(); // .onBackendConnected(conversationList.get(position));
 				} else {
 					spl.closePane();
@@ -328,48 +334,56 @@ public class ConversationActivity extends XmppActivity {
 		return true;
 	}
 	
-	private void attachFileDialog() {
+	private void selectPresenceToAttachFile(final int attachmentChoice) {
 		selectPresence(getSelectedConversation(), new OnPresenceSelected() {
 			
 			@Override
 			public void onPresenceSelected(boolean success, String presence) {
 				if (success) {
-					Intent attachFileIntent = new Intent();
-					attachFileIntent.setType("image/*");
-					attachFileIntent.setAction(Intent.ACTION_GET_CONTENT);
-					Intent chooser = Intent.createChooser(attachFileIntent, getString(R.string.attach_file));
-					startActivityForResult(chooser,	REQUEST_ATTACH_FILE_DIALOG);
+					if (attachmentChoice==ATTACHMENT_CHOICE_TAKE_PHOTO) {
+						Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+						takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, ImageProvider.getIncomingContentUri());
+						if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+							startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE);
+						}
+					} else if (attachmentChoice==ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
+						Intent attachFileIntent = new Intent();
+						attachFileIntent.setType("image/*");
+						attachFileIntent.setAction(Intent.ACTION_GET_CONTENT);
+						Intent chooser = Intent.createChooser(attachFileIntent, getString(R.string.attach_file));
+						startActivityForResult(chooser,	REQUEST_ATTACH_FILE_DIALOG);
+					}
 				}
 			}
 
 			@Override
 			public void onSendPlainTextInstead() {
+				// TODO Auto-generated method stub
 				
 			}
 		},"file");
 	}
 
-	private void attachFile() {
+	private void attachFile(final int attachmentChoice) {
 		final Conversation conversation = getSelectedConversation();
 		if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
 			if (hasPgp()) {
 				if (conversation.getContact().getPgpKeyId()!=0) {
-					xmppConnectionService.getPgpEngine().hasKey(conversation.getContact(), new OnPgpEngineResult() {
+					xmppConnectionService.getPgpEngine().hasKey(conversation.getContact(), new UiCallback() {
 						
 						@Override
 						public void userInputRequried(PendingIntent pi) {
-							ConversationActivity.this.runIntent(pi, REQUEST_ATTACH_FILE);
+							ConversationActivity.this.runIntent(pi, attachmentChoice);
 						}
 						
 						@Override
 						public void success() {
-							attachFileDialog();
+							selectPresenceToAttachFile(attachmentChoice);
 						}
 						
 						@Override
-						public void error(OpenPgpError openPgpError) {
-							// TODO Auto-generated method stub
-							
+						public void error(int error) {
+							displayErrorDialog(error);
 						}
 					});
 				} else {
@@ -381,14 +395,14 @@ public class ConversationActivity extends XmppActivity {
 							@Override
 							public void onClick(DialogInterface dialog, int which) {
 								conversation.setNextEncryption(Message.ENCRYPTION_NONE);
-								attachFileDialog();
+								selectPresenceToAttachFile(attachmentChoice);
 							}
 						});
 					}
 				}
 			}
 		} else if (getSelectedConversation().getNextEncryption() == Message.ENCRYPTION_NONE) {
-			attachFileDialog();
+			selectPresenceToAttachFile(attachmentChoice);
 		} else {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle(getString(R.string.otr_file_transfer));
@@ -400,7 +414,7 @@ public class ConversationActivity extends XmppActivity {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						conversation.setNextEncryption(Message.ENCRYPTION_NONE);
-						attachFile();
+						attachFile(attachmentChoice);
 					}
 				});
 			} else {
@@ -409,7 +423,7 @@ public class ConversationActivity extends XmppActivity {
 					@Override
 					public void onClick(DialogInterface dialog, int which) {
 						conversation.setNextEncryption(Message.ENCRYPTION_PGP);
-						attachFile();
+						attachFile(attachmentChoice);
 					}
 				});
 			}
@@ -424,7 +438,25 @@ public class ConversationActivity extends XmppActivity {
 			spl.openPane();
 			break;
 		case R.id.action_attach_file:
-			attachFile();
+			View menuAttachFile = findViewById(R.id.action_attach_file);
+			PopupMenu attachFilePopup = new PopupMenu(this, menuAttachFile);
+			attachFilePopup.inflate(R.menu.attachment_choices);
+			attachFilePopup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+				
+				@Override
+				public boolean onMenuItemClick(MenuItem item) {
+					switch (item.getItemId()) {
+					case R.id.attach_choose_picture:
+						attachFile(ATTACHMENT_CHOICE_CHOOSE_IMAGE);
+						break;
+					case R.id.attach_take_picture:
+						attachFile(ATTACHMENT_CHOICE_TAKE_PHOTO);
+						break;
+					}
+					return false;
+				}
+			});
+			attachFilePopup.show();
 			break;
 		case R.id.action_add:
 			startActivity(new Intent(this, ContactsActivity.class));
@@ -453,7 +485,7 @@ public class ConversationActivity extends XmppActivity {
 			Intent inviteIntent = new Intent(getApplicationContext(),
 					ContactsActivity.class);
 			inviteIntent.setAction("invite");
-			inviteIntent.putExtra("uuid", selectedConversation.getUuid());
+			inviteIntent.putExtra("uuid", getSelectedConversation().getUuid());
 			startActivity(inviteIntent);
 			break;
 		case R.id.action_security:
@@ -532,9 +564,9 @@ public class ConversationActivity extends XmppActivity {
 		spl.openPane();
 		xmppConnectionService.archiveConversation(conversation);
 		if (conversationList.size() > 0) {
-			selectedConversation = conversationList.get(0);
+			setSelectedConversation(conversationList.get(0));
 		} else {
-			selectedConversation = null;
+			setSelectedConversation(null);
 		}
 	}
 
@@ -620,7 +652,7 @@ public class ConversationActivity extends XmppActivity {
 
 				for (int i = 0; i < conversationList.size(); ++i) {
 					if (conversationList.get(i).getUuid().equals(convToView)) {
-						selectedConversation = conversationList.get(i);
+						setSelectedConversation(conversationList.get(i));
 					}
 				}
 				paneShouldBeOpen = false;
@@ -643,7 +675,7 @@ public class ConversationActivity extends XmppActivity {
 				if (selectedFragment != null) {
 					selectedFragment.onBackendConnected();
 				} else {
-					selectedConversation = conversationList.get(0);
+					setSelectedConversation(conversationList.get(0));
 					swapConversationFragment();
 				}
 				ExceptionHelper.checkForCrash(this, this.xmppConnectionService);
@@ -669,57 +701,71 @@ public class ConversationActivity extends XmppActivity {
 					selectedFragment.hidePgpPassphraseBox();
 				}
 			} else if (requestCode == REQUEST_ATTACH_FILE_DIALOG) {
-				prepareImageToast = Toast.makeText(getApplicationContext(), getText(R.string.preparing_image), Toast.LENGTH_LONG);
-				final Conversation conversation = getSelectedConversation();
-				String presence = conversation.getNextPresence();
-				if (conversation.getNextEncryption() == Message.ENCRYPTION_NONE) {
-					prepareImageToast.show();
-					xmppConnectionService.attachImageToConversation(conversation, presence, data.getData());
-				} else if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
-					prepareImageToast.show();
-					attachPgpFile(conversation,data.getData());
-				} else {
-					Log.d(LOGTAG,"unknown next message encryption: "+conversation.getNextEncryption());
-				}
+				attachImageToConversation(getSelectedConversation(),data.getData());
 			} else if (requestCode == REQUEST_SEND_PGP_IMAGE) {
 				
-			} else if (requestCode == REQUEST_ATTACH_FILE) {
-				attachFile();
+			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
+				attachFile(ATTACHMENT_CHOICE_CHOOSE_IMAGE);
+			} else if (requestCode == ATTACHMENT_CHOICE_TAKE_PHOTO) {
+				attachFile(ATTACHMENT_CHOICE_TAKE_PHOTO);
 			} else if (requestCode == REQUEST_ANNOUNCE_PGP) {
 				announcePgp(getSelectedConversation().getAccount(),getSelectedConversation());
 			} else if (requestCode == REQUEST_ENCRYPT_MESSAGE) {
 				encryptTextMessage();
+			} else if (requestCode == REQUEST_IMAGE_CAPTURE) {
+				attachImageToConversation(getSelectedConversation(), null);
 			} else {
 				Log.d(LOGTAG,"unknown result code:"+requestCode);
 			}
 		}
 	}
 	
-	private void attachPgpFile(Conversation conversation, Uri uri) {
-			String presence = conversation.getNextPresence();
-			pendingMessage = xmppConnectionService.attachEncryptedImageToConversation(conversation, presence, uri, new OnPgpEngineResult() {
+	private void attachImageToConversation(Conversation conversation, Uri uri) {
+		prepareImageToast = Toast.makeText(getApplicationContext(), getText(R.string.preparing_image), Toast.LENGTH_LONG);
+		prepareImageToast.show();
+		pendingMessage = xmppConnectionService.attachImageToConversation(conversation, uri, new UiCallback() {
+				
+			@Override
+			public void userInputRequried(PendingIntent pi) {
+				hidePrepareImageToast();
+				ConversationActivity.this.runIntent(pi, ConversationActivity.REQUEST_SEND_PGP_IMAGE);
+			}
+			
+			@Override
+			public void success() {
+				sendPendingImageMessage();
+				hidePrepareImageToast();
+			}
+			
+			@Override
+			public void error(int error) {
+				hidePrepareImageToast();
+				pendingMessage = null;
+				displayErrorDialog(error);
+			}
+		});
+	}
+	
+	private void hidePrepareImageToast() {
+		if (prepareImageToast!=null) {
+			runOnUiThread(new Runnable() {
 				
 				@Override
-				public void userInputRequried(PendingIntent pi) {
-					ConversationActivity.this.runIntent(pi, ConversationActivity.REQUEST_SEND_PGP_IMAGE);
-				}
-				
-				@Override
-				public void success() {
-					pendingMessage.getConversation().getMessages().add(pendingMessage);
-					xmppConnectionService.databaseBackend.createMessage(pendingMessage);
-					xmppConnectionService.sendMessage(pendingMessage, null);
-					xmppConnectionService.updateUi(pendingMessage.getConversation(), false);
-					pendingMessage = null;
-				}
-				
-				@Override
-				public void error(OpenPgpError openPgpError) {
-					Log.d(LOGTAG,"pgp error"+openPgpError.getMessage());
+				public void run() {
+					prepareImageToast.cancel();
 				}
 			});
+		}
 	}
 
+	private void sendPendingImageMessage() {
+		pendingMessage.getConversation().getMessages().add(pendingMessage);
+		xmppConnectionService.databaseBackend.createMessage(pendingMessage);
+		xmppConnectionService.sendMessage(pendingMessage, null);
+		xmppConnectionService.updateUi(pendingMessage.getConversation(), false);
+		pendingMessage = null;
+	}
+	
 	public void updateConversationList() {
 		conversationList.clear();
 		conversationList.addAll(xmppConnectionService.getConversations());
@@ -925,7 +971,7 @@ public class ConversationActivity extends XmppActivity {
 	}
 
 	public void encryptTextMessage() {
-		xmppConnectionService.getPgpEngine().encrypt(this.pendingMessage, new OnPgpEngineResult() {
+		xmppConnectionService.getPgpEngine().encrypt(this.pendingMessage, new UiCallback() {
 
 					@Override
 					public void userInputRequried(
@@ -947,10 +993,7 @@ public class ConversationActivity extends XmppActivity {
 					}
 
 					@Override
-					public void error(
-							OpenPgpError openPgpError) {
-						// TODO Auto-generated method
-						// stub
+					public void error(int error) {
 
 					}
 				});
