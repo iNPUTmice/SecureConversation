@@ -1,0 +1,8 @@
+include ':minidns'
+include ':openpgpapilib'
+
+// Gradle convention places each sub-project in a unique directory
+// This can be overriden with the below configuration:
+
+project(':minidns').projectDir          = new File('libs/minidns')
+project(':openpgpapilib').projectDir    = new File('libs/openpgp-api-lib')

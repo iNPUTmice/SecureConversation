@@ -4,3 +4,11 @@ bin/**
 .settings
 local.properties
 gen
+
+# Mac OS X
+.DS_Store
+
+# Gradle cache
+.gradle/
+# Gradle build files
+build/
