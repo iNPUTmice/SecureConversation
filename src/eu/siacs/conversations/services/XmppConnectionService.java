@@ -10,14 +10,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
-import org.openintents.openpgp.OpenPgpError;
 import org.openintents.openpgp.util.OpenPgpApi;
 import org.openintents.openpgp.util.OpenPgpServiceConnection;
 
 import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
-import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
@@ -29,10 +27,8 @@ import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
-import eu.siacs.conversations.persistance.OnPhoneContactsMerged;
 import eu.siacs.conversations.ui.OnAccountListChangedListener;
 import eu.siacs.conversations.ui.OnConversationListChangedListener;
-import eu.siacs.conversations.ui.OnRosterFetchedListener;
 import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.OnPhoneContactsLoadedListener;
@@ -47,7 +43,6 @@ import eu.siacs.conversations.xmpp.OnStatusChanged;
 import eu.siacs.conversations.xmpp.OnTLSExceptionReceived;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
-import eu.siacs.conversations.xmpp.jingle.JingleFile;
 import eu.siacs.conversations.xmpp.jingle.OnJinglePacketReceived;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
@@ -60,13 +55,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
-import android.database.DatabaseUtils;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Looper;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
@@ -87,6 +82,8 @@ public class XmppConnectionService extends Service {
 	private static final int PING_TIMEOUT = 5;
 	private static final int CONNECT_TIMEOUT = 60;
 	private static final long CARBON_GRACE_PERIOD = 60000L;
+	
+	private static String ACTION_MERGE_PHONE_CONTACTS = "merge_phone_contacts";
 
 	private MessageParser mMessageParser = new MessageParser(this);
 
@@ -113,8 +110,9 @@ public class XmppConnectionService extends Service {
 		@Override
 		public void onChange(boolean selfChange) {
 			super.onChange(selfChange);
-			Log.d(LOGTAG, "contact list has changed");
-			mergePhoneContactsWithRoster(null);
+			Intent intent = new Intent(getApplicationContext(), XmppConnectionService.class);
+			intent.setAction(ACTION_MERGE_PHONE_CONTACTS);
+			startService(intent);
 		}
 	};
 
@@ -264,10 +262,17 @@ public class XmppConnectionService extends Service {
 			} else if (account.getStatus() == Account.STATUS_REGISTRATION_SUCCESSFULL) {
 				databaseBackend.updateAccount(account);
 				reconnectAccount(account, true);
-			} else {
-				UIHelper.showErrorNotification(getApplicationContext(),
-						getAccounts());
+			} else if (account.getStatus() != Account.STATUS_CONNECTING) {
+				int next = account.getXmppConnection().getTimeToNextAttempt();
+				Log.d(LOGTAG, account.getJid()
+						+ ": error connecting account. try again in " + next
+						+ "s for the "
+						+ (account.getXmppConnection().getAttempt() + 1)
+						+ " time");
+				scheduleWakeupCall(next, false);
 			}
+			UIHelper.showErrorNotification(getApplicationContext(),
+					getAccounts());
 		}
 	};
 
@@ -315,17 +320,8 @@ public class XmppConnectionService extends Service {
 					}
 
 				} else {
-					Contact contact = findContact(account, fromParts[0]);
-					if (contact == null) {
-						if ("subscribe".equals(type)) {
-							account.getXmppConnection().addPendingSubscription(
-									fromParts[0]);
-						} else {
-							// Log.d(LOGTAG,packet.getFrom()+
-							// " could not be found");
-						}
-						return;
-					}
+					Contact contact = account.getRoster().getContact(
+							packet.getFrom());
 					if (type == null) {
 						if (fromParts.length == 2) {
 							contact.updatePresence(fromParts[1], Presences
@@ -344,17 +340,8 @@ public class XmppConnectionService extends Service {
 									}
 									contact.setPgpKeyId(pgp.fetchKeyId(account,
 											msg, x.getContent()));
-									Log.d("xmppService",
-											account.getJid()
-													+ ": fetched key id for "
-													+ contact.getJid()
-													+ " was:"
-													+ contact.getPgpKeyId());
 								}
 							}
-							replaceContactInConversation(account,
-									contact.getJid(), contact);
-							databaseBackend.updateContact(contact, true);
 						} else {
 							// Log.d(LOGTAG,"presence without resource "+packet.toString());
 						}
@@ -364,30 +351,20 @@ public class XmppConnectionService extends Service {
 						} else {
 							contact.removePresence(fromParts[1]);
 						}
-						replaceContactInConversation(account, contact.getJid(),
-								contact);
-						databaseBackend.updateContact(contact, true);
 					} else if (type.equals("subscribe")) {
 						Log.d(LOGTAG, "received subscribe packet from "
 								+ packet.getFrom());
-						if (contact
-								.getSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT)) {
+						if (contact.getOption(Contact.Options.PREEMPTIVE_GRANT)) {
 							Log.d(LOGTAG, "preemptive grant; granting");
 							sendPresenceUpdatesTo(contact);
-							contact.setSubscriptionOption(Contact.Subscription.FROM);
-							contact.resetSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT);
-							replaceContactInConversation(account,
-									contact.getJid(), contact);
-							databaseBackend.updateContact(contact, false);
-							if ((contact
-									.getSubscriptionOption(Contact.Subscription.ASKING))
-									&& (!contact
-											.getSubscriptionOption(Contact.Subscription.TO))) {
+							contact.setOption(Contact.Options.FROM);
+							contact.resetOption(Contact.Options.PREEMPTIVE_GRANT);
+							if ((contact.getOption(Contact.Options.ASKING))
+									&& (!contact.getOption(Contact.Options.TO))) {
 								requestPresenceUpdatesFrom(contact);
 							}
 						} else {
-							account.getXmppConnection().addPendingSubscription(
-									fromParts[0]);
+							contact.setOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST);
 						}
 					} else {
 						// Log.d(LOGTAG, packet.toString());
@@ -406,7 +383,6 @@ public class XmppConnectionService extends Service {
 				if ((from == null) || (from.equals(account.getJid()))) {
 					Element query = packet.findChild("query");
 					processRosterItems(account, query);
-					mergePhoneContactsWithRoster(null);
 				} else {
 					Log.d(LOGTAG, "unauthorized roster push from: " + from);
 				}
@@ -523,47 +499,21 @@ public class XmppConnectionService extends Service {
 	private void processRosterItems(Account account, Element elements) {
 		String version = elements.getAttribute("ver");
 		if (version != null) {
-			account.setRosterVersion(version);
-			databaseBackend.updateAccount(account);
+			account.getRoster().setVersion(version);
 		}
 		for (Element item : elements.getChildren()) {
 			if (item.getName().equals("item")) {
 				String jid = item.getAttribute("jid");
+				String name = item.getAttribute("name");
 				String subscription = item.getAttribute("subscription");
-				Contact contact = databaseBackend.findContact(account, jid);
-				if (contact == null) {
-					if (!subscription.equals("remove")) {
-						String name = item.getAttribute("name");
-						if (name == null) {
-							name = jid.split("@")[0];
-						}
-						contact = new Contact(account, name, jid, null);
-						contact.parseSubscriptionFromElement(item);
-						databaseBackend.createContact(contact);
-					}
+				Contact contact = account.getRoster().getContact(jid);
+				contact.setServerName(name);
+				if (subscription.equals("remove")) {
+					contact.resetOption(Contact.Options.IN_ROSTER);
 				} else {
-					if (subscription.equals("remove")) {
-						databaseBackend.deleteContact(contact);
-						replaceContactInConversation(account, contact.getJid(),
-								null);
-					} else {
-						contact.parseSubscriptionFromElement(item);
-						databaseBackend.updateContact(contact, false);
-						replaceContactInConversation(account, contact.getJid(),
-								contact);
-					}
+					contact.setOption(Contact.Options.IN_ROSTER);
+					contact.parseSubscriptionFromElement(item);
 				}
-			}
-		}
-	}
-
-	private void replaceContactInConversation(Account account, String jid,
-			Contact contact) {
-		List<Conversation> conversations = getConversations();
-		for (Conversation c : conversations) {
-			if (c.getContactJid().equals(jid) && (c.getAccount() == account)) {
-				c.setContact(contact);
-				break;
 			}
 		}
 	}
@@ -577,7 +527,9 @@ public class XmppConnectionService extends Service {
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		this.wakeLock.acquire();
-		// Log.d(LOGTAG,"calling start service. caller was:"+intent.getAction());
+		if ((intent.getAction()!=null)&&(intent.getAction().equals(ACTION_MERGE_PHONE_CONTACTS))) {
+			mergePhoneContactsWithRoster();
+		}
 		ConnectivityManager cm = (ConnectivityManager) getApplicationContext()
 				.getSystemService(Context.CONNECTIVITY_SERVICE);
 		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
@@ -598,8 +550,6 @@ public class XmppConnectionService extends Service {
 							statusListener.onStatusChanged(account);
 						}
 					}
-
-					// TODO 3 remaining cases
 					if (account.getStatus() == Account.STATUS_ONLINE) {
 						long lastReceived = account.getXmppConnection().lastPaketReceived;
 						long lastSent = account.getXmppConnection().lastPingSent;
@@ -627,15 +577,9 @@ public class XmppConnectionService extends Service {
 								+ ": time out during connect reconnecting");
 						reconnectAccount(account, true);
 					} else {
-						Log.d(LOGTAG,
-								"seconds since last connect:"
-										+ ((SystemClock.elapsedRealtime() - account
-												.getXmppConnection().lastConnect) / 1000));
-						Log.d(LOGTAG,
-								account.getJid() + ": status="
-										+ account.getStatus());
-						// TODO notify user of ssl cert problem or auth problem
-						// or what ever
+						if (account.getXmppConnection().getTimeToNextAttempt() <= 0) {
+							reconnectAccount(account, true);
+						}
 					}
 					// in any case. reschedule wakup call
 					this.scheduleWakeupCall(PING_MAX_INTERVAL, true);
@@ -659,6 +603,10 @@ public class XmppConnectionService extends Service {
 		this.fileBackend = new FileBackend(getApplicationContext());
 		this.accounts = databaseBackend.getAccounts();
 
+		for (Account account : this.accounts) {
+			this.databaseBackend.readRoster(account.getRoster());
+		}
+		this.mergePhoneContactsWithRoster();
 		this.getConversations();
 
 		getContentResolver().registerContentObserver(
@@ -674,13 +622,24 @@ public class XmppConnectionService extends Service {
 
 	@Override
 	public void onDestroy() {
-		Log.d(LOGTAG, "stopping service");
 		super.onDestroy();
+		this.logoutAndSave();
+	}
+	
+	@Override
+	public void onTaskRemoved(Intent rootIntent) {
+		super.onTaskRemoved(rootIntent);
+		this.logoutAndSave();
+	}
+	
+	private void logoutAndSave() {
 		for (Account account : accounts) {
+			databaseBackend.writeRoster(account.getRoster());
 			if (account.getXmppConnection() != null) {
 				disconnect(account, true);
 			}
 		}
+		Log.d(LOGTAG,"good bye");
 	}
 
 	protected void scheduleWakeupCall(int seconds, boolean ping) {
@@ -698,7 +657,6 @@ public class XmppConnectionService extends Service {
 						this.pingIntent, 0);
 				alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
 						timeToWake, pendingPingIntent);
-				// Log.d(LOGTAG,"schedule ping in "+seconds+" seconds");
 			} else {
 				long scheduledTime = this.pingIntent.getLongExtra("time", 0);
 				if (scheduledTime < SystemClock.elapsedRealtime()
@@ -709,7 +667,6 @@ public class XmppConnectionService extends Service {
 							context, 0, this.pingIntent, 0);
 					alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP,
 							timeToWake, pendingPingIntent);
-					// Log.d(LOGTAG,"reschedule old ping to ping in "+seconds+" seconds");
 				}
 			}
 		} else {
@@ -750,12 +707,11 @@ public class XmppConnectionService extends Service {
 		connection.setOnBindListener(new OnBindListener() {
 
 			@Override
-			public void onBind(Account account) {
-				databaseBackend.clearPresences(account);
+			public void onBind(final Account account) {
+				account.getRoster().clearPresences();
 				account.clearPresences(); // self presences
-				if (account.getXmppConnection().hasFeatureRosterManagment()) {
-					updateRoster(account, null);
-				}
+				fetchRosterFromServer(account);
+				sendPresence(account);
 				connectMultiModeConversations(account);
 				if (convChangedListener != null) {
 					convChangedListener.onConversationListChanged();
@@ -793,11 +749,7 @@ public class XmppConnectionService extends Service {
 					addToConversation = true;
 				} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
 					message.getConversation().endOtrIfNeeded();
-					packet = new MessagePacket();
-					packet.setType(MessagePacket.TYPE_CHAT);
-					packet.setFrom(message.getConversation().getAccount()
-							.getFullJid());
-					packet.setTo(message.getCounterpart());
+					packet = prepareMessagePacket(account, message, null);
 					packet.setBody("This is an XEP-0027 encryted message");
 					packet.addChild("x", "jabber:x:encrypted").setContent(
 							message.getEncryptedBody());
@@ -811,17 +763,26 @@ public class XmppConnectionService extends Service {
 					// don't encrypt
 					if (message.getConversation().getMode() == Conversation.MODE_SINGLE) {
 						message.setStatus(Message.STATUS_SEND);
-						saveInDb = true;
-						addToConversation = true;
 					}
 					packet = prepareMessagePacket(account, message, null);
 					send = true;
+					saveInDb = true;
+					addToConversation = true;
 				}
 			}
 		} else {
-			// account is offline
-			saveInDb = true;
-			addToConversation = true;
+			if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+				String pgpBody = message.getEncryptedBody();
+				String decryptedBody = message.getBody();
+				message.setBody(pgpBody);
+				databaseBackend.createMessage(message);
+				message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+				message.setBody(decryptedBody);
+				addToConversation = true;
+			} else {
+				saveInDb = true;
+				addToConversation = true;
+			}
 
 		}
 		if (saveInDb) {
@@ -841,22 +802,35 @@ public class XmppConnectionService extends Service {
 
 	private void sendUnsendMessages(Conversation conversation) {
 		for (int i = 0; i < conversation.getMessages().size(); ++i) {
-			if ((conversation.getMessages().get(i).getStatus() == Message.STATUS_UNSEND)
-					&& (conversation.getMessages().get(i).getEncryption() == Message.ENCRYPTION_NONE)) {
-				Message message = conversation.getMessages().get(i);
-				MessagePacket packet = prepareMessagePacket(
-						conversation.getAccount(), message, null);
-				conversation.getAccount().getXmppConnection()
-						.sendMessagePacket(packet);
-				message.setStatus(Message.STATUS_SEND);
-				if (conversation.getMode() == Conversation.MODE_SINGLE) {
-					databaseBackend.updateMessage(message);
-				} else {
-					databaseBackend.deleteMessage(message);
-					conversation.getMessages().remove(i);
-					i--;
-				}
+			if (conversation.getMessages().get(i).getStatus() == Message.STATUS_UNSEND) {
+				resendMessage(conversation.getMessages().get(i));
 			}
+		}
+	}
+
+	private void resendMessage(Message message) {
+		Account account = message.getConversation().getAccount();
+		MessagePacket packet = null;
+		if (message.getEncryption() == Message.ENCRYPTION_NONE) {
+			packet = prepareMessagePacket(account, message, null);
+		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
+			packet = prepareMessagePacket(account, message, null);
+			packet.setBody("This is an XEP-0027 encryted message");
+			if (message.getEncryptedBody() == null) {
+				markMessage(message, Message.STATUS_SEND_FAILED);
+				return;
+			}
+			packet.addChild("x", "jabber:x:encrypted").setContent(
+					message.getEncryptedBody());
+		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+			packet = prepareMessagePacket(account, message, null);
+			packet.setBody("This is an XEP-0027 encryted message");
+			packet.addChild("x", "jabber:x:encrypted").setContent(
+					message.getBody());
+		}
+		if (packet != null) {
+			account.getXmppConnection().sendMessagePacket(packet);
+			markMessage(message, Message.STATUS_SEND);
 		}
 	}
 
@@ -895,27 +869,7 @@ public class XmppConnectionService extends Service {
 		return packet;
 	}
 
-	private void getRoster(Account account,
-			final OnRosterFetchedListener listener) {
-		List<Contact> contacts = databaseBackend.getContactsByAccount(account);
-		for (int i = 0; i < contacts.size(); ++i) {
-			contacts.get(i).setAccount(account);
-		}
-		if (listener != null) {
-			listener.onRosterFetched(contacts);
-		}
-	}
-
-	public List<Contact> getRoster(Account account) {
-		List<Contact> contacts = databaseBackend.getContactsByAccount(account);
-		for (int i = 0; i < contacts.size(); ++i) {
-			contacts.get(i).setAccount(account);
-		}
-		return contacts;
-	}
-
-	public void updateRoster(final Account account,
-			final OnRosterFetchedListener listener) {
+	public void fetchRosterFromServer(Account account) {
 		IqPacket iqPacket = new IqPacket(IqPacket.TYPE_GET);
 		if (!"".equals(account.getRosterVersion())) {
 			Log.d(LOGTAG, account.getJid() + ": fetching roster version "
@@ -933,62 +887,23 @@ public class XmppConnectionService extends Service {
 							IqPacket packet) {
 						Element roster = packet.findChild("query");
 						if (roster != null) {
-							Log.d(LOGTAG, account.getJid()
-									+ ": processing roster");
+							account.getRoster().markAllAsNotInRoster();
 							processRosterItems(account, roster);
-							StringBuilder mWhere = new StringBuilder();
-							mWhere.append("jid NOT IN(");
-							List<Element> items = roster.getChildren();
-							for (int i = 0; i < items.size(); ++i) {
-								mWhere.append(DatabaseUtils
-										.sqlEscapeString(items.get(i)
-												.getAttribute("jid")));
-								if (i != items.size() - 1) {
-									mWhere.append(",");
-								}
-							}
-							mWhere.append(") and accountUuid = \"");
-							mWhere.append(account.getUuid());
-							mWhere.append("\"");
-							List<Contact> contactsToDelete = databaseBackend
-									.getContacts(mWhere.toString());
-							for (Contact contact : contactsToDelete) {
-								databaseBackend.deleteContact(contact);
-								replaceContactInConversation(account,
-										contact.getJid(), null);
-							}
-
-						} else {
-							Log.d(LOGTAG, account.getJid()
-									+ ": empty roster returend");
 						}
-						mergePhoneContactsWithRoster(new OnPhoneContactsMerged() {
-
-							@Override
-							public void phoneContactsMerged() {
-								if (listener != null) {
-									getRoster(account, listener);
-								}
-							}
-						});
 					}
 				});
 	}
 
-	public void mergePhoneContactsWithRoster(
-			final OnPhoneContactsMerged listener) {
+	private void mergePhoneContactsWithRoster() {
 		PhoneHelper.loadPhoneContacts(getApplicationContext(),
 				new OnPhoneContactsLoadedListener() {
 					@Override
-					public void onPhoneContactsLoaded(
-							Hashtable<String, Bundle> phoneContacts) {
-						List<Contact> contacts = databaseBackend
-								.getContactsByAccount(null);
-						for (int i = 0; i < contacts.size(); ++i) {
-							Contact contact = contacts.get(i);
-							if (phoneContacts.containsKey(contact.getJid())) {
-								Bundle phoneContact = phoneContacts.get(contact
-										.getJid());
+					public void onPhoneContactsLoaded(List<Bundle> phoneContacts) {
+						for (Bundle phoneContact : phoneContacts) {
+							for (Account account : accounts) {
+								String jid = phoneContact.getString("jid");
+								Contact contact = account.getRoster()
+										.getContact(jid);
 								String systemAccount = phoneContact
 										.getInt("phoneid")
 										+ "#"
@@ -996,27 +911,9 @@ public class XmppConnectionService extends Service {
 								contact.setSystemAccount(systemAccount);
 								contact.setPhotoUri(phoneContact
 										.getString("photouri"));
-								contact.setDisplayName(phoneContact
+								contact.setSystemName(phoneContact
 										.getString("displayname"));
-								databaseBackend.updateContact(contact, false);
-								replaceContactInConversation(
-										contact.getAccount(), contact.getJid(),
-										contact);
-							} else {
-								if ((contact.getSystemAccount() != null)
-										|| (contact.getProfilePhoto() != null)) {
-									contact.setSystemAccount(null);
-									contact.setPhotoUri(null);
-									databaseBackend.updateContact(contact,
-											false);
-									replaceContactInConversation(
-											contact.getAccount(),
-											contact.getJid(), contact);
-								}
 							}
-						}
-						if (listener != null) {
-							listener.phoneContactsMerged();
 						}
 					}
 				});
@@ -1033,7 +930,6 @@ public class XmppConnectionService extends Service {
 			for (Conversation conv : this.conversations) {
 				Account account = accountLookupTable.get(conv.getAccountUuid());
 				conv.setAccount(account);
-				conv.setContact(findContact(account, conv.getContactJid()));
 				conv.setMessages(databaseBackend.getMessages(conv, 50));
 			}
 		}
@@ -1049,14 +945,6 @@ public class XmppConnectionService extends Service {
 
 	public List<Account> getAccounts() {
 		return this.accounts;
-	}
-
-	public Contact findContact(Account account, String jid) {
-		Contact contact = databaseBackend.findContact(account, jid);
-		if (contact != null) {
-			contact.setAccount(account);
-		}
-		return contact;
 	}
 
 	public Conversation findOrCreateConversation(Account account, String jid,
@@ -1080,11 +968,9 @@ public class XmppConnectionService extends Service {
 			conversation.setMessages(databaseBackend.getMessages(conversation,
 					50));
 			this.databaseBackend.updateConversation(conversation);
-			conversation.setContact(findContact(account,
-					conversation.getContactJid()));
 		} else {
 			String conversationName;
-			Contact contact = findContact(account, jid);
+			Contact contact = account.getRoster().getContact(jid);
 			if (contact != null) {
 				conversationName = contact.getDisplayName();
 			} else {
@@ -1097,7 +983,6 @@ public class XmppConnectionService extends Service {
 				conversation = new Conversation(conversationName, account, jid,
 						Conversation.MODE_SINGLE);
 			}
-			conversation.setContact(contact);
 			this.databaseBackend.createConversation(conversation);
 		}
 		this.conversations.add(conversation);
@@ -1145,23 +1030,14 @@ public class XmppConnectionService extends Service {
 			accountChangedListener.onAccountListChangedListener();
 	}
 
-	public void deleteContact(Contact contact) {
-		IqPacket iq = new IqPacket(IqPacket.TYPE_SET);
-		Element query = iq.query("jabber:iq:roster");
-		query.addChild("item").setAttribute("jid", contact.getJid())
-				.setAttribute("subscription", "remove");
-		contact.getAccount().getXmppConnection().sendIqPacket(iq, null);
-		replaceContactInConversation(contact.getAccount(), contact.getJid(),
-				null);
-		databaseBackend.deleteContact(contact);
-	}
-
 	public void updateAccount(Account account) {
 		this.statusListener.onStatusChanged(account);
 		databaseBackend.updateAccount(account);
 		reconnectAccount(account, false);
-		if (accountChangedListener != null)
+		if (accountChangedListener != null) {
 			accountChangedListener.onAccountListChangedListener();
+		}
+		UIHelper.showErrorNotification(getApplicationContext(), getAccounts());
 	}
 
 	public void deleteAccount(Account account) {
@@ -1170,8 +1046,10 @@ public class XmppConnectionService extends Service {
 		}
 		databaseBackend.deleteAccount(account);
 		this.accounts.remove(account);
-		if (accountChangedListener != null)
+		if (accountChangedListener != null) {
 			accountChangedListener.onAccountListChangedListener();
+		}
+		UIHelper.showErrorNotification(getApplicationContext(), getAccounts());
 	}
 
 	public void setOnConversationListChangedListener(
@@ -1312,12 +1190,6 @@ public class XmppConnectionService extends Service {
 		return mBinder;
 	}
 
-	public void updateContact(Contact contact) {
-		databaseBackend.updateContact(contact, false);
-		replaceContactInConversation(contact.getAccount(), contact.getJid(),
-				contact);
-	}
-
 	public void updateMessage(Message message) {
 		databaseBackend.updateMessage(message);
 	}
@@ -1326,30 +1198,33 @@ public class XmppConnectionService extends Service {
 		SharedPreferences sharedPref = getPreferences();
 		boolean autoGrant = sharedPref.getBoolean("grant_new_contacts", true);
 		if (autoGrant) {
-			contact.setSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT);
-			contact.setSubscriptionOption(Contact.Subscription.ASKING);
+			contact.setOption(Contact.Options.PREEMPTIVE_GRANT);
+			contact.setOption(Contact.Options.ASKING);
 		}
-		databaseBackend.createContact(contact);
-		IqPacket iq = new IqPacket(IqPacket.TYPE_SET);
-		Element query = new Element("query");
-		query.setAttribute("xmlns", "jabber:iq:roster");
-		Element item = new Element("item");
-		item.setAttribute("jid", contact.getJid());
-		item.setAttribute("name", contact.getJid());
-		query.addChild(item);
-		iq.addChild(query);
-		Account account = contact.getAccount();
-		account.getXmppConnection().sendIqPacket(iq, null);
+		pushContactToServer(contact);
 		if (autoGrant) {
 			requestPresenceUpdatesFrom(contact);
-			if (account.getXmppConnection().hasPendingSubscription(
-					contact.getJid())) {
+			if (contact.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
 				Log.d("xmppService", "contact had pending subscription");
 				sendPresenceUpdatesTo(contact);
 			}
 		}
-		replaceContactInConversation(contact.getAccount(), contact.getJid(),
-				contact);
+	}
+	
+	public void pushContactToServer(Contact contact) {
+		IqPacket iq = new IqPacket(IqPacket.TYPE_SET);
+		iq.query("jabber:iq:roster").addChild(contact.asElement());
+		Account account = contact.getAccount();
+		account.getXmppConnection().sendIqPacket(iq, null);
+	}
+	
+	public void deleteContactOnServer(Contact contact) {
+		IqPacket iq = new IqPacket(IqPacket.TYPE_SET);
+		Element item = iq.query("jabber:iq:roster").addChild("item");
+		item.setAttribute("jid", contact.getJid());
+		item.setAttribute("subscription", "remove");
+		Account account = contact.getAccount();
+		account.getXmppConnection().sendIqPacket(iq, null);
 	}
 
 	public void requestPresenceUpdatesFrom(Contact contact) {
@@ -1390,18 +1265,17 @@ public class XmppConnectionService extends Service {
 		packet.setAttribute("from", contact.getAccount().getJid());
 		Log.d(LOGTAG, packet.toString());
 		contact.getAccount().getXmppConnection().sendPresencePacket(packet);
+		contact.resetOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST);
 	}
 
-	public void sendPgpPresence(Account account, String signature) {
+	public void sendPresence(Account account) {
 		PresencePacket packet = new PresencePacket();
 		packet.setAttribute("from", account.getFullJid());
-		Element status = new Element("status");
-		status.setContent("online");
-		packet.addChild(status);
-		Element x = new Element("x");
-		x.setAttribute("xmlns", "jabber:x:signed");
-		x.setContent(signature);
-		packet.addChild(x);
+		String sig = account.getPgpSignature();
+		if (sig != null) {
+			packet.addChild("status").setContent("online");
+			packet.addChild("x", "jabber:x:signed").setContent(sig);
+		}
 		account.getXmppConnection().sendPresencePacket(packet);
 	}
 
@@ -1409,23 +1283,10 @@ public class XmppConnectionService extends Service {
 		this.databaseBackend.updateConversation(conversation);
 	}
 
-	public Contact findContact(String uuid) {
-		Contact contact = this.databaseBackend.getContact(uuid);
-		if (contact != null) {
-			for (Account account : getAccounts()) {
-				if (contact.getAccountUuid().equals(account.getUuid())) {
-					contact.setAccount(account);
-				}
-			}
-		}
-		return contact;
-	}
-
 	public void removeOnTLSExceptionReceivedListener() {
 		this.tlsException = null;
 	}
 
-	// TODO dont let thread sleep but schedule wake up
 	public void reconnectAccount(final Account account, final boolean force) {
 		new Thread(new Runnable() {
 
@@ -1482,21 +1343,24 @@ public class XmppConnectionService extends Service {
 
 	public boolean markMessage(Account account, String recipient, String uuid,
 			int status) {
-		boolean marked = false;
 		for (Conversation conversation : getConversations()) {
 			if (conversation.getContactJid().equals(recipient)
 					&& conversation.getAccount().equals(account)) {
-				for (Message message : conversation.getMessages()) {
-					if (message.getUuid().equals(uuid)) {
-						markMessage(message, status);
-						marked = true;
-						break;
-					}
-				}
-				break;
+				return markMessage(conversation, uuid, status);
 			}
 		}
-		return marked;
+		return false;
+	}
+
+	public boolean markMessage(Conversation conversation, String uuid,
+			int status) {
+		for (Message message : conversation.getMessages()) {
+			if (message.getUuid().equals(uuid)) {
+				markMessage(message, status);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void markMessage(Message message, int status) {
@@ -1519,5 +1383,14 @@ public class XmppConnectionService extends Service {
 			UIHelper.updateNotification(getApplicationContext(),
 					getConversations(), conversation, notify);
 		}
+	}
+	
+	public Account findAccountByJid(String accountJid) {
+		for (Account account : this.accounts) {
+			if (account.getJid().equals(accountJid)) {
+				return account;
+			}
+		}
+		return null;
 	}
 }

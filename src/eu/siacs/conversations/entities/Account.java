@@ -65,6 +65,8 @@ public class Account  extends AbstractEntity{
 
 	private String otrFingerprint;
 	
+	private Roster roster = null;
+	
 	public Account() {
 		this.uuid = "0";
 	}
@@ -135,7 +137,7 @@ public class Account  extends AbstractEntity{
 	}
 	
 	public boolean hasErrorStatus() {
-		return getStatus() > STATUS_NO_INTERNET;
+		return getStatus() > STATUS_NO_INTERNET && (getXmppConnection().getAttempt() >= 2);
 	}
 	
 	public void setResource(String resource) {
@@ -286,5 +288,12 @@ public class Account  extends AbstractEntity{
 		} else {
 			return null;
 		}
+	}
+	
+	public Roster getRoster() {
+		if (this.roster==null) {
+			this.roster = new Roster(this);
+		}
+		return this.roster;
 	}
 }

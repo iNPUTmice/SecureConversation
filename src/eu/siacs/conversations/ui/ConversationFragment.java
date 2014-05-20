@@ -5,12 +5,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-import org.openintents.openpgp.OpenPgpError;
-
 import net.java.otr4j.session.SessionStatus;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
-import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
@@ -31,7 +28,6 @@ import android.content.SharedPreferences;
 import android.content.IntentSender.SendIntentException;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.text.Editable;
@@ -267,7 +263,9 @@ public class ConversationFragment extends Fragment {
 			}
 
 			private void displayInfoMessage(ViewHolder viewHolder, int r) {
-				viewHolder.download_button.setVisibility(View.GONE);
+				if (viewHolder.download_button != null) {
+					viewHolder.download_button.setVisibility(View.GONE);
+				}
 				viewHolder.image.setVisibility(View.GONE);
 				viewHolder.messageBody.setVisibility(View.VISIBLE);
 				viewHolder.messageBody.setText(getString(r));
@@ -331,7 +329,8 @@ public class ConversationFragment extends Fragment {
 					@Override
 					public void onClick(View v) {
 						Intent intent = new Intent(Intent.ACTION_VIEW);
-						intent.setDataAndType(ImageProvider.getContentUri(message), "image/*");
+						intent.setDataAndType(
+								ImageProvider.getContentUri(message), "image/*");
 						startActivity(intent);
 					}
 				});
@@ -393,20 +392,17 @@ public class ConversationFragment extends Fragment {
 
 				if (type == RECIEVED) {
 					if (item.getConversation().getMode() == Conversation.MODE_MULTI) {
-						if (item.getCounterpart() != null) {
-							viewHolder.contact_picture
-									.setImageBitmap(mBitmapCache.get(item
-											.getCounterpart(), null,
-											getActivity()
-													.getApplicationContext()));
-						} else {
-							viewHolder.contact_picture
-									.setImageBitmap(mBitmapCache.get(
-											item.getConversation().getName(
-													useSubject), null,
-											getActivity()
-													.getApplicationContext()));
-						}
+						viewHolder.contact_picture.setImageBitmap(mBitmapCache
+								.get(item.getCounterpart(), null, getActivity()
+										.getApplicationContext()));
+						viewHolder.contact_picture
+								.setOnClickListener(new OnClickListener() {
+
+									@Override
+									public void onClick(View v) {
+										highlightInConference(item.getCounterpart());
+									}
+								});
 					}
 				}
 
@@ -462,6 +458,22 @@ public class ConversationFragment extends Fragment {
 		return view;
 	}
 
+	protected void highlightInConference(String nick) {
+		if (chatMsg.getText().toString().isEmpty()) {
+			chatMsg.setText(nick+": ");
+		} else {
+			String oldString = chatMsg.getText().toString();
+			if (oldString.endsWith(" ")) {
+				chatMsg.setText(oldString+nick+" ");
+			} else {
+				chatMsg.setText(oldString+" "+nick+" ");
+			}
+		}
+		int position = chatMsg.length();
+		Editable etext = chatMsg.getText();
+		Selection.setSelection(etext, position);
+	}
+	
 	protected Bitmap findSelfPicture() {
 		SharedPreferences sharedPref = PreferenceManager
 				.getDefaultSharedPreferences(getActivity()
@@ -488,7 +500,7 @@ public class ConversationFragment extends Fragment {
 	@Override
 	public void onStop() {
 		super.onStop();
-		if (this.conversation!=null) {
+		if (this.conversation != null) {
 			this.conversation.setNextMessage(chatMsg.getText().toString());
 		}
 	}
@@ -579,14 +591,15 @@ public class ConversationFragment extends Fragment {
 	}
 
 	public void updateMessages() {
-		if (getView()==null) {
+		if (getView() == null) {
 			return;
 		}
 		ConversationActivity activity = (ConversationActivity) getActivity();
 		if (this.conversation != null) {
 			for (Message message : this.conversation.getMessages()) {
 				if ((message.getEncryption() == Message.ENCRYPTION_PGP)
-						&& (message.getStatus() == Message.STATUS_RECIEVED)) {
+						&& ((message.getStatus() == Message.STATUS_RECIEVED) || (message
+								.getStatus() == Message.STATUS_SEND))) {
 					decryptMessage(message);
 					break;
 				}
@@ -626,31 +639,26 @@ public class ConversationFragment extends Fragment {
 	protected void makeFingerprintWarning(int latestEncryption) {
 		final LinearLayout fingerprintWarning = (LinearLayout) getView()
 				.findViewById(R.id.new_fingerprint);
-		if (conversation.getContact() != null) {
-			Set<String> knownFingerprints = conversation.getContact()
-					.getOtrFingerprints();
-			if ((latestEncryption == Message.ENCRYPTION_OTR)
-					&& (conversation.hasValidOtrSession()
-							&& (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) && (!knownFingerprints
-								.contains(conversation.getOtrFingerprint())))) {
-				fingerprintWarning.setVisibility(View.VISIBLE);
-				TextView fingerprint = (TextView) getView().findViewById(
-						R.id.otr_fingerprint);
-				fingerprint.setText(conversation.getOtrFingerprint());
-				fingerprintWarning.setOnClickListener(new OnClickListener() {
+		Set<String> knownFingerprints = conversation.getContact()
+				.getOtrFingerprints();
+		if ((latestEncryption == Message.ENCRYPTION_OTR)
+				&& (conversation.hasValidOtrSession()
+						&& (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) && (!knownFingerprints
+							.contains(conversation.getOtrFingerprint())))) {
+			fingerprintWarning.setVisibility(View.VISIBLE);
+			TextView fingerprint = (TextView) getView().findViewById(
+					R.id.otr_fingerprint);
+			fingerprint.setText(conversation.getOtrFingerprint());
+			fingerprintWarning.setOnClickListener(new OnClickListener() {
 
-					@Override
-					public void onClick(View v) {
-						AlertDialog dialog = UIHelper
-								.getVerifyFingerprintDialog(
-										(ConversationActivity) getActivity(),
-										conversation, fingerprintWarning);
-						dialog.show();
-					}
-				});
-			} else {
-				fingerprintWarning.setVisibility(View.GONE);
-			}
+				@Override
+				public void onClick(View v) {
+					AlertDialog dialog = UIHelper.getVerifyFingerprintDialog(
+							(ConversationActivity) getActivity(), conversation,
+							fingerprintWarning);
+					dialog.show();
+				}
+			});
 		} else {
 			fingerprintWarning.setVisibility(View.GONE);
 		}
@@ -669,35 +677,31 @@ public class ConversationFragment extends Fragment {
 		final Contact contact = message.getConversation().getContact();
 		if (activity.hasPgp()) {
 			if (contact.getPgpKeyId() != 0) {
-				xmppService.getPgpEngine().hasKey(contact,
-						new UiCallback() {
+				xmppService.getPgpEngine().hasKey(contact, new UiCallback() {
 
-							@Override
-							public void userInputRequried(PendingIntent pi) {
-								activity.runIntent(
-										pi,
-										ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
-							}
+					@Override
+					public void userInputRequried(PendingIntent pi) {
+						activity.runIntent(pi,
+								ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
+					}
 
-							@Override
-							public void success() {
-								activity.encryptTextMessage();
-							}
+					@Override
+					public void success() {
+						activity.encryptTextMessage();
+					}
 
-							@Override
-							public void error(int error) {
-								
-							}
-						});
+					@Override
+					public void error(int error) {
+
+					}
+				});
 
 			} else {
 				showNoPGPKeyDialog(new DialogInterface.OnClickListener() {
 
 					@Override
-					public void onClick(DialogInterface dialog,
-							int which) {
-						conversation
-								.setNextEncryption(Message.ENCRYPTION_NONE);
+					public void onClick(DialogInterface dialog, int which) {
+						conversation.setNextEncryption(Message.ENCRYPTION_NONE);
 						message.setEncryption(Message.ENCRYPTION_NONE);
 						xmppService.sendMessage(message, null);
 						chatMsg.setText("");
@@ -706,15 +710,15 @@ public class ConversationFragment extends Fragment {
 			}
 		}
 	}
-	
+
 	public void showNoPGPKeyDialog(DialogInterface.OnClickListener listener) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(
-				getActivity());
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 		builder.setTitle(getString(R.string.no_pgp_key));
 		builder.setIconAttribute(android.R.attr.alertDialogIcon);
 		builder.setMessage(getText(R.string.contact_has_no_pgp_key));
 		builder.setNegativeButton(getString(R.string.cancel), null);
-		builder.setPositiveButton(getString(R.string.send_unencrypted),listener);
+		builder.setPositiveButton(getString(R.string.send_unencrypted),
+				listener);
 		builder.create().show();
 	}
 
@@ -760,7 +764,6 @@ public class ConversationFragment extends Fragment {
 
 	private class BitmapCache {
 		private HashMap<String, Bitmap> bitmaps = new HashMap<String, Bitmap>();
-		private Bitmap error = null;
 
 		public Bitmap get(String name, Contact contact, Context context) {
 			if (bitmaps.containsKey(name)) {

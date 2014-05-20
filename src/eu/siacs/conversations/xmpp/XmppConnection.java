@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.net.ssl.SSLContext;
@@ -31,7 +30,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
-import org.json.JSONException;
 import org.xmlpull.v1.XmlPullParserException;
 
 import android.os.Bundle;
@@ -76,9 +74,7 @@ public class XmppConnection implements Runnable {
 	private boolean shouldAuthenticate = true;
 	private Element streamFeatures;
 	private HashMap<String, List<String>> disco = new HashMap<String, List<String>>();
-	
-	private HashSet<String> pendingSubscriptions = new HashSet<String>();
-	
+
 	private String streamId = null;
 	private int smVersion = 3;
 	
@@ -89,6 +85,8 @@ public class XmppConnection implements Runnable {
 	public long lastPingSent = 0;
 	public long lastConnect = 0;
 	public long lastSessionStarted = 0;
+	
+	private int attempt = 0;
 
 	private static final int PACKET_IQ = 0;
 	private static final int PACKET_MESSAGE = 1;
@@ -111,8 +109,11 @@ public class XmppConnection implements Runnable {
 
 	protected void changeStatus(int nextStatus) {
 		if (account.getStatus() != nextStatus) {
-			if ((nextStatus == Account.STATUS_OFFLINE)&&(account.getStatus() != Account.STATUS_CONNECTING)&&(account.getStatus() != Account.STATUS_ONLINE)) {
+			if ((nextStatus == Account.STATUS_OFFLINE)&&(account.getStatus() != Account.STATUS_CONNECTING)&&(account.getStatus() != Account.STATUS_ONLINE)&&(account.getStatus() != Account.STATUS_DISABLED)) {
 				return;
+			}
+			if (nextStatus == Account.STATUS_ONLINE) {
+				this.attempt = 0;
 			}
 			account.setStatus(nextStatus);
 			if (statusListener != null) {
@@ -124,6 +125,7 @@ public class XmppConnection implements Runnable {
 	protected void connect() {
 		Log.d(LOGTAG,account.getJid()+ ": connecting");
 		lastConnect = SystemClock.elapsedRealtime();
+		this.attempt++;
 		try {
 			shouldAuthenticate = shouldBind = !account.isOptionSet(Account.OPTION_REGISTER);
 			tagReader = new XmlReader(wakeLock);
@@ -257,10 +259,11 @@ public class XmppConnection implements Runnable {
 				RequestPacket r = new RequestPacket(smVersion);
 				tagWriter.writeStanzaAsync(r);
 			} else if (nextTag.isStart("resumed")) {
+				lastPaketReceived = SystemClock.elapsedRealtime();
+				Log.d(LOGTAG,account.getJid()+": session resumed");
 				tagReader.readElement(nextTag);
 				sendPing();
 				changeStatus(Account.STATUS_ONLINE);
-				Log.d(LOGTAG,account.getJid()+": session resumed");
 			} else if (nextTag.isStart("r")) {
 				tagReader.readElement(nextTag);
 				AckPacket ack = new AckPacket(this.stanzasReceived,smVersion);
@@ -543,12 +546,6 @@ public class XmppConnection implements Runnable {
 			this.tagWriter.writeStanzaAsync(resume);
 		} else if (this.streamFeatures.hasChild("bind") && shouldBind) {
 			sendBindRequest();
-			if (this.streamFeatures.hasChild("session")) {
-				Log.d(LOGTAG,account.getJid()+": sending deprecated session");
-				IqPacket startSession = new IqPacket(IqPacket.TYPE_SET);
-				startSession.addChild("session","urn:ietf:params:xml:ns:xmpp-session"); //setContent("")
-				this.sendIqPacket(startSession, null);
-			}
 		}
 	}
 
@@ -616,25 +613,10 @@ public class XmppConnection implements Runnable {
 		});
 	}
 
-	private void sendInitialPresence() {
-		PresencePacket packet = new PresencePacket();
-		packet.setAttribute("from", account.getFullJid());
-		if (account.getKeys().has("pgp_signature")) {
-			try {
-				String signature = account.getKeys().getString("pgp_signature");
-				packet.addChild("status").setContent("online");
-				packet.addChild("x","jabber:x:signed").setContent(signature);
-			} catch (JSONException e) {
-				//
-			}
-		}
-		this.sendPresencePacket(packet);
-	}
-
 	private void sendBindRequest() throws IOException {
 		IqPacket iq = new IqPacket(IqPacket.TYPE_SET);
 		iq.addChild("bind", "urn:ietf:params:xml:ns:xmpp-bind").addChild("resource").setContent(account.getResource());
-		this.sendIqPacket(iq, new OnIqPacketReceived() {
+		this.sendUnboundIqPacket(iq, new OnIqPacketReceived() {
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
 				String resource = packet.findChild("bind").findChild("jid")
@@ -649,15 +631,21 @@ public class XmppConnection implements Runnable {
 					EnablePacket enable = new EnablePacket(smVersion);
 					tagWriter.writeStanzaAsync(enable);
 				}
-				sendInitialPresence();
 				sendServiceDiscoveryInfo(account.getServer());
 				sendServiceDiscoveryItems(account.getServer());
 				if (bindListener !=null) {
 					bindListener.onBind(account);
 				}
+				
 				changeStatus(Account.STATUS_ONLINE);
 			}
 		});
+		if (this.streamFeatures.hasChild("session")) {
+			Log.d(LOGTAG,account.getJid()+": sending deprecated session");
+			IqPacket startSession = new IqPacket(IqPacket.TYPE_SET);
+			startSession.addChild("session","urn:ietf:params:xml:ns:xmpp-session");
+			this.sendUnboundIqPacket(startSession, null);
+		}
 	}
 
 	private void sendServiceDiscoveryInfo(final String server) {
@@ -754,6 +742,14 @@ public class XmppConnection implements Runnable {
 			packet.setAttribute("id", id);
 		}
 		packet.setFrom(account.getFullJid());
+		this.sendPacket(packet, callback);
+	}
+	
+	public void sendUnboundIqPacket(IqPacket packet, OnIqPacketReceived callback) {
+		if (packet.getId()==null) {
+			String id = nextRandomId();
+			packet.setAttribute("id", id);
+		}
 		this.sendPacket(packet, callback);
 	}
 
@@ -907,12 +903,13 @@ public class XmppConnection implements Runnable {
 		return findDiscoItemByFeature("http://jabber.org/protocol/muc");
 	}
 	
-	public boolean hasPendingSubscription(String jid) {
-		return this.pendingSubscriptions.contains(jid);
+	public int getTimeToNextAttempt() {
+		int interval = (int) (25 * Math.pow(1.5,attempt));
+		int secondsSinceLast = (int) ((SystemClock.elapsedRealtime() - this.lastConnect) / 1000);
+		return interval - secondsSinceLast;
 	}
 	
-	public void addPendingSubscription(String jid) {
-		Log.d(LOGTAG,"adding "+jid+" to pending subscriptions");
-		this.pendingSubscriptions.add(jid);
+	public int getAttempt() {
+		return this.attempt;
 	}
 }
