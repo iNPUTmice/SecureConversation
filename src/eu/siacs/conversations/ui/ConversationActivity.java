@@ -223,7 +223,7 @@ public class ConversationActivity extends XmppActivity {
 				}
 
 				((TextView) view.findViewById(R.id.conversation_lastupdate))
-						.setText(UIHelper.readableTimeDifference(conv
+						.setText(UIHelper.readableTimeDifference(getContext(), conv
 								.getLatestMessage().getTimeSent()));
 
 				ImageView profilePicture = (ImageView) view
@@ -321,7 +321,6 @@ public class ConversationActivity extends XmppActivity {
 			if (this.getSelectedConversation() != null) {
 				if (this.getSelectedConversation().getMode() == Conversation.MODE_MULTI) {
 					menuContactDetails.setVisible(false);
-					menuSecure.setVisible(false);
 					menuAttach.setVisible(false);
 				} else {
 					menuMucDetails.setVisible(false);
@@ -474,7 +473,7 @@ public class ConversationActivity extends XmppActivity {
 			break;
 		case R.id.action_contact_details:
 			Contact contact = this.getSelectedConversation().getContact();
-			if (contact.getOption(Contact.Options.IN_ROSTER)) {
+			if (contact.showInRoster()) {
 				Intent intent = new Intent(this, ContactDetailsActivity.class);
 				intent.setAction(ContactDetailsActivity.ACTION_VIEW_CONTACT);
 				intent.putExtra("account", this.getSelectedConversation().getAccount().getJid());
@@ -536,14 +535,17 @@ public class ConversationActivity extends XmppActivity {
 					}
 				});
 				popup.inflate(R.menu.encryption_choices);
+				MenuItem otr = popup.getMenu().findItem(R.id.encryption_choice_otr);
+				if (conversation.getMode() == Conversation.MODE_MULTI) {
+					otr.setVisible(false);
+				}
 				switch (conversation.getNextEncryption()) {
 				case Message.ENCRYPTION_NONE:
 					popup.getMenu().findItem(R.id.encryption_choice_none)
 							.setChecked(true);
 					break;
 				case Message.ENCRYPTION_OTR:
-					popup.getMenu().findItem(R.id.encryption_choice_otr)
-							.setChecked(true);
+					otr.setChecked(true);
 					break;
 				case Message.ENCRYPTION_PGP:
 					popup.getMenu().findItem(R.id.encryption_choice_pgp)
@@ -621,6 +623,23 @@ public class ConversationActivity extends XmppActivity {
 		return super.onKeyDown(keyCode, event);
 	}
 
+	@Override
+	protected void onNewIntent (Intent intent) {
+		if ((Intent.ACTION_VIEW.equals(intent.getAction())&&(VIEW_CONVERSATION.equals(intent.getType())))) {
+			String convToView = (String) intent.getExtras().get(
+					CONVERSATION);
+
+			for (int i = 0; i < conversationList.size(); ++i) {
+				if (conversationList.get(i).getUuid().equals(convToView)) {
+					setSelectedConversation(conversationList.get(i));
+				}
+			}
+			paneShouldBeOpen = false;
+			String text = intent.getExtras().getString(TEXT, null);
+			swapConversationFragment().setText(text);
+		}
+	}
+	
 	@Override
 	public void onStart() {
 		super.onStart();

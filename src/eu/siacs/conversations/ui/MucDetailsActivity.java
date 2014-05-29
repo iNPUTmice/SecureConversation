@@ -3,6 +3,8 @@ package eu.siacs.conversations.ui;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.openintents.openpgp.util.OpenPgpUtils;
+
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.MucOptions;
@@ -153,11 +155,11 @@ public class MucDetailsActivity extends XmppActivity {
 					switch (self.getAffiliation()) {
 					case User.AFFILIATION_ADMIN:
 						mRoleAffiliaton.setText(getReadableRole(self.getRole())
-								+ " (Admin)");
+								+ " (" + getString(R.string.admin) + ")");
 						break;
 					case User.AFFILIATION_OWNER:
 						mRoleAffiliaton.setText(getReadableRole(self.getRole())
-								+ " (Owner)");
+								+ " (" + getString(R.string.owner) + ")");
 						break;
 					default:
 						mRoleAffiliaton
@@ -176,7 +178,11 @@ public class MucDetailsActivity extends XmppActivity {
 					((TextView) view.findViewById(R.id.contact_display_name))
 							.setText(contact.getName());
 					TextView role = (TextView) view.findViewById(R.id.contact_jid);
-					role.setText(getReadableRole(contact.getRole()));
+					if (contact.getPgpKeyId()==0) {
+						role.setText(getReadableRole(contact.getRole()));
+					} else {
+						role.setText(getReadableRole(contact.getRole())+" \u00B7 "+OpenPgpUtils.convertKeyIdToHex(contact.getPgpKeyId()));
+					}
 					ImageView imageView = (ImageView) view
 							.findViewById(R.id.contact_photo);
 					imageView.setImageBitmap(UIHelper.getContactPicture(contact.getName(), 48,this.getApplicationContext(), false));

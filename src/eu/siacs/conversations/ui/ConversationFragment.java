@@ -233,7 +233,7 @@ public class ConversationFragment extends Fragment {
 					viewHolder.indicator.setVisibility(View.VISIBLE);
 				}
 
-				String formatedTime = UIHelper.readableTimeDifference(message
+				String formatedTime = UIHelper.readableTimeDifference(getContext(), message
 						.getTimeSent());
 				if (message.getStatus() <= Message.STATUS_RECIEVED) {
 					if ((filesize != null) && (info != null)) {
@@ -459,15 +459,11 @@ public class ConversationFragment extends Fragment {
 	}
 
 	protected void highlightInConference(String nick) {
-		if (chatMsg.getText().toString().isEmpty()) {
+		String oldString = chatMsg.getText().toString().trim();
+		if (oldString.isEmpty()) {
 			chatMsg.setText(nick+": ");
 		} else {
-			String oldString = chatMsg.getText().toString();
-			if (oldString.endsWith(" ")) {
-				chatMsg.setText(oldString+nick+" ");
-			} else {
-				chatMsg.setText(oldString+" "+nick+" ");
-			}
+			chatMsg.setText(oldString+" "+nick+" ");
 		}
 		int position = chatMsg.length();
 		Editable etext = chatMsg.getText();
@@ -510,10 +506,16 @@ public class ConversationFragment extends Fragment {
 		if (this.conversation == null) {
 			return;
 		}
+		String oldString = conversation.getNextMessage().trim();
 		if (this.pastedText == null) {
-			this.chatMsg.setText(conversation.getNextMessage());
+			this.chatMsg.setText(oldString);
 		} else {
-			chatMsg.setText(conversation.getNextMessage() + " " + pastedText);
+			
+			if (oldString.isEmpty()) {
+				chatMsg.setText(pastedText);
+			} else {
+				chatMsg.setText(oldString + " " + pastedText);
+			}
 			pastedText = null;
 		}
 		int position = chatMsg.length();
@@ -676,37 +678,41 @@ public class ConversationFragment extends Fragment {
 		final XmppConnectionService xmppService = activity.xmppConnectionService;
 		final Contact contact = message.getConversation().getContact();
 		if (activity.hasPgp()) {
-			if (contact.getPgpKeyId() != 0) {
-				xmppService.getPgpEngine().hasKey(contact, new UiCallback() {
-
-					@Override
-					public void userInputRequried(PendingIntent pi) {
-						activity.runIntent(pi,
-								ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
-					}
-
-					@Override
-					public void success() {
-						activity.encryptTextMessage();
-					}
-
-					@Override
-					public void error(int error) {
-
-					}
-				});
-
+			if (conversation.getMode() == Conversation.MODE_SINGLE) {
+				if (contact.getPgpKeyId() != 0) {
+					xmppService.getPgpEngine().hasKey(contact, new UiCallback() {
+	
+						@Override
+						public void userInputRequried(PendingIntent pi) {
+							activity.runIntent(pi,
+									ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
+						}
+	
+						@Override
+						public void success() {
+							activity.encryptTextMessage();
+						}
+	
+						@Override
+						public void error(int error) {
+	
+						}
+					});
+	
+				} else {
+					showNoPGPKeyDialog(new DialogInterface.OnClickListener() {
+	
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							conversation.setNextEncryption(Message.ENCRYPTION_NONE);
+							message.setEncryption(Message.ENCRYPTION_NONE);
+							xmppService.sendMessage(message, null);
+							chatMsg.setText("");
+						}
+					});
+				}
 			} else {
-				showNoPGPKeyDialog(new DialogInterface.OnClickListener() {
-
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						conversation.setNextEncryption(Message.ENCRYPTION_NONE);
-						message.setEncryption(Message.ENCRYPTION_NONE);
-						xmppService.sendMessage(message, null);
-						chatMsg.setText("");
-					}
-				});
+				activity.encryptTextMessage();
 			}
 		}
 	}

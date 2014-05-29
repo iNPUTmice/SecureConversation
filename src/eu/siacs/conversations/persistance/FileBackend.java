@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.bouncycastle.crypto.engines.ISAACEngine;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -81,8 +83,12 @@ public class FileBackend {
 			return originalBitmap;
 		}
 	}
+	
+	public JingleFile copyImageToPrivateStorage(Message message, Uri image) throws ImageCopyException {
+		return this.copyImageToPrivateStorage(message, image,0);
+	}
 
-	public JingleFile copyImageToPrivateStorage(Message message, Uri image)
+	private JingleFile copyImageToPrivateStorage(Message message, Uri image, int sampleSize)
 			throws ImageCopyException {
 		try {
 			InputStream is;
@@ -94,17 +100,21 @@ public class FileBackend {
 			JingleFile file = getJingleFile(message);
 			file.getParentFile().mkdirs();
 			file.createNewFile();
-			OutputStream os = new FileOutputStream(file);
-			Bitmap originalBitmap = BitmapFactory.decodeStream(is);
+			Bitmap originalBitmap;
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			int inSampleSize = (int) Math.pow(2, sampleSize);
+			Log.d("xmppService","reading bitmap with sample size "+inSampleSize);
+			options.inSampleSize = inSampleSize;
+			originalBitmap = BitmapFactory.decodeStream(is, null, options);
+			is.close();
 			if (originalBitmap == null) {
-				os.close();
 				throw new ImageCopyException(R.string.error_not_an_image_file);
 			}
-			is.close();
 			if (image == null) {
 				getIncomingFile().delete();
 			}
 			Bitmap scalledBitmap = resize(originalBitmap, IMAGE_SIZE);
+			OutputStream os = new FileOutputStream(file);
 			boolean success = scalledBitmap.compress(
 					Bitmap.CompressFormat.WEBP, 75, os);
 			if (!success) {
@@ -124,6 +134,13 @@ public class FileBackend {
 		} catch (SecurityException e) {
 			throw new ImageCopyException(
 					R.string.error_security_exception_during_image_copy);
+		} catch (OutOfMemoryError e) {
+			++sampleSize;
+			if (sampleSize<=3) {
+				return copyImageToPrivateStorage(message, image, sampleSize);
+			} else {
+				throw new ImageCopyException(R.string.error_out_of_memory);
+			}
 		}
 	}
 
