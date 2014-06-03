@@ -172,7 +172,26 @@ public class XmppConnectionService extends Service {
 						}
 					}
 				}
-
+				if ( message != null && packet.hasChild("request", "urn:xmpp:receipts" ) ) {
+					String id = packet.getId();
+					if ( id != null && !id.equals( "" ) ) {
+						Log.d(LOGTAG, "message has request with xmlns = urn:xmpp:receipts (XEP-0184). from: " + packet.getFrom());
+		
+						MessagePacket received_packet = new MessagePacket();
+						received_packet.setType(MessagePacket.TYPE_UNKNOWN);
+						received_packet.setTo(message.getCounterpart());
+						received_packet.setFrom(account.getJid());
+						received_packet.setId(message.getUuid());
+						Element received_element = new Element( "received" );
+						received_element.setAttribute( "xmlns", "urn:xmpp:receipts" );
+						received_element.setAttribute( "id", id );
+						received_packet.addChild( received_element );
+			
+						account.getXmppConnection().sendMessagePacket( received_packet );
+					} else {
+						Log.d(LOGTAG, "message has request, but no id. from: " + packet.getFrom());
+					}
+				}
 			} else if (packet.getType() == MessagePacket.TYPE_GROUPCHAT) {
 				message = mMessageParser.parseGroupchat(packet, account);
 				if (message != null) {
