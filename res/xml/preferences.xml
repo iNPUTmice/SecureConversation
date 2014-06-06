@@ -68,6 +68,11 @@
             android:summary="@string/pref_use_phone_self_picture_summary"
             android:defaultValue="true"/>
         <CheckBoxPreference 
+            android:key="show_twelve_hr_timestamp"
+            android:title="@string/pref_show_twelve_hr_timestamp"
+            android:summary="@string/pref_show_twelve_hr_timestamp_summary"
+            android:defaultValue="false"/>
+        <CheckBoxPreference 
             android:key="show_full_timestamp"
             android:title="@string/pref_show_full_timestamp"
             android:summary="@string/pref_show_full_timestamp_summary"
