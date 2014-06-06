@@ -147,10 +147,6 @@
     <string name="pref_never_send_crash_summary">By sending in stack traces you are helping the ongoing development of Conversations</string>
     <string name="pref_confirm_messages">Confirm Messages</string>
     <string name="pref_confirm_messages_summary">Let your contact know when you have received and read a message</string>
-    <string name="pref_show_twelve_hr_timestamp">Display 12-hour timestamps</string>
-    <string name="pref_show_twelve_hr_timestamp_summary">Display timestamps in 12-hour format (hmm:a)</string>
-    <string name="pref_show_full_timestamp">Display full timestamps</string>
-    <string name="pref_show_full_timestamp_summary">Display full timestamps, including date (hmm:a MMM d)</string>
     <string name="pref_show_last_seen">Display last seen</string>
     <string name="pref_show_last_seen_summary">Display the latest time a contact has been seen online</string>
     <string name="openpgp_error">OpenKeychain reporeted an error</string>
@@ -242,5 +238,4 @@
     <string name="missing_public_keys">Missing public key announcements</string>
     <string name="last_seen">last seen %1$s ago on %2$s</string>
     <string name="never_seen">never seen</string>
-    <string name="message_options_menu_title">Options</string>
 </resources>

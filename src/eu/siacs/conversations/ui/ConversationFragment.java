@@ -21,9 +21,6 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.ClipboardManager;
-import android.content.ClipData;
-//import android.text.ClipboardManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -43,8 +40,6 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -73,8 +68,6 @@ public class ConversationFragment extends Fragment {
 	protected Bitmap selfBitmap;
 
 	private boolean useSubject = true;
-	private boolean showTweleveHourTimestamp = false;
-	private boolean showFullTimestamp = false;
 
 	private IntentSender askForPassphraseIntent = null;
 
@@ -246,8 +239,7 @@ public class ConversationFragment extends Fragment {
 				}
 
 				String formatedTime = UIHelper.readableTimeDifference(
-						getContext(), message.getTimeSent(), ConversationFragment.this.showTweleveHourTimestamp,
-						ConversationFragment.this.showFullTimestamp);
+						getContext(), message.getTimeSent());
 				if (message.getStatus() <= Message.STATUS_RECIEVED) {
 					if ((filesize != null) && (info != null)) {
 						viewHolder.time.setText(filesize + " \u00B7 " + info);
@@ -296,65 +288,19 @@ public class ConversationFragment extends Fragment {
 				viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 			}
 
-			private void displayTextMessage(ViewHolder viewHolder, final Message message) {
+			private void displayTextMessage(ViewHolder viewHolder, String text) {
 				if (viewHolder.download_button != null) {
 					viewHolder.download_button.setVisibility(View.GONE);
 				}
 				viewHolder.image.setVisibility(View.GONE);
 				viewHolder.messageBody.setVisibility(View.VISIBLE);
-				if (message.getBody() != null) {
-					viewHolder.messageBody.setText(message.getBody().trim());
+				if (text != null) {
+					viewHolder.messageBody.setText(text.trim());
 				} else {
 					viewHolder.messageBody.setText("");
 				}
 				viewHolder.messageBody.setTextColor(0xff333333);
 				viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
-
-				// Add long press options menu
-				viewHolder.messageBody.setOnLongClickListener(new OnLongClickListener() {
-
-					@Override
-					public boolean onLongClick(View v) {
-						String[] messageOptions = getResources().getStringArray(
-							R.array.message_options_menu_items);
-
-						AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-						builder.setTitle(getString(R.string.message_options_menu_title));
-						builder.setItems(messageOptions, new DialogInterface.OnClickListener() {
-							@Override
-							public void onClick(DialogInterface dialog, int which) {
-								switch (which) {
-								case 0:
-									// Copy message to clipboard
-									// Handle < API 11 and >= 11
-									Context context = getActivity().getApplicationContext();
-									int currentapiVersion = android.os.Build.VERSION.SDK_INT;
-									if (currentapiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
-										android.content.ClipboardManager clipboard = 
-											(android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-										ClipData clip = ClipData.newPlainText(
-												"Message: " + message.getBody(), message.getBody());
-										clipboard.setPrimaryClip(clip);
-									} else {
-										android.text.ClipboardManager clipboard = 
-											(android.text.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
-										clipboard.setText(message.getBody());
-									}
-									break;
-								case 1:
-									// Delete message
-									ConversationActivity activity = (ConversationActivity) getActivity();
-									activity.xmppConnectionService.deleteSingleMessage(message, activity.getSelectedConversation());
-									break;
-								}
-							}
-						});
-						builder.create().show();
-
-						return true;
-					}
-				});
-				
 			}
 
 			private void displayImageMessage(ViewHolder viewHolder,
@@ -421,8 +367,6 @@ public class ConversationFragment extends Fragment {
 					case SENT:
 						view = (View) inflater.inflate(R.layout.message_sent,
 								null);
-						viewHolder.layoutWrap = (LinearLayout) view
-								.findViewById(R.id.linearLayout1);
 						viewHolder.contact_picture = (ImageView) view
 								.findViewById(R.id.message_photo);
 						viewHolder.contact_picture.setImageBitmap(selfBitmap);
@@ -439,10 +383,6 @@ public class ConversationFragment extends Fragment {
 					case RECIEVED:
 						view = (View) inflater.inflate(
 								R.layout.message_recieved, null);
-
-						viewHolder.layoutWrap = (LinearLayout) view
-								.findViewById(R.id.linearLayout1);
-
 						viewHolder.contact_picture = (ImageView) view
 								.findViewById(R.id.message_photo);
 
@@ -557,7 +497,7 @@ public class ConversationFragment extends Fragment {
 					} else if (item.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 						displayDecryptionFailed(viewHolder);
 					} else {
-						displayTextMessage(viewHolder, item);
+						displayTextMessage(viewHolder, item.getBody());
 					}
 				}
 
@@ -601,8 +541,6 @@ public class ConversationFragment extends Fragment {
 		SharedPreferences preferences = PreferenceManager
 				.getDefaultSharedPreferences(activity);
 		this.useSubject = preferences.getBoolean("use_subject_in_muc", true);
-		this.showTweleveHourTimestamp = preferences.getBoolean("show_twelve_hr_timestamp", false);
-		this.showFullTimestamp = preferences.getBoolean("show_full_timestamp", false);
 		if (activity.xmppConnectionServiceBound) {
 			this.onBackendConnected();
 		}
@@ -941,7 +879,6 @@ public class ConversationFragment extends Fragment {
 
 	private static class ViewHolder {
 
-		protected LinearLayout layoutWrap;
 		protected Button download_button;
 		protected ImageView image;
 		protected ImageView indicator;

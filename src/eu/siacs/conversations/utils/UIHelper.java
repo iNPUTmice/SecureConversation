@@ -52,7 +52,7 @@ public class UIHelper {
 	private static final int FG_COLOR = 0xFFE5E5E5;
 	private static final int TRANSPARENT = 0x00000000;
 
-	public static String readableTimeDifference(Context context, long time, boolean showTwelveHourTimestamp, boolean showFullTimestamp) {
+	public static String readableTimeDifference(Context context, long time) {
 		if (time == 0) {
 			return context.getString(R.string.just_now);
 		}
@@ -63,32 +63,10 @@ public class UIHelper {
 		} else if (difference < 60 * 10) {
 			return difference / 60 + " " + context.getString(R.string.minutes_ago);
 		} else if (difference < 60 * 60 * 24) {
-			SimpleDateFormat sdf = null;// = new SimpleDateFormat("HH:mm",Locale.US);
-			if(showFullTimestamp) {
-				if(showTwelveHourTimestamp) {
-					sdf = new SimpleDateFormat("h:mma, MMM d",Locale.US);
-				} else {
-					sdf = new SimpleDateFormat("HH:mm, MMM d",Locale.US);
-				}
-			} else {
-				if(showTwelveHourTimestamp) {
-					sdf = new SimpleDateFormat("h:mma",Locale.US);
-				} else {
-					sdf = new SimpleDateFormat("HH:mm",Locale.US);
-				}
-			}
+			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm",Locale.US);
 			return sdf.format(date);
 		} else {
-			SimpleDateFormat sdf =  null;//new SimpleDateFormat("MM/dd",Locale.US);
-			if(showFullTimestamp) {
-				if(showTwelveHourTimestamp) {
-					sdf = new SimpleDateFormat("h:mma, MMM d",Locale.US);
-				} else {
-					sdf = new SimpleDateFormat("HH:mm, MMM d",Locale.US);
-				}
-			} else {
-				sdf = new SimpleDateFormat("MMM d",Locale.US);
-			}
+			SimpleDateFormat sdf = new SimpleDateFormat("MM/dd",Locale.US);
 			return sdf.format(date);
 		}
 	}
