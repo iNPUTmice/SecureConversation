@@ -3,7 +3,8 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="8dp" >
+    android:padding="8dp"
+    android:focusableInTouchMode="true" >
 
     <LinearLayout
         android:id="@+id/linearLayout1"
@@ -36,9 +37,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:autoLink="web"
-                android:textIsSelectable="true"
                 android:textColor="#333333"
                 android:textSize="16sp"/>
+                <!-- android:textIsSelectable="true" -->
 
             <Button
                 android:id="@+id/download_button"
@@ -46,6 +47,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/download_image"
+                android:focusable="false"
                 android:visibility="gone"/>
 
            <LinearLayout
