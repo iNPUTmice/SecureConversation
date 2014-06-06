@@ -19,8 +19,4 @@
         <item>524288</item>
         <item>1048576</item>
     </string-array>
-    <string-array name="message_options_menu_items">
-        <item>Copy Text</item>
-        <item>Delete</item>
-    </string-array>
 </resources>

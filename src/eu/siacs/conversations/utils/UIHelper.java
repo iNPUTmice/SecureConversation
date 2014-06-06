@@ -1,7 +1,6 @@
 package eu.siacs.conversations.utils;
 
 import java.io.FileNotFoundException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -53,7 +52,7 @@ public class UIHelper {
 	private static final int FG_COLOR = 0xFFE5E5E5;
 	private static final int TRANSPARENT = 0x00000000;
 
-	public static String readableTimeDifference(Context context, long time, boolean showFullTimestamp) {
+	public static String readableTimeDifference(Context context, long time) {
 		if (time == 0) {
 			return context.getString(R.string.just_now);
 		}
@@ -64,22 +63,11 @@ public class UIHelper {
 		} else if (difference < 60 * 10) {
 			return difference / 60 + " " + context.getString(R.string.minutes_ago);
 		} else if (difference < 60 * 60 * 24) {
-			DateFormat df = null;
-			if(showFullTimestamp) {
-				df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-			} else {
-				df = DateFormat.getTimeInstance(DateFormat.SHORT);
-			}
-			return df.format(date);
+			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm",Locale.US);
+			return sdf.format(date);
 		} else {
-			SimpleDateFormat sdf =  null;
-			DateFormat df = null;
-			if(showFullTimestamp) {
-				df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-			} else {
-				df = DateFormat.getDateInstance(DateFormat.SHORT);
-			}
-			return df.format(date);
+			SimpleDateFormat sdf = new SimpleDateFormat("MM/dd",Locale.US);
+			return sdf.format(date);
 		}
 	}
 	
