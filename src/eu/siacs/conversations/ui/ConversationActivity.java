@@ -83,6 +83,7 @@ public class ConversationActivity extends XmppActivity {
 	private boolean paneShouldBeOpen = true;
 	private boolean useSubject = true;
 	private boolean showLastseen = false;
+	private boolean showFullTimestamp = false;
 	private ArrayAdapter<Conversation> listAdapter;
 
 	public Message pendingMessage = null;
@@ -228,7 +229,7 @@ public class ConversationActivity extends XmppActivity {
 
 				((TextView) view.findViewById(R.id.conversation_lastupdate))
 						.setText(UIHelper.readableTimeDifference(getContext(),
-								conv.getLatestMessage().getTimeSent()));
+								conv.getLatestMessage().getTimeSent(), ConversationActivity.this.showFullTimestamp));
 
 				ImageView profilePicture = (ImageView) view
 						.findViewById(R.id.conversation_image);
@@ -698,6 +699,7 @@ public class ConversationActivity extends XmppActivity {
 				.getDefaultSharedPreferences(this);
 		this.useSubject = preferences.getBoolean("use_subject_in_muc", true);
 		this.showLastseen = preferences.getBoolean("show_last_seen", false);
+		this.showFullTimestamp = preferences.getBoolean("show_full_timestamp", false);
 		if (this.xmppConnectionServiceBound) {
 			this.onBackendConnected();
 		}
