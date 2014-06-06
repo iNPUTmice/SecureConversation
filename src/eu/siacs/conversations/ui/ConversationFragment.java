@@ -73,7 +73,6 @@ public class ConversationFragment extends Fragment {
 	protected Bitmap selfBitmap;
 
 	private boolean useSubject = true;
-	private boolean showTweleveHourTimestamp = false;
 	private boolean showFullTimestamp = false;
 
 	private IntentSender askForPassphraseIntent = null;
@@ -246,8 +245,7 @@ public class ConversationFragment extends Fragment {
 				}
 
 				String formatedTime = UIHelper.readableTimeDifference(
-						getContext(), message.getTimeSent(), ConversationFragment.this.showTweleveHourTimestamp,
-						ConversationFragment.this.showFullTimestamp);
+						getContext(), message.getTimeSent(), ConversationFragment.this.showFullTimestamp);
 				if (message.getStatus() <= Message.STATUS_RECIEVED) {
 					if ((filesize != null) && (info != null)) {
 						viewHolder.time.setText(filesize + " \u00B7 " + info);
@@ -601,7 +599,6 @@ public class ConversationFragment extends Fragment {
 		SharedPreferences preferences = PreferenceManager
 				.getDefaultSharedPreferences(activity);
 		this.useSubject = preferences.getBoolean("use_subject_in_muc", true);
-		this.showTweleveHourTimestamp = preferences.getBoolean("show_twelve_hr_timestamp", false);
 		this.showFullTimestamp = preferences.getBoolean("show_full_timestamp", false);
 		if (activity.xmppConnectionServiceBound) {
 			this.onBackendConnected();

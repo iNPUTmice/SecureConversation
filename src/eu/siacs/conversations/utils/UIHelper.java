@@ -1,6 +1,7 @@
 package eu.siacs.conversations.utils;
 
 import java.io.FileNotFoundException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -52,7 +53,7 @@ public class UIHelper {
 	private static final int FG_COLOR = 0xFFE5E5E5;
 	private static final int TRANSPARENT = 0x00000000;
 
-	public static String readableTimeDifference(Context context, long time, boolean showTwelveHourTimestamp, boolean showFullTimestamp) {
+	public static String readableTimeDifference(Context context, long time, boolean showFullTimestamp) {
 		if (time == 0) {
 			return context.getString(R.string.just_now);
 		}
@@ -63,33 +64,22 @@ public class UIHelper {
 		} else if (difference < 60 * 10) {
 			return difference / 60 + " " + context.getString(R.string.minutes_ago);
 		} else if (difference < 60 * 60 * 24) {
-			SimpleDateFormat sdf = null;// = new SimpleDateFormat("HH:mm",Locale.US);
+			DateFormat df = null;
 			if(showFullTimestamp) {
-				if(showTwelveHourTimestamp) {
-					sdf = new SimpleDateFormat("h:mma, MMM d",Locale.US);
-				} else {
-					sdf = new SimpleDateFormat("HH:mm, MMM d",Locale.US);
-				}
+				df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 			} else {
-				if(showTwelveHourTimestamp) {
-					sdf = new SimpleDateFormat("h:mma",Locale.US);
-				} else {
-					sdf = new SimpleDateFormat("HH:mm",Locale.US);
-				}
+				df = DateFormat.getTimeInstance(DateFormat.SHORT);
 			}
-			return sdf.format(date);
+			return df.format(date);
 		} else {
-			SimpleDateFormat sdf =  null;//new SimpleDateFormat("MM/dd",Locale.US);
+			SimpleDateFormat sdf =  null;
+			DateFormat df = null;
 			if(showFullTimestamp) {
-				if(showTwelveHourTimestamp) {
-					sdf = new SimpleDateFormat("h:mma, MMM d",Locale.US);
-				} else {
-					sdf = new SimpleDateFormat("HH:mm, MMM d",Locale.US);
-				}
+				df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 			} else {
-				sdf = new SimpleDateFormat("MMM d",Locale.US);
+				df = DateFormat.getDateInstance(DateFormat.SHORT);
 			}
-			return sdf.format(date);
+			return df.format(date);
 		}
 	}
 	
