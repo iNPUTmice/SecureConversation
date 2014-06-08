@@ -21,6 +21,8 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
@@ -40,6 +42,8 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -288,19 +292,65 @@ public class ConversationFragment extends Fragment {
 				viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 			}
 
-			private void displayTextMessage(ViewHolder viewHolder, String text) {
+			private void displayTextMessage(ViewHolder viewHolder, final Message message) {
 				if (viewHolder.download_button != null) {
 					viewHolder.download_button.setVisibility(View.GONE);
 				}
 				viewHolder.image.setVisibility(View.GONE);
 				viewHolder.messageBody.setVisibility(View.VISIBLE);
-				if (text != null) {
-					viewHolder.messageBody.setText(text.trim());
+				if (message.getBody() != null) {
+					viewHolder.messageBody.setText(message.getBody().trim());
 				} else {
 					viewHolder.messageBody.setText("");
 				}
 				viewHolder.messageBody.setTextColor(0xff333333);
 				viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
+
+				// Add long press options menu
+				viewHolder.messageBody.setOnLongClickListener(new OnLongClickListener() {
+
+					@Override
+					public boolean onLongClick(View v) {
+						String[] messageOptions = getResources().getStringArray(
+							R.array.message_options_menu_items);
+
+						AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+						builder.setTitle(getString(R.string.message_options_menu_title));
+						builder.setItems(messageOptions, new DialogInterface.OnClickListener() {
+							@Override
+							public void onClick(DialogInterface dialog, int which) {
+								switch (which) {
+								case 0:
+									// Copy message to clipboard
+									// Handle < API 11 and >= 11
+									Context context = getActivity().getApplicationContext();
+									int currentapiVersion = android.os.Build.VERSION.SDK_INT;
+									if (currentapiVersion >= android.os.Build.VERSION_CODES.HONEYCOMB) {
+										android.content.ClipboardManager clipboard = 
+											(android.content.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+										ClipData clip = ClipData.newPlainText(
+												"Message: " + message.getBody(), message.getBody());
+										clipboard.setPrimaryClip(clip);
+									} else {
+										android.text.ClipboardManager clipboard = 
+											(android.text.ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+										clipboard.setText(message.getBody());
+									}
+									break;
+								case 1:
+									// Delete message
+									ConversationActivity activity = (ConversationActivity) getActivity();
+									activity.xmppConnectionService.deleteSingleMessage(message, activity.getSelectedConversation());
+									break;
+								}
+							}
+						});
+						builder.create().show();
+
+						return true;
+					}
+				});
+
 			}
 
 			private void displayImageMessage(ViewHolder viewHolder,
@@ -497,7 +547,7 @@ public class ConversationFragment extends Fragment {
 					} else if (item.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 						displayDecryptionFailed(viewHolder);
 					} else {
-						displayTextMessage(viewHolder, item.getBody());
+						displayTextMessage(viewHolder, item);
 					}
 				}
 

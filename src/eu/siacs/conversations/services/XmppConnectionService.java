@@ -1377,4 +1377,14 @@ public class XmppConnectionService extends Service {
 		received.setAttribute("id", id);
 		account.getXmppConnection().sendMessagePacket(receivedPacket);
 	}
+
+	public void deleteSingleMessage(Message message, Conversation conversation) {
+		this.databaseBackend.deleteMessage(message);
+		conversation.getMessages().clear();
+		conversation.setMessages(databaseBackend.getMessages(conversation, 50));
+		if (this.convChangedListener != null) {
+			this.convChangedListener.onConversationListChanged();
+		}
+	}
+
 }
