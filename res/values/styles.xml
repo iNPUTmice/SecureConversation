@@ -79,7 +79,7 @@
         <item name="conversation_list_row_text">@android:color/primary_text_dark</item>
         <item name="conversation_list_row_image_background">@android:color/background_dark</item>
 
-        <item name="message_sent_background">@android:color/background_dark</item>
+        <item name="message_sent_background">@color/dark_grey_4</item>
         <item name="message_sent_image_background">@android:color/background_dark</item>
         <item name="message_sent_border">@drawable/message_border_dark</item>
         <item name="message_sent_text">@color/light_grey_1</item>
@@ -88,7 +88,7 @@
         <item name="message_sent_info">@color/blue</item>
         <item name="message_sent_decryption_failed">@color/red</item>
 
-        <item name="message_recieved_background">@android:color/background_dark</item>
+        <item name="message_recieved_background">@color/dark_grey_4</item>
         <item name="message_recieved_image_background">@android:color/background_dark</item>
         <item name="message_recieved_border">@drawable/message_border_dark</item>
         <item name="message_recieved_text">@color/light_grey_1</item>
