@@ -499,8 +499,6 @@ public class ConversationFragment extends Fragment {
 					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_text, typedValue, true);
 					messageTextColor = typedValue.data;
 
-					Log.e("Theme", "messageTextColor " + messageTextColor);
-
 					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_time, typedValue, true);
 					timeTextColor = typedValue.data;
 
