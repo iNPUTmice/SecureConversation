@@ -8,7 +8,9 @@
    
    <attr name="activity_contact_details_background" format="reference" />
    
-   <attr name="conversation_list_row_text" format="reference" />
+   <attr name="conversation_list_row_name" format="reference" />
+   <attr name="conversation_list_row_lastmsg" format="reference" />
+   <attr name="conversation_list_row_lastupdate" format="reference" />
    <attr name="conversation_list_row_image_background" format="reference" />
    
    <attr name="message_sent_background" format="reference" />
