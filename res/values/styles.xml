@@ -64,6 +64,7 @@
         <item name="ic_action_discard">@drawable/ic_action_discard</item>
         <item name="ic_action_chat">@drawable/ic_action_chat</item>
         <item name="ic_action_add_person">@drawable/ic_action_add_person</item>
+        <item name="ic_action_new_attachment">@drawable/ic_action_new_attachment</item>
     </style>
 
     <style name="Conversations.Dark" parent="@android:style/Theme.Holo">
@@ -121,6 +122,7 @@
         <item name="ic_action_discard">@drawable/ic_action_discard_dark</item>
         <item name="ic_action_chat">@drawable/ic_action_chat_dark</item>
         <item name="ic_action_add_person">@drawable/ic_action_add_person_dark</item>
+        <item name="ic_action_new_attachment">@drawable/ic_action_new_attachment_dark</item>
     </style>
 
     <style name="Divider">
