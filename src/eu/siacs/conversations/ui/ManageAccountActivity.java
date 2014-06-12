@@ -9,6 +9,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.ui.EditAccount.EditAccountListener;
+import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.OnTLSExceptionReceived;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import android.app.Activity;
@@ -112,7 +113,7 @@ public class ManageAccountActivity extends XmppActivity {
 
 		super.onCreate(savedInstanceState);
 
-		setTheme(R.style.Conversations_Dark);
+		setTheme(UIHelper.getTheme(this));
 
 		setContentView(R.layout.manage_accounts);
 
