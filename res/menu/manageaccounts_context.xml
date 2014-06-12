@@ -3,12 +3,12 @@
 
     <item
         android:id="@+id/mgmt_account_edit"
-        android:icon="@drawable/ic_action_edit"
+        android:icon="?attr/ic_action_edit"
         android:showAsAction="always"
         android:title="@string/mgmt_account_edit"/>
     <item
         android:id="@+id/mgmt_account_delete"
-        android:icon="@drawable/ic_action_delete"
+        android:icon="?attr/ic_action_delete"
         android:showAsAction="always"
         android:title="@string/mgmt_account_delete"/>
     <item

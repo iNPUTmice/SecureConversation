@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+   <attr name="conversation_background" format="reference" />
+   <attr name="conversations_overview_background" format="reference" />
+   
+   <attr name="activity_muc_details_background" format="reference" />
+   
+   <attr name="activity_contact_details_background" format="reference" />
+   
+   <attr name="conversation_list_row_text" format="reference" />
+   <attr name="conversation_list_row_image_background" format="reference" />
+   
+   <attr name="message_sent_background" format="reference" />
+   <attr name="message_sent_image_background" format="reference" />
+   <attr name="message_sent_border" format="reference" />
+   <attr name="message_sent_text" format="reference" />
+   <attr name="message_sent_time" format="reference" />
+   <attr name="message_sent_time_error" format="reference" />
+   <attr name="message_sent_info" format="reference" />
+   <attr name="message_sent_decryption_failed" format="reference" />
+   
+   <attr name="message_recieved_background" format="reference" />
+   <attr name="message_recieved_image_background" format="reference" />
+   <attr name="message_recieved_border" format="reference" />
+   <attr name="message_recieved_text" format="reference" />
+   <attr name="message_recieved_time" format="reference" />
+   <attr name="message_recieved_time_error" format="reference" />
+   <attr name="message_recieved_info" format="reference" />
+   <attr name="message_recieved_decryption_failed" format="reference" />
+   
+   <attr name="contact_details_text" format="reference" />
+   
+   <attr name="fragment_conversation_text" format="reference" />
+   
+   <attr name="muc_jabberid" format="reference" />
+   <attr name="muc_role" format="reference" />
+   
+   <attr name="edit_contact_name" format="reference" />
+   
+   <attr name="contact_text" format="reference" />
+   
+   <attr name="contact_key_text" format="reference" />
+   
+   <attr name="new_conversation_header" format="reference" />
+   
+   <attr name="ic_profile" format="reference" />
+   <attr name="ic_action_send_now" format="reference" />
+   <attr name="ic_indicator" format="reference" />
+   <attr name="ic_action_add" format="reference" />
+   <attr name="ic_action_secure" format="reference" />
+   <attr name="ic_action_unsecure" format="reference" />
+   <attr name="ic_action_new_attachment" format="reference" />
+   <attr name="ic_action_person" format="reference" />
+   <attr name="ic_action_group" format="reference" />
+   <attr name="ic_action_edit" format="reference" />
+   <attr name="ic_action_delete" format="reference" />
+   <attr name="ic_action_discard" format="reference" />
+   <attr name="ic_action_add_person" format="reference" />
+   <attr name="ic_action_chat" format="reference" />
+</resources> 

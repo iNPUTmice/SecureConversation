@@ -7,7 +7,7 @@
     android:layout_width="240dp"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#eeeeee"
+    android:background="?attr/conversations_overview_background"
     >
  
     <ListView
@@ -16,7 +16,7 @@
         android:layout_height="wrap_content"
         android:divider="#b5b5b5"
         android:dividerHeight="1dp"
-        android:background="#eeeeee"
+        android:background="?attr/conversations_overview_background"
      />
  
 </LinearLayout>
@@ -25,7 +25,7 @@
     android:layout_width="fill_parent"
 	android:layout_height="match_parent"
 	android:layout_weight="1"
-	android:background="#e5e5e5"
+	android:background="?attr/activity_contact_details_background"
 	android:orientation="vertical">
 </LinearLayout>      
 </android.support.v4.widget.SlidingPaneLayout>

@@ -112,6 +112,8 @@ public class ManageAccountActivity extends XmppActivity {
 
 		super.onCreate(savedInstanceState);
 
+		setTheme(R.style.Conversations_Dark);
+
 		setContentView(R.layout.manage_accounts);
 
 		accountListView = (ListView) findViewById(R.id.account_list);

@@ -497,4 +497,16 @@ public class UIHelper {
 			return getContactPicture(account.getJid(), size, context, false);
 		}
 	}
+
+	public static int getTheme(Context context) {
+		SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+
+		String theme = preferences.getString("theme", "Light");
+
+		if (theme.equals("Dark")) {
+			return R.style.Conversations_Dark;
+		} else {
+			return R.style.Conversations_Light;
+		}
+	}
 }

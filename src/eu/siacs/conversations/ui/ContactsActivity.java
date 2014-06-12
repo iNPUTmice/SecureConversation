@@ -334,6 +334,8 @@ public class ContactsActivity extends XmppActivity {
 
 		super.onCreate(savedInstanceState);
 
+		setTheme(UIHelper.getTheme(this));
+
 		setContentView(R.layout.activity_new_conversation);
 
 		contactsHeader = (TextView) findViewById(R.id.contacts_header);
