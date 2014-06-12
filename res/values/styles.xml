@@ -12,6 +12,7 @@
     <style name="Conversations.Light" parent="@android:style/Theme.Holo.Light">
         <item name="conversation_background">@color/light_grey_1</item>
         <item name="conversations_overview_background">@color/light_grey_1</item>
+        <item name="conversations_overview_divider">@color/light_grey_4</item>
 
         <item name="activity_muc_details_background">@color/light_grey_3</item>
 
@@ -71,6 +72,7 @@
     <style name="Conversations.Dark" parent="@android:style/Theme.Holo">
         <item name="conversation_background">@android:color/background_dark</item>
         <item name="conversations_overview_background">@android:color/background_dark</item>
+        <item name="conversations_overview_divider">@color/dark_grey_3</item>
 
         <item name="activity_muc_details_background">@android:color/background_dark</item>
 

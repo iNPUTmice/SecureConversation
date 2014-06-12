@@ -14,7 +14,7 @@
         android:id="@+id/list"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:divider="#b5b5b5"
+        android:divider="?attr/conversations_overview_divider"
         android:dividerHeight="1dp"
         android:background="?attr/conversations_overview_background"
      />
