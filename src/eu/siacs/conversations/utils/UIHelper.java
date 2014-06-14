@@ -1,18 +1,19 @@
 package eu.siacs.conversations.utils;
 
 import java.io.FileNotFoundException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
-import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.MucOptions.User;
 import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
@@ -27,7 +28,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -38,11 +38,11 @@ import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.Contacts;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.NotificationCompat.InboxStyle;
 import android.support.v4.app.TaskStackBuilder;
+import android.text.format.DateFormat;
+import android.text.format.DateUtils;
 import android.text.Html;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.LinearLayout;
@@ -53,23 +53,48 @@ public class UIHelper {
 	private static final int BG_COLOR = 0xFF181818;
 	private static final int FG_COLOR = 0xFFE5E5E5;
 	private static final int TRANSPARENT = 0x00000000;
+    private static final int DATE_NO_YEAR_FLAGS = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_NO_YEAR | DateUtils.FORMAT_ABBREV_ALL;
 
-	public static String readableTimeDifference(long time) {
+	public static String readableTimeDifference(Context context, long time) {
 		if (time == 0) {
-			return "just now";
+			return context.getString(R.string.just_now);
 		}
 		Date date = new Date(time);
 		long difference = (System.currentTimeMillis() - time) / 1000;
-		if (difference < 60) {
-			return "just now";
-		} else if (difference < 60 * 10) {
-			return difference / 60 + " min ago";
-		} else if (difference < 60 * 60 * 24) {
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm",Locale.US);
-			return sdf.format(date);
+		if (difference < 90) {
+			return context.getString(R.string.just_now);
+		} else if (difference < 60 * 15) {
+			return context.getString(R.string.minutes_ago,Math.round(difference/60.0));
+		} else if (today(date)) {
+			java.text.DateFormat df = DateFormat.getTimeFormat(context);
+			return df.format(date);
 		} else {
-			SimpleDateFormat sdf = new SimpleDateFormat("MM/dd",Locale.US);
-			return sdf.format(date);
+			return DateUtils.formatDateTime(context, date.getTime(), DATE_NO_YEAR_FLAGS);
+		}
+	}
+	
+	private static boolean today(Date date) {
+		Calendar cal1 = Calendar.getInstance();
+		Calendar cal2 = Calendar.getInstance();
+		cal1.setTime(date);
+		cal2.setTimeInMillis(System.currentTimeMillis());
+		return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+		                  cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+	}
+	
+	public static String lastseen(Context context, long time) {
+		if (time==0) {
+			return context.getString(R.string.never_seen);
+		}
+		long difference = (System.currentTimeMillis() - time) / 1000;
+		if (difference < 90) {
+			return context.getString(R.string.last_seen_now);
+		} else if (difference < 60 * 90) {
+			return context.getString(R.string.last_seen_mins,Math.round(difference/60.0));
+		} else if (difference < 60 * 60 * 36) {
+			return context.getString(R.string.last_seen_hours,Math.round(difference/(60.0*60.0)));
+		} else {
+			return context.getString(R.string.last_seen_days,Math.round(difference/(60.0*60.0*24.0)));
 		}
 	}
 
@@ -81,8 +106,24 @@ public class UIHelper {
 	private static int getNameColor(String name) {
 		int holoColors[] = { 0xFF1da9da, 0xFFb368d9, 0xFF83b600, 0xFFffa713,
 				0xFFe92727 };
-		int color = holoColors[Math.abs(name.toLowerCase(Locale.getDefault()).hashCode()) % holoColors.length];
-		return color;
+		return holoColors[Math.abs(name.toLowerCase(Locale.getDefault()).hashCode()) % holoColors.length];
+	}
+
+	private static void drawTile(Canvas canvas, String letter, int tileColor, int textColor, int left, int top, int right, int bottom) {
+		Paint tilePaint = new Paint(), textPaint = new Paint();
+		tilePaint.setColor(tileColor);
+		textPaint.setColor(textColor);
+		textPaint.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+		textPaint.setTextSize((float) ((right - left) * 0.8));
+		Rect rect = new Rect();
+
+		canvas.drawRect(new Rect(left, top, right, bottom), tilePaint);
+		textPaint.getTextBounds(letter, 0, 1, rect);
+		float width = textPaint.measureText(letter);
+		canvas.drawText(letter,
+				(right+left)/2 - width/2,
+				(top+bottom)/2 + rect.height()/2,
+				textPaint);
 	}
 
 	private static Bitmap getUnknownContactPicture(String[] names, int size, int bgColor, int fgColor) {
@@ -110,135 +151,46 @@ public class UIHelper {
 				colors[3] = 0xFF444444;
 			}
 		}
-		Paint textPaint = new Paint(), tilePaint = new Paint();
-		textPaint.setColor(fgColor);
-		textPaint.setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
-		Rect rect, left, right, topLeft, bottomLeft, topRight, bottomRight;
-		float width;
+
+		bitmap.eraseColor(bgColor);
 
 		switch(tiles) {
 			case 1:
-				bitmap.eraseColor(colors[0]);
-
-				textPaint.setTextSize((float) (size * 0.8));
-				textPaint.setAntiAlias(true);
-				rect = new Rect();
-				textPaint.getTextBounds(letters[0], 0, 1, rect);
-				width = textPaint.measureText(letters[0]);
-				canvas.drawText(letters[0], (size / 2) - (width / 2), (size / 2)
-						+ (rect.height() / 2), textPaint);
+				drawTile(canvas, letters[0], colors[0], fgColor,
+						0, 0, size, size);
 				break;
 
 			case 2:
-				bitmap.eraseColor(bgColor);
-
-				tilePaint.setColor(colors[0]);
-				left = new Rect(0, 0, (size/2)-1, size);
-				canvas.drawRect(left, tilePaint);
-
-				tilePaint.setColor(colors[1]);
-				right = new Rect((size/2)+1, 0, size, size);
-				canvas.drawRect(right, tilePaint);
-
-				textPaint.setTextSize((float) (size * 0.8*0.5));
-				textPaint.setAntiAlias(true);
-				rect = new Rect();
-				textPaint.getTextBounds(letters[0], 0, 1, rect);
-				width = textPaint.measureText(letters[0]);
-				canvas.drawText(letters[0], (size / 4) - (width / 2), (size / 2)
-						+ (rect.height() / 2), textPaint);
-				textPaint.getTextBounds(letters[1], 0, 1, rect);
-				width = textPaint.measureText(letters[1]);
-				canvas.drawText(letters[1], (3 * size / 4) - (width / 2), (size / 2)
-						+ (rect.height() / 2), textPaint);
+				drawTile(canvas, letters[0], colors[0], fgColor,
+						0, 0, size/2 - 1, size);
+				drawTile(canvas, letters[1], colors[1], fgColor,
+						size/2 + 1, 0, size, size);
 				break;
 
 			case 3:
-				bitmap.eraseColor(bgColor);
-
-				tilePaint.setColor(colors[0]);
-				left = new Rect(0, 0, (size/2)-1, size);
-				canvas.drawRect(left, tilePaint);
-
-				tilePaint.setColor(colors[1]);
-				topRight = new Rect((size/2)+1, 0, size, (size/2 - 1));
-				canvas.drawRect(topRight, tilePaint);
-
-				tilePaint.setColor(colors[2]);
-				bottomRight = new Rect((size/2)+1, (size/2 + 1), size, size);
-				canvas.drawRect(bottomRight, tilePaint);
-
-				textPaint.setTextSize((float) (size * 0.8*0.5));
-				textPaint.setAntiAlias(true);
-				rect = new Rect();
-
-				textPaint.getTextBounds(letters[0], 0, 1, rect);
-				width = textPaint.measureText(letters[0]);
-				canvas.drawText(letters[0], (size / 4) - (width / 2), (size / 2)
-						+ (rect.height() / 2), textPaint);
-
-				textPaint.getTextBounds(letters[1], 0, 1, rect);
-				width = textPaint.measureText(letters[1]);
-				canvas.drawText(letters[1], (3 * size / 4) - (width / 2), (size / 4)
-						+ (rect.height() / 2), textPaint);
-
-				textPaint.getTextBounds(letters[2], 0, 1, rect);
-				width = textPaint.measureText(letters[2]);
-				canvas.drawText(letters[2], (3 * size / 4) - (width / 2), (3* size / 4)
-						+ (rect.height() / 2), textPaint);
+				drawTile(canvas, letters[0], colors[0], fgColor,
+						0, 0, size/2 - 1, size);
+				drawTile(canvas, letters[1], colors[1], fgColor,
+						size/2 + 1, 0, size, size/2 - 1);
+				drawTile(canvas, letters[2], colors[2], fgColor,
+						size/2 + 1, size/2 + 1, size, size);
 				break;
 
 			case 4:
-				bitmap.eraseColor(bgColor);
-
-				tilePaint.setColor(colors[0]);
-				topLeft = new Rect(0, 0, (size/2)-1, (size/2)-1);
-				canvas.drawRect(topLeft, tilePaint);
-
-				tilePaint.setColor(colors[1]);
-				bottomLeft = new Rect(0, (size/2)+1, (size/2)-1, size);
-				canvas.drawRect(bottomLeft, tilePaint);
-
-				tilePaint.setColor(colors[2]);
-				topRight = new Rect((size/2)+1, 0, size, (size/2 - 1));
-				canvas.drawRect(topRight, tilePaint);
-
-				tilePaint.setColor(colors[3]);
-				bottomRight = new Rect((size/2)+1, (size/2 + 1), size, size);
-				canvas.drawRect(bottomRight, tilePaint);
-
-				textPaint.setTextSize((float) (size * 0.8*0.5));
-				textPaint.setAntiAlias(true);
-				rect = new Rect();
-
-				textPaint.getTextBounds(letters[0], 0, 1, rect);
-				width = textPaint.measureText(letters[0]);
-				canvas.drawText(letters[0], (size / 4) - (width / 2), (size / 4)
-						+ (rect.height() / 2), textPaint);
-
-				textPaint.getTextBounds(letters[1], 0, 1, rect);
-				width = textPaint.measureText(letters[1]);
-				canvas.drawText(letters[1], (size / 4) - (width / 2), (3* size / 4)
-						+ (rect.height() / 2), textPaint);
-
-				textPaint.getTextBounds(letters[2], 0, 1, rect);
-				width = textPaint.measureText(letters[2]);
-				canvas.drawText(letters[2], (3 * size / 4) - (width / 2), (size / 4)
-						+ (rect.height() / 2), textPaint);
-
-				textPaint.getTextBounds(letters[3], 0, 1, rect);
-				width = textPaint.measureText(letters[3]);
-				canvas.drawText(letters[3], (3 * size / 4) - (width / 2), (3* size / 4)
-						+ (rect.height() / 2), textPaint);
+				drawTile(canvas, letters[0], colors[0], fgColor,
+						0, 0, size/2 - 1, size/2 - 1);
+				drawTile(canvas, letters[1], colors[1], fgColor,
+						0, size/2 + 1, size/2 - 1, size);
+				drawTile(canvas, letters[2], colors[2], fgColor,
+						size/2 + 1, 0, size, size/2 - 1);
+				drawTile(canvas, letters[3], colors[3], fgColor,
+						size/2 + 1, size/2 + 1, size, size);
 				break;
 		}
+
 		return bitmap;
 	}
-
-	private static Bitmap getUnknownContactPicture(String[] names, int size) {
-		return getUnknownContactPicture(names, size, UIHelper.BG_COLOR, UIHelper.FG_COLOR);
-	}
-
+	
 	private static Bitmap getMucContactPicture(Conversation conversation, int size, int bgColor, int fgColor) {
 		List<User> members = conversation.getMucOptions().getUsers();
 		if (members.size() == 0) {
@@ -255,13 +207,8 @@ public class UIHelper {
 
 	public static Bitmap getContactPicture(Conversation conversation, int dpSize, Context context, boolean notification) {
 		if(conversation.getMode() == Conversation.MODE_SINGLE) {
-			if (conversation.getContact() != null){
 				return getContactPicture(conversation.getContact(), dpSize,
 						context, notification);
-			} else {
-				return getContactPicture(conversation.getName(false), dpSize,
-						context, notification);
-			}
 		} else{
 			int fgColor = UIHelper.FG_COLOR,
 				bgColor = (notification) ?
@@ -273,10 +220,6 @@ public class UIHelper {
 	}
 
 	public static Bitmap getContactPicture(Contact contact, int dpSize, Context context, boolean notification) {
-		int fgColor = UIHelper.FG_COLOR,
-			bgColor = (notification) ?
-				UIHelper.BG_COLOR : UIHelper.TRANSPARENT;
-
 		String uri = contact.getProfilePhoto();
 		if (uri==null) {
 			return getContactPicture(contact.getDisplayName(), dpSize,
@@ -340,6 +283,15 @@ public class UIHelper {
 		mNotificationManager.notify(1111, notification);
 	}
 
+	private static Pattern generateNickHighlightPattern(String nick) {
+		// We expect a word boundary, i.e. space or start of string, followed by the
+		// nick (matched in case-insensitive manner), followed by optional
+		// punctuation (for example "bob: i disagree" or "how are you alice?"),
+		// followed by another word boundary.
+		return Pattern.compile("\\b"+nick+"\\p{Punct}?\\b",
+				Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+	}
+
 	public static void updateNotification(Context context,
 			List<Conversation> conversations, Conversation currentCon, boolean notify) {
 		NotificationManager mNotificationManager = (NotificationManager) context
@@ -360,7 +312,9 @@ public class UIHelper {
 		
 		if ((currentCon != null) &&(currentCon.getMode() == Conversation.MODE_MULTI)&&(!alwaysNotify)) {
 			String nick = currentCon.getMucOptions().getNick();
-			notify = currentCon.getLatestMessage().getBody().contains(nick);
+			Pattern highlight = generateNickHighlightPattern(nick);
+			Matcher m = highlight.matcher(currentCon.getLatestMessage().getBody());
+			notify = m.find();
 		}
 		
 		List<Conversation> unread = new ArrayList<Conversation>();
@@ -412,7 +366,7 @@ public class UIHelper {
 					.bigText(bigText.toString()));
 		} else {
 			NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
-			style.setBigContentTitle(unread.size() + " unread Conversations");
+			style.setBigContentTitle(unread.size() + " " + context.getString(R.string.unread_conversations));
 			StringBuilder names = new StringBuilder();
 			for (int i = 0; i < unread.size(); ++i) {
 				targetUuid = unread.get(i).getUuid();
@@ -424,7 +378,7 @@ public class UIHelper {
 				style.addLine(Html.fromHtml("<b>" + unread.get(i).getName(useSubject)
 						+ "</b> " + unread.get(i).getLatestMessage().getReadableBody(context)));
 			}
-			mBuilder.setContentTitle(unread.size() + " unread Conversations");
+			mBuilder.setContentTitle(unread.size() + " " + context.getString(R.string.unread_conversations));
 			mBuilder.setContentText(names.toString());
 			mBuilder.setStyle(style);
 		}
@@ -470,11 +424,13 @@ public class UIHelper {
 	private static boolean wasHighlighted(Conversation conversation) {
 		List<Message> messages = conversation.getMessages();
 		String nick = conversation.getMucOptions().getNick();
+		Pattern highlight = generateNickHighlightPattern(nick);
 		for(int i = messages.size() - 1; i >= 0; --i) {
 			if (messages.get(i).isRead()) {
 				break;
 			} else {
-				if (messages.get(i).getBody().contains(nick)) {
+				Matcher m = highlight.matcher(messages.get(i).getBody());
+				if (m.find()) {
 					return true;
 				}
 			}
@@ -518,7 +474,7 @@ public class UIHelper {
 			public void onClick(DialogInterface dialog, int which) {
 				contact.addOtrFingerprint(conversation.getOtrFingerprint());
 				msg.setVisibility(View.GONE);
-				activity.xmppConnectionService.updateContact(contact);
+				//activity.xmppConnectionService.updateContact(contact);
 			}
 		});
 		builder.setView(view);

@@ -7,7 +7,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
+
+import org.bouncycastle.crypto.engines.ISAACEngine;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -15,13 +16,9 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.util.Log;
 import android.util.LruCache;
-import android.view.View;
-import android.widget.ImageView;
-import android.widget.TextView;
-import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
-import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xmpp.jingle.JingleFile;
 
 public class FileBackend {
@@ -43,11 +40,11 @@ public class FileBackend {
 		};
 
 	}
-	
+
 	public LruCache<String, Bitmap> getThumbnailCache() {
 		return thumbnailCache;
 	}
-	
+
 	public JingleFile getJingleFile(Message message) {
 		return getJingleFile(message, true);
 	}
@@ -58,7 +55,7 @@ public class FileBackend {
 		String path = prefix + "/" + conversation.getAccount().getJid() + "/"
 				+ conversation.getContactJid();
 		String filename;
-		if ((decrypted)||(message.getEncryption() == Message.ENCRYPTION_NONE)) {
+		if ((decrypted) || (message.getEncryption() == Message.ENCRYPTION_NONE)) {
 			filename = message.getUuid() + ".webp";
 		} else {
 			filename = message.getUuid() + ".webp.pgp";
@@ -86,47 +83,64 @@ public class FileBackend {
 			return originalBitmap;
 		}
 	}
+	
+	public JingleFile copyImageToPrivateStorage(Message message, Uri image) throws ImageCopyException {
+		return this.copyImageToPrivateStorage(message, image,0);
+	}
 
-	public JingleFile copyImageToPrivateStorage(Message message, Uri image) {
+	private JingleFile copyImageToPrivateStorage(Message message, Uri image, int sampleSize)
+			throws ImageCopyException {
 		try {
 			InputStream is;
-			if (image!=null) {
-				Log.d("xmppService","copying file: "+image.toString()+ " to internal storage");
-				is = context.getContentResolver()
-					.openInputStream(image);
+			if (image != null) {
+				is = context.getContentResolver().openInputStream(image);
 			} else {
-				Log.d("xmppService","copying file from incoming to internal storage");
 				is = new FileInputStream(getIncomingFile());
 			}
 			JingleFile file = getJingleFile(message);
 			file.getParentFile().mkdirs();
 			file.createNewFile();
-			OutputStream os = new FileOutputStream(file);
-			Bitmap originalBitmap = BitmapFactory.decodeStream(is);
+			Bitmap originalBitmap;
+			BitmapFactory.Options options = new BitmapFactory.Options();
+			int inSampleSize = (int) Math.pow(2, sampleSize);
+			Log.d("xmppService","reading bitmap with sample size "+inSampleSize);
+			options.inSampleSize = inSampleSize;
+			originalBitmap = BitmapFactory.decodeStream(is, null, options);
 			is.close();
-			if (image==null) {
-				Log.d("xmppService","delete incoming file");
+			if (originalBitmap == null) {
+				throw new ImageCopyException(R.string.error_not_an_image_file);
+			}
+			if (image == null) {
 				getIncomingFile().delete();
 			}
 			Bitmap scalledBitmap = resize(originalBitmap, IMAGE_SIZE);
+			OutputStream os = new FileOutputStream(file);
 			boolean success = scalledBitmap.compress(
 					Bitmap.CompressFormat.WEBP, 75, os);
 			if (!success) {
-				return null;
+				throw new ImageCopyException(R.string.error_compressing_image);
 			}
 			os.flush();
 			os.close();
 			long size = file.getSize();
 			int width = scalledBitmap.getWidth();
 			int height = scalledBitmap.getHeight();
-			message.setBody(""+size+","+width+","+height);
+			message.setBody("" + size + "," + width + "," + height);
 			return file;
 		} catch (FileNotFoundException e) {
-			return null;
+			throw new ImageCopyException(R.string.error_file_not_found);
 		} catch (IOException e) {
-			return null;
+			throw new ImageCopyException(R.string.error_io_exception);
 		} catch (SecurityException e) {
-			return null;
+			throw new ImageCopyException(
+					R.string.error_security_exception_during_image_copy);
+		} catch (OutOfMemoryError e) {
+			++sampleSize;
+			if (sampleSize<=3) {
+				return copyImageToPrivateStorage(message, image, sampleSize);
+			} else {
+				throw new ImageCopyException(R.string.error_out_of_memory);
+			}
 		}
 	}
 
@@ -138,7 +152,7 @@ public class FileBackend {
 	public Bitmap getThumbnail(Message message, int size, boolean cacheOnly)
 			throws FileNotFoundException {
 		Bitmap thumbnail = thumbnailCache.get(message.getUuid());
-		if ((thumbnail == null)&&(!cacheOnly)) {
+		if ((thumbnail == null) && (!cacheOnly)) {
 			Bitmap fullsize = BitmapFactory.decodeFile(getJingleFile(message)
 					.getAbsolutePath());
 			if (fullsize == null) {
@@ -172,6 +186,19 @@ public class FileBackend {
 	}
 
 	public File getIncomingFile() {
-		return new File(context.getFilesDir().getAbsolutePath()+"/incoming");
+		return new File(context.getFilesDir().getAbsolutePath() + "/incoming");
+	}
+
+	public class ImageCopyException extends Exception {
+		private static final long serialVersionUID = -1010013599132881427L;
+		private int resId;
+
+		public ImageCopyException(int resId) {
+			this.resId = resId;
+		}
+
+		public int getResId() {
+			return resId;
+		}
 	}
 }

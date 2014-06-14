@@ -34,13 +34,11 @@ import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.ImageView;
 import android.widget.Toast;
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -130,8 +128,10 @@ public class ContactsActivity extends XmppActivity {
 				Intent intent = new Intent(getApplicationContext(),
 						ContactDetailsActivity.class);
 				intent.setAction(ContactDetailsActivity.ACTION_VIEW_CONTACT);
-				intent.putExtra("uuid", selectedContacts.get(0).getUuid());
+				intent.putExtra("account", selectedContacts.get(0).getAccount().getJid());
+				intent.putExtra("contact",selectedContacts.get(0).getJid());
 				startActivity(intent);
+				finish();
 				break;
 			case R.id.action_invite:
 				invite();
@@ -187,7 +187,7 @@ public class ContactsActivity extends XmppActivity {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle(getString(R.string.account_offline));
 			builder.setMessage(getString(R.string.cant_invite_while_offline));
-			builder.setNegativeButton("OK", null);
+			builder.setNegativeButton(getString(R.string.ok), null);
 			builder.setIconAttribute(android.R.attr.alertDialogIcon);
 			builder.create().show();
 			return false;
@@ -259,7 +259,7 @@ public class ContactsActivity extends XmppActivity {
 									conversation, subject.toString());
 							xmppConnectionService.inviteToConference(conversation,
 									selectedContacts);
-							switchToConversation(conversation, null);
+							switchToConversation(conversation, null,false);
 						}
 					});
 			builder.create().show();
@@ -270,7 +270,7 @@ public class ContactsActivity extends XmppActivity {
 
 		aggregatedContacts.clear();
 		for (Contact contact : rosterContacts) {
-			if (contact.match(searchString))
+			if (contact.match(searchString)&&(contact.showInRoster()))
 				aggregatedContacts.add(contact);
 		}
 
@@ -287,16 +287,15 @@ public class ContactsActivity extends XmppActivity {
 		if (aggregatedContacts.size() == 0) {
 
 			if (Validator.isValidJid(searchString)) {
-				String name = searchString.split("@")[0];
-				Contact newContact = new Contact(null, name, searchString, null);
-				newContact.flagAsNotInRoster();
+				Contact newContact = new Contact(searchString);
+				newContact.resetOption(Contact.Options.IN_ROSTER);
 				aggregatedContacts.add(newContact);
-				contactsHeader.setText("Create new contact");
+				contactsHeader.setText(getString(R.string.new_contact));
 			} else {
-				contactsHeader.setText("Contacts");
+				contactsHeader.setText(getString(R.string.contacts));
 			}
 		} else {
-			contactsHeader.setText("Contacts");
+			contactsHeader.setText(getString(R.string.contacts));
 		}
 
 		contactsAdapter.notifyDataSetChanged();
@@ -429,17 +428,19 @@ public class ContactsActivity extends XmppActivity {
 		}
 
 		AlertDialog.Builder accountChooser = new AlertDialog.Builder(this);
-		accountChooser.setTitle("Choose account");
+		accountChooser.setTitle(getString(R.string.choose_account));
 		accountChooser.setItems(accountList, listener);
 		return accountChooser.create();
 	}
 
 	public void showIsMucDialogIfNeeded(final Contact clickedContact) {
-		if (clickedContact.couldBeMuc()) {
+		if (isMuc(clickedContact)) {
+			startConversation(clickedContact,clickedContact.getAccount(), true);
+		} else if (clickedContact.couldBeMuc()) {
 			AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-			dialog.setTitle("Multi User Conference");
-			dialog.setMessage("Are you trying to join a conference?");
-			dialog.setPositiveButton("Yes", new OnClickListener() {
+			dialog.setTitle(getString(R.string.multi_user_conference));
+			dialog.setMessage(getString(R.string.trying_join_conference));
+			dialog.setPositiveButton(getString(R.string.yes), new OnClickListener() {
 
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
@@ -447,7 +448,7 @@ public class ContactsActivity extends XmppActivity {
 							clickedContact.getAccount(), true);
 				}
 			});
-			dialog.setNegativeButton("No", new OnClickListener() {
+			dialog.setNegativeButton(getString(R.string.no), new OnClickListener() {
 
 				@Override
 				public void onClick(DialogInterface dialog, int which) {
@@ -461,15 +462,26 @@ public class ContactsActivity extends XmppActivity {
 					false);
 		}
 	}
+	
+	private boolean isMuc(Contact contact) {
+		ArrayList<String> mucServers = new ArrayList<String>();
+		for(Account account : accounts) {
+			if (account.getXmppConnection()!=null) {
+				mucServers.add(account.getXmppConnection().getMucServer());
+			}
+		}
+		String server = contact.getJid().split("@")[1];
+		return mucServers.contains(server);
+	}
 
 	public void startConversation(Contact contact, Account account, boolean muc) {
-		if (!contact.isInRoster()&&(!muc)) {
+		if (!contact.getOption(Contact.Options.IN_ROSTER)&&(!muc)) {
 			xmppConnectionService.createContact(contact);
 		}
 		Conversation conversation = xmppConnectionService
 				.findOrCreateConversation(account, contact.getJid(), muc);
 
-		switchToConversation(conversation, null);
+		switchToConversation(conversation, null,false);
 	}
 
 	@Override
@@ -496,7 +508,7 @@ public class ContactsActivity extends XmppActivity {
 									.findOrCreateConversation(
 											accounts.get(which), finalJid,
 											false);
-							switchToConversation(conversation, null);
+							switchToConversation(conversation, null,false);
 							finish();
 						}
 					}).show();
@@ -504,7 +516,7 @@ public class ContactsActivity extends XmppActivity {
 					Conversation conversation = xmppConnectionService
 							.findOrCreateConversation(this.accounts.get(0),
 									jid, false);
-					switchToConversation(conversation, null);
+					switchToConversation(conversation, null,false);
 					finish();
 				}
 			}
@@ -515,9 +527,10 @@ public class ContactsActivity extends XmppActivity {
 			getActionBar().setHomeButtonEnabled(false);
 		}
 		this.rosterContacts.clear();
-		for (int i = 0; i < accounts.size(); ++i) {
-			rosterContacts.addAll(xmppConnectionService.getRoster(accounts
-					.get(i)));
+		for(Account account : accounts) {
+			if (account.getStatus() != Account.STATUS_DISABLED) {
+				rosterContacts.addAll(account.getRoster().getContacts());
+			}
 		}
 		updateAggregatedContacts();
 	}
@@ -532,50 +545,10 @@ public class ContactsActivity extends XmppActivity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-		case R.id.action_refresh_contacts:
-			refreshContacts();
-			break;
 		default:
 			break;
 		}
 		return super.onOptionsItemSelected(item);
-	}
-
-	private void refreshContacts() {
-		final ProgressBar progress = (ProgressBar) findViewById(R.id.progressBar1);
-		final EditText searchBar = (EditText) findViewById(R.id.new_conversation_search);
-		final TextView contactsHeader = (TextView) findViewById(R.id.contacts_header);
-		final ListView contactList = (ListView) findViewById(R.id.contactList);
-		searchBar.setVisibility(View.GONE);
-		contactsHeader.setVisibility(View.GONE);
-		contactList.setVisibility(View.GONE);
-		progress.setVisibility(View.VISIBLE);
-		this.accounts = xmppConnectionService.getAccounts();
-		this.rosterContacts.clear();
-		for (int i = 0; i < accounts.size(); ++i) {
-			if (accounts.get(i).getStatus() == Account.STATUS_ONLINE) {
-				xmppConnectionService.updateRoster(accounts.get(i),
-						new OnRosterFetchedListener() {
-
-							@Override
-							public void onRosterFetched(
-									final List<Contact> roster) {
-								runOnUiThread(new Runnable() {
-
-									@Override
-									public void run() {
-										rosterContacts.addAll(roster);
-										progress.setVisibility(View.GONE);
-										searchBar.setVisibility(View.VISIBLE);
-										contactList.setVisibility(View.VISIBLE);
-										contactList.setVisibility(View.VISIBLE);
-										updateAggregatedContacts();
-									}
-								});
-							}
-						});
-			}
-		}
 	}
 
 	@Override

@@ -1,6 +1,5 @@
 package eu.siacs.conversations.entities;
 
-import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
@@ -10,27 +9,24 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import eu.siacs.conversations.xml.Element;
-
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.util.Log;
 
-public class Contact extends AbstractEntity implements Serializable {
-	private static final long serialVersionUID = -4570817093119419962L;
-
+public class Contact {
 	public static final String TABLENAME = "contacts";
 
-	public static final String DISPLAYNAME = "name";
+	public static final String SYSTEMNAME = "systemname";
+	public static final String SERVERNAME = "servername";
 	public static final String JID = "jid";
-	public static final String SUBSCRIPTION = "subscription";
+	public static final String OPTIONS = "options";
 	public static final String SYSTEMACCOUNT = "systemaccount";
 	public static final String PHOTOURI = "photouri";
 	public static final String KEYS = "pgpkey";
-	public static final String PRESENCES = "presences";
 	public static final String ACCOUNT = "accountUuid";
 
 	protected String accountUuid;
-	protected String displayName;
+	protected String systemName;
+	protected String serverName;
 	protected String jid;
 	protected int subscription = 0;
 	protected String systemAccount;
@@ -41,27 +37,15 @@ public class Contact extends AbstractEntity implements Serializable {
 	protected Account account;
 
 	protected boolean inRoster = true;
+	
+	public Lastseen lastseen = new Lastseen();
 
-	public Contact(Account account, String displayName, String jid,
-			String photoUri) {
-		if (account == null) {
-			this.accountUuid = null;
-		} else {
-			this.accountUuid = account.getUuid();
-		}
-		this.account = account;
-		this.displayName = displayName;
-		this.jid = jid;
-		this.photoUri = photoUri;
-		this.uuid = java.util.UUID.randomUUID().toString();
-	}
-
-	public Contact(String uuid, String account, String displayName, String jid,
-			int subscription, String photoUri, String systemAccount,
-			String keys, String presences) {
-		this.uuid = uuid;
+	public Contact(String account, String systemName, String serverName,
+			String jid, int subscription, String photoUri,
+			String systemAccount, String keys) {
 		this.accountUuid = account;
-		this.displayName = displayName;
+		this.systemName = systemName;
+		this.serverName = serverName;
 		this.jid = jid;
 		this.subscription = subscription;
 		this.photoUri = photoUri;
@@ -74,11 +58,20 @@ public class Contact extends AbstractEntity implements Serializable {
 		} catch (JSONException e) {
 			this.keys = new JSONObject();
 		}
-		this.presences = Presences.fromJsonString(presences);
+	}
+
+	public Contact(String jid) {
+		this.jid = jid;
 	}
 
 	public String getDisplayName() {
-		return this.displayName;
+		if (this.systemName != null) {
+			return this.systemName;
+		} else if (this.serverName != null) {
+			return this.serverName;
+		} else {
+			return this.jid.split("@")[0];
+		}
 	}
 
 	public String getProfilePhoto() {
@@ -90,35 +83,32 @@ public class Contact extends AbstractEntity implements Serializable {
 	}
 
 	public boolean match(String needle) {
-		return (jid.toLowerCase().contains(needle.toLowerCase()) || (displayName
+		return (jid.toLowerCase().contains(needle.toLowerCase()) || (getDisplayName()
 				.toLowerCase().contains(needle.toLowerCase())));
 	}
 
-	@Override
 	public ContentValues getContentValues() {
 		ContentValues values = new ContentValues();
-		values.put(UUID, uuid);
 		values.put(ACCOUNT, accountUuid);
-		values.put(DISPLAYNAME, displayName);
+		values.put(SYSTEMNAME, systemName);
+		values.put(SERVERNAME, serverName);
 		values.put(JID, jid);
-		values.put(SUBSCRIPTION, subscription);
+		values.put(OPTIONS, subscription);
 		values.put(SYSTEMACCOUNT, systemAccount);
 		values.put(PHOTOURI, photoUri);
 		values.put(KEYS, keys.toString());
-		values.put(PRESENCES, presences.toJsonString());
 		return values;
 	}
 
 	public static Contact fromCursor(Cursor cursor) {
-		return new Contact(cursor.getString(cursor.getColumnIndex(UUID)),
-				cursor.getString(cursor.getColumnIndex(ACCOUNT)),
-				cursor.getString(cursor.getColumnIndex(DISPLAYNAME)),
+		return new Contact(cursor.getString(cursor.getColumnIndex(ACCOUNT)),
+				cursor.getString(cursor.getColumnIndex(SYSTEMNAME)),
+				cursor.getString(cursor.getColumnIndex(SERVERNAME)),
 				cursor.getString(cursor.getColumnIndex(JID)),
-				cursor.getInt(cursor.getColumnIndex(SUBSCRIPTION)),
+				cursor.getInt(cursor.getColumnIndex(OPTIONS)),
 				cursor.getString(cursor.getColumnIndex(PHOTOURI)),
 				cursor.getString(cursor.getColumnIndex(SYSTEMACCOUNT)),
-				cursor.getString(cursor.getColumnIndex(KEYS)),
-				cursor.getString(cursor.getColumnIndex(PRESENCES)));
+				cursor.getString(cursor.getColumnIndex(KEYS)));
 	}
 
 	public int getSubscription() {
@@ -138,10 +128,6 @@ public class Contact extends AbstractEntity implements Serializable {
 		return this.account;
 	}
 
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-
 	public boolean couldBeMuc() {
 		String[] split = this.getJid().split("@");
 		if (split.length != 2) {
@@ -153,15 +139,17 @@ public class Contact extends AbstractEntity implements Serializable {
 			} else {
 				return (domainParts[0].equals("conf")
 						|| domainParts[0].equals("conference")
+						|| domainParts[0].equals("room")
 						|| domainParts[0].equals("muc")
+						|| domainParts[0].equals("chat")
 						|| domainParts[0].equals("sala")
 						|| domainParts[0].equals("salas"));
 			}
 		}
 	}
 
-	public Hashtable<String, Integer> getPresences() {
-		return this.presences.getPresences();
+	public Presences getPresences() {
+		return this.presences;
 	}
 
 	public void updatePresence(String resource, int status) {
@@ -188,8 +176,12 @@ public class Contact extends AbstractEntity implements Serializable {
 		this.photoUri = uri;
 	}
 
-	public void setDisplayName(String name) {
-		this.displayName = name;
+	public void setServerName(String serverName) {
+		this.serverName = serverName;
+	}
+
+	public void setSystemName(String systemName) {
+		this.systemName = systemName;
 	}
 
 	public String getSystemAccount() {
@@ -249,16 +241,22 @@ public class Contact extends AbstractEntity implements Serializable {
 		}
 	}
 
-	public void setSubscriptionOption(int option) {
+	public void setOption(int option) {
 		this.subscription |= 1 << option;
 	}
 
-	public void resetSubscriptionOption(int option) {
+	public void resetOption(int option) {
 		this.subscription &= ~(1 << option);
 	}
 
-	public boolean getSubscriptionOption(int option) {
+	public boolean getOption(int option) {
 		return ((this.subscription & (1 << option)) != 0);
+	}
+
+	public boolean showInRoster() {
+		return (this.getOption(Contact.Options.IN_ROSTER) && (!this
+				.getOption(Contact.Options.DIRTY_DELETE)))
+				|| (this.getOption(Contact.Options.DIRTY_PUSH));
 	}
 
 	public void parseSubscriptionFromElement(Element item) {
@@ -267,40 +265,52 @@ public class Contact extends AbstractEntity implements Serializable {
 
 		if (subscription != null) {
 			if (subscription.equals("to")) {
-				this.resetSubscriptionOption(Contact.Subscription.FROM);
-				this.setSubscriptionOption(Contact.Subscription.TO);
+				this.resetOption(Contact.Options.FROM);
+				this.setOption(Contact.Options.TO);
 			} else if (subscription.equals("from")) {
-				this.resetSubscriptionOption(Contact.Subscription.TO);
-				this.setSubscriptionOption(Contact.Subscription.FROM);
+				this.resetOption(Contact.Options.TO);
+				this.setOption(Contact.Options.FROM);
 			} else if (subscription.equals("both")) {
-				this.setSubscriptionOption(Contact.Subscription.TO);
-				this.setSubscriptionOption(Contact.Subscription.FROM);
+				this.setOption(Contact.Options.TO);
+				this.setOption(Contact.Options.FROM);
+			} else if (subscription.equals("none")) {
+				this.resetOption(Contact.Options.FROM);
+				this.resetOption(Contact.Options.TO);
 			}
 		}
 
-		if ((ask != null) && (ask.equals("subscribe"))) {
-			this.setSubscriptionOption(Contact.Subscription.ASKING);
-		} else {
-			this.resetSubscriptionOption(Contact.Subscription.ASKING);
+		// do NOT override asking if pending push request
+		if (!this.getOption(Contact.Options.DIRTY_PUSH)) {
+			if ((ask != null) && (ask.equals("subscribe"))) {
+				this.setOption(Contact.Options.ASKING);
+			} else {
+				this.resetOption(Contact.Options.ASKING);
+			}
 		}
 	}
 
-	public class Subscription {
+	public Element asElement() {
+		Element item = new Element("item");
+		item.setAttribute("jid", this.jid);
+		if (this.serverName != null) {
+			item.setAttribute("name", this.serverName);
+		}
+		return item;
+	}
+
+	public class Options {
 		public static final int TO = 0;
 		public static final int FROM = 1;
 		public static final int ASKING = 2;
-		public static final int PREEMPTIVE_GRANT = 4;
+		public static final int PREEMPTIVE_GRANT = 3;
+		public static final int IN_ROSTER = 4;
+		public static final int PENDING_SUBSCRIPTION_REQUEST = 5;
+		public static final int DIRTY_PUSH = 6;
+		public static final int DIRTY_DELETE = 7;
 	}
-
-	public void flagAsNotInRoster() {
-		this.inRoster = false;
-	}
-
-	public boolean isInRoster() {
-		return this.inRoster;
-	}
-
-	public String getAccountUuid() {
-		return this.accountUuid;
+	
+	public class Lastseen {
+		public long time = 0;
+		public String presence = null;
 	}
 }

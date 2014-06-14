@@ -37,6 +37,10 @@ public class MessagePacket extends AbstractStanza {
 		case TYPE_GROUPCHAT:
 			this.setAttribute("type", "groupchat");
 			break;
+		case TYPE_UNKNOWN:
+			break;
+		case TYPE_NORMAL:
+			break;
 		default:
 			this.setAttribute("type","chat");
 			break;

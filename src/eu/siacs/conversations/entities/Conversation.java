@@ -4,17 +4,19 @@ import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 
+import eu.siacs.conversations.services.XmppConnectionService;
+
 import net.java.otr4j.OtrException;
 import net.java.otr4j.crypto.OtrCryptoEngineImpl;
 import net.java.otr4j.crypto.OtrCryptoException;
 import net.java.otr4j.session.SessionID;
 import net.java.otr4j.session.SessionImpl;
 import net.java.otr4j.session.SessionStatus;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.util.Log;
 
 public class Conversation extends AbstractEntity {
 
@@ -44,12 +46,11 @@ public class Conversation extends AbstractEntity {
 	private int status;
 	private long created;
 	private int mode;
-	
+
 	private String nextPresence;
 
 	private transient List<Message> messages = null;
 	private transient Account account = null;
-	private transient Contact contact;
 
 	private transient SessionImpl otrSession;
 
@@ -59,6 +60,8 @@ public class Conversation extends AbstractEntity {
 	private String nextMessage;
 
 	private transient MucOptions mucOptions = null;
+
+	private transient String latestMarkableMessageId;
 
 	public Conversation(String name, Account account, String contactJid,
 			int mode) {
@@ -101,12 +104,23 @@ public class Conversation extends AbstractEntity {
 	}
 
 	public void markRead() {
-		if (this.messages == null)
+		if (this.messages == null) {
 			return;
+		}
 		for (int i = this.messages.size() - 1; i >= 0; --i) {
-			if (messages.get(i).isRead())
-				return;
+			if (messages.get(i).isRead()) {
+				break;
+			}
 			this.messages.get(i).markRead();
+		}
+	}
+
+	public void markRead(XmppConnectionService service) {
+		markRead();
+		if (service.confirmMessages() && this.latestMarkableMessageId != null) {
+			service.sendConfirmMessage(getAccount(), getContactJid(),
+					this.latestMarkableMessageId);
+			this.latestMarkableMessageId = null;
 		}
 	}
 
@@ -127,21 +141,16 @@ public class Conversation extends AbstractEntity {
 	}
 
 	public String getName(boolean useSubject) {
-		if ((getMode() == MODE_MULTI) && (getMucOptions().getSubject() != null) && useSubject) {
+		if ((getMode() == MODE_MULTI) && (getMucOptions().getSubject() != null)
+				&& useSubject) {
 			return getMucOptions().getSubject();
-		} else if (this.contact != null) {
-			return this.contact.getDisplayName();
 		} else {
-			return this.name;
+			return this.getContact().getDisplayName();
 		}
 	}
 
 	public String getProfilePhotoString() {
-		if (this.contact == null) {
-			return null;
-		} else {
-			return this.contact.getProfilePhoto();
-		}
+		return this.getContact().getProfilePhoto();
 	}
 
 	public String getAccountUuid() {
@@ -153,14 +162,7 @@ public class Conversation extends AbstractEntity {
 	}
 
 	public Contact getContact() {
-		return this.contact;
-	}
-
-	public void setContact(Contact contact) {
-		this.contact = contact;
-		if (contact != null) {
-			this.contactUuid = contact.getUuid();
-		}
+		return this.account.getRoster().getContact(this.contactJid);
 	}
 
 	public void setAccount(Account account) {
@@ -222,14 +224,15 @@ public class Conversation extends AbstractEntity {
 		this.mode = mode;
 	}
 
-	public SessionImpl startOtrSession(Context context, String presence, boolean sendStart) {
+	public SessionImpl startOtrSession(Context context, String presence,
+			boolean sendStart) {
 		if (this.otrSession != null) {
 			return this.otrSession;
 		} else {
 			SessionID sessionId = new SessionID(this.getContactJid(), presence,
 					"xmpp");
-			this.otrSession = new SessionImpl(sessionId, getAccount().getOtrEngine(
-					context));
+			this.otrSession = new SessionImpl(sessionId, getAccount()
+					.getOtrEngine(context));
 			try {
 				if (sendStart) {
 					this.otrSession.startSession();
@@ -240,13 +243,13 @@ public class Conversation extends AbstractEntity {
 				return null;
 			}
 		}
-		
+
 	}
 
 	public SessionImpl getOtrSession() {
 		return this.otrSession;
 	}
-	
+
 	public void resetOtrSession() {
 		this.otrSession = null;
 	}
@@ -260,21 +263,14 @@ public class Conversation extends AbstractEntity {
 				} catch (OtrException e) {
 					this.resetOtrSession();
 				}
+			} else {
+				this.resetOtrSession();
 			}
 		}
 	}
 
 	public boolean hasValidOtrSession() {
-		if (this.otrSession == null) {
-			return false;
-		} else {
-			String foreignPresence = this.otrSession.getSessionID().getUserID();
-			if (!getContact().getPresences().containsKey(foreignPresence)) {
-				this.resetOtrSession();
-				return false;
-			}
-			return true;
-		}
+		return this.otrSession != null;
 	}
 
 	public String getOtrFingerprint() {
@@ -298,7 +294,7 @@ public class Conversation extends AbstractEntity {
 
 	public synchronized MucOptions getMucOptions() {
 		if (this.mucOptions == null) {
-			this.mucOptions = new MucOptions();
+			this.mucOptions = new MucOptions(this.getAccount());
 		}
 		this.mucOptions.setConversation(this);
 		return this.mucOptions;
@@ -311,40 +307,51 @@ public class Conversation extends AbstractEntity {
 	public void setContactJid(String jid) {
 		this.contactJid = jid;
 	}
-	
+
 	public void setNextPresence(String presence) {
 		this.nextPresence = presence;
 	}
-	
+
 	public String getNextPresence() {
 		return this.nextPresence;
 	}
-	
+
 	public int getLatestEncryption() {
 		int latestEncryption = this.getLatestMessage().getEncryption();
-		if ((latestEncryption == Message.ENCRYPTION_DECRYPTED) || (latestEncryption == Message.ENCRYPTION_DECRYPTION_FAILED)) {
+		if ((latestEncryption == Message.ENCRYPTION_DECRYPTED)
+				|| (latestEncryption == Message.ENCRYPTION_DECRYPTION_FAILED)) {
 			return Message.ENCRYPTION_PGP;
 		} else {
 			return latestEncryption;
 		}
 	}
-	
+
 	public int getNextEncryption() {
 		if (this.nextMessageEncryption == -1) {
 			return this.getLatestEncryption();
 		}
 		return this.nextMessageEncryption;
 	}
-	
+
 	public void setNextEncryption(int encryption) {
 		this.nextMessageEncryption = encryption;
 	}
-	
+
 	public String getNextMessage() {
-		return this.nextMessage;
+		if (this.nextMessage == null) {
+			return "";
+		} else {
+			return this.nextMessage;
+		}
 	}
-	
+
 	public void setNextMessage(String message) {
 		this.nextMessage = message;
+	}
+
+	public void setLatestMarkableMessageId(String id) {
+		if (id != null) {
+			this.latestMarkableMessageId = id;
+		}
 	}
 }

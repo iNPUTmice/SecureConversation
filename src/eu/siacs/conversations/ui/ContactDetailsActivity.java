@@ -1,8 +1,6 @@
 package eu.siacs.conversations.ui;
 
-import java.math.BigInteger;
 import java.util.Iterator;
-import java.util.Locale;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
 
@@ -17,7 +15,6 @@ import android.os.Bundle;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -31,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.utils.UIHelper;
@@ -40,14 +38,17 @@ public class ContactDetailsActivity extends XmppActivity {
 
 	protected ContactDetailsActivity activity = this;
 
-	private String uuid;
 	private Contact contact;
-
+	
+	private String accountJid;
+	private String contactJid;
+	
 	private EditText name;
-	private TextView contactJid;
-	private TextView accountJid;
+	private TextView contactJidTv;
+	private TextView accountJidTv;
 	private TextView status;
 	private TextView askAgain;
+	private TextView lastseen;
 	private CheckBox send;
 	private CheckBox receive;
 	private QuickContactBadge badge;
@@ -56,7 +57,7 @@ public class ContactDetailsActivity extends XmppActivity {
 
 		@Override
 		public void onClick(DialogInterface dialog, int which) {
-			activity.xmppConnectionService.deleteContact(contact);
+			activity.xmppConnectionService.deleteContactOnServer(contact);
 			activity.finish();
 		}
 	};
@@ -65,8 +66,8 @@ public class ContactDetailsActivity extends XmppActivity {
 
 		@Override
 		public void onClick(DialogInterface dialog, int which) {
-			contact.setDisplayName(name.getText().toString());
-			activity.xmppConnectionService.updateContact(contact);
+			contact.setServerName(name.getText().toString());
+			activity.xmppConnectionService.pushContactToServer(contact);
 			populateView();
 		}
 	};
@@ -89,11 +90,10 @@ public class ContactDetailsActivity extends XmppActivity {
 		@Override
 		public void onClick(View v) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(activity);
-			builder.setTitle("Add to phone book");
-			builder.setMessage("Do you want to add " + contact.getJid()
-					+ " to your phones contact list?");
-			builder.setNegativeButton("Cancel", null);
-			builder.setPositiveButton("Add", addToPhonebook);
+			builder.setTitle(getString(R.string.action_add_phone_book));
+			builder.setMessage(getString(R.string.add_phone_book_text, contact.getJid()));
+			builder.setNegativeButton(getString(R.string.cancel), null);
+			builder.setPositiveButton(getString(R.string.add), addToPhonebook);
 			builder.create().show();
 		}
 	};
@@ -104,13 +104,15 @@ public class ContactDetailsActivity extends XmppActivity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		if (getIntent().getAction().equals(ACTION_VIEW_CONTACT)) {
-			this.uuid = getIntent().getExtras().getString("uuid");
+			this.accountJid = getIntent().getExtras().getString("account");
+			this.contactJid = getIntent().getExtras().getString("contact");
 		}
 		setContentView(R.layout.activity_contact_details);
 
-		contactJid = (TextView) findViewById(R.id.details_contactjid);
-		accountJid = (TextView) findViewById(R.id.details_account);
+		contactJidTv = (TextView) findViewById(R.id.details_contactjid);
+		accountJidTv = (TextView) findViewById(R.id.details_account);
 		status = (TextView) findViewById(R.id.details_contactstatus);
+		lastseen = (TextView) findViewById(R.id.details_lastseen);
 		send = (CheckBox) findViewById(R.id.details_send_presence);
 		receive = (CheckBox) findViewById(R.id.details_receive_presence);
 		askAgain = (TextView) findViewById(R.id.ask_again);
@@ -124,17 +126,17 @@ public class ContactDetailsActivity extends XmppActivity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem menuItem) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setNegativeButton("Cancel", null);
+		builder.setNegativeButton(getString(R.string.cancel), null);
 		switch (menuItem.getItemId()) {
 		case android.R.id.home:
 			finish();
 			break;
 		case R.id.action_delete_contact:
-			builder.setTitle("Delete from roster")
+			builder.setTitle(getString(R.string.action_delete_contact))
 					.setMessage(
 							getString(R.string.remove_contact_text,
 									contact.getJid()))
-					.setPositiveButton("Delete", removeFromRoster).create()
+					.setPositiveButton(getString(R.string.delete), removeFromRoster).create()
 					.show();
 			break;
 		case R.id.action_edit_contact:
@@ -145,7 +147,7 @@ public class ContactDetailsActivity extends XmppActivity {
 				name = (EditText) view.findViewById(R.id.editText1);
 				name.setText(contact.getDisplayName());
 				builder.setView(view).setTitle(contact.getJid())
-						.setPositiveButton("Edit", editContactNameListener)
+						.setPositiveButton(getString(R.string.edit), editContactNameListener)
 						.create().show();
 
 			} else {
@@ -170,18 +172,18 @@ public class ContactDetailsActivity extends XmppActivity {
 
 	private void populateView() {
 		setTitle(contact.getDisplayName());
-		if (contact.getSubscriptionOption(Contact.Subscription.FROM)) {
+		if (contact.getOption(Contact.Options.FROM)) {
 			send.setChecked(true);
 		} else {
 			send.setText(R.string.preemptively_grant);
 			if (contact
-					.getSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT)) {
+					.getOption(Contact.Options.PREEMPTIVE_GRANT)) {
 				send.setChecked(true);
 			} else {
 				send.setChecked(false);
 			}
 		}
-		if (contact.getSubscriptionOption(Contact.Subscription.TO)) {
+		if (contact.getOption(Contact.Options.TO)) {
 			receive.setChecked(true);
 		} else {
 			receive.setText(R.string.ask_for_presence_updates);
@@ -190,54 +192,57 @@ public class ContactDetailsActivity extends XmppActivity {
 				
 				@Override
 				public void onClick(View v) {
-					Toast.makeText(getApplicationContext(), "Asked for presence updates",Toast.LENGTH_SHORT).show();
+					Toast.makeText(getApplicationContext(), getString(R.string.asked_for_presence_updates),
+                            Toast.LENGTH_SHORT).show();
 					xmppConnectionService.requestPresenceUpdatesFrom(contact);
 					
 				}
 			});
-			if (contact.getSubscriptionOption(Contact.Subscription.ASKING)) {
+			if (contact.getOption(Contact.Options.ASKING)) {
 				receive.setChecked(true);
 			} else {
 				receive.setChecked(false);
 			}
 		}
+		
+		lastseen.setText(UIHelper.lastseen(getApplicationContext(),contact.lastseen.time));
 
 		switch (contact.getMostAvailableStatus()) {
 		case Presences.CHAT:
-			status.setText("free to chat");
+			status.setText(R.string.contact_status_free_to_chat);
 			status.setTextColor(0xFF83b600);
 			break;
 		case Presences.ONLINE:
-			status.setText("online");
+			status.setText(R.string.contact_status_online);
 			status.setTextColor(0xFF83b600);
 			break;
 		case Presences.AWAY:
-			status.setText("away");
+			status.setText(R.string.contact_status_away);
 			status.setTextColor(0xFFffa713);
 			break;
 		case Presences.XA:
-			status.setText("extended away");
+			status.setText(R.string.contact_status_extended_away);
 			status.setTextColor(0xFFffa713);
 			break;
 		case Presences.DND:
-			status.setText("do not disturb");
+			status.setText(R.string.contact_status_do_not_disturb);
 			status.setTextColor(0xFFe92727);
 			break;
 		case Presences.OFFLINE:
-			status.setText("offline");
+			status.setText(R.string.contact_status_offline);
 			status.setTextColor(0xFFe92727);
 			break;
 		default:
-			status.setText("offline");
+			status.setText(R.string.contact_status_offline);
 			status.setTextColor(0xFFe92727);
 			break;
 		}
 		if (contact.getPresences().size() > 1) {
-			contactJid.setText(contact.getJid()+" ("+contact.getPresences().size()+")");
+			contactJidTv.setText(contact.getJid()+" ("+contact.getPresences().size()+")");
 		} else {
-			contactJid.setText(contact.getJid());
+			contactJidTv.setText(contact.getJid());
 		}
-		accountJid.setText(contact.getAccount().getJid());
+		accountJidTv.setText(contact.getAccount().getJid());
 
 		UIHelper.prepareContactBadge(this, badge, contact, getApplicationContext());
 
@@ -286,65 +291,83 @@ public class ContactDetailsActivity extends XmppActivity {
 
 	@Override
 	public void onBackendConnected() {
-		if (uuid != null) {
-			this.contact = xmppConnectionService.findContact(uuid);
-			if (this.contact != null) {
-				populateView();
+		if ((accountJid != null)&&(contactJid != null)) {
+			Account account = xmppConnectionService.findAccountByJid(accountJid);
+			if (account==null) {
+				return;
 			}
+			this.contact = account.getRoster().getContact(contactJid);
+			populateView();
 		}
 	}
 
 	@Override
 	protected void onStop() {
 		super.onStop();
-		boolean needsUpdating = false;
-		if (contact.getSubscriptionOption(Contact.Subscription.FROM)) {
+		boolean updated = false;
+		boolean online = contact.getAccount().getStatus() == Account.STATUS_ONLINE;
+		if (contact.getOption(Contact.Options.FROM)) {
 			if (!send.isChecked()) {
-				contact.resetSubscriptionOption(Contact.Subscription.FROM);
-				contact.resetSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT);
-				activity.xmppConnectionService.stopPresenceUpdatesTo(contact);
-				needsUpdating = true;
+				if (online) {
+					contact.resetOption(Contact.Options.FROM);
+					contact.resetOption(Contact.Options.PREEMPTIVE_GRANT);
+					activity.xmppConnectionService.stopPresenceUpdatesTo(contact);
+				}
+				updated = true;
 			}
 		} else {
 			if (contact
-					.getSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT)) {
+					.getOption(Contact.Options.PREEMPTIVE_GRANT)) {
 				if (!send.isChecked()) {
-					contact.resetSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT);
-					needsUpdating = true;
+					if (online) {
+						contact.resetOption(Contact.Options.PREEMPTIVE_GRANT);
+					}
+					updated = true;
 				}
 			} else {
 				if (send.isChecked()) {
-					contact.setSubscriptionOption(Contact.Subscription.PREEMPTIVE_GRANT);
-					needsUpdating = true;
+					if (online) {
+						contact.setOption(Contact.Options.PREEMPTIVE_GRANT);
+					}
+					updated = true;
 				}
 			}
 		}
-		if (contact.getSubscriptionOption(Contact.Subscription.TO)) {
+		if (contact.getOption(Contact.Options.TO)) {
 			if (!receive.isChecked()) {
-				contact.resetSubscriptionOption(Contact.Subscription.TO);
-				activity.xmppConnectionService.stopPresenceUpdatesFrom(contact);
-				needsUpdating = true;
+				if (online) {
+					contact.resetOption(Contact.Options.TO);
+					activity.xmppConnectionService.stopPresenceUpdatesFrom(contact);
+				}
+				updated = true;
 			}
 		} else {
-			if (contact.getSubscriptionOption(Contact.Subscription.ASKING)) {
+			if (contact.getOption(Contact.Options.ASKING)) {
 				if (!receive.isChecked()) {
-					contact.resetSubscriptionOption(Contact.Subscription.ASKING);
-					activity.xmppConnectionService
+					if (online) {
+						contact.resetOption(Contact.Options.ASKING);
+						activity.xmppConnectionService
 							.stopPresenceUpdatesFrom(contact);
-					needsUpdating = true;
+					}
+					updated = true;
 				}
 			} else {
 				if (receive.isChecked()) {
-					contact.setSubscriptionOption(Contact.Subscription.ASKING);
-					activity.xmppConnectionService
+					if (online) {
+						contact.setOption(Contact.Options.ASKING);
+						activity.xmppConnectionService
 							.requestPresenceUpdatesFrom(contact);
-					needsUpdating = true;
+					}
+					updated = true;
 				}
 			}
 		}
-		if (needsUpdating) {
-			Toast.makeText(getApplicationContext(), "Subscription updated", Toast.LENGTH_SHORT).show();
-			activity.xmppConnectionService.updateContact(contact);
+		if (updated) {
+			if (online) {
+				Toast.makeText(getApplicationContext(), getString(R.string.subscription_updated), Toast.LENGTH_SHORT).show();
+			} else {
+				Toast.makeText(getApplicationContext(), getString(R.string.subscription_not_updated_offline), Toast.LENGTH_SHORT).show();
+			}
 		}
 	}
 

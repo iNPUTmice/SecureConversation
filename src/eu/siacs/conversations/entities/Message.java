@@ -19,7 +19,10 @@ public class Message extends AbstractEntity {
 	public static final int STATUS_SEND = 2;
 	public static final int STATUS_SEND_FAILED = 3;
 	public static final int STATUS_SEND_REJECTED = 4;
+	public static final int STATUS_WAITING = 5;
 	public static final int STATUS_OFFERED = 6;
+	public static final int STATUS_SEND_RECEIVED = 7;
+	public static final int STATUS_SEND_DISPLAYED = 8;
 
 	public static final int ENCRYPTION_NONE = 0;
 	public static final int ENCRYPTION_PGP = 1;
@@ -29,6 +32,8 @@ public class Message extends AbstractEntity {
 	
 	public static final int TYPE_TEXT = 0;
 	public static final int TYPE_IMAGE = 1;
+	public static final int TYPE_AUDIO = 2;
+	public static final int TYPE_STATUS = 3;
 
 	public static String CONVERSATION = "conversationUuid";
 	public static String COUNTERPART = "counterpart";
@@ -51,6 +56,10 @@ public class Message extends AbstractEntity {
 	protected transient Conversation conversation = null;
 	
 	protected transient JingleConnection jingleConnection = null;
+	
+	private Message() {
+		
+	}
 
 	public Message(Conversation conversation, String body, int encryption) {
 		this(java.util.UUID.randomUUID().toString(), conversation.getUuid(),
@@ -192,7 +201,20 @@ public class Message extends AbstractEntity {
 	}
 
 	public void setPresence(String presence) {
-		this.counterpart = this.counterpart.split("/")[0] + "/" + presence;
+		if (presence == null) {
+			this.counterpart = this.counterpart.split("/")[0];
+		} else {
+			this.counterpart = this.counterpart.split("/")[0] + "/" + presence;
+		}
+	}
+	
+	public String getPresence() {
+		String[] counterparts = this.counterpart.split("/");
+		if (counterparts.length == 2) {
+			return counterparts[1];
+		} else {
+			return null;
+		}
 	}
 	
 	public void setJingleConnection(JingleConnection connection) {
@@ -201,5 +223,12 @@ public class Message extends AbstractEntity {
 	
 	public JingleConnection getJingleConnection() {
 		return this.jingleConnection;
+	}
+	
+	public static Message createStatusMessage(Conversation conversation) {
+		Message message = new Message();
+		message.setType(Message.TYPE_STATUS);
+		message.setConversation(conversation);
+		return message;
 	}
 }

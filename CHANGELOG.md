@@ -1,5 +1,22 @@
 ###Changelog
 
+####Version 0.3
+* Mostly bug fixes and internal rewrites
+* Touch contact picture in conference to highlight
+* Long press on received image to share
+* made OTR more reliable
+* improved issues with occasional message lost
+* experimental conference encryption. (see FAQ)
+
+####Version 0.2.3
+* regression fix with receiving encrypted images
+
+####Version 0.2.2
+* Ability to take photos directly
+* Improved openPGP offline handling
+* Various bug fixes
+* Updated Translations
+
 ####Version 0.2.1
 * Various bug fixes
 * Updated Translations
