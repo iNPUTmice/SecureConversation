@@ -11,8 +11,12 @@
 
     <style name="Conversations.Light" parent="@android:style/Theme.Holo.Light">
         <item name="conversation_background">@color/light_grey_1</item>
+        <item name="fragment_conversation_textsend">@color/light_grey_1</item>
+        <item name="fragment_conversation_textinput">@color/light_grey_1</item>
         <item name="conversations_overview_background">@color/light_grey_1</item>
         <item name="conversations_overview_divider">@color/light_grey_4</item>
+
+        <item name="new_conversations_search_background">@color/light_grey_1</item>
 
         <item name="es_slidingpane_shadow">@drawable/es_slidingpane_shadow</item>
 
@@ -78,8 +82,12 @@
 
     <style name="Conversations.Dark" parent="@android:style/Theme.Holo">
         <item name="conversation_background">@android:color/background_dark</item>
+        <item name="fragment_conversation_textsend">@color/dark_grey_4</item>
+        <item name="fragment_conversation_textinput">@color/dark_grey_4</item>
         <item name="conversations_overview_background">@color/dark_grey_4</item>
-        <item name="conversations_overview_divider">@color/dark_grey_3</item>
+        <item name="conversations_overview_divider">@color/dark_grey_1</item>
+
+        <item name="new_conversations_search_background">@color/dark_grey_4</item>
 
         <item name="es_slidingpane_shadow">@drawable/es_slidingpane_shadow_dark</item>
 
