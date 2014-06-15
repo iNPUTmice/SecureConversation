@@ -78,7 +78,7 @@
 
     <style name="Conversations.Dark" parent="@android:style/Theme.Holo">
         <item name="conversation_background">@android:color/background_dark</item>
-        <item name="conversations_overview_background">@android:color/background_dark</item>
+        <item name="conversations_overview_background">@color/dark_grey_4</item>
         <item name="conversations_overview_divider">@color/dark_grey_3</item>
 
         <item name="es_slidingpane_shadow">@drawable/es_slidingpane_shadow_dark</item>
