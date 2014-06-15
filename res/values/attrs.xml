@@ -4,6 +4,8 @@
    <attr name="conversations_overview_background" format="reference" />
    <attr name="conversations_overview_divider" format="reference" />
 
+   <attr name="es_slidingpane_shadow" format="reference" />
+
    <attr name="activity_muc_details_background" format="reference" />
    
    <attr name="activity_contact_details_background" format="reference" />

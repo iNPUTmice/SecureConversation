@@ -260,7 +260,12 @@ public class ConversationActivity extends XmppActivity {
 		});
 		spl = (SlidingPaneLayout) findViewById(R.id.slidingpanelayout);
 		spl.setParallaxDistance(150);
-		spl.setShadowResource(R.drawable.es_slidingpane_shadow);
+
+		TypedValue drawable_value = new TypedValue();
+		getTheme().resolveAttribute(R.attr.es_slidingpane_shadow, drawable_value, true);
+		Drawable drawable = getResources().getDrawable(drawable_value.resourceId);
+
+		spl.setShadowDrawable(drawable);
 		spl.setSliderFadeColor(0);
 		spl.setPanelSlideListener(new PanelSlideListener() {
 
