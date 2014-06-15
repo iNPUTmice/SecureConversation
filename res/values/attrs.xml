@@ -7,6 +7,9 @@
    <attr name="activity_muc_details_background" format="reference" />
    
    <attr name="activity_contact_details_background" format="reference" />
+
+   <attr name="account_row_jid" format="reference" />
+   <attr name="account_row_status_label" format="reference" />
    
    <attr name="conversation_list_row_name" format="reference" />
    <attr name="conversation_list_row_lastmsg" format="reference" />

@@ -18,6 +18,9 @@
 
         <item name="activity_contact_details_background">@color/light_grey_3</item>
 
+        <item name="account_row_jid">@color/dark_grey_1</item>
+        <item name="account_row_status_label">@color/dark_grey_2</item>
+
         <item name="conversation_list_row_name">@color/dark_grey_1</item>
         <item name="conversation_list_row_lastmsg">@color/dark_grey_1</item>
         <item name="conversation_list_row_lastupdate">@color/dark_grey_1</item>
@@ -79,6 +82,9 @@
         <item name="activity_muc_details_background">@android:color/background_dark</item>
 
         <item name="activity_contact_details_background">@android:color/background_dark</item>
+
+        <item name="account_row_jid">@android:color/primary_text_dark</item>
+        <item name="account_row_status_label">@android:color/secondary_text_dark</item>
 
         <item name="conversation_list_row_name">@android:color/primary_text_dark</item>
         <item name="conversation_list_row_lastmsg">@android:color/secondary_text_dark</item>
