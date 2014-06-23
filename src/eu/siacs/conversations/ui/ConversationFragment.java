@@ -34,6 +34,7 @@ import android.text.Editable;
 import android.text.Selection;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -204,6 +205,12 @@ public class ConversationFragment extends Fragment {
 			private static final int RECIEVED = 1;
 			private static final int STATUS = 2;
 
+			private int messageTextColor;
+			private int timeTextColor;
+			private int timeErrorTextColor;
+			private int textInfoColor;
+			private int textDecryptionFailedColor;
+
 			@Override
 			public int getViewTypeCount() {
 				return 3;
@@ -260,9 +267,9 @@ public class ConversationFragment extends Fragment {
 					break;
 				}
 				if (error) {
-					viewHolder.time.setTextColor(0xFFe92727);
+					viewHolder.time.setTextColor(timeErrorTextColor);
 				} else {
-					viewHolder.time.setTextColor(0xFF8e8e8e);
+					viewHolder.time.setTextColor(timeTextColor);
 				}
 				if (message.getEncryption() == Message.ENCRYPTION_NONE) {
 					viewHolder.indicator.setVisibility(View.GONE);
@@ -310,7 +317,7 @@ public class ConversationFragment extends Fragment {
 				viewHolder.image.setVisibility(View.GONE);
 				viewHolder.messageBody.setVisibility(View.VISIBLE);
 				viewHolder.messageBody.setText(getString(r));
-				viewHolder.messageBody.setTextColor(0xff33B5E5);
+				viewHolder.messageBody.setTextColor(textInfoColor);
 				viewHolder.messageBody.setTypeface(null, Typeface.ITALIC);
 				viewHolder.messageBody.setTextIsSelectable(false);
 			}
@@ -323,7 +330,7 @@ public class ConversationFragment extends Fragment {
 				viewHolder.messageBody.setVisibility(View.VISIBLE);
 				viewHolder.messageBody
 						.setText(getString(R.string.decryption_failed));
-				viewHolder.messageBody.setTextColor(0xFFe92727);
+				viewHolder.messageBody.setTextColor(textDecryptionFailedColor);
 				viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 				viewHolder.messageBody.setTextIsSelectable(false);
 			}
@@ -339,7 +346,8 @@ public class ConversationFragment extends Fragment {
 				} else {
 					viewHolder.messageBody.setText("");
 				}
-				viewHolder.messageBody.setTextColor(0xff333333);
+				viewHolder.messageBody.setTextColor(messageTextColor);
+
 				viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 				viewHolder.messageBody.setTextIsSelectable(true);
 			}
@@ -488,6 +496,23 @@ public class ConversationFragment extends Fragment {
 				}
 
 				if (type == RECIEVED) {
+					TypedValue typedValue = new TypedValue();
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_text, typedValue, true);
+					messageTextColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_time, typedValue, true);
+					timeTextColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_time_error, typedValue, true);
+					timeErrorTextColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_info, typedValue, true);
+					textInfoColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_recieved_decryption_failed, typedValue, true);
+					textDecryptionFailedColor = 0xFFe92727;
+
 					if (item.getConversation().getMode() == Conversation.MODE_MULTI) {
 						viewHolder.contact_picture.setImageBitmap(mBitmapCache
 								.get(item.getCounterpart(), null, getActivity()
@@ -502,6 +527,23 @@ public class ConversationFragment extends Fragment {
 									}
 								});
 					}
+				} else { // type == SENT
+					TypedValue typedValue = new TypedValue();
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_sent_text, typedValue, true);
+					messageTextColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_sent_time, typedValue, true);
+					timeTextColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_sent_time_error, typedValue, true);
+					timeErrorTextColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_sent_info, typedValue, true);
+					textInfoColor = typedValue.data;
+
+					getActivity().getTheme().resolveAttribute(R.attr.message_sent_decryption_failed, typedValue, true);
+					textDecryptionFailedColor = 0xFFe92727;
 				}
 
 				if (item.getType() == Message.TYPE_IMAGE) {

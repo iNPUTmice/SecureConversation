@@ -7,6 +7,10 @@
         <item>Conversations</item>
         <item>Android</item>
     </string-array>
+    <string-array name="themes">
+        <item>Light</item>
+        <item>Dark</item>
+    </string-array>
     <string-array name="filesizes">
         <item>never</item>
         <item>256 KB</item>

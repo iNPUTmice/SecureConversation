@@ -6,8 +6,149 @@
         <item name="android:layout_marginTop">8dp</item>
         <item name="android:textSize">14sp</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:textColor">#5b5b5b</item>
         <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Conversations.Light" parent="@android:style/Theme.Holo.Light">
+        <item name="conversation_background">@color/light_grey_1</item>
+        <item name="fragment_conversation_textsend">@color/light_grey_1</item>
+        <item name="fragment_conversation_textinput">@color/light_grey_1</item>
+        <item name="conversations_overview_background">@color/light_grey_1</item>
+        <item name="conversations_overview_divider">@color/light_grey_4</item>
+
+        <item name="new_conversations_search_background">@color/light_grey_1</item>
+
+        <item name="es_slidingpane_shadow">@drawable/es_slidingpane_shadow</item>
+
+        <item name="activity_muc_details_background">@color/light_grey_3</item>
+
+        <item name="activity_contact_details_background">@color/light_grey_3</item>
+
+        <item name="account_row_jid">@color/dark_grey_1</item>
+        <item name="account_row_status_label">@color/dark_grey_2</item>
+
+        <item name="conversation_list_row_name">@color/dark_grey_1</item>
+        <item name="conversation_list_row_lastmsg">@color/dark_grey_1</item>
+        <item name="conversation_list_row_lastupdate">@color/dark_grey_1</item>
+        <item name="conversation_list_row_image_background">@color/dark_grey_3</item>
+
+        <item name="message_sent_background">@color/light_grey_2</item>
+        <item name="message_sent_image_background">@color/light_grey_2</item>
+        <item name="message_sent_border">@drawable/message_border</item>
+        <item name="message_sent_text">@color/dark_grey_1</item>
+        <item name="message_sent_time">@color/grey_1</item>
+        <item name="message_sent_time_error">@color/red</item>
+        <item name="message_sent_info">@color/blue</item>
+        <item name="message_sent_decryption_failed">@color/red</item>
+
+        <item name="message_recieved_background">@color/light_grey_2</item>
+        <item name="message_recieved_image_background">@color/light_grey_2</item>
+        <item name="message_recieved_border">@drawable/message_border</item>
+        <item name="message_recieved_text">@color/dark_grey_1</item>
+        <item name="message_recieved_time">@color/grey_1</item>
+        <item name="message_recieved_time_error">@color/red</item>
+        <item name="message_recieved_info">@color/blue</item>
+        <item name="message_recieved_decryption_failed">@color/red</item>
+
+        <item name="contact_details_text">@color/dark_grey_2</item>
+
+        <item name="fragment_conversation_text">@color/light_grey_1</item>
+
+        <item name="muc_jabberid">@color/dark_grey_2</item>
+        <item name="muc_role">@color/dark_grey_2</item>
+
+        <item name="edit_contact_name">@color/dark_grey_2</item>
+
+        <item name="contact_text">@color/dark_grey_2</item>
+
+        <item name="contact_text">@color/dark_grey_2</item>
+
+        <item name="new_conversation_header">@color/dark_grey_2</item>
+
+        <item name="ic_action_send_now">@drawable/ic_action_send_now</item>
+        <item name="ic_indicator">@drawable/ic_indicator</item>
+        <item name="ic_profile">@drawable/ic_profile</item>
+        <item name="ic_action_add">@drawable/ic_action_add</item>
+        <item name="ic_action_secure">@drawable/ic_action_secure</item>
+        <item name="ic_action_unsecure">@drawable/ic_action_unsecure</item>
+        <item name="ic_action_edit">@drawable/ic_action_edit</item>
+        <item name="ic_action_delete">@drawable/ic_action_delete</item>
+        <item name="ic_action_discard">@drawable/ic_action_discard</item>
+        <item name="ic_action_chat">@drawable/ic_action_chat</item>
+        <item name="ic_action_add_person">@drawable/ic_action_add_person</item>
+        <item name="ic_action_new_attachment">@drawable/ic_action_new_attachment</item>
+        <item name="ic_action_group">@drawable/ic_action_group</item>
+    </style>
+
+    <style name="Conversations.Dark" parent="@android:style/Theme.Holo">
+        <item name="conversation_background">@android:color/background_dark</item>
+        <item name="fragment_conversation_textsend">@color/dark_grey_4</item>
+        <item name="fragment_conversation_textinput">@color/dark_grey_4</item>
+        <item name="conversations_overview_background">@color/dark_grey_4</item>
+        <item name="conversations_overview_divider">@color/dark_grey_1</item>
+
+        <item name="new_conversations_search_background">@color/dark_grey_4</item>
+
+        <item name="es_slidingpane_shadow">@drawable/es_slidingpane_shadow_dark</item>
+
+        <item name="activity_muc_details_background">@android:color/background_dark</item>
+
+        <item name="activity_contact_details_background">@android:color/background_dark</item>
+
+        <item name="account_row_jid">@android:color/primary_text_dark</item>
+        <item name="account_row_status_label">@android:color/secondary_text_dark</item>
+
+        <item name="conversation_list_row_name">@android:color/primary_text_dark</item>
+        <item name="conversation_list_row_lastmsg">@android:color/secondary_text_dark</item>
+        <item name="conversation_list_row_lastupdate">@android:color/secondary_text_dark</item>
+        <item name="conversation_list_row_image_background">@android:color/background_dark</item>
+
+        <item name="message_sent_background">@color/dark_grey_4</item>
+        <item name="message_sent_image_background">@android:color/background_dark</item>
+        <item name="message_sent_border">@drawable/message_border_dark</item>
+        <item name="message_sent_text">@color/light_grey_1</item>
+        <item name="message_sent_time">@color/light_grey_2</item>
+        <item name="message_sent_time_error">@color/red</item>
+        <item name="message_sent_info">@color/blue</item>
+        <item name="message_sent_decryption_failed">@color/red</item>
+
+        <item name="message_recieved_background">@color/dark_grey_4</item>
+        <item name="message_recieved_image_background">@android:color/background_dark</item>
+        <item name="message_recieved_border">@drawable/message_border_dark</item>
+        <item name="message_recieved_text">@color/light_grey_1</item>
+        <item name="message_recieved_time">@color/light_grey_2</item>
+        <item name="message_recieved_time_error">@color/red</item>
+        <item name="message_recieved_info">@color/blue</item>
+        <item name="message_recieved_decryption_failed">@color/red</item>
+
+        <item name="contact_details_text">@android:color/primary_text_dark</item>
+
+        <item name="fragment_conversation_text">@android:color/primary_text_dark</item>
+
+        <item name="muc_jabberid">@android:color/primary_text_dark</item>
+        <item name="muc_role">@android:color/primary_text_dark</item>
+
+        <item name="edit_contact_name">@android:color/primary_text_dark</item>
+
+        <item name="contact_text">@android:color/primary_text_dark</item>
+
+        <item name="contact_text">@android:color/primary_text_dark</item>
+
+        <item name="new_conversation_header">@android:color/primary_text_dark</item>
+
+        <item name="ic_action_send_now">@drawable/ic_action_send_now_dark</item>
+        <item name="ic_indicator">@drawable/ic_indicator</item>
+        <item name="ic_profile">@drawable/ic_profile</item>
+        <item name="ic_action_add">@drawable/ic_action_add_dark</item>
+        <item name="ic_action_secure">@drawable/ic_action_secure_dark</item>
+        <item name="ic_action_unsecure">@drawable/ic_action_unsecure_dark</item>
+        <item name="ic_action_edit">@drawable/ic_action_edit_dark</item>
+        <item name="ic_action_delete">@drawable/ic_action_delete_dark</item>
+        <item name="ic_action_discard">@drawable/ic_action_discard_dark</item>
+        <item name="ic_action_chat">@drawable/ic_action_chat_dark</item>
+        <item name="ic_action_add_person">@drawable/ic_action_add_person_dark</item>
+        <item name="ic_action_new_attachment">@drawable/ic_action_new_attachment_dark</item>
+        <item name="ic_action_group">@drawable/ic_action_group_dark</item>
     </style>
 
     <style name="Divider">

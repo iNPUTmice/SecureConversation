@@ -62,6 +62,13 @@
     </PreferenceCategory>
     <PreferenceCategory 
         android:title="@string/pref_ui_options">
+        <ListPreference
+            android:key="theme"
+            android:title="@string/pref_theme"
+            android:summary="@string/pref_theme_summary"
+            android:entries="@array/themes"
+            android:entryValues="@array/themes"
+            android:defaultValue="Light"/>
         <CheckBoxPreference 
             android:key="show_phone_selfcontact_picture"
             android:title="@string/pref_use_phone_self_picture"

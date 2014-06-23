@@ -107,6 +107,9 @@ public class ContactDetailsActivity extends XmppActivity {
 			this.accountJid = getIntent().getExtras().getString("account");
 			this.contactJid = getIntent().getExtras().getString("contact");
 		}
+
+		setTheme(UIHelper.getTheme(this));
+
 		setContentView(R.layout.activity_contact_details);
 
 		contactJidTv = (TextView) findViewById(R.id.details_contactjid);

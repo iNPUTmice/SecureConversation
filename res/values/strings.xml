@@ -137,6 +137,8 @@
     <string name="pref_notification_grace_period">Notification grace period</string>
     <string name="pref_notification_grace_period_summary">Disable notifications for a short time after a carbon copy was received</string>
     <string name="pref_ui_options">UI Options</string>
+    <string name="pref_theme">Theme</string>
+    <string name="pref_theme_summary">Light or Dark</string>
     <string name="pref_use_phone_self_picture">Use Phones self contact picture</string>
     <string name="pref_use_phone_self_picture_summary">You may no longer be able to distinguish which account you are using in a conversation</string>
     <string name="pref_conference_name">Conference name</string>

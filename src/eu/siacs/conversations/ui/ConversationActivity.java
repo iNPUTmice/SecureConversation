@@ -36,6 +36,7 @@ import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -146,6 +147,8 @@ public class ConversationActivity extends XmppActivity {
 
 		super.onCreate(savedInstanceState);
 
+		setTheme(UIHelper.getTheme(this));
+
 		setContentView(R.layout.fragment_conversations_overview);
 
 		listView = (ListView) findViewById(R.id.list);
@@ -254,7 +257,12 @@ public class ConversationActivity extends XmppActivity {
 		});
 		spl = (SlidingPaneLayout) findViewById(R.id.slidingpanelayout);
 		spl.setParallaxDistance(150);
-		spl.setShadowResource(R.drawable.es_slidingpane_shadow);
+
+		TypedValue drawable_value = new TypedValue();
+		getTheme().resolveAttribute(R.attr.es_slidingpane_shadow, drawable_value, true);
+		Drawable drawable = getResources().getDrawable(drawable_value.resourceId);
+
+		spl.setShadowDrawable(drawable);
 		spl.setSliderFadeColor(0);
 		spl.setPanelSlideListener(new PanelSlideListener() {
 
@@ -325,7 +333,12 @@ public class ConversationActivity extends XmppActivity {
 			if (this.getSelectedConversation() != null) {
 				if (this.getSelectedConversation().getLatestMessage()
 						.getEncryption() != Message.ENCRYPTION_NONE) {
-					menuSecure.setIcon(R.drawable.ic_action_secure);
+
+					TypedValue drawable_secure_value = new TypedValue();
+					getTheme().resolveAttribute(R.attr.ic_action_secure, drawable_secure_value, true);
+					Drawable drawable = getResources().getDrawable(drawable_secure_value.resourceId);
+
+					menuSecure.setIcon(drawable);
 				}
 				if (this.getSelectedConversation().getMode() == Conversation.MODE_MULTI) {
 					menuContactDetails.setVisible(false);

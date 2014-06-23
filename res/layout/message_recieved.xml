@@ -11,13 +11,13 @@
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
         android:layout_toRightOf="@+id/message_photo"
-        android:background="@drawable/message_border"
+        android:background="?attr/message_recieved_border"
         android:minHeight="48dp" >
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="fill_parent"
-            android:background="#ededed"
+            android:background="?attr/message_recieved_background"
             android:orientation="vertical"
             android:padding="5dp" >
 
@@ -28,7 +28,7 @@
                 android:adjustViewBounds="true"
                 android:paddingBottom="2dp"
                 android:scaleType="fitXY"
-                android:background="#333333"
+                android:background="?attr/message_recieved_image_background"
                 />
             
             <TextView
@@ -37,7 +37,6 @@
                 android:layout_height="wrap_content"
                 android:autoLink="web"
                 android:textIsSelectable="true"
-                android:textColor="#333333"
                 android:textSize="16sp"/>
 
             <Button
@@ -60,7 +59,7 @@
                     android:layout_gravity="center_vertical"
                     android:gravity="center_vertical"
                     android:layout_marginTop="2sp"
-                    android:src="@drawable/ic_indicator"
+                    android:src="?attr/ic_indicator"
                     android:layout_marginRight="6sp"/>
 
 
@@ -72,7 +71,6 @@
                     android:gravity="center_vertical"
                     android:paddingTop="1dp"
                     android:text="@string/sending"
-                    android:textColor="#8e8e8e"
                     android:textSize="12sp" />
             </LinearLayout>
         </LinearLayout>
@@ -87,6 +85,6 @@
         android:layout_marginRight="-1.5dp"
         android:padding="0dp"
         android:scaleType="fitXY"
-        android:src="@drawable/ic_profile" />
+        android:src="?attr/ic_profile" />
 
 </RelativeLayout>

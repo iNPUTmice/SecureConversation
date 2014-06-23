@@ -85,6 +85,9 @@ public class MucDetailsActivity extends XmppActivity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+
+		setTheme(UIHelper.getTheme(this));
+
 		setContentView(R.layout.activity_muc_details);
 		mYourNick = (EditText) findViewById(R.id.muc_your_nick);
 		mFullJid = (TextView) findViewById(R.id.muc_jabberid);
