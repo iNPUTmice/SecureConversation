@@ -1,8 +1,8 @@
 package eu.siacs.conversations.utils;
 
 import java.io.FileNotFoundException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -39,6 +39,8 @@ import android.preference.PreferenceManager;
 import android.provider.ContactsContract.Contacts;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
+import android.text.format.DateFormat;
+import android.text.format.DateUtils;
 import android.text.Html;
 import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
@@ -51,6 +53,7 @@ public class UIHelper {
 	private static final int BG_COLOR = 0xFF181818;
 	private static final int FG_COLOR = 0xFFE5E5E5;
 	private static final int TRANSPARENT = 0x00000000;
+    private static final int DATE_NO_YEAR_FLAGS = DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_NO_YEAR | DateUtils.FORMAT_ABBREV_ALL;
 
 	public static String readableTimeDifference(Context context, long time) {
 		if (time == 0) {
@@ -60,14 +63,46 @@ public class UIHelper {
 		long difference = (System.currentTimeMillis() - time) / 1000;
 		if (difference < 60) {
 			return context.getString(R.string.just_now);
-		} else if (difference < 60 * 10) {
-			return difference / 60 + " " + context.getString(R.string.minutes_ago);
-		} else if (difference < 60 * 60 * 24) {
-			SimpleDateFormat sdf = new SimpleDateFormat("HH:mm",Locale.US);
-			return sdf.format(date);
+        } else if (difference < 60 * 2) {
+            return context.getString(R.string.minute_ago);
+		} else if (difference < 60 * 15) {
+			return context.getString(R.string.minutes_ago,Math.round(difference/60.0));
+		} else if (today(date)) {
+			java.text.DateFormat df = DateFormat.getTimeFormat(context);
+			return df.format(date);
 		} else {
-			SimpleDateFormat sdf = new SimpleDateFormat("MM/dd",Locale.US);
-			return sdf.format(date);
+			return DateUtils.formatDateTime(context, date.getTime(), DATE_NO_YEAR_FLAGS);
+		}
+	}
+	
+	private static boolean today(Date date) {
+		Calendar cal1 = Calendar.getInstance();
+		Calendar cal2 = Calendar.getInstance();
+		cal1.setTime(date);
+		cal2.setTimeInMillis(System.currentTimeMillis());
+		return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR) &&
+		                  cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+	}
+	
+	public static String lastseen(Context context, long time) {
+		if (time==0) {
+			return context.getString(R.string.never_seen);
+		}
+		long difference = (System.currentTimeMillis() - time) / 1000;
+		if (difference < 60) {
+			return context.getString(R.string.last_seen_now);
+		} else if (difference < 60 * 2) {
+			return context.getString(R.string.last_seen_min);
+        } else if (difference < 60 * 60) {
+            return context.getString(R.string.last_seen_mins,Math.round(difference/60.0));
+		} else if (difference < 60 * 60 * 2) {
+			return context.getString(R.string.last_seen_hour);
+        } else if (difference < 60 * 60 * 24) {
+            return context.getString(R.string.last_seen_hours,Math.round(difference/(60.0*60.0)));
+        } else if (difference < 60 * 60 * 48) {
+            return context.getString(R.string.last_seen_day);
+		} else {
+			return context.getString(R.string.last_seen_days,Math.round(difference/(60.0*60.0*24.0)));
 		}
 	}
 
@@ -79,12 +114,10 @@ public class UIHelper {
 	private static int getNameColor(String name) {
 		int holoColors[] = { 0xFF1da9da, 0xFFb368d9, 0xFF83b600, 0xFFffa713,
 				0xFFe92727 };
-		int color = holoColors[Math.abs(name.toLowerCase(Locale.getDefault()).hashCode()) % holoColors.length];
-		return color;
+		return holoColors[(int) ((name.hashCode() & 0xffffffffl) % holoColors.length)];
 	}
 
 	private static void drawTile(Canvas canvas, String letter, int tileColor, int textColor, int left, int top, int right, int bottom) {
-		int size = canvas.getWidth();
 		Paint tilePaint = new Paint(), textPaint = new Paint();
 		tilePaint.setColor(tileColor);
 		textPaint.setColor(textColor);
@@ -154,7 +187,7 @@ public class UIHelper {
 			case 4:
 				drawTile(canvas, letters[0], colors[0], fgColor,
 						0, 0, size/2 - 1, size/2 - 1);
-				drawTile(canvas, letters[1], colors[0], fgColor,
+				drawTile(canvas, letters[1], colors[1], fgColor,
 						0, size/2 + 1, size/2 - 1, size);
 				drawTile(canvas, letters[2], colors[2], fgColor,
 						size/2 + 1, 0, size, size/2 - 1);
@@ -361,7 +394,7 @@ public class UIHelper {
 			targetUuid=currentCon.getUuid();
 		}
 		if (unread.size() != 0) {
-			mBuilder.setSmallIcon(R.drawable.notification);
+			mBuilder.setSmallIcon(R.drawable.ic_notification);
 			if (notify) {
 				if (vibrate) {
 					int dat = 70;

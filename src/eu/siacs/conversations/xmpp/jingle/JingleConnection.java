@@ -5,11 +5,11 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 
 import android.graphics.BitmapFactory;
 import android.util.Log;
-
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
@@ -24,7 +24,7 @@ import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 public class JingleConnection {
 
 	private final String[] extensions = {"webp","jpeg","jpg","png"};
-	private final String[] cryptoExtensions = {"pgp","gpg"};
+	private final String[] cryptoExtensions = {"pgp","gpg","otr"};
 	
 	private JingleConnectionManager mJingleConnectionManager;
 	private XmppConnectionService mXmppConnectionService;
@@ -94,7 +94,7 @@ public class JingleConnection {
 				mXmppConnectionService.databaseBackend.createMessage(message);
 				mXmppConnectionService.markMessage(message, Message.STATUS_RECIEVED);
 			}
-			Log.d("xmppService","sucessfully transmitted file:"+file.getName()+" encryption:"+message.getEncryption());
+			Log.d("xmppService","sucessfully transmitted file:"+file.getAbsolutePath());
 		}
 	};
 	
@@ -244,14 +244,19 @@ public class JingleConnection {
 			Element fileNameElement = fileOffer.findChild("name");
 			if (fileNameElement!=null) {
 				boolean supportedFile = false;
-				String[] filename = fileNameElement.getContent().toLowerCase().split("\\.");
+				String[] filename = fileNameElement.getContent().toLowerCase(Locale.US).split("\\.");
 				if (Arrays.asList(this.extensions).contains(filename[filename.length - 1])) {
 					supportedFile = true;
 				} else if (Arrays.asList(this.cryptoExtensions).contains(filename[filename.length - 1])) {
 					if (filename.length == 3) {
 						if (Arrays.asList(this.extensions).contains(filename[filename.length -2])) {
 							supportedFile = true;
-							this.message.setEncryption(Message.ENCRYPTION_PGP);
+							if (filename[filename.length - 1].equals("otr")) {
+								Log.d("xmppService","receiving otr file");
+								this.message.setEncryption(Message.ENCRYPTION_OTR);
+							} else {
+								this.message.setEncryption(Message.ENCRYPTION_PGP);
+							}
 						}
 					}
 				}
@@ -269,6 +274,9 @@ public class JingleConnection {
 						this.mXmppConnectionService.updateUi(conversation, true);
 					}
 					this.file = this.mXmppConnectionService.getFileBackend().getJingleFile(message,false);
+					if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+						this.file.setKey(conversation.getSymmetricKey());
+					}
 					this.file.setExpectedSize(size);
 				} else {
 					this.sendCancel();
@@ -287,7 +295,14 @@ public class JingleConnection {
 		if (message.getType() == Message.TYPE_IMAGE) {
 			content.setTransportId(this.transportId);
 			this.file = this.mXmppConnectionService.getFileBackend().getJingleFile(message,false);
-			content.setFileOffer(this.file);
+			if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+				Conversation conversation = this.message.getConversation();
+				this.mXmppConnectionService.renewSymmetricKey(conversation);
+				content.setFileOffer(this.file, true);
+				this.file.setKey(conversation.getSymmetricKey());
+			} else {
+				content.setFileOffer(this.file,false);
+			}
 			this.transportId = this.mJingleConnectionManager.nextRandomId();
 			content.setTransportId(this.transportId);
 			content.socks5transport().setChildren(getCandidatesAsElements());

@@ -17,7 +17,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -38,6 +37,7 @@ import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
 import android.util.Log;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.DNSHelper;
 import eu.siacs.conversations.utils.zlib.ZLibOutputStream;
@@ -64,7 +64,7 @@ public class XmppConnection implements Runnable {
 
 	private WakeLock wakeLock;
 
-	private SecureRandom random = new SecureRandom();
+	private SecureRandom mRandom;
 
 	private Socket socket;
 	private XmlReader tagReader;
@@ -101,9 +101,10 @@ public class XmppConnection implements Runnable {
 	private OnTLSExceptionReceived tlsListener = null;
 	private OnBindListener bindListener = null;
 
-	public XmppConnection(Account account, PowerManager pm) {
+	public XmppConnection(Account account, XmppConnectionService service) {
+		this.mRandom = service.getRNG();
 		this.account = account;
-		this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+		this.wakeLock = service.getPowerManager().newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
 				account.getJid());
 		tagWriter = new TagWriter();
 	}
@@ -241,7 +242,7 @@ public class XmppConnection implements Runnable {
 				processStream(tagReader.readTag());
 				break;
 			} else if (nextTag.isStart("failure")) {
-				Element failure = tagReader.readElement(nextTag);
+				tagReader.readElement(nextTag);
 				changeStatus(Account.STATUS_UNAUTHORIZED);
 			} else if (nextTag.isStart("challenge")) {
 				String challange = tagReader.readElement(nextTag).getContent();
@@ -249,7 +250,7 @@ public class XmppConnection implements Runnable {
 				response.setAttribute("xmlns",
 						"urn:ietf:params:xml:ns:xmpp-sasl");
 				response.setContent(CryptoHelper.saslDigestMd5(account,
-						challange));
+						challange,mRandom));
 				tagWriter.writeElement(response);
 			} else if (nextTag.isStart("enabled")) {
 				this.stanzasSent = 0;
@@ -442,17 +443,14 @@ public class XmppConnection implements Runnable {
 
 	private void switchOverToTls(Tag currentTag) throws XmlPullParserException,
 			IOException {
-		Tag nextTag = tagReader.readTag(); // should be proceed end tag
+		tagReader.readTag();
 		try {
 			SSLContext sc = SSLContext.getInstance("TLS");
 			TrustManagerFactory tmf = TrustManagerFactory
 					.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-			// Initialise the TMF as you normally would, for example:
-			// tmf.in
 			try {
 				tmf.init((KeyStore) null);
 			} catch (KeyStoreException e1) {
-				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 
@@ -776,7 +774,7 @@ public class XmppConnection implements Runnable {
 	}
 
 	private String nextRandomId() {
-		return new BigInteger(50, random).toString(32);
+		return new BigInteger(50, mRandom).toString(32);
 	}
 
 	public void sendIqPacket(IqPacket packet, OnIqPacketReceived callback) {
@@ -936,7 +934,7 @@ public class XmppConnection implements Runnable {
 				.iterator();
 		while (it.hasNext()) {
 			Entry<String, List<String>> pairs = it.next();
-			if (pairs.getValue().contains(feature)) {
+			if (pairs.getValue().contains(feature)&&pairs.getValue().size()==1) {
 				return pairs.getKey();
 			}
 			it.remove();

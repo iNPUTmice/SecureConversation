@@ -1,14 +1,11 @@
 package eu.siacs.conversations.services;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
 
 import org.openintents.openpgp.util.OpenPgpApi;
 import org.openintents.openpgp.util.OpenPgpServiceConnection;
@@ -24,14 +21,18 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.MucOptions.OnRenameListener;
 import eu.siacs.conversations.entities.Presences;
+import eu.siacs.conversations.generator.MessageGenerator;
 import eu.siacs.conversations.parser.MessageParser;
+import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.ui.OnAccountListChangedListener;
 import eu.siacs.conversations.ui.OnConversationListChangedListener;
 import eu.siacs.conversations.ui.UiCallback;
+import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.utils.OnPhoneContactsLoadedListener;
+import eu.siacs.conversations.utils.PRNGFixes;
 import eu.siacs.conversations.utils.PhoneHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Element;
@@ -49,6 +50,7 @@ import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
+import android.annotation.SuppressLint;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.app.Service;
@@ -86,6 +88,8 @@ public class XmppConnectionService extends Service {
 	private static String ACTION_MERGE_PHONE_CONTACTS = "merge_phone_contacts";
 
 	private MessageParser mMessageParser = new MessageParser(this);
+	private PresenceParser mPresenceParser = new PresenceParser(this);
+	private MessageGenerator mMessageGenerator = new MessageGenerator();
 
 	private List<Account> accounts;
 	private List<Conversation> conversations = null;
@@ -96,13 +100,16 @@ public class XmppConnectionService extends Service {
 	private int convChangedListenerCount = 0;
 	private OnAccountListChangedListener accountChangedListener = null;
 	private OnTLSExceptionReceived tlsException = null;
-	private OnContactStatusChanged onContactStatusChanged = new OnContactStatusChanged() {
-		
+	public OnContactStatusChanged onContactStatusChanged = new OnContactStatusChanged() {
+
 		@Override
-		public void onContactStatusChanged(Contact contact) {
+		public void onContactStatusChanged(Contact contact, boolean online) {
 			Conversation conversation = findActiveConversation(contact);
-			if (conversation!=null) {
+			if (conversation != null) {
 				conversation.endOtrIfNeeded();
+				if (online && (contact.getPresences().size() == 1)) {
+					sendUnsendMessages(conversation);
+				}
 			}
 		}
 	};
@@ -112,7 +119,7 @@ public class XmppConnectionService extends Service {
 		tlsException = listener;
 	}
 
-	private Random mRandom = new Random(System.currentTimeMillis());
+	private SecureRandom mRandom;
 
 	private long lastCarbonMessageReceived = -CARBON_GRACE_PERIOD;
 
@@ -141,20 +148,14 @@ public class XmppConnectionService extends Service {
 			}
 
 			if ((packet.getType() == MessagePacket.TYPE_CHAT)) {
-				String pgpBody = mMessageParser.getPgpBody(packet);
-				if (pgpBody != null) {
-					message = mMessageParser.parsePgpChat(pgpBody, packet,
-							account);
-					message.markUnread();
-				} else if ((packet.getBody() != null)
+				if ((packet.getBody() != null)
 						&& (packet.getBody().startsWith("?OTR"))) {
 					message = mMessageParser.parseOtrChat(packet, account);
 					if (message != null) {
 						message.markUnread();
 					}
 				} else if (packet.hasChild("body")) {
-					message = mMessageParser
-							.parsePlainTextChat(packet, account);
+					message = mMessageParser.parseChat(packet, account);
 					message.markUnread();
 				} else if (packet.hasChild("received")
 						|| (packet.hasChild("sent"))) {
@@ -186,35 +187,28 @@ public class XmppConnectionService extends Service {
 				mMessageParser.parseError(packet, account);
 				return;
 			} else if (packet.getType() == MessagePacket.TYPE_NORMAL) {
-				if (packet.hasChild("x")) {
-					Element x = packet.findChild("x");
-					if (x.hasChild("invite")) {
-						findOrCreateConversation(account, packet.getFrom(),
-								true);
-						if (convChangedListener != null) {
-							convChangedListener.onConversationListChanged();
-						}
-						Log.d(LOGTAG,
-								"invitation received to " + packet.getFrom());
-					}
-
-				} else {
-					// Log.d(LOGTAG, "unparsed message " + packet.toString());
-				}
+				mMessageParser.parseNormal(packet, account);
 			}
 			if ((message == null) || (message.getBody() == null)) {
 				return;
 			}
-			if (packet.hasChild("delay")) {
-				try {
-					String stamp = packet.findChild("delay").getAttribute(
-							"stamp");
-					stamp = stamp.replace("Z", "+0000");
-					Date date = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
-							.parse(stamp);
-					message.setTime(date.getTime());
-				} catch (ParseException e) {
-					Log.d(LOGTAG, "error trying to parse date" + e.getMessage());
+			if ((confirmMessages()) && ((packet.getId() != null))) {
+				MessagePacket receivedPacket = new MessagePacket();
+				receivedPacket.setType(MessagePacket.TYPE_NORMAL);
+				receivedPacket.setTo(message.getCounterpart());
+				receivedPacket.setFrom(account.getFullJid());
+				if (packet.hasChild("markable", "urn:xmpp:chat-markers:0")) {
+					Element received = receivedPacket.addChild("received",
+							"urn:xmpp:chat-markers:0");
+					received.setAttribute("id", packet.getId());
+					account.getXmppConnection().sendMessagePacket(
+							receivedPacket);
+				} else if (packet.hasChild("request", "urn:xmpp:receipts")) {
+					Element received = receivedPacket.addChild("received",
+							"urn:xmpp:receipts");
+					received.setAttribute("id", packet.getId());
+					account.getXmppConnection().sendMessagePacket(
+							receivedPacket);
 				}
 			}
 			Conversation conversation = message.getConversation();
@@ -241,6 +235,7 @@ public class XmppConnectionService extends Service {
 				List<Conversation> conversations = getConversations();
 				for (int i = 0; i < conversations.size(); ++i) {
 					if (conversations.get(i).getAccount() == account) {
+						conversations.get(i).endOtrIfNeeded();
 						sendUnsendMessages(conversations.get(i));
 					}
 				}
@@ -276,94 +271,11 @@ public class XmppConnectionService extends Service {
 		public void onPresencePacketReceived(final Account account,
 				PresencePacket packet) {
 			if (packet.hasChild("x", "http://jabber.org/protocol/muc#user")) {
-				Conversation muc = findMuc(
-						packet.getAttribute("from").split("/")[0], account);
-				if (muc != null) {
-					muc.getMucOptions().processPacket(packet,getPgpEngine());
-				} else {
-					Log.d(LOGTAG, account.getJid()
-							+ ": could not find muc for received muc package "
-							+ packet.toString());
-				}
+				mPresenceParser.parseConferencePresence(packet, account);
 			} else if (packet.hasChild("x", "http://jabber.org/protocol/muc")) {
-				Conversation muc = findMuc(
-						packet.getAttribute("from").split("/")[0], account);
-				if (muc != null) {
-					Log.d(LOGTAG,
-							account.getJid() + ": reading muc status packet "
-									+ packet.toString());
-					int error = muc.getMucOptions().getError();
-					muc.getMucOptions().processPacket(packet,getPgpEngine());
-					if ((muc.getMucOptions().getError() != error)
-							&& (convChangedListener != null)) {
-						Log.d(LOGTAG, "muc error status changed");
-						convChangedListener.onConversationListChanged();
-					}
-				}
+				mPresenceParser.parseConferencePresence(packet, account);
 			} else {
-				String[] fromParts = packet.getAttribute("from").split("/");
-				String type = packet.getAttribute("type");
-				if (fromParts[0].equals(account.getJid())) {
-					if (fromParts.length == 2) {
-						if (type == null) {
-							account.updatePresence(fromParts[1], Presences
-									.parseShow(packet.findChild("show")));
-						} else if (type.equals("unavailable")) {
-							account.removePresence(fromParts[1]);
-						}
-					}
-
-				} else {
-					Contact contact = account.getRoster().getContact(
-							packet.getFrom());
-					if (type == null) {
-						if (fromParts.length == 2) {
-							contact.updatePresence(fromParts[1], Presences
-									.parseShow(packet.findChild("show")));
-							PgpEngine pgp = getPgpEngine();
-							if (pgp != null) {
-								Element x = packet.findChild("x",
-										"jabber:x:signed");
-								if (x != null) {
-									Element status = packet.findChild("status");
-									String msg;
-									if (status != null) {
-										msg = status.getContent();
-									} else {
-										msg = "";
-									}
-									contact.setPgpKeyId(pgp.fetchKeyId(account,
-											msg, x.getContent()));
-								}
-							}
-							onContactStatusChanged.onContactStatusChanged(contact);
-						}
-					} else if (type.equals("unavailable")) {
-						if (fromParts.length != 2) {
-							contact.clearPresences();
-						} else {
-							contact.removePresence(fromParts[1]);
-						}
-						onContactStatusChanged.onContactStatusChanged(contact);
-					} else if (type.equals("subscribe")) {
-						Log.d(LOGTAG, "received subscribe packet from "
-								+ packet.getFrom());
-						if (contact.getOption(Contact.Options.PREEMPTIVE_GRANT)) {
-							Log.d(LOGTAG, "preemptive grant; granting");
-							sendPresenceUpdatesTo(contact);
-							contact.setOption(Contact.Options.FROM);
-							contact.resetOption(Contact.Options.PREEMPTIVE_GRANT);
-							if ((contact.getOption(Contact.Options.ASKING))
-									&& (!contact.getOption(Contact.Options.TO))) {
-								requestPresenceUpdatesFrom(contact);
-							}
-						} else {
-							contact.setOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST);
-						}
-					} else {
-						// Log.d(LOGTAG, packet.toString());
-					}
-				}
+				mPresenceParser.parseContactPresence(packet, account);
 			}
 		}
 	};
@@ -400,6 +312,10 @@ public class XmppConnectionService extends Service {
 						"urn:xmpp:jingle:transports:s5b:1");
 				query.addChild("feature").setAttribute("var",
 						"urn:xmpp:jingle:transports:ibb:1");
+				if (confirmMessages()) {
+					query.addChild("feature").setAttribute("var",
+							"urn:xmpp:receipts");
+				}
 				account.getXmppConnection().sendIqPacket(iqResponse, null);
 			} else {
 				if ((packet.getType() == IqPacket.TYPE_GET)
@@ -450,13 +366,14 @@ public class XmppConnectionService extends Service {
 	}
 
 	public Message attachImageToConversation(final Conversation conversation,
-			final Uri uri, final UiCallback callback) {
+			final Uri uri, final UiCallback<Message> callback) {
 		final Message message;
 		if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
 			message = new Message(conversation, "",
 					Message.ENCRYPTION_DECRYPTED);
 		} else {
-			message = new Message(conversation, "", Message.ENCRYPTION_NONE);
+			message = new Message(conversation, "",
+					conversation.getNextEncryption());
 		}
 		message.setPresence(conversation.getNextPresence());
 		message.setType(Message.TYPE_IMAGE);
@@ -470,17 +387,17 @@ public class XmppConnectionService extends Service {
 					if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
 						getPgpEngine().encrypt(message, callback);
 					} else {
-						callback.success();
+						callback.success(message);
 					}
 				} catch (FileBackend.ImageCopyException e) {
-					callback.error(e.getResId());
+					callback.error(e.getResId(), message);
 				}
 			}
 		}).start();
 		return message;
 	}
 
-	protected Conversation findMuc(String name, Account account) {
+	public Conversation findMuc(String name, Account account) {
 		for (Conversation conversation : this.conversations) {
 			if (conversation.getContactJid().split("/")[0].equals(name)
 					&& (conversation.getAccount() == account)) {
@@ -598,9 +515,12 @@ public class XmppConnectionService extends Service {
 		return START_STICKY;
 	}
 
+	@SuppressLint("TrulyRandom")
 	@Override
 	public void onCreate() {
 		ExceptionHelper.init(getApplicationContext());
+		PRNGFixes.apply();
+		this.mRandom = new SecureRandom();
 		this.databaseBackend = DatabaseBackend
 				.getInstance(getApplicationContext());
 		this.fileBackend = new FileBackend(getApplicationContext());
@@ -693,7 +613,7 @@ public class XmppConnectionService extends Service {
 		SharedPreferences sharedPref = getPreferences();
 		account.setResource(sharedPref.getString("resource", "mobile")
 				.toLowerCase(Locale.getDefault()));
-		XmppConnection connection = new XmppConnection(account, this.pm);
+		XmppConnection connection = new XmppConnection(account, this);
 		connection.setOnMessagePacketReceivedListener(this.messageListener);
 		connection.setOnStatusChangedListener(this.statusListener);
 		connection.setOnPresencePacketReceivedListener(this.presenceListener);
@@ -730,78 +650,98 @@ public class XmppConnectionService extends Service {
 		return connection;
 	}
 
-	synchronized public void sendMessage(Message message, String presence) {
+	synchronized public void sendMessage(Message message) {
 		Account account = message.getConversation().getAccount();
 		Conversation conv = message.getConversation();
 		MessagePacket packet = null;
-		boolean saveInDb = false;
-		boolean addToConversation = false;
+		boolean saveInDb = true;
 		boolean send = false;
 		if (account.getStatus() == Account.STATUS_ONLINE) {
 			if (message.getType() == Message.TYPE_IMAGE) {
-				mJingleConnectionManager.createNewConnection(message);
+				if (message.getPresence() != null) {
+					if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+						if (!conv.hasValidOtrSession()
+								&& (message.getPresence() != null)) {
+							conv.startOtrSession(getApplicationContext(),
+									message.getPresence(), true);
+							message.setStatus(Message.STATUS_WAITING);
+						} else if (conv.hasValidOtrSession()
+								&& conv.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) {
+							mJingleConnectionManager
+									.createNewConnection(message);
+						} else if (message.getPresence() == null) {
+							message.setStatus(Message.STATUS_WAITING);
+						}
+					} else {
+						mJingleConnectionManager.createNewConnection(message);
+					}
+				} else {
+					message.setStatus(Message.STATUS_WAITING);
+				}
 			} else {
 				if (message.getEncryption() == Message.ENCRYPTION_OTR) {
-					if (!conv.hasValidOtrSession()) {
-						// starting otr session. messages will be send later
-						conv.startOtrSession(getApplicationContext(), presence,
-								true);
-					} else if (conv.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) {
-						// otr session aleary exists, creating message packet
-						// accordingly
-						packet = prepareMessagePacket(account, message,
-								conv.getOtrSession());
-						send = true;
-						message.setStatus(Message.STATUS_SEND);
+					if (!conv.hasValidOtrSession()
+							&& (message.getPresence() != null)) {
+						conv.startOtrSession(getApplicationContext(),
+								message.getPresence(), true);
+						message.setStatus(Message.STATUS_WAITING);
+					} else if (conv.hasValidOtrSession()
+							&& conv.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) {
+						message.setPresence(conv.getOtrSession().getSessionID().getUserID());
+						try {
+							packet = mMessageGenerator.generateOtrChat(message);
+							send = true;
+							message.setStatus(Message.STATUS_SEND);
+						} catch (OtrException e) {
+							Log.e(LOGTAG,"error generating otr packet");
+							packet = null;
+						}
+					} else if (message.getPresence() == null) {
+						message.setStatus(Message.STATUS_WAITING);
 					}
-					saveInDb = true;
-					addToConversation = true;
-				} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+				} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
 					message.getConversation().endOtrIfNeeded();
-					packet = prepareMessagePacket(account, message, null);
-					packet.setBody("This is an XEP-0027 encryted message");
-					packet.addChild("x", "jabber:x:encrypted").setContent(
-							message.getEncryptedBody());
+					packet = mMessageGenerator.generatePgpChat(message);
 					message.setStatus(Message.STATUS_SEND);
-					message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-					saveInDb = true;
-					addToConversation = true;
 					send = true;
 				} else {
 					message.getConversation().endOtrIfNeeded();
-					// don't encrypt
 					if (message.getConversation().getMode() == Conversation.MODE_SINGLE) {
 						message.setStatus(Message.STATUS_SEND);
 					}
-					packet = prepareMessagePacket(account, message, null);
+					packet = mMessageGenerator.generateChat(message);
 					send = true;
-					saveInDb = true;
-					addToConversation = true;
 				}
 			}
 		} else {
-			if (message.getEncryption() == Message.ENCRYPTION_PGP) {
-				String pgpBody = message.getEncryptedBody();
-				String decryptedBody = message.getBody();
-				message.setBody(pgpBody);
-				databaseBackend.createMessage(message);
-				message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-				message.setBody(decryptedBody);
-				addToConversation = true;
-			} else {
-				saveInDb = true;
-				addToConversation = true;
+			message.setStatus(Message.STATUS_WAITING);
+			if (message.getType() == Message.TYPE_TEXT) {
+				if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
+					String pgpBody = message.getEncryptedBody();
+					String decryptedBody = message.getBody();
+					message.setBody(pgpBody);
+					databaseBackend.createMessage(message);
+					saveInDb = false;
+					message.setBody(decryptedBody);
+				} else if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+					if (conv.hasValidOtrSession()) {
+						message.setPresence(conv.getOtrSession().getSessionID()
+								.getUserID());
+					} else if (!conv.hasValidOtrSession()
+							&& message.getPresence() != null) {
+						conv.startOtrSession(getApplicationContext(),
+								message.getPresence(), false);
+					}
+				}
 			}
 
 		}
 		if (saveInDb) {
 			databaseBackend.createMessage(message);
 		}
-		if (addToConversation) {
-			conv.getMessages().add(message);
-			if (convChangedListener != null) {
-				convChangedListener.onConversationListChanged();
-			}
+		conv.getMessages().add(message);
+		if (convChangedListener != null) {
+			convChangedListener.onConversationListChanged();
 		}
 		if ((send) && (packet != null)) {
 			account.getXmppConnection().sendMessagePacket(packet);
@@ -811,7 +751,8 @@ public class XmppConnectionService extends Service {
 
 	private void sendUnsendMessages(Conversation conversation) {
 		for (int i = 0; i < conversation.getMessages().size(); ++i) {
-			if (conversation.getMessages().get(i).getStatus() == Message.STATUS_UNSEND) {
+			int status = conversation.getMessages().get(i).getStatus();
+			if (status == Message.STATUS_WAITING) {
 				resendMessage(conversation.getMessages().get(i));
 			}
 		}
@@ -819,63 +760,50 @@ public class XmppConnectionService extends Service {
 
 	private void resendMessage(Message message) {
 		Account account = message.getConversation().getAccount();
-		MessagePacket packet = null;
-		if (message.getEncryption() == Message.ENCRYPTION_NONE) {
-			packet = prepareMessagePacket(account, message, null);
-		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
-			packet = prepareMessagePacket(account, message, null);
-			packet.setBody("This is an XEP-0027 encryted message");
-			if (message.getEncryptedBody() == null) {
-				markMessage(message, Message.STATUS_SEND_FAILED);
-				return;
-			}
-			packet.addChild("x", "jabber:x:encrypted").setContent(
-					message.getEncryptedBody());
-		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
-			packet = prepareMessagePacket(account, message, null);
-			packet.setBody("This is an XEP-0027 encryted message");
-			packet.addChild("x", "jabber:x:encrypted").setContent(
-					message.getBody());
-		}
-		if (packet != null) {
-			account.getXmppConnection().sendMessagePacket(packet);
-			markMessage(message, Message.STATUS_SEND);
-		}
-	}
-
-	public MessagePacket prepareMessagePacket(Account account, Message message,
-			Session otrSession) {
-		MessagePacket packet = new MessagePacket();
-		if (message.getConversation().getMode() == Conversation.MODE_SINGLE) {
-			packet.setType(MessagePacket.TYPE_CHAT);
-			if (otrSession != null) {
-				try {
-					packet.setBody(otrSession.transformSending(message
-							.getBody()));
-				} catch (OtrException e) {
-					Log.d(LOGTAG,
-							account.getJid()
-									+ ": could not encrypt message to "
-									+ message.getCounterpart());
+		if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+			Presences presences = message.getConversation().getContact()
+					.getPresences();
+			if (!message.getConversation().hasValidOtrSession()) {
+				if ((message.getPresence() != null)
+						&& (presences.has(message.getPresence()))) {
+					message.getConversation().startOtrSession(
+							getApplicationContext(), message.getPresence(),
+							true);
+				} else {
+					if (presences.size() == 1) {
+						String presence = presences.asStringArray()[0];
+						message.getConversation().startOtrSession(
+								getApplicationContext(), presence, true);
+					}
 				}
-				packet.addChild("private", "urn:xmpp:carbons:2");
-				packet.addChild("no-copy", "urn:xmpp:hints");
-				packet.setTo(otrSession.getSessionID().getAccountID() + "/"
-						+ otrSession.getSessionID().getUserID());
-				packet.setFrom(account.getFullJid());
-			} else {
-				packet.setBody(message.getBody());
-				packet.setTo(message.getCounterpart());
-				packet.setFrom(account.getJid());
 			}
-		} else if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-			packet.setType(MessagePacket.TYPE_GROUPCHAT);
-			packet.setBody(message.getBody());
-			packet.setTo(message.getCounterpart().split("/")[0]);
-			packet.setFrom(account.getJid());
+		} else if (message.getType() == Message.TYPE_TEXT) {
+			MessagePacket packet = null;
+			if (message.getEncryption() == Message.ENCRYPTION_NONE) {
+				packet = mMessageGenerator.generateChat(message,true);
+			} else if ((message.getEncryption() == Message.ENCRYPTION_DECRYPTED)||(message.getEncryption() == Message.ENCRYPTION_PGP)) {
+				packet = mMessageGenerator.generatePgpChat(message,true);
+			}
+			if (packet != null) {
+				account.getXmppConnection().sendMessagePacket(packet);
+				markMessage(message, Message.STATUS_SEND);
+			}
+		} else if (message.getType() == Message.TYPE_IMAGE) {
+			Presences presences = message.getConversation().getContact()
+					.getPresences();
+			if ((message.getPresence() != null)
+					&& (presences.has(message.getPresence()))) {
+				markMessage(message, Message.STATUS_OFFERED);
+				mJingleConnectionManager.createNewConnection(message);
+			} else {
+				if (presences.size() == 1) {
+					String presence = presences.asStringArray()[0];
+					message.setPresence(presence);
+					markMessage(message, Message.STATUS_OFFERED);
+					mJingleConnectionManager.createNewConnection(message);
+				}
+			}
 		}
-		packet.setId(message.getUuid());
-		return packet;
 	}
 
 	public void fetchRosterFromServer(Account account) {
@@ -908,7 +836,7 @@ public class XmppConnectionService extends Service {
 				new OnPhoneContactsLoadedListener() {
 					@Override
 					public void onPhoneContactsLoaded(List<Bundle> phoneContacts) {
-						for(Account account : accounts) {
+						for (Account account : accounts) {
 							account.getRoster().clearSystemAccounts();
 						}
 						for (Bundle phoneContact : phoneContacts) {
@@ -948,17 +876,34 @@ public class XmppConnectionService extends Service {
 		Collections.sort(this.conversations, new Comparator<Conversation>() {
 			@Override
 			public int compare(Conversation lhs, Conversation rhs) {
-				return (int) (rhs.getLatestMessage().getTimeSent() - lhs
-						.getLatestMessage().getTimeSent());
+				Message left = lhs.getLatestMessage();
+				Message right = rhs.getLatestMessage();
+				if (left.getTimeSent() > right.getTimeSent()) {
+					return -1;
+				} else if (left.getTimeSent() < right.getTimeSent()) {
+					return 1;
+				} else {
+					return 0;
+				}
 			}
 		});
 		return this.conversations;
 	}
 
+	public List<Message> getMoreMessages(Conversation conversation,
+			long timestamp) {
+		List<Message> messages = databaseBackend.getMessages(conversation, 50,
+				timestamp);
+		for (Message message : messages) {
+			message.setConversation(conversation);
+		}
+		return messages;
+	}
+
 	public List<Account> getAccounts() {
 		return this.accounts;
 	}
-	
+
 	public Conversation findActiveConversation(Contact contact) {
 		for (Conversation conversation : this.getConversations()) {
 			if (conversation.getContact() == contact) {
@@ -1133,8 +1078,7 @@ public class XmppConnectionService extends Service {
 			x.addChild("history").setAttribute("seconds", diff + "");
 		}
 		packet.addChild(x);
-		account.getXmppConnection()
-				.sendPresencePacket(packet);
+		account.getXmppConnection().sendPresencePacket(packet);
 	}
 
 	private OnRenameListener renameListener = null;
@@ -1167,13 +1111,13 @@ public class XmppConnectionService extends Service {
 			packet.setAttribute("to",
 					conversation.getContactJid().split("/")[0] + "/" + nick);
 			packet.setAttribute("from", conversation.getAccount().getFullJid());
-			
+
 			String sig = account.getPgpSignature();
 			if (sig != null) {
 				packet.addChild("status").setContent("online");
 				packet.addChild("x", "jabber:x:signed").setContent(sig);
 			}
-			
+
 			account.getXmppConnection().sendPresencePacket(packet, null);
 		} else {
 			String jid = conversation.getContactJid().split("/")[0] + "/"
@@ -1226,14 +1170,14 @@ public class XmppConnectionService extends Service {
 	public void updateMessage(Message message) {
 		databaseBackend.updateMessage(message);
 	}
-	
+
 	protected void syncDirtyContacts(Account account) {
-		for(Contact contact : account.getRoster().getContacts()) {
+		for (Contact contact : account.getRoster().getContacts()) {
 			if (contact.getOption(Contact.Options.DIRTY_PUSH)) {
 				pushContactToServer(contact);
 			}
 			if (contact.getOption(Contact.Options.DIRTY_DELETE)) {
-				Log.d(LOGTAG,"dirty delete");
+				Log.d(LOGTAG, "dirty delete");
 				deleteContactOnServer(contact);
 			}
 		}
@@ -1247,6 +1191,62 @@ public class XmppConnectionService extends Service {
 			contact.setOption(Contact.Options.ASKING);
 		}
 		pushContactToServer(contact);
+	}
+
+	public void onOtrSessionEstablished(Conversation conversation) {
+		Account account = conversation.getAccount();
+		List<Message> messages = conversation.getMessages();
+		Session otrSession = conversation.getOtrSession();
+		Log.d(LOGTAG, account.getJid() + " otr session established with "
+				+ conversation.getContactJid() + "/"
+				+ otrSession.getSessionID().getUserID());
+		for (int i = 0; i < messages.size(); ++i) {
+			Message msg = messages.get(i);
+			if ((msg.getStatus() == Message.STATUS_UNSEND || msg.getStatus() == Message.STATUS_WAITING)
+					&& (msg.getEncryption() == Message.ENCRYPTION_OTR)) {
+				msg.setPresence(otrSession.getSessionID().getUserID());
+				if (msg.getType() == Message.TYPE_TEXT) {
+					try {
+						MessagePacket outPacket = mMessageGenerator.generateOtrChat(msg,true);
+						msg.setStatus(Message.STATUS_SEND);
+						databaseBackend.updateMessage(msg);
+						account.getXmppConnection().sendMessagePacket(outPacket);
+					} catch (OtrException e) {
+						Log.e(LOGTAG,"error creating otr packet");
+					}
+				} else if (msg.getType() == Message.TYPE_IMAGE) {
+					mJingleConnectionManager.createNewConnection(msg);
+				}
+			}
+		}
+		updateUi(conversation, false);
+	}
+
+	public boolean renewSymmetricKey(Conversation conversation) {
+		Account account = conversation.getAccount();
+		byte[] symmetricKey = new byte[32];
+		this.mRandom.nextBytes(symmetricKey);
+		Session otrSession = conversation.getOtrSession();
+		if (otrSession != null) {
+			MessagePacket packet = new MessagePacket();
+			packet.setType(MessagePacket.TYPE_CHAT);
+			packet.setFrom(account.getFullJid());
+			packet.addChild("private", "urn:xmpp:carbons:2");
+			packet.addChild("no-copy", "urn:xmpp:hints");
+			packet.setTo(otrSession.getSessionID().getAccountID() + "/"
+					+ otrSession.getSessionID().getUserID());
+			try {
+				packet.setBody(otrSession
+						.transformSending(CryptoHelper.FILETRANSFER
+								+ CryptoHelper.bytesToHex(symmetricKey)));
+				account.getXmppConnection().sendMessagePacket(packet);
+				conversation.setSymmetricKey(symmetricKey);
+				return true;
+			} catch (OtrException e) {
+				return false;
+			}
+		}
+		return false;
 	}
 
 	public void pushContactToServer(Contact contact) {
@@ -1424,6 +1424,10 @@ public class XmppConnectionService extends Service {
 				.getDefaultSharedPreferences(getApplicationContext());
 	}
 
+	public boolean confirmMessages() {
+		return getPreferences().getBoolean("confirm_messages", true);
+	}
+
 	public void updateUi(Conversation conversation, boolean notify) {
 		if (convChangedListener != null) {
 			convChangedListener.onConversationListChanged();
@@ -1440,5 +1444,28 @@ public class XmppConnectionService extends Service {
 			}
 		}
 		return null;
+	}
+
+	public void markRead(Conversation conversation) {
+		conversation.markRead(this);
+	}
+
+	public void sendConfirmMessage(Account account, String to, String id) {
+		MessagePacket receivedPacket = new MessagePacket();
+		receivedPacket.setType(MessagePacket.TYPE_NORMAL);
+		receivedPacket.setTo(to);
+		receivedPacket.setFrom(account.getFullJid());
+		Element received = receivedPacket.addChild("displayed",
+				"urn:xmpp:chat-markers:0");
+		received.setAttribute("id", id);
+		account.getXmppConnection().sendMessagePacket(receivedPacket);
+	}
+
+	public SecureRandom getRNG() {
+		return this.mRandom;
+	}
+
+	public PowerManager getPowerManager() {
+		return this.pm;
 	}
 }

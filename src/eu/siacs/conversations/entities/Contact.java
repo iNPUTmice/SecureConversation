@@ -1,7 +1,6 @@
 package eu.siacs.conversations.entities;
 
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Set;
 
 import org.json.JSONArray;
@@ -11,7 +10,6 @@ import org.json.JSONObject;
 import eu.siacs.conversations.xml.Element;
 import android.content.ContentValues;
 import android.database.Cursor;
-import android.util.Log;
 
 public class Contact {
 	public static final String TABLENAME = "contacts";
@@ -38,6 +36,8 @@ public class Contact {
 	protected Account account;
 
 	protected boolean inRoster = true;
+	
+	public Lastseen lastseen = new Lastseen();
 
 	public Contact(String account, String systemName, String serverName,
 			String jid, int subscription, String photoUri,
@@ -138,15 +138,17 @@ public class Contact {
 			} else {
 				return (domainParts[0].equals("conf")
 						|| domainParts[0].equals("conference")
+						|| domainParts[0].equals("room")
 						|| domainParts[0].equals("muc")
-						|| domainParts[0].equals("sala") || domainParts[0]
-							.equals("salas"));
+						|| domainParts[0].equals("chat")
+						|| domainParts[0].equals("sala")
+						|| domainParts[0].equals("salas"));
 			}
 		}
 	}
 
-	public Hashtable<String, Integer> getPresences() {
-		return this.presences.getPresences();
+	public Presences getPresences() {
+		return this.presences;
 	}
 
 	public void updatePresence(String resource, int status) {
@@ -304,5 +306,10 @@ public class Contact {
 		public static final int PENDING_SUBSCRIPTION_REQUEST = 5;
 		public static final int DIRTY_PUSH = 6;
 		public static final int DIRTY_DELETE = 7;
+	}
+	
+	public class Lastseen {
+		public long time = 0;
+		public String presence = null;
 	}
 }

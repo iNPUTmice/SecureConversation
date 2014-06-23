@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.bouncycastle.crypto.engines.ISAACEngine;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -58,7 +56,11 @@ public class FileBackend {
 		if ((decrypted) || (message.getEncryption() == Message.ENCRYPTION_NONE)) {
 			filename = message.getUuid() + ".webp";
 		} else {
-			filename = message.getUuid() + ".webp.pgp";
+			if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+				filename = message.getUuid() + ".webp";
+			} else {
+				filename = message.getUuid() + ".webp.pgp";
+			}
 		}
 		return new JingleFile(path + "/" + filename);
 	}
