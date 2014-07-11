@@ -1,0 +1,13 @@
+#!/bin/sh
+IMAGE_NAME=conversations
+
+set -e
+
+# Build
+docker build -t $IMAGE_NAME .
+
+# Run temp container & copy bin
+ID=$(docker run -d $IMAGE_NAME)
+docker wait $ID
+docker cp $ID:/Conversations/bin .
+docker rm $ID

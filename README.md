@@ -136,3 +136,12 @@ git submodule update --init --recursive
 ant clean
 ant debug
 ```
+
+If you do not want to set up an Android SDK, just install [docker](https://www.docker.io) and use the included build script:
+
+```
+git clone https://github.com/siacs/Conversations.git
+cd Conversations
+# You might need to use "sudo" here
+./build-with-docker
+```
