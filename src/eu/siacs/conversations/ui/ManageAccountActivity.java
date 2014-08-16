@@ -6,10 +6,8 @@ import java.util.List;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
-import eu.siacs.conversations.ui.EditAccountDialog.EditAccountListener;
 import eu.siacs.conversations.ui.adapter.AccountAdapter;
 import eu.siacs.conversations.xmpp.XmppConnection;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -236,17 +234,7 @@ public class ManageAccountActivity extends XmppActivity {
 			public void onItemClick(AdapterView<?> arg0, View view,
 					int position, long arg3) {
 				if (!isActionMode) {
-					Account account = accountList.get(position);
-					if (account.getStatus() == Account.STATUS_OFFLINE) {
-						activity.xmppConnectionService.reconnectAccount(
-								accountList.get(position), true);
-					} else if (account.getStatus() == Account.STATUS_ONLINE) {
-						activity.startActivity(new Intent(activity
-								.getApplicationContext(),
-								StartConversationActivity.class));
-					} else if (account.getStatus() != Account.STATUS_DISABLED) {
-						editAccount(account);
-					}
+					editAccount(accountList.get(position));
 				} else {
 					selectedAccountForActionMode = accountList.get(position);
 					actionMode.invalidate();
@@ -292,7 +280,6 @@ public class ManageAccountActivity extends XmppActivity {
 		if ((this.accountList.size() == 0) && (this.firstrun)) {
 			getActionBar().setDisplayHomeAsUpEnabled(false);
 			getActionBar().setHomeButtonEnabled(false);
-			addAccount();
 			this.firstrun = false;
 		}
 	}
@@ -307,7 +294,7 @@ public class ManageAccountActivity extends XmppActivity {
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_add_account:
-			addAccount();
+			startActivity(new Intent(getApplicationContext(), EditAccountActivity.class));
 			break;
 		default:
 			break;
@@ -337,37 +324,9 @@ public class ManageAccountActivity extends XmppActivity {
 	}
 
 	private void editAccount(Account account) {
-		EditAccountDialog dialog = new EditAccountDialog();
-		dialog.setAccount(account);
-		dialog.setEditAccountListener(new EditAccountListener() {
-
-			@Override
-			public void onAccountEdited(Account account) {
-				xmppConnectionService.updateAccount(account);
-				if (actionMode != null) {
-					actionMode.finish();
-				}
-			}
-		});
-		dialog.show(getFragmentManager(), "edit_account");
-		dialog.setKnownHosts(xmppConnectionService.getKnownHosts(), this);
-
-	}
-
-	protected void addAccount() {
-		final Activity activity = this;
-		EditAccountDialog dialog = new EditAccountDialog();
-		dialog.setEditAccountListener(new EditAccountListener() {
-
-			@Override
-			public void onAccountEdited(Account account) {
-				xmppConnectionService.createAccount(account);
-				activity.getActionBar().setDisplayHomeAsUpEnabled(true);
-				activity.getActionBar().setHomeButtonEnabled(true);
-			}
-		});
-		dialog.show(getFragmentManager(), "add_account");
-		dialog.setKnownHosts(xmppConnectionService.getKnownHosts(), this);
+		Intent intent = new Intent(this, EditAccountActivity.class);
+		intent.putExtra("jid", account.getJid());
+		startActivity(intent);
 	}
 
 	@Override
