@@ -188,6 +188,7 @@
     <string name="mgmt_account_delete">Eliminar cuenta</string>
     <string name="mgmt_account_disable">Deshabilitar temporalmente</string>
     <string name="mgmt_account_publish_avatar">Imagen de perfil</string>
+    <string name="mgmt_account_publish_pgp">Publicar clave pública OpenPGP</string>
     <string name="mgmt_account_enable">Habilitar</string>
     <string name="mgmt_account_are_you_sure">¿Estás seguro?</string>
     <string name="mgmt_account_delete_confirm_text">Si eliminas tu cuenta tu historial completo de conversaciones se perderá</string>
@@ -281,4 +282,10 @@
     <string name="private_message">en privado</string>
     <string name="private_message_to">en privado para %s</string>
     <string name="send_private_message_to">Enviar mensaje privado a %s</string>
+    <string name="connect">Conectar</string>
+    <string name="account_already_exists">Esta cuenta ya existe</string>
+    <string name="next">Siguiente</string>
+    <string name="server_info_compatibilty">Compatibilidad del servidor</string>
+    <string name="server_info_session_established">Inicio sesión actual</string>
+    <string name="additional_information">Información adicional</string>
 </resources>
