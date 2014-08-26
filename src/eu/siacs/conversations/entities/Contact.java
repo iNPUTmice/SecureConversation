@@ -213,10 +213,12 @@ public class Contact implements ListItem {
 	}
 
 	public void setPgpKeyId(long keyId) {
-		try {
-			this.keys.put("pgp_keyid", keyId);
-		} catch (JSONException e) {
-
+		if(keyId!=0L) {
+			try {
+				this.keys.put("pgp_keyid", keyId);
+			} catch (JSONException e) {
+		
+			}
 		}
 	}
 

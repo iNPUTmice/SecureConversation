@@ -34,6 +34,14 @@ public class CryptoHelper {
 		}
 		return array;
 	}
+	
+	public static long convertHexToKeyId(String hexString) {
+		int len = hexString.length();
+		String s2 = hexString.substring(len - 8);
+		String s1 = hexString.substring(0, len - 8);
+		return ((!s1.isEmpty() ? Long.parseLong(s1, 16) << 32 : 0) | Long.parseLong(s2, 16));
+	}
+
 
 	public static String saslPlain(String username, String password) {
 		String sasl = '\u0000' + username + '\u0000' + password;
