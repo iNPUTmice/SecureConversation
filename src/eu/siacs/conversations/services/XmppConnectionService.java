@@ -765,6 +765,11 @@ public class XmppConnectionService extends Service {
 										.getString("photouri"));
 								contact.setSystemName(phoneContact
 										.getString("displayname"));
+								long pgpKeyId=phoneContact
+										.getLong("pgpkeyid");
+								if(pgpKeyId!=0L) {
+									contact.setPgpKeyId(pgpKeyId);
+								}
 							}
 						}
 					}
