@@ -28,7 +28,7 @@
         <provider
             android:name="eu.siacs.conversations.services.ImageProvider"
             android:authorities="eu.siacs.conversations.images"
-            android:exported="true" />
+            android:exported="false" />
 
         <receiver android:name="eu.siacs.conversations.services.EventReceiver" >
             <intent-filter>
