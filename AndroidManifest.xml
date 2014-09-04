@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="eu.siacs.conversations"
-    android:versionCode="24"
-    android:versionName="0.6-alpha" >
+    android:versionCode="26"
+    android:versionName="0.7-alpha" >
 
     <uses-sdk
         android:minSdkVersion="14"
@@ -93,7 +93,7 @@
         </activity>
         <activity
             android:name="eu.siacs.conversations.ui.PublishProfilePictureActivity"
-            android:label="@string/publish_avatar"
+            android:label="@string/mgmt_account_publish_avatar"
             android:windowSoftInputMode="stateHidden" >
         </activity>
         <activity

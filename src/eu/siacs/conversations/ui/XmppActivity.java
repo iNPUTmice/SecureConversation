@@ -1,5 +1,10 @@
 package eu.siacs.conversations.ui;
 
+import java.io.FileNotFoundException;
+import java.lang.ref.WeakReference;
+import java.util.concurrent.RejectedExecutionException;
+
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
@@ -18,23 +23,29 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.IntentSender.SendIntentException;
+import android.content.res.Resources;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.text.InputType;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.ImageView;
 
 public abstract class XmppActivity extends Activity {
 
 	protected static final int REQUEST_ANNOUNCE_PGP = 0x0101;
 	protected static final int REQUEST_INVITE_TO_CONVERSATION = 0x0102;
-
-	protected final static String LOGTAG = "xmppService";
 
 	public XmppConnectionService xmppConnectionService;
 	public boolean xmppConnectionServiceBound = false;
@@ -44,6 +55,8 @@ public abstract class XmppActivity extends Activity {
 	protected int mSecondaryTextColor;
 	protected int mWarningTextColor;
 	protected int mPrimaryColor;
+
+	private DisplayMetrics metrics;
 
 	protected interface OnValueEdited {
 		public void onValueEdited(String value);
@@ -164,6 +177,7 @@ public abstract class XmppActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		metrics = getResources().getDisplayMetrics();
 		ExceptionHelper.init(getApplicationContext());
 		mPrimaryTextColor = getResources().getColor(R.color.primarytext);
 		mSecondaryTextColor = getResources().getColor(R.color.secondarytext);
@@ -284,16 +298,22 @@ public abstract class XmppActivity extends Activity {
 		builder.create().show();
 	}
 
-	protected void quickEdit(final String previousValue,
-			final OnValueEdited callback) {
+	protected void quickEdit(String previousValue, OnValueEdited callback) {
+		quickEdit(previousValue, callback, false);
+	}
+
+	protected void quickPasswordEdit(String previousValue,
+			OnValueEdited callback) {
+		quickEdit(previousValue, callback, true);
+	}
+
+	private void quickEdit(final String previousValue,
+			final OnValueEdited callback, boolean password) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		View view = (View) getLayoutInflater()
 				.inflate(R.layout.quickedit, null);
 		final EditText editor = (EditText) view.findViewById(R.id.editor);
-		editor.setText(previousValue);
-		builder.setView(view);
-		builder.setNegativeButton(R.string.cancel, null);
-		builder.setPositiveButton(R.string.edit, new OnClickListener() {
+		OnClickListener mClickListener = new OnClickListener() {
 
 			@Override
 			public void onClick(DialogInterface dialog, int which) {
@@ -302,7 +322,19 @@ public abstract class XmppActivity extends Activity {
 					callback.onValueEdited(value);
 				}
 			}
-		});
+		};
+		if (password) {
+			editor.setInputType(InputType.TYPE_CLASS_TEXT
+					| InputType.TYPE_TEXT_VARIATION_PASSWORD);
+			editor.setHint(R.string.password);
+			builder.setPositiveButton(R.string.accept, mClickListener);
+		} else {
+			builder.setPositiveButton(R.string.edit, mClickListener);
+		}
+		editor.requestFocus();
+		editor.setText(previousValue);
+		builder.setView(view);
+		builder.setNegativeButton(R.string.cancel, null);
 		builder.create().show();
 	}
 
@@ -370,8 +402,8 @@ public abstract class XmppActivity extends Activity {
 			if (conversation.getMode() == Conversation.MODE_MULTI) {
 				xmppConnectionService.invite(conversation, contactJid);
 			}
-			Log.d("xmppService", "inviting " + contactJid + " to "
-					+ conversation.getName(true));
+			Log.d(Config.LOGTAG, "inviting " + contactJid + " to "
+					+ conversation.getName());
 		}
 	}
 
@@ -389,5 +421,104 @@ public abstract class XmppActivity extends Activity {
 
 	public int getPrimaryColor() {
 		return this.mPrimaryColor;
+	}
+
+	class BitmapWorkerTask extends AsyncTask<Message, Void, Bitmap> {
+		private final WeakReference<ImageView> imageViewReference;
+		private Message message = null;
+
+		public BitmapWorkerTask(ImageView imageView) {
+			imageViewReference = new WeakReference<ImageView>(imageView);
+		}
+
+		@Override
+		protected Bitmap doInBackground(Message... params) {
+			message = params[0];
+			try {
+				return xmppConnectionService.getFileBackend().getThumbnail(
+						message, (int) (metrics.density * 288), false);
+			} catch (FileNotFoundException e) {
+				return null;
+			}
+		}
+
+		@Override
+		protected void onPostExecute(Bitmap bitmap) {
+			if (imageViewReference != null && bitmap != null) {
+				final ImageView imageView = imageViewReference.get();
+				if (imageView != null) {
+					imageView.setImageBitmap(bitmap);
+					imageView.setBackgroundColor(0x00000000);
+				}
+			}
+		}
+	}
+
+	public void loadBitmap(Message message, ImageView imageView) {
+		Bitmap bm;
+		try {
+			bm = xmppConnectionService.getFileBackend().getThumbnail(message,
+					(int) (metrics.density * 288), true);
+		} catch (FileNotFoundException e) {
+			bm = null;
+		}
+		if (bm != null) {
+			imageView.setImageBitmap(bm);
+			imageView.setBackgroundColor(0x00000000);
+		} else {
+			if (cancelPotentialWork(message, imageView)) {
+				imageView.setBackgroundColor(0xff333333);
+				final BitmapWorkerTask task = new BitmapWorkerTask(imageView);
+				final AsyncDrawable asyncDrawable = new AsyncDrawable(
+						getResources(), null, task);
+				imageView.setImageDrawable(asyncDrawable);
+				try {
+					task.execute(message);
+				} catch (RejectedExecutionException e) {
+					return;
+				}
+			}
+		}
+	}
+
+	public static boolean cancelPotentialWork(Message message,
+			ImageView imageView) {
+		final BitmapWorkerTask bitmapWorkerTask = getBitmapWorkerTask(imageView);
+
+		if (bitmapWorkerTask != null) {
+			final Message oldMessage = bitmapWorkerTask.message;
+			if (oldMessage == null || message != oldMessage) {
+				bitmapWorkerTask.cancel(true);
+			} else {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	private static BitmapWorkerTask getBitmapWorkerTask(ImageView imageView) {
+		if (imageView != null) {
+			final Drawable drawable = imageView.getDrawable();
+			if (drawable instanceof AsyncDrawable) {
+				final AsyncDrawable asyncDrawable = (AsyncDrawable) drawable;
+				return asyncDrawable.getBitmapWorkerTask();
+			}
+		}
+		return null;
+	}
+
+	static class AsyncDrawable extends BitmapDrawable {
+		private final WeakReference<BitmapWorkerTask> bitmapWorkerTaskReference;
+
+		public AsyncDrawable(Resources res, Bitmap bitmap,
+				BitmapWorkerTask bitmapWorkerTask) {
+			super(res, bitmap);
+			bitmapWorkerTaskReference = new WeakReference<BitmapWorkerTask>(
+					bitmapWorkerTask);
+		}
+
+		public BitmapWorkerTask getBitmapWorkerTask() {
+			return bitmapWorkerTaskReference.get();
+		}
 	}
 }

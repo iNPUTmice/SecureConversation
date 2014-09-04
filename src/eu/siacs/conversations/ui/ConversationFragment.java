@@ -15,6 +15,7 @@ import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.EditMessage.OnEnterPressed;
 import eu.siacs.conversations.ui.XmppActivity.OnPresenceSelected;
+import eu.siacs.conversations.ui.XmppActivity.OnValueEdited;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureClicked;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureLongClicked;
@@ -26,10 +27,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
-import android.content.SharedPreferences;
 import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.text.Editable;
 import android.text.Selection;
 import android.view.Gravity;
@@ -67,7 +66,6 @@ public class ConversationFragment extends Fragment {
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 
-	private boolean useSubject = true;
 	private boolean messagesLoaded = false;
 
 	private IntentSender askForPassphraseIntent = null;
@@ -128,6 +126,25 @@ public class ConversationFragment extends Fragment {
 		@Override
 		public void onClick(View v) {
 			activity.endConversation(conversation);
+		}
+	};
+
+	private OnClickListener enterPassword = new OnClickListener() {
+
+		@Override
+		public void onClick(View v) {
+			MucOptions muc = conversation.getMucOptions();
+			String password = muc.getPassword();
+			if (password==null) {
+				password = "";
+			}
+			activity.quickPasswordEdit(password, new OnValueEdited() {
+				
+				@Override
+				public void onValueEdited(String value) {
+					activity.xmppConnectionService.providePasswordForMuc(conversation,value);
+				}
+			});
 		}
 	};
 
@@ -287,23 +304,22 @@ public class ConversationFragment extends Fragment {
 
 	protected void highlightInConference(String nick) {
 		String oldString = mEditMessage.getText().toString().trim();
-		if (oldString.isEmpty()) {
-			mEditMessage.setText(nick + ": ");
+		if (oldString.isEmpty() || mEditMessage.getSelectionStart() == 0) {
+			mEditMessage.getText().insert(0, nick + ": ");
 		} else {
-			mEditMessage.setText(oldString + " " + nick + " ");
+			if (mEditMessage.getText().charAt(
+					mEditMessage.getSelectionStart() - 1) != ' ') {
+				nick = " " + nick;
+			}
+			mEditMessage.getText().insert(mEditMessage.getSelectionStart(),
+					nick + " ");
 		}
-		int position = mEditMessage.length();
-		Editable etext = mEditMessage.getText();
-		Selection.setSelection(etext, position);
 	}
 
 	@Override
 	public void onStart() {
 		super.onStart();
 		this.activity = (ConversationActivity) getActivity();
-		SharedPreferences preferences = PreferenceManager
-				.getDefaultSharedPreferences(activity);
-		this.useSubject = preferences.getBoolean("use_subject_in_muc", true);
 		if (activity.xmppConnectionServiceBound) {
 			this.onBackendConnected();
 		}
@@ -343,8 +359,7 @@ public class ConversationFragment extends Fragment {
 				activity.getSlidingPaneLayout().closePane();
 				activity.getActionBar().setDisplayHomeAsUpEnabled(true);
 				activity.getActionBar().setHomeButtonEnabled(true);
-				activity.getActionBar().setTitle(
-						conversation.getName(useSubject));
+				activity.getActionBar().setTitle(conversation.getName());
 				activity.invalidateOptionsMenu();
 			}
 		}
@@ -390,7 +405,17 @@ public class ConversationFragment extends Fragment {
 		final ConversationActivity activity = (ConversationActivity) getActivity();
 		if (this.conversation != null) {
 			final Contact contact = this.conversation.getContact();
-			if (!contact.showInRoster()
+			if (this.conversation.isMuted()) {
+				showSnackbar(R.string.notifications_disabled, R.string.enable,
+						new OnClickListener() {
+
+							@Override
+							public void onClick(View v) {
+								conversation.setMutedTill(0);
+								updateMessages();
+							}
+						});
+			} else if (!contact.showInRoster()
 					&& contact
 							.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
 				showSnackbar(R.string.contact_added_you, R.string.add_back,
@@ -432,12 +457,20 @@ public class ConversationFragment extends Fragment {
 			} else {
 				if (!conversation.getMucOptions().online()
 						&& conversation.getAccount().getStatus() == Account.STATUS_ONLINE) {
-					if (conversation.getMucOptions().getError() == MucOptions.ERROR_NICK_IN_USE) {
+					int error = conversation.getMucOptions().getError();
+					switch (error) {
+					case MucOptions.ERROR_NICK_IN_USE:
 						showSnackbar(R.string.nick_in_use, R.string.edit,
 								clickToMuc);
-					} else if (conversation.getMucOptions().getError() == MucOptions.ERROR_ROOM_NOT_FOUND) {
+						break;
+					case MucOptions.ERROR_ROOM_NOT_FOUND:
 						showSnackbar(R.string.conference_not_found,
 								R.string.leave, leaveMuc);
+					case MucOptions.ERROR_PASSWORD_REQUIRED:
+						showSnackbar(R.string.conference_requires_password,
+								R.string.enter_password, enterPassword);
+					default:
+						break;
 					}
 				}
 			}
@@ -445,7 +478,6 @@ public class ConversationFragment extends Fragment {
 			updateChatMsgHint();
 			if (!activity.shouldPaneBeOpen()) {
 				activity.xmppConnectionService.markRead(conversation);
-				// TODO update notifications
 				UIHelper.updateNotification(getActivity(),
 						activity.getConversationList(), null, false);
 				activity.updateConversationList();
@@ -491,6 +523,7 @@ public class ConversationFragment extends Fragment {
 				.getOtrFingerprints();
 		if ((latestEncryption == Message.ENCRYPTION_OTR)
 				&& (conversation.hasValidOtrSession()
+						&& (!conversation.isMuted())
 						&& (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) && (!knownFingerprints
 							.contains(conversation.getOtrFingerprint())))) {
 			showSnackbar(R.string.unknown_otr_fingerprint, R.string.verify,

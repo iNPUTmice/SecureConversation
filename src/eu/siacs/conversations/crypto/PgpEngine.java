@@ -14,6 +14,7 @@ import org.openintents.openpgp.OpenPgpSignatureResult;
 import org.openintents.openpgp.util.OpenPgpApi;
 import org.openintents.openpgp.util.OpenPgpApi.IOpenPgpCallback;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
@@ -38,7 +39,7 @@ public class PgpEngine {
 
 	public void decrypt(final Message message,
 			final UiCallback<Message> callback) {
-		Log.d("xmppService", "decrypting message " + message.getUuid());
+		Log.d(Config.LOGTAG, "decrypting message " + message.getUuid());
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_DECRYPT_VERIFY);
 		params.putExtra(OpenPgpApi.EXTRA_ACCOUNT_NAME, message
@@ -65,7 +66,7 @@ public class PgpEngine {
 							callback.error(R.string.openpgp_error, message);
 							return;
 						}
-						
+
 						return;
 					case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
 						callback.userInputRequried((PendingIntent) result
@@ -73,8 +74,9 @@ public class PgpEngine {
 								message);
 						return;
 					case OpenPgpApi.RESULT_CODE_ERROR:
-						OpenPgpError error = result.getParcelableExtra(OpenPgpApi.RESULT_ERROR);
-						Log.d("xmppService",error.getMessage());
+						OpenPgpError error = result
+								.getParcelableExtra(OpenPgpApi.RESULT_ERROR);
+						Log.d(Config.LOGTAG, error.getMessage());
 						callback.error(R.string.openpgp_error, message);
 						return;
 					default:
@@ -104,12 +106,13 @@ public class PgpEngine {
 									outputFile.getAbsolutePath(), options);
 							int imageHeight = options.outHeight;
 							int imageWidth = options.outWidth;
-							message.setBody("" + outputFile.getSize() + ","
-									+ imageWidth + "," + imageHeight);
+							message.setBody(Long.toString(outputFile.getSize()) + ','
+									+ imageWidth + ',' + imageHeight);
 							message.setEncryption(Message.ENCRYPTION_DECRYPTED);
 							PgpEngine.this.mXmppConnectionService
 									.updateMessage(message);
-							PgpEngine.this.mXmppConnectionService.updateConversationUi();
+							PgpEngine.this.mXmppConnectionService
+									.updateConversationUi();
 							callback.success(message);
 							return;
 						case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
@@ -168,8 +171,10 @@ public class PgpEngine {
 							os.flush();
 							StringBuilder encryptedMessageBody = new StringBuilder();
 							String[] lines = os.toString().split("\n");
-							for (int i = 3; i < lines.length - 1; ++i) {
-								encryptedMessageBody.append(lines[i].trim());
+							for (int i = 2; i < lines.length - 1; ++i) {
+								if (!lines[i].contains("Version")) {
+									encryptedMessageBody.append(lines[i].trim());
+								}
 							}
 							message.setEncryptedBody(encryptedMessageBody
 									.toString());
@@ -177,7 +182,7 @@ public class PgpEngine {
 						} catch (IOException e) {
 							callback.error(R.string.openpgp_error, message);
 						}
-						
+
 						break;
 					case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
 						callback.userInputRequried((PendingIntent) result
@@ -221,9 +226,9 @@ public class PgpEngine {
 					}
 				});
 			} catch (FileNotFoundException e) {
-				Log.d("xmppService", "file not found: " + e.getMessage());
+				Log.d(Config.LOGTAG, "file not found: " + e.getMessage());
 			} catch (IOException e) {
-				Log.d("xmppService", "io exception during file encrypt");
+				Log.d(Config.LOGTAG, "io exception during file encrypt");
 			}
 		}
 	}
@@ -267,7 +272,7 @@ public class PgpEngine {
 		case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
 			return 0;
 		case OpenPgpApi.RESULT_CODE_ERROR:
-			Log.d("xmppService",
+			Log.d(Config.LOGTAG,
 					"openpgp error: "
 							+ ((OpenPgpError) result
 									.getParcelableExtra(OpenPgpApi.RESULT_ERROR))
@@ -292,9 +297,27 @@ public class PgpEngine {
 				switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
 				case OpenPgpApi.RESULT_CODE_SUCCESS:
 					StringBuilder signatureBuilder = new StringBuilder();
-					String[] lines = os.toString().split("\n");
-					for (int i = 7; i < lines.length - 1; ++i) {
-						signatureBuilder.append(lines[i].trim());
+					try {
+						os.flush();
+						String[] lines = os.toString().split("\n");
+						boolean sig = false;
+						for(String line : lines) {
+							if (sig) {
+								if (line.contains("END PGP SIGNATURE")) {
+									sig = false;
+								} else {
+									if (!line.contains("Version")) {
+										signatureBuilder.append(line.trim());
+									}
+								}
+							}
+							if (line.contains("BEGIN PGP SIGNATURE")) {
+								sig = true;
+							}
+						}
+					} catch (IOException e) {
+						callback.error(R.string.openpgp_error, account);
+						return;
 					}
 					account.setKey("pgp_signature", signatureBuilder.toString());
 					callback.success(account);

@@ -3,6 +3,7 @@ package eu.siacs.conversations.ui.adapter;
 import java.util.HashMap;
 import java.util.List;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
@@ -14,7 +15,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
-import android.text.Html;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -34,8 +34,9 @@ import android.widget.Toast;
 public class MessageAdapter extends ArrayAdapter<Message> {
 
 	private static final int SENT = 0;
-	private static final int RECIEVED = 1;
+	private static final int RECEIVED = 1;
 	private static final int STATUS = 2;
+	private static final int NULL = 3;
 
 	private ConversationActivity activity;
 
@@ -67,22 +68,25 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 	public void setOnContactPictureClicked(OnContactPictureClicked listener) {
 		this.mOnContactPictureClickedListener = listener;
 	}
-	
-	public void setOnContactPictureLongClicked(OnContactPictureLongClicked listener) {
+
+	public void setOnContactPictureLongClicked(
+			OnContactPictureLongClicked listener) {
 		this.mOnContactPictureLongClickedListener = listener;
 	}
 
 	@Override
 	public int getViewTypeCount() {
-		return 3;
+		return 4;
 	}
 
 	@Override
 	public int getItemViewType(int position) {
-		if (getItem(position).getType() == Message.TYPE_STATUS) {
+		if (getItem(position).wasMergedIntoPrevious()) {
+			return NULL;
+		} else if (getItem(position).getType() == Message.TYPE_STATUS) {
 			return STATUS;
 		} else if (getItem(position).getStatus() <= Message.STATUS_RECEIVED) {
-			return RECIEVED;
+			return RECEIVED;
 		} else {
 			return SENT;
 		}
@@ -93,7 +97,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		String info = null;
 		boolean error = false;
 		boolean multiReceived = message.getConversation().getMode() == Conversation.MODE_MULTI
-				&& message.getStatus() <= Message.STATUS_RECEIVED;
+				&& message.getMergedStatus() <= Message.STATUS_RECEIVED;
 		if (message.getType() == Message.TYPE_IMAGE) {
 			String[] fileParams = message.getBody().split(",");
 			try {
@@ -103,7 +107,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				filesize = "0 KB";
 			}
 		}
-		switch (message.getStatus()) {
+		switch (message.getMergedStatus()) {
 		case Message.STATUS_WAITING:
 			info = getContext().getString(R.string.waiting);
 			break;
@@ -151,7 +155,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		}
 
 		String formatedTime = UIHelper.readableTimeDifference(getContext(),
-				message.getTimeSent());
+				message.getMergedTimeSent());
 		if (message.getStatus() <= Message.STATUS_RECEIVED) {
 			if ((filesize != null) && (info != null)) {
 				viewHolder.time.setText(filesize + " \u00B7 " + info);
@@ -212,11 +216,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
 		if (message.getBody() != null) {
 			if (message.getType() != Message.TYPE_PRIVATE) {
-				viewHolder.messageBody.setText(message.getBody().trim());
+				String body = Config.PARSE_EMOTICONS ? UIHelper
+						.transformAsciiEmoticons(message.getMergedBody())
+						: message.getMergedBody();
+				viewHolder.messageBody.setText(body);
 			} else {
 				String privateMarker;
 				if (message.getStatus() <= Message.STATUS_RECEIVED) {
-					privateMarker = activity.getString(R.string.private_message);
+					privateMarker = activity
+							.getString(R.string.private_message);
 				} else {
 					String to;
 					if (message.getPresence() != null) {
@@ -224,11 +232,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 					} else {
 						to = message.getCounterpart();
 					}
-					privateMarker = activity.getString(R.string.private_message_to, to);
+					privateMarker = activity.getString(
+							R.string.private_message_to, to);
 				}
-				SpannableString span = new SpannableString(privateMarker+" "+message.getBody());
-				span.setSpan(new ForegroundColorSpan(activity.getSecondaryTextColor()), 0, privateMarker.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				span.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0, privateMarker.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				SpannableString span = new SpannableString(privateMarker + " "
+						+ message.getBody());
+				span.setSpan(
+						new ForegroundColorSpan(activity
+								.getSecondaryTextColor()), 0, privateMarker
+								.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				span.setSpan(new StyleSpan(android.graphics.Typeface.BOLD), 0,
+						privateMarker.length(),
+						Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 				viewHolder.messageBody.setText(span);
 			}
 		} else {
@@ -301,6 +316,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		if (view == null) {
 			viewHolder = new ViewHolder();
 			switch (type) {
+			case NULL:
+				view = (View) activity.getLayoutInflater().inflate(
+						R.layout.message_null, parent, false);
+				break;
 			case SENT:
 				view = (View) activity.getLayoutInflater().inflate(
 						R.layout.message_sent, parent, false);
@@ -319,7 +338,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						.findViewById(R.id.message_time);
 				view.setTag(viewHolder);
 				break;
-			case RECIEVED:
+			case RECEIVED:
 				view = (View) activity.getLayoutInflater().inflate(
 						R.layout.message_received, parent, false);
 				viewHolder.message_box = (LinearLayout) view
@@ -362,7 +381,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 								@Override
 								public void onClick(View v) {
 									String name = item.getConversation()
-											.getName(true);
+											.getName();
 									String read = getContext()
 											.getString(
 													R.string.contact_has_read_up_to_this_point,
@@ -382,11 +401,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			viewHolder = (ViewHolder) view.getTag();
 		}
 
-		if (type == STATUS) {
+		if (type == STATUS || type == NULL) {
 			return view;
 		}
 
-		if (type == RECIEVED) {
+		if (type == RECEIVED) {
 			if (item.getConversation().getMode() == Conversation.MODE_MULTI) {
 				Contact contact = item.getContact();
 				if (contact != null) {
@@ -394,10 +413,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 							contact, getContext()));
 				} else {
 					String name = item.getPresence();
-					if (name==null) {
+					if (name == null) {
 						name = item.getCounterpart();
 					}
-					viewHolder.contact_picture.setImageBitmap(mBitmapCache.get(name, getContext()));
+					viewHolder.contact_picture.setImageBitmap(mBitmapCache.get(
+							name, getContext()));
 				}
 				viewHolder.contact_picture
 						.setOnClickListener(new OnClickListener() {
@@ -412,18 +432,20 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 							}
 						});
-				viewHolder.contact_picture.setOnLongClickListener(new OnLongClickListener() {
-					
-					@Override
-					public boolean onLongClick(View v) {
-						if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
-							MessageAdapter.this.mOnContactPictureLongClickedListener.onContactPictureLongClicked(item);
-							return true;
-						} else {
-							return false;
-						}
-					}
-				});
+				viewHolder.contact_picture
+						.setOnLongClickListener(new OnLongClickListener() {
+
+							@Override
+							public boolean onLongClick(View v) {
+								if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+									MessageAdapter.this.mOnContactPictureLongClickedListener
+											.onContactPictureLongClicked(item);
+									return true;
+								} else {
+									return false;
+								}
+							}
+						});
 			}
 		}
 
@@ -522,7 +544,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 	public interface OnContactPictureClicked {
 		public void onContactPictureClicked(Message message);
 	}
-	
+
 	public interface OnContactPictureLongClicked {
 		public void onContactPictureLongClicked(Message message);
 	}

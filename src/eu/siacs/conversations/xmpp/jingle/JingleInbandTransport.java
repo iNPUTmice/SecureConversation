@@ -32,7 +32,7 @@ public class JingleInbandTransport extends JingleTransport {
 	private OutputStream fileOutputStream;
 	private long remainingSize;
 	private MessageDigest digest;
-	
+
 	private OnFileTransmissionStatusChanged onFileTransmissionStatusChanged;
 
 	private OnIqPacketReceived onAckReceived = new OnIqPacketReceived() {
@@ -59,7 +59,7 @@ public class JingleInbandTransport extends JingleTransport {
 		Element open = iq.addChild("open", "http://jabber.org/protocol/ibb");
 		open.setAttribute("sid", this.sessionId);
 		open.setAttribute("stanza", "iq");
-		open.setAttribute("block-size", "" + this.blockSize);
+		open.setAttribute("block-size", Integer.toString(this.blockSize));
 
 		this.account.getXmppConnection().sendIqPacket(iq,
 				new OnIqPacketReceived() {
@@ -77,7 +77,8 @@ public class JingleInbandTransport extends JingleTransport {
 	}
 
 	@Override
-	public void receive(JingleFile file, OnFileTransmissionStatusChanged callback) {
+	public void receive(JingleFile file,
+			OnFileTransmissionStatusChanged callback) {
 		this.onFileTransmissionStatusChanged = callback;
 		this.file = file;
 		try {
@@ -86,7 +87,7 @@ public class JingleInbandTransport extends JingleTransport {
 			file.getParentFile().mkdirs();
 			file.createNewFile();
 			this.fileOutputStream = getOutputStream(file);
-			if (this.fileOutputStream==null) {
+			if (this.fileOutputStream == null) {
 				callback.onFileTransferAborted();
 				return;
 			}
@@ -106,7 +107,7 @@ public class JingleInbandTransport extends JingleTransport {
 			this.digest = MessageDigest.getInstance("SHA-1");
 			this.digest.reset();
 			fileInputStream = this.getInputStream(file);
-			if (fileInputStream==null) {
+			if (fileInputStream == null) {
 				callback.onFileTransferAborted();
 				return;
 			}
@@ -133,8 +134,8 @@ public class JingleInbandTransport extends JingleTransport {
 				iq.setTo(this.counterpart);
 				Element data = iq.addChild("data",
 						"http://jabber.org/protocol/ibb");
-				data.setAttribute("seq", "" + this.seq);
-				data.setAttribute("block-size", "" + this.blockSize);
+				data.setAttribute("seq", Integer.toString(this.seq));
+				data.setAttribute("block-size", Integer.toString(this.blockSize));
 				data.setAttribute("sid", this.sessionId);
 				data.setContent(base64);
 				this.account.getXmppConnection().sendIqPacket(iq,
@@ -150,7 +151,8 @@ public class JingleInbandTransport extends JingleTransport {
 		try {
 			byte[] buffer = Base64.decode(data, Base64.NO_WRAP);
 			if (this.remainingSize < buffer.length) {
-				buffer = Arrays.copyOfRange(buffer, 0, (int) this.remainingSize);
+				buffer = Arrays
+						.copyOfRange(buffer, 0, (int) this.remainingSize);
 			}
 			this.remainingSize -= buffer.length;
 

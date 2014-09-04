@@ -109,7 +109,7 @@ public class Contact implements ListItem {
 		values.put(SYSTEMACCOUNT, systemAccount);
 		values.put(PHOTOURI, photoUri);
 		values.put(KEYS, keys.toString());
-		values.put(AVATAR,avatar);
+		values.put(AVATAR, avatar);
 		return values;
 	}
 
@@ -141,7 +141,7 @@ public class Contact implements ListItem {
 	public Account getAccount() {
 		return this.account;
 	}
-	
+
 	public Presences getPresences() {
 		return this.presences;
 	}
@@ -316,7 +316,8 @@ public class Contact implements ListItem {
 
 	@Override
 	public int compareTo(ListItem another) {
-		return this.getDisplayName().compareToIgnoreCase(another.getDisplayName());
+		return this.getDisplayName().compareToIgnoreCase(
+				another.getDisplayName());
 	}
 
 	public String getServer() {
@@ -330,9 +331,9 @@ public class Contact implements ListItem {
 
 	@Override
 	public Bitmap getImage(int size, Context context) {
-		if (this.avatar!=null) {
+		if (this.avatar != null) {
 			Bitmap bm = FileBackend.getAvatar(avatar, size, context);
-			if (bm==null) {
+			if (bm == null) {
 				return UIHelper.getContactPicture(this, size, context, false);
 			} else {
 				return bm;

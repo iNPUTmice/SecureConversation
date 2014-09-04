@@ -14,6 +14,7 @@ public class MucOptions {
 	public static final int ERROR_NO_ERROR = 0;
 	public static final int ERROR_NICK_IN_USE = 1;
 	public static final int ERROR_ROOM_NOT_FOUND = 2;
+	public static final int ERROR_PASSWORD_REQUIRED = 3;
 
 	public interface OnRenameListener {
 		public void onRename(boolean success);
@@ -106,6 +107,7 @@ public class MucOptions {
 	private User self = new User();
 	private String subject = null;
 	private String joinnick;
+	private String password = null;
 
 	public MucOptions(Account account) {
 		this.account = account;
@@ -186,6 +188,8 @@ public class MucOptions {
 					} else {
 						this.error = ERROR_NICK_IN_USE;
 					}
+				} else if (error.hasChild("not-authorized")) {
+					this.error = ERROR_PASSWORD_REQUIRED;
 				}
 			}
 		}
@@ -299,13 +303,21 @@ public class MucOptions {
 		return this.conversation.getContactJid().split("/")[0] + "/"
 				+ this.joinnick;
 	}
-	
+
 	public String getTrueCounterpart(String counterpart) {
-		for(User user : this.getUsers()) {
+		for (User user : this.getUsers()) {
 			if (user.getName().equals(counterpart)) {
 				return user.getJid();
 			}
 		}
 		return null;
+	}
+
+	public String getPassword() {
+		return this.password;
+	}
+	
+	public void setPassword(String password) {
+		this.password = password;
 	}
 }

@@ -118,9 +118,13 @@ public class UIHelper {
 	}
 
 	private static int getNameColor(String name) {
-		/*int holoColors[] = { 0xFF1da9da, 0xFFb368d9, 0xFF83b600, 0xFFffa713,
-				0xFFe92727 };*/
-		int holoColors[] = {0xFFe91e63, 0xFF9c27b0, 0xFF673ab7, 0xFF3f51b5, 0xFF5677fc, 0xFF03a9f4, 0xFF00bcd4, 0xFF009688, 0xFFff5722, 0xFF795548, 0xFF607d8b};
+		/*
+		 * int holoColors[] = { 0xFF1da9da, 0xFFb368d9, 0xFF83b600, 0xFFffa713,
+		 * 0xFFe92727 };
+		 */
+		int holoColors[] = { 0xFFe91e63, 0xFF9c27b0, 0xFF673ab7, 0xFF3f51b5,
+				0xFF5677fc, 0xFF03a9f4, 0xFF00bcd4, 0xFF009688, 0xFFff5722,
+				0xFF795548, 0xFF607d8b };
 		return holoColors[(int) ((name.hashCode() & 0xffffffffl) % holoColors.length)];
 	}
 
@@ -211,14 +215,14 @@ public class UIHelper {
 		List<User> members = conversation.getMucOptions().getUsers();
 		if (members.size() == 0) {
 			return getUnknownContactPicture(
-					new String[] { conversation.getName(false) }, size,
+					new String[] { conversation.getName() }, size,
 					bgColor, fgColor);
 		}
 		ArrayList<String> names = new ArrayList<String>();
 		names.add(conversation.getMucOptions().getActualNick());
-		for(User user : members) {
+		for (User user : members) {
 			names.add(user.getName());
-			if (names.size() > 4 ) {
+			if (names.size() > 4) {
 				break;
 			}
 		}
@@ -328,7 +332,6 @@ public class UIHelper {
 
 		SharedPreferences preferences = PreferenceManager
 				.getDefaultSharedPreferences(context);
-		boolean useSubject = preferences.getBoolean("use_subject_in_muc", true);
 		boolean showNofifications = preferences.getBoolean("show_notification",
 				true);
 		boolean vibrate = preferences.getBoolean("vibrate_on_notification",
@@ -377,7 +380,7 @@ public class UIHelper {
 			Conversation conversation = unread.get(0);
 			targetUuid = conversation.getUuid();
 			mBuilder.setLargeIcon(conversation.getImage(context, 64));
-			mBuilder.setContentTitle(conversation.getName(useSubject));
+			mBuilder.setContentTitle(conversation.getName());
 			if (notify) {
 				mBuilder.setTicker(conversation.getLatestMessage()
 						.getReadableBody(context));
@@ -409,12 +412,12 @@ public class UIHelper {
 			for (int i = 0; i < unread.size(); ++i) {
 				targetUuid = unread.get(i).getUuid();
 				if (i < unread.size() - 1) {
-					names.append(unread.get(i).getName(useSubject) + ", ");
+					names.append(unread.get(i).getName() + ", ");
 				} else {
-					names.append(unread.get(i).getName(useSubject));
+					names.append(unread.get(i).getName());
 				}
 				style.addLine(Html.fromHtml("<b>"
-						+ unread.get(i).getName(useSubject)
+						+ unread.get(i).getName()
 						+ "</b> "
 						+ unread.get(i).getLatestMessage()
 								.getReadableBody(context)));
@@ -540,5 +543,44 @@ public class UIHelper {
 		} else {
 			return getContactPicture(account.getJid(), size, context, false);
 		}
+	}
+
+	private final static class EmoticonPattern {
+		Pattern pattern;
+		String replacement;
+		EmoticonPattern(String ascii, int unicode) {
+			this.pattern = Pattern.compile("(?<=(^|\\s))" + ascii + "(?=(\\s|$))");
+			this.replacement = new String(new int[]{unicode, }, 0, 1);
+		}
+		String replaceAll(String body) {
+			return pattern.matcher(body).replaceAll(replacement);
+		}
+	}
+
+	private static final EmoticonPattern[] patterns = new EmoticonPattern[] {
+		new EmoticonPattern(":-?D", 0x1f600),
+		new EmoticonPattern("\\^\\^", 0x1f601),
+		new EmoticonPattern(":'D", 0x1f602),
+		new EmoticonPattern("\\]-?D", 0x1f608),
+		new EmoticonPattern(";-?\\)", 0x1f609),
+		new EmoticonPattern(":-?\\)", 0x1f60a),
+		new EmoticonPattern("[B8]-?\\)", 0x1f60e),
+		new EmoticonPattern(":-?\\|", 0x1f610),
+		new EmoticonPattern(":-?[/\\\\]", 0x1f615),
+		new EmoticonPattern(":-?\\*", 0x1f617),
+		new EmoticonPattern(":-?[Ppb]", 0x1f61b),
+		new EmoticonPattern(":-?\\(", 0x1f61e),
+		new EmoticonPattern(":-?[0Oo]", 0x1f62e),
+		new EmoticonPattern("\\\\o/", 0x1F631),
+	};
+
+	public static String transformAsciiEmoticons(String body) {
+		if (body != null) {
+			for (EmoticonPattern p: patterns) {
+				body = p.replaceAll(body);
+			}
+			body = body.trim();
+		}
+		return body;
 	}
 }

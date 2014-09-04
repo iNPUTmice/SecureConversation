@@ -46,7 +46,7 @@ public class PublishProfilePictureActivity extends XmppActivity {
 				public void run() {
 					if (mInitialAccountSetup) {
 						startActivity(new Intent(getApplicationContext(),
-							StartConversationActivity.class));
+								StartConversationActivity.class));
 					}
 					finish();
 				}
@@ -61,7 +61,7 @@ public class PublishProfilePictureActivity extends XmppActivity {
 				public void run() {
 					hintOrWarning.setText(errorCode);
 					hintOrWarning.setTextColor(getWarningTextColor());
-					publishButton.setText(R.string.publish_avatar);
+					publishButton.setText(R.string.publish);
 					enablePublishButton();
 				}
 			});
@@ -111,7 +111,7 @@ public class PublishProfilePictureActivity extends XmppActivity {
 			public void onClick(View v) {
 				if (mInitialAccountSetup) {
 					startActivity(new Intent(getApplicationContext(),
-						StartConversationActivity.class));
+							StartConversationActivity.class));
 				}
 				finish();
 			}
@@ -211,7 +211,7 @@ public class PublishProfilePictureActivity extends XmppActivity {
 		this.avatar.setImageBitmap(bm);
 		if (support) {
 			enablePublishButton();
-			this.publishButton.setText(R.string.publish_avatar);
+			this.publishButton.setText(R.string.publish);
 			this.hintOrWarning.setText(R.string.publish_avatar_explanation);
 			this.hintOrWarning.setTextColor(getPrimaryTextColor());
 		} else {
