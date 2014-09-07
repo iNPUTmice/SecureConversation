@@ -146,8 +146,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		if (error) {
 			viewHolder.time.setTextColor(0xFFe92727);
 		} else {
-			viewHolder.time.setTextColor(activity.getSecondaryTextColor());
+			if (message.getStatus() == Message.STATUS_SEND_RECEIVED) {
+				viewHolder.time.setTextColor(0xFF27e927);
+			} else {
+				if (message.getStatus() == Message.STATUS_SEND_RECEIVED_DISPLAYED) {
+					viewHolder.time.setTextColor(0xFF2727e9);
+				} else {
+					viewHolder.time.setTextColor(activity.getSecondaryTextColor());
+				}
+			}
 		}
+
 		if (message.getEncryption() == Message.ENCRYPTION_NONE) {
 			viewHolder.indicator.setVisibility(View.GONE);
 		} else {
