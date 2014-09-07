@@ -1531,6 +1531,9 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void markMessage(Message message, int status) {
+		if ((message.getStatus() == Message.STATUS_SEND_RECEIVED) && (status == Message.STATUS_SEND_DISPLAYED)) {
+			status = Message.STATUS_SEND_RECEIVED_DISPLAYED;
+		}
 		message.setStatus(status);
 		databaseBackend.updateMessage(message);
 		updateConversationUi();

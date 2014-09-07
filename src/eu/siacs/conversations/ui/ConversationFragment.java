@@ -512,7 +512,8 @@ public class ConversationFragment extends Fragment {
 					if (this.messageList.get(i).getStatus() == Message.STATUS_RECEIVED) {
 						addedStatusMsg = true;
 					} else {
-						if (this.messageList.get(i).getStatus() == Message.STATUS_SEND_DISPLAYED) {
+						if (this.messageList.get(i).getStatus() == Message.STATUS_SEND_DISPLAYED ||
+								this.messageList.get(i).getStatus() == Message.STATUS_SEND_RECEIVED_DISPLAYED) {
 							this.messageList.add(i + 1,
 									Message.createStatusMessage(conversation));
 							addedStatusMsg = true;
