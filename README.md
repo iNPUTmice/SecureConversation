@@ -1,7 +1,7 @@
 #Conversations
 Conversations - the very last word in instant messaging
 
-[![Google Play](http://developer.android.com/images/brand/en_generic_rgb_wo_45.png)](https://play.google.com/store/apps/details?id=eu.siacs.conversations)
+[![Google Play](http://developer.android.com/images/brand/en_generic_rgb_wo_45.png)](https://play.google.com/store/apps/details?id=eu.siacs.conversations) [![F-Droid](https://f-droid.org/wiki/images/0/0f/F-Droid-button_smaller.png)](https://f-droid.org/repository/browse/?fdfilter=conversations&fdid=eu.siacs.conversations)
 
 ![screenshots](https://raw.githubusercontent.com/siacs/Conversations/master/screenshots.png)
 
