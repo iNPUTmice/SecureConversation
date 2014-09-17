@@ -9,6 +9,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
@@ -34,6 +35,7 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.net.Uri;
+import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract.Contacts;
 import android.support.v4.app.NotificationCompat;
@@ -560,7 +562,23 @@ public class UIHelper {
 		}
 	}
 
-	private static final EmoticonPattern[] patterns = new EmoticonPattern[] {
+	private static final EmoticonPattern[] patternsPre = new EmoticonPattern[] {
+			//new EmoticonPattern(":-?D", 0x1f600),
+			new EmoticonPattern("\\^\\^", 0x1f601),
+			new EmoticonPattern(":'D", 0x1f602),
+			new EmoticonPattern("\\]-?D", 0x1f608),
+			//new EmoticonPattern(";-?\\)", 0x1f609),
+			//new EmoticonPattern(":-?\\)", 0x1f60a),
+			//new EmoticonPattern("[B8]-?\\)", 0x1f60e),
+			//new EmoticonPattern(":-?\\|", 0x1f610),
+			//new EmoticonPattern(":-?[/\\\\]", 0x1f615),
+			//new EmoticonPattern(":-?\\*", 0x1f617),
+			//new EmoticonPattern(":-?[Ppb]", 0x1f61b),
+			new EmoticonPattern(":-?\\(", 0x1f61e),
+			//new EmoticonPattern(":-?[0Oo]", 0x1f62e),
+			new EmoticonPattern("\\\\o/", 0x1F631), };
+
+	private static final EmoticonPattern[] patternsKitkat = new EmoticonPattern[] {
 			new EmoticonPattern(":-?D", 0x1f600),
 			new EmoticonPattern("\\^\\^", 0x1f601),
 			new EmoticonPattern(":'D", 0x1f602),
@@ -576,10 +594,21 @@ public class UIHelper {
 			new EmoticonPattern(":-?[0Oo]", 0x1f62e),
 			new EmoticonPattern("\\\\o/", 0x1F631), };
 
-	public static String transformAsciiEmoticons(String body) {
+	/**
+	 * transfrom ascii emoticons to unicode ones.
+	 *
+	 * @body: text to transform
+	 * @origin: usage of the body, NULL for display, other for sening
+	 */
+	public static String transformAsciiEmoticons(String body, String origin) {
 		if (body != null) {
-			for (EmoticonPattern p : patterns) {
-				body = p.replaceAll(body);
+			// check if transformation is enabled in config
+			if ((Config.TRANSFORM_EMOTICONS.ordinal() & (origin == null ?
+					Config.TransformEmoticons.DISPLAY.ordinal() : Config.TransformEmoticons.SEND.ordinal())) != 0) {
+				// check the version to reduce patterns on pre-kitkat
+				for (EmoticonPattern p : Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT ? patternsKitkat : patternsPre) {
+					body = p.replaceAll(body);
+				}
 			}
 			body = body.trim();
 		}

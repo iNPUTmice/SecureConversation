@@ -217,9 +217,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
 		if (message.getBody() != null) {
 			if (message.getType() != Message.TYPE_PRIVATE) {
-				String body = Config.PARSE_EMOTICONS ? UIHelper
-						.transformAsciiEmoticons(message.getMergedBody())
-						: message.getMergedBody();
+				String body = UIHelper.transformAsciiEmoticons(message.getMergedBody(), null);
 				viewHolder.messageBody.setText(body);
 			} else {
 				String privateMarker;
