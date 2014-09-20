@@ -420,34 +420,34 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 					viewHolder.contact_picture.setImageBitmap(mBitmapCache.get(
 							name, getContext()));
 				}
-				viewHolder.contact_picture
-						.setOnClickListener(new OnClickListener() {
-
-							@Override
-							public void onClick(View v) {
-								if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
-									MessageAdapter.this.mOnContactPictureClickedListener
-											.onContactPictureClicked(item);
-									;
-								}
-
-							}
-						});
-				viewHolder.contact_picture
-						.setOnLongClickListener(new OnLongClickListener() {
-
-							@Override
-							public boolean onLongClick(View v) {
-								if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
-									MessageAdapter.this.mOnContactPictureLongClickedListener
-											.onContactPictureLongClicked(item);
-									return true;
-								} else {
-									return false;
-								}
-							}
-						});
 			}
+			viewHolder.contact_picture
+					.setOnClickListener(new OnClickListener() {
+
+						@Override
+						public void onClick(View v) {
+							if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
+								MessageAdapter.this.mOnContactPictureClickedListener
+										.onContactPictureClicked(item);
+								;
+							}
+
+						}
+					});
+			viewHolder.contact_picture
+					.setOnLongClickListener(new OnLongClickListener() {
+
+						@Override
+						public boolean onLongClick(View v) {
+							if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+								MessageAdapter.this.mOnContactPictureLongClickedListener
+										.onContactPictureLongClicked(item);
+								return true;
+							} else {
+								return false;
+							}
+						}
+					});
 		}
 
 		if (item.getType() == Message.TYPE_IMAGE) {
