@@ -38,7 +38,6 @@ import android.preference.PreferenceManager;
 import android.provider.ContactsContract.Contacts;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
-import android.text.format.DateFormat;
 import android.text.format.DateUtils;
 import android.text.Html;
 import android.util.DisplayMetrics;
@@ -51,8 +50,8 @@ public class UIHelper {
 	private static final int BG_COLOR = 0xFF181818;
 	private static final int FG_COLOR = 0xFFFAFAFA;
 	private static final int TRANSPARENT = 0x00000000;
-	private static final int DATE_NO_YEAR_FLAGS = DateUtils.FORMAT_SHOW_DATE
-			| DateUtils.FORMAT_NO_YEAR | DateUtils.FORMAT_ABBREV_ALL;
+	private static final int DATE_TODAY_FLAGS = DateUtils.FORMAT_SHOW_TIME | DateUtils.FORMAT_ABBREV_ALL;
+	private static final int DATE_FLAGS = DATE_TODAY_FLAGS | DateUtils.FORMAT_SHOW_DATE;
 
 	public static String readableTimeDifference(Context context, long time) {
 		if (time == 0) {
@@ -68,11 +67,11 @@ public class UIHelper {
 			return context.getString(R.string.minutes_ago,
 					Math.round(difference / 60.0));
 		} else if (today(date) || difference < 6 * 60 * 60) {
-			java.text.DateFormat df = DateFormat.getTimeFormat(context);
-			return df.format(date);
+			return DateUtils.formatDateTime(context, date.getTime(),
+					DATE_TODAY_FLAGS);
 		} else {
 			return DateUtils.formatDateTime(context, date.getTime(),
-					DATE_NO_YEAR_FLAGS);
+					DATE_FLAGS);
 		}
 	}
 
