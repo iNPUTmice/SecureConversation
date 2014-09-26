@@ -2,7 +2,6 @@ package eu.siacs.conversations.ui;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
@@ -17,6 +16,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
@@ -376,6 +376,7 @@ public class ConversationActivity extends XmppActivity implements
 		}
 	}
 
+	@SuppressLint("InflateParams")
 	protected void clearHistoryDialog(final Conversation conversation) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle(getString(R.string.clear_conversation_history));

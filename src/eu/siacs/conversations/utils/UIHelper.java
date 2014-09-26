@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
@@ -17,6 +16,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions.User;
 import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Notification;
@@ -511,6 +511,7 @@ public class UIHelper {
 		badge.setImageBitmap(contact.getImage(72, context));
 	}
 
+	@SuppressLint("InflateParams")
 	public static AlertDialog getVerifyFingerprintDialog(
 			final ConversationActivity activity,
 			final Conversation conversation, final View msg) {
