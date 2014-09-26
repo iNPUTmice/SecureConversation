@@ -3,7 +3,7 @@ package eu.siacs.conversations.ui;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
+import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.ActionBar.TabListener;
@@ -308,6 +308,7 @@ public class StartConversationActivity extends XmppActivity {
 
 	}
 
+	@SuppressLint("InflateParams")
 	protected void showCreateContactDialog() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle(R.string.create_contact);
@@ -359,6 +360,7 @@ public class StartConversationActivity extends XmppActivity {
 
 	}
 
+	@SuppressLint("InflateParams")
 	protected void showJoinConferenceDialog() {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		builder.setTitle(R.string.join_conference);
