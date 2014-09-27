@@ -8,6 +8,12 @@
             android:summary="@string/pref_grant_presence_updates_summary"
             android:title="@string/pref_grant_presence_updates" />
 
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="hide_offline_contacts"
+            android:summary="@string/pref_hide_offline_contacts_summary"
+            android:title="@string/pref_hide_offline_contacts" />
+
         <ListPreference
             android:defaultValue="Mobile"
             android:entries="@array/resources"
