@@ -18,6 +18,16 @@
         android:showAsAction="always"
         android:title="@string/join_conference"/>
     <item
+        android:id="@+id/action_qrcode_show"
+        android:orderInCategory="90"
+        android:showAsAction="never"
+        android:title="@string/qrcode_show"/>
+    <item
+        android:id="@+id/action_qrcode_scan"
+        android:orderInCategory="90"
+        android:showAsAction="never"
+        android:title="@string/qrcode_scan"/>
+    <item
         android:id="@+id/action_accounts"
         android:orderInCategory="90"
         android:showAsAction="never"

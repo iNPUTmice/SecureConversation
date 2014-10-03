@@ -265,5 +265,7 @@
     <string name="conference_banned">You are banned from this conference</string>
     <string name="conference_members_only">This conference is members only</string>
     <string name="conference_kicked">You have been kicked from this conference</string>
+    <string name="qrcode_scan">Scan QRCode</string>
+    <string name="qrcode_show">Show QRCode</string>
 
 </resources>

@@ -2,6 +2,7 @@ package eu.siacs.conversations.ui;
 
 import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -12,9 +13,12 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Presences;
+import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.XmppConnectionBinder;
 import eu.siacs.conversations.utils.ExceptionHelper;
+import eu.siacs.conversations.utils.Beam;
+import eu.siacs.conversations.utils.QrCode;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -56,6 +60,7 @@ public abstract class XmppActivity extends Activity {
 	public XmppConnectionService xmppConnectionService;
 	public boolean xmppConnectionServiceBound = false;
 	protected boolean handledViewIntent = false;
+	protected Beam mBeam = new Beam();
 
 	protected int mPrimaryTextColor;
 	protected int mSecondaryTextColor;
@@ -189,6 +194,21 @@ public abstract class XmppActivity extends Activity {
 			break;
 		case R.id.action_accounts:
 			startActivity(new Intent(this, ManageAccountActivity.class));
+			break;
+		case R.id.action_qrcode_scan:
+			QrCode.doScan(this, this.getApplicationContext());
+			break;
+		case R.id.action_qrcode_show:
+			String jid = getMyJid();
+			if (jid != null) {
+				Bitmap bitmap = QrCode.getQRCodeBitmap(jid, 120);
+				Log.d(Config.LOGTAG, "created qrcode bitmap");
+				// TODO: show pic with qrcode
+				Builder builder = new Builder(this);
+				builder.setIcon(new android.graphics.drawable.BitmapDrawable(getResources(), bitmap));
+				builder.setMessage(getMyJid());
+				builder.create().show();
+			}
 			break;
 		case android.R.id.home:
 			finish();
@@ -492,6 +512,7 @@ public abstract class XmppActivity extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode,
 			final Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
+		String jid;
 		if (requestCode == REQUEST_INVITE_TO_CONVERSATION
 				&& resultCode == RESULT_OK) {
 			String contactJid = data.getStringExtra("contact");
@@ -503,6 +524,8 @@ public abstract class XmppActivity extends Activity {
 			}
 			Log.d(Config.LOGTAG, "inviting " + contactJid + " to "
 					+ conversation.getName());
+		} else if ((jid = QrCode.onActivityResult(requestCode, resultCode, data)) != null) {
+			handleJid(jid);
 		}
 	}
 
@@ -623,5 +646,36 @@ public abstract class XmppActivity extends Activity {
 		public BitmapWorkerTask getBitmapWorkerTask() {
 			return bitmapWorkerTaskReference.get();
 		}
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		String jid = mBeam.activate(this, getApplicationContext(), getIntent(), false, getMyJid());
+		if (jid != null) {
+			handleJid(jid);
+		}
+	}
+
+	protected boolean handleJid(String jid) {
+		jid = URLDecoder.decode(Uri.parse(jid).getEncodedPath(), "UTF-8").split("/")[1];
+		Log.d(Config.LOGTAG, "handleJid jid=" + jid);
+		// TODO
+		return false;
+	}
+
+	/**
+	 * Return the jid of the first account found.
+	 */
+	String getMyJid() {
+		DatabaseBackend databaseBackend = DatabaseBackend.getInstance(getApplicationContext());
+		List<Account> accounts = databaseBackend.getAccounts();
+		for (Account account : accounts) {
+			String jid = "xmpp:" + account.getJid();
+			Log.d(Config.LOGTAG, "getMyJid jid=" + jid);
+			return jid;
+			// TODO show a chooser if more than one account is configured?
+		}
+		return null;
 	}
 }
