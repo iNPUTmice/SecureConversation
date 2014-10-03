@@ -1,33 +1,51 @@
 package eu.siacs.conversations.ui;
 
+import android.app.AlertDialog.Builder;
 import android.app.PendingIntent;
+import android.content.ClipboardManager;
+import android.content.ClipData;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Point;
+import android.nfc.NdefMessage;
+import android.nfc.NdefRecord;
+import android.nfc.NfcAdapter;
+import android.nfc.NfcAdapter.CreateNdefMessageCallback;
+import android.nfc.NfcEvent;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-import eu.siacs.conversations.R;
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.utils.QrCode;
 import eu.siacs.conversations.utils.Validator;
-import eu.siacs.conversations.xmpp.XmppConnection.Features;
 import eu.siacs.conversations.xmpp.pep.Avatar;
+import eu.siacs.conversations.xmpp.XmppConnection.Features;
 
-public class EditAccountActivity extends XmppActivity {
+public class EditAccountActivity extends XmppActivity implements CreateNdefMessageCallback {
+
+	private NfcAdapter nfcAdapter;
 
 	private AutoCompleteTextView mAccountJid;
 	private EditText mPassword;
@@ -299,6 +317,32 @@ public class EditAccountActivity extends XmppActivity {
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		Log.d(Config.LOGTAG, "onResume: nfcAdapter=" + nfcAdapter);
+		if (nfcAdapter == null)
+			nfcAdapter = NfcAdapter.getDefaultAdapter(getApplicationContext());
+		if (nfcAdapter != null) {
+			if (nfcAdapter.isEnabled()) {
+				if (nfcAdapter.isNdefPushEnabled()) {
+					// only if nfc and nde/beam is enabled we can proceed
+					Log.d(Config.LOGTAG, "NFC and NDE available");
+					nfcAdapter.setNdefPushMessageCallback(this, this);
+				}
+				else {
+					Log.d(Config.LOGTAG, "Beam not enabled");
+				}
+			}
+			else {
+				Log.d(Config.LOGTAG, "NFC and Beam not enabled");
+			}
+		}
+		else {
+			Log.d(Config.LOGTAG, "NFC not available");
+		}
+	}
+
+	@Override
 	protected void onStart() {
 		super.onStart();
 		if (getIntent() != null) {
@@ -406,5 +450,43 @@ public class EditAccountActivity extends XmppActivity {
 			}
 			this.mStats.setVisibility(View.GONE);
 		}
+	}
+
+	@Override
+	public NdefMessage createNdefMessage(NfcEvent event) {
+		NdefMessage msg = new NdefMessage(new NdefRecord[] { NdefRecord.createMime(
+			"application/vnd.eu.siacs.conversations.jid",
+			mAccount.getJid().getBytes()),
+			});
+		return msg;
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		super.onCreateOptionsMenu(menu);
+		getMenuInflater().inflate(R.menu.editaccount, menu);
+		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.action_qrcode_show:
+			Point size = new Point();
+			getWindowManager().getDefaultDisplay().getSize(size);
+			final int width = (size.x < size.y ? size.x : size.y) * 6 / 9;
+			String jid = "xmpp:" + mAccount.getJid();
+			Bitmap bitmap = QrCode.getQRCodeBitmap(jid, width);
+			Log.d(Config.LOGTAG, "created qrcode bitmap");
+			ImageView view = new ImageView(getApplicationContext());
+			view.setImageBitmap(bitmap);
+			view.setPadding(width/9, width/9, width/9, width/9);
+			Builder builder = new Builder(this);
+			builder.setTitle(jid);
+			builder.setView(view);
+			builder.create().show();
+			break;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 }

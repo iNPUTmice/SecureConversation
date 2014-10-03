@@ -1,7 +1,9 @@
 package eu.siacs.conversations.ui;
 
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -16,6 +18,7 @@ import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.XmppConnectionBinder;
 import eu.siacs.conversations.utils.ExceptionHelper;
+import eu.siacs.conversations.utils.QrCode;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -38,9 +41,12 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.nfc.NdefMessage;
+import android.nfc.NfcAdapter;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.text.InputType;
 import android.util.DisplayMetrics;
@@ -184,6 +190,7 @@ public abstract class XmppActivity extends Activity {
 
 	abstract void onBackendConnected();
 
+	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 		case R.id.action_settings:
@@ -191,6 +198,9 @@ public abstract class XmppActivity extends Activity {
 			break;
 		case R.id.action_accounts:
 			startActivity(new Intent(this, ManageAccountActivity.class));
+			break;
+		case R.id.action_qrcode_scan:
+			QrCode.doScan(this, this.getApplicationContext());
 			break;
 		case android.R.id.home:
 			finish();
@@ -493,6 +503,7 @@ public abstract class XmppActivity extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode,
 			final Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
+		String uri;
 		if (requestCode == REQUEST_INVITE_TO_CONVERSATION
 				&& resultCode == RESULT_OK) {
 			String contactJid = data.getStringExtra("contact");
@@ -504,6 +515,8 @@ public abstract class XmppActivity extends Activity {
 			}
 			Log.d(Config.LOGTAG, "inviting " + contactJid + " to "
 					+ conversation.getName());
+		} else if ((uri = QrCode.onActivityResult(requestCode, resultCode, data)) != null) {
+			handleJid(jidFromUri(uri));
 		}
 	}
 
@@ -644,5 +657,35 @@ public abstract class XmppActivity extends Activity {
 		public BitmapWorkerTask getBitmapWorkerTask() {
 			return bitmapWorkerTaskReference.get();
 		}
+	}
+
+	static String jidFromUri(String uri) {
+		if (uri != null && uri.startsWith("xmpp:"))
+			return uri.substring(5);
+		return null;
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		if (getIntent() != null && NfcAdapter.ACTION_NDEF_DISCOVERED.equals(getIntent().getAction())) {
+			// this is the moment where we actually notice that we received
+			// a beam event:
+			Parcelable[] rawMsgs = getIntent().getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES);
+			NdefMessage msg = (NdefMessage)rawMsgs[0];
+			String uri = new String(msg.getRecords()[0].getPayload());
+			Log.d(Config.LOGTAG, "we got the payload, should be a uri: " + uri);
+			if (uri != null) {
+				handleJid(jidFromUri(uri));
+			}
+		}
+	}
+
+	protected boolean handleJid(String jid) {
+		Log.d(Config.LOGTAG, "handleJid jid=" + jid);
+		Intent intent = new Intent(Intent.ACTION_VIEW);
+		intent.setData(Uri.parse("xmpp:" + jid));
+		startActivity(intent);
+		return true;
 	}
 }
