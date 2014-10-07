@@ -3,6 +3,10 @@ package eu.siacs.conversations.ui.adapter;
 import java.util.HashMap;
 import java.util.List;
 
+import android.app.AlertDialog;
+import android.content.ClipboardManager;
+import android.content.DialogInterface;
+import android.net.Uri;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
@@ -103,11 +107,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				&& message.getMergedStatus() <= Message.STATUS_RECEIVED;
 		if (message.getType() == Message.TYPE_IMAGE) {
 			String[] fileParams = message.getBody().split(",");
-			try {
-				long size = Long.parseLong(fileParams[0]);
-				filesize = size / 1024 + " KB";
-			} catch (NumberFormatException e) {
-				filesize = "0 KB";
+			if (fileParams.length == 4) {
+				filesize = fileParams[3];
+			} else if (fileParams.length == 3) {
+				try {
+					long size = Long.parseLong(fileParams[0]);
+					filesize = size / 1024 + " KB";
+				} catch (NumberFormatException e) {
+					filesize = "0 KB";
+				}
+			} else {
+				// display URL for un-downloaded
+				filesize = message.getBody();
 			}
 		}
 		switch (message.getMergedStatus()) {
@@ -275,8 +286,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		}
 		viewHolder.messageBody.setVisibility(View.GONE);
 		viewHolder.image.setVisibility(View.VISIBLE);
-		String[] fileParams = message.getBody().split(",");
-		if (fileParams.length == 3) {
+		String[] fileParams = message.getBody().split(",", 4);
+		if (fileParams.length >= 3) {
 			double target = metrics.density * 288;
 			int w = Integer.parseInt(fileParams[1]);
 			int h = Integer.parseInt(fileParams[2]);
@@ -297,29 +308,76 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 			@Override
 			public void onClick(View v) {
-				Intent intent = new Intent(Intent.ACTION_VIEW);
-				intent.setDataAndType(activity.xmppConnectionService
-						.getFileBackend().getJingleFileUri(message), "image/*");
-				getContext().startActivity(intent);
+				viewImageMessage(message);
 			}
 		});
 		viewHolder.image.setOnLongClickListener(new OnLongClickListener() {
 
 			@Override
 			public boolean onLongClick(View v) {
-				Intent shareIntent = new Intent();
-				shareIntent.setAction(Intent.ACTION_SEND);
-				shareIntent.putExtra(Intent.EXTRA_STREAM,
-						activity.xmppConnectionService.getFileBackend()
-								.getJingleFileUri(message));
-				shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-				shareIntent.setType("image/webp");
-				getContext().startActivity(
-						Intent.createChooser(shareIntent,
-								getContext().getText(R.string.share_with)));
+				String[] fileParams = message.getBody().split(",", 4);
+				if (fileParams.length == 4) {
+					showImagePreviewContextmenu(message);
+					return true;
+				}
+				shareImageMessage(message);
 				return true;
 			}
 		});
+	}
+
+	public void showImagePreviewContextmenu(final Message message) {
+		final String fileParams[] = message.getBody().split(",");
+		new AlertDialog.Builder(getContext())
+		.setTitle(R.string.image_context_menu_title)
+		.setItems(R.array.image_preview_contextmenu,
+				new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialogInterface, int i) {
+						switch(i) {
+							case 0:
+								Intent intent = new Intent(Intent.ACTION_VIEW);
+								intent.setData(Uri.parse(fileParams[3]));
+								getContext().startActivity(intent);
+								break;
+							case 1:
+								ClipboardManager cm = (ClipboardManager)getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+								cm.setText(fileParams[3]);
+								break;
+							case 2:
+								shareImageMessage(message);
+								break;
+						}
+					}
+				})
+		.setCancelable(true)
+		.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialogInterface, int i) {
+				dialogInterface.dismiss();
+			}
+		})
+		.show();
+	}
+
+	public void shareImageMessage(Message message) {
+		Intent shareIntent = new Intent();
+		shareIntent.setAction(Intent.ACTION_SEND);
+		shareIntent.putExtra(Intent.EXTRA_STREAM,
+				activity.xmppConnectionService.getFileBackend()
+						.getJingleFileUri(message));
+		shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+		shareIntent.setType("image/webp");
+		getContext().startActivity(
+				Intent.createChooser(shareIntent,
+						getContext().getText(R.string.share_with)));
+	}
+
+	public void viewImageMessage(Message message) {
+		Intent intent = new Intent(Intent.ACTION_VIEW);
+		intent.setDataAndType(activity.xmppConnectionService
+				.getFileBackend().getJingleFileUri(message), "image/*");
+		getContext().startActivity(intent);
 	}
 
 	@Override

@@ -1,7 +1,10 @@
 package eu.siacs.conversations.parser;
 
+import android.content.SharedPreferences;
 import android.os.SystemClock;
 import android.util.Log;
+import eu.siacs.conversations.utils.http.ImageDownloadManager;
+import eu.siacs.conversations.utils.http.ImageDownloader;
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
 import eu.siacs.conversations.Config;
@@ -53,6 +56,12 @@ public class MessageParser extends AbstractParser implements
 				return null;
 			}
 
+		}
+
+		ImageDownloadManager idm = mXmppConnectionService.getImageDownloadManager();
+		if (idm.shouldDisplayImagePreview(finishedMessage)) {
+			ImageDownloader downloader = idm.createNewConnection(finishedMessage);
+			finishedMessage.setDownloadable(downloader);
 		}
 		finishedMessage.setTime(getTimestamp(packet));
 		return finishedMessage;
@@ -181,6 +190,12 @@ public class MessageParser extends AbstractParser implements
 			return null;
 		}
 		finishedMessage.setTime(getTimestamp(packet));
+
+		ImageDownloadManager idm = mXmppConnectionService.getImageDownloadManager();
+		if (idm.shouldDisplayImagePreview(finishedMessage)) {
+			ImageDownloader downloader = idm.createNewConnection(finishedMessage);
+			finishedMessage.setDownloadable(downloader);
+		}
 		return finishedMessage;
 	}
 
@@ -517,4 +532,5 @@ public class MessageParser extends AbstractParser implements
 			}
 		}
 	}
+
 }

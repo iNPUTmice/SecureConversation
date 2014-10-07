@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <string name="app_name">Conversations</string>
     <string name="action_settings">Einstellungen</string>
     <string name="action_add">Neue Unterhaltung</string>
@@ -231,6 +230,9 @@
     <string name="server_info_session_established">Aktuelle Sitzung wiederhergestellt</string>
     <string name="additional_information">Zusätzliche Informationen</string>
     <string name="skip">Überspringen</string>
+    <string name="pref_preview_image_urls_summary">Vorschau für Bild-URLs anzeigen</string>
+    <string name="pref_preview_image_urls">Bildvorschau</string>
+    <string name="image_context_menu_title">Bildaktionen</string>
     <string name="pref_ui_options">Benutzeroberfläche</string>
     <string name="pref_use_indicate_received">Anfrage für Nachrichten Empfang</string>
     <string name="pref_use_indicate_received_summary">Empfangene Nachrichten werden mit einem grünen Häckchen markiert. Bitte beachte das dies nicht unbedingt in allen Fällen funktioniert.</string>

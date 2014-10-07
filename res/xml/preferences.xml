@@ -95,6 +95,13 @@
                     android:key="indicate_received"
                     android:summary="@string/pref_use_indicate_received_summary"
                     android:title="@string/pref_use_indicate_received" />
+                    
+                    
+                <CheckBoxPreference
+                    android:key="preview_image_urls_enabled"
+                    android:title="@string/pref_preview_image_urls"
+                    android:defaultValue="1"/>
+
             </PreferenceCategory>
         </PreferenceScreen>
 

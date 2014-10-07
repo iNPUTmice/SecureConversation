@@ -6,6 +6,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 
+import java.util.regex.Pattern;
+
 public class Message extends AbstractEntity {
 
 	public static final String TABLENAME = "messages";
@@ -368,5 +370,13 @@ public class Message extends AbstractEntity {
 		} else {
 			return prev.mergable(this);
 		}
+	}
+
+	private static final Pattern imageUrlPattern = Pattern.compile("^https?://.*\\.(webp|jpg|png|gif|jpeg)$", Pattern.CASE_INSENSITIVE);
+	public boolean isImageUrl() {
+		//TODO improve image url recognition regex...
+		if (getBody() == null) return false;
+		return imageUrlPattern.matcher(getBody()).matches();
+
 	}
 }
