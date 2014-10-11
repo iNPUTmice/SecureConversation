@@ -827,6 +827,14 @@ public class XmppConnection implements Runnable {
 		this.sendPacket(packet, callback);
 	}
 
+	public void sendIqPacketToMuc(IqPacket packet, OnIqPacketReceived callback) {
+		if (packet.getId() == null) {
+			String id = nextRandomId();
+			packet.setAttribute("id", id);
+		}
+		this.sendPacket(packet, callback);
+	}
+
 	public void sendUnboundIqPacket(IqPacket packet, OnIqPacketReceived callback) {
 		if (packet.getId() == null) {
 			String id = nextRandomId();

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+    <item
+        android:id="@+id/muc_set_none"
+        android:title="@string/muc_set_none" />
+    <item
+        android:id="@+id/muc_set_visitor"
+        android:title="@string/muc_set_visitor" />
+    <item
+        android:id="@+id/muc_set_participant"
+        android:title="@string/muc_set_participant" />
+</menu>

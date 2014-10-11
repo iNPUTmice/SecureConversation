@@ -13,7 +13,7 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.MucOptions.OnRenameListener;
 import eu.siacs.conversations.entities.MucOptions.User;
-import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
+import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 import android.app.PendingIntent;
@@ -21,6 +21,8 @@ import android.content.Context;
 import android.content.IntentSender.SendIntentException;
 import android.graphics.Bitmap;
 import android.os.Bundle;
+import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -38,6 +40,7 @@ public class ConferenceDetailsActivity extends XmppActivity {
 	private Conversation conversation;
 	private TextView mYourNick;
 	private ImageView mYourPhoto;
+	private View mucUserView;
 	private ImageButton mEditNickButton;
 	private TextView mRoleAffiliaton;
 	private TextView mFullJid;
@@ -45,6 +48,9 @@ public class ConferenceDetailsActivity extends XmppActivity {
 	private LinearLayout mMoreDetails;
 	private Button mInviteButton;
 	private String uuid = null;
+	private String mucUser;
+	private String mucJid;
+	private int mucRole;
 
 	private OnClickListener inviteListener = new OnClickListener() {
 
@@ -55,10 +61,10 @@ public class ConferenceDetailsActivity extends XmppActivity {
 	};
 
 	private List<User> users = new ArrayList<MucOptions.User>();
-	private OnConversationUpdate onConvChanged = new OnConversationUpdate() {
+	private OnRosterUpdate onPresenceChanged = new OnRosterUpdate() {
 
 		@Override
-		public void onConversationUpdate() {
+		public void onRosterUpdate() {
 			runOnUiThread(new Runnable() {
 
 				@Override
@@ -163,7 +169,7 @@ public class ConferenceDetailsActivity extends XmppActivity {
 	@Override
 	protected void onStop() {
 		if (xmppConnectionServiceBound) {
-			xmppConnectionService.removeOnConversationListChangedListener();
+			xmppConnectionService.removeOnRosterUpdateListener();
 		}
 		super.onStop();
 	}
@@ -171,7 +177,7 @@ public class ConferenceDetailsActivity extends XmppActivity {
 	protected void registerListener() {
 		if (xmppConnectionServiceBound) {
 			xmppConnectionService
-					.setOnConversationListChangedListener(this.onConvChanged);
+					.setOnRosterUpdateListener(this.onPresenceChanged);
 			xmppConnectionService.setOnRenameListener(new OnRenameListener() {
 
 				@Override
@@ -227,12 +233,12 @@ public class ConferenceDetailsActivity extends XmppActivity {
 		membersView.removeAllViews();
 		Account account = conversation.getAccount();
 		for (final User user : conversation.getMucOptions().getUsers()) {
-			View view = (View) inflater.inflate(R.layout.contact, membersView,
-					false);
-			TextView name = (TextView) view
+			mucUserView = (View) inflater
+					.inflate(R.layout.contact, membersView, false);
+			TextView name = (TextView) mucUserView
 					.findViewById(R.id.contact_display_name);
-			TextView key = (TextView) view.findViewById(R.id.key);
-			TextView role = (TextView) view.findViewById(R.id.contact_jid);
+			TextView key = (TextView) mucUserView.findViewById(R.id.key);
+			TextView role = (TextView) mucUserView.findViewById(R.id.contact_jid);
 			if (user.getPgpKeyId() != 0) {
 				key.setVisibility(View.VISIBLE);
 				key.setOnClickListener(new OnClickListener() {
@@ -264,9 +270,23 @@ public class ConferenceDetailsActivity extends XmppActivity {
 				name.setText(user.getName());
 				role.setText(getReadableRole(user.getRole()));
 			}
-			ImageView iv = (ImageView) view.findViewById(R.id.contact_photo);
+			ImageView iv = (ImageView) mucUserView.findViewById(R.id.contact_photo);
 			iv.setImageBitmap(bm);
-			membersView.addView(view);
+			if (conversation.getMucOptions().getSelf().getRole() == User.ROLE_MODERATOR
+					&& (user.getRole() < User.ROLE_MODERATOR && conversation
+							.getMucOptions().getSelf().getAffiliation() >= user
+							.getAffiliation())) {
+				mucUserView.setOnLongClickListener(new View.OnLongClickListener() {
+
+					@Override
+					public boolean onLongClick(View v) {
+						mucAction(user.getJid(), user.getName(), user.getRole());
+						return true;
+					}
+
+				});
+			}
+			membersView.addView(mucUserView);
 		}
 	}
 
@@ -284,5 +304,52 @@ public class ConferenceDetailsActivity extends XmppActivity {
 				}
 			}
 		}
+	}
+
+	private void mucAction(String jid, String user, int role) {
+		this.mucJid = jid;
+		this.mucUser = user;
+		this.mucRole = role;
+		registerForContextMenu(mucUserView);
+		openContextMenu(mucUserView);
+		unregisterForContextMenu(mucUserView);
+	}
+
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		super.onCreateContextMenu(menu, v, menuInfo);
+
+		this.getMenuInflater().inflate(R.menu.mucadmin_context, menu);
+		MenuItem mItemVisitor = menu.findItem(R.id.muc_set_visitor);
+		MenuItem mItemParticipant = menu.findItem(R.id.muc_set_participant);
+
+		switch (mucRole) {
+		case User.ROLE_VISITOR:
+			mItemVisitor.setEnabled(false);
+			break;
+		case User.ROLE_PARTICIPANT:
+			mItemParticipant.setEnabled(false);
+			break;
+		}
+
+		menu.setHeaderTitle(mucUser + "\n" + mucJid);
+	}
+
+	@Override
+	public boolean onContextItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case R.id.muc_set_none:
+			xmppConnectionService.setMucUserRole(conversation, mucUser, "none");
+			break;
+		case R.id.muc_set_visitor:
+			xmppConnectionService.setMucUserRole(conversation, mucUser, "visitor");
+			break;
+		case R.id.muc_set_participant:
+			xmppConnectionService.setMucUserRole(conversation, mucUser,
+					"participant");
+			break;
+		}
+		return true;
 	}
 }
