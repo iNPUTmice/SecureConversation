@@ -1524,6 +1524,14 @@ public class XmppConnectionService extends Service {
 		sendMessagePacket(conversation.getAccount(), packet);
 	}
 
+	public void setMucUserRole(Conversation conversation, String user,
+			String role) {
+		IqPacket packet = mIqGenerator.setMucUserRole(user, role);
+		packet.setFrom(conversation.getContactJid());
+		packet.setTo(conversation.getContactJid().split("/", 2)[0]);
+		sendIqPacketToMuc(conversation.getAccount(), packet, null);
+	}
+
 	public void resetSendingToWaiting(Account account) {
 		for (Conversation conversation : getConversations()) {
 			if (conversation.getAccount() == account) {
@@ -1744,6 +1752,14 @@ public class XmppConnectionService extends Service {
 		XmppConnection connection = account.getXmppConnection();
 		if (connection != null) {
 			connection.sendIqPacket(packet, callback);
+		}
+	}
+
+	public void sendIqPacketToMuc(Account account, IqPacket packet,
+			OnIqPacketReceived callback) {
+		XmppConnection connection = account.getXmppConnection();
+		if (connection != null) {
+			connection.sendIqPacketToMuc(packet, callback);
 		}
 	}
 

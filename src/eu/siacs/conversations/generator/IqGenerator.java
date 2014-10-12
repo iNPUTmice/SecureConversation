@@ -93,4 +93,15 @@ public class IqGenerator extends AbstractGenerator {
 		}
 		return packet;
 	}
+
+	public IqPacket setMucUserRole(String user, String role) {
+		IqPacket packet = new IqPacket(IqPacket.TYPE_SET);
+		Element query = packet.addChild("query",
+				"http://jabber.org/protocol/muc#admin");
+		Element item = query.addChild("item");
+		item.setAttribute("role", role);
+		item.setAttribute("nick", user);
+
+		return packet;
+	}
 }

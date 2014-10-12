@@ -29,11 +29,12 @@ public class MucOptions {
 
 	public class User {
 		public static final int ROLE_MODERATOR = 3;
-		public static final int ROLE_NONE = 0;
 		public static final int ROLE_PARTICIPANT = 2;
 		public static final int ROLE_VISITOR = 1;
-		public static final int AFFILIATION_ADMIN = 4;
-		public static final int AFFILIATION_OWNER = 3;
+		public static final int ROLE_NONE = 0;
+
+		public static final int AFFILIATION_OWNER = 4;
+		public static final int AFFILIATION_ADMIN = 3;
 		public static final int AFFILIATION_MEMBER = 2;
 		public static final int AFFILIATION_OUTCAST = 1;
 		public static final int AFFILIATION_NONE = 0;
