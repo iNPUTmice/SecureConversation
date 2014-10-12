@@ -101,8 +101,6 @@
     <string name="pref_sound_summary">Riproduci una suoneria con la notifica</string>
     <string name="pref_conference_notifications">Notifiche Conferenze</string>
     <string name="pref_conference_notifications_summary">Notifica sempre quando arriva un nuovo messaggio da una conferenza, invece che solo quando in primo piano</string>
-    <string name="pref_notification_grace_period">Periodo tra notifiche</string>
-    <string name="pref_notification_grace_period_summary">Disabilita le notifiche per un breve lasso di tempo dopo che un messaggio è stato ricevuto</string>
     <string name="pref_advanced_options">Opzioni Avanzate</string>
     <string name="pref_never_send_crash">Non inviare mai segnalazioni di errore</string>
     <string name="pref_never_send_crash_summary">Se scegli di inviare una segnalazione dell\'errore aiuterai lo sviluppo di Conversations</string>
@@ -144,7 +142,6 @@
     <string name="encryption_choice_none">Testo semplice</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Modifica utente</string>
     <string name="mgmt_account_delete">Elimina utente</string>
     <string name="mgmt_account_disable">Disabilita temporaneamente</string>
     <string name="mgmt_account_publish_avatar">Pubblica avatar</string>
@@ -238,7 +235,6 @@
     <string name="enable">Abilita</string>
     <string name="conference_requires_password">La conferenza richiede una password</string>
     <string name="enter_password">Inserisci la password</string>
-    <string name="missing_presence_updates">Aggiornamenti della presenza del contatto mancanti</string>
     <string name="request_presence_updates">Richiedi gli aggiornamenti della presenza dal tuo contatto.\n\n<small>Questo verrà usato per determinare quali client sta usando il tuo contatto.</small></string>
     <string name="request_now">Rechiedi adesso</string>
     <string name="delete_fingerprint">Elimina Impronta</string>

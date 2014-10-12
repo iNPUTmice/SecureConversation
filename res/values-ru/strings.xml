@@ -101,8 +101,6 @@
     <string name="pref_sound_summary">Выберите звуковой сигнал для сообщений</string>
     <string name="pref_conference_notifications">Уведомления конференции</string>
     <string name="pref_conference_notifications_summary">Всегда сообщать при получении нового сообщения в конференции</string>
-    <string name="pref_notification_grace_period">Отсрочка уведомлений</string>
-    <string name="pref_notification_grace_period_summary">Не использовать уведомления, если вы прочитали сообщение на другом устройстве</string>
     <string name="pref_advanced_options">Дополнительные параметры</string>
     <string name="pref_never_send_crash">Отчеты об ошибках</string>
     <string name="pref_never_send_crash_summary">Отправляя отчеты об ошибках, вы помогаете исправить и улучшить Conversations, поддерживая дальнейшее развитие программы</string>
@@ -144,7 +142,6 @@
     <string name="encryption_choice_none">Без шифрования</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Редактировать аккаунт</string>
     <string name="mgmt_account_delete">Удалить</string>
     <string name="mgmt_account_disable">Отключить</string>
     <string name="mgmt_account_publish_avatar">Разместить аватар</string>
@@ -238,7 +235,6 @@
     <string name="enable">Включить</string>
     <string name="conference_requires_password">Конференция требует авторизации</string>
     <string name="enter_password">Введите пароль</string>
-    <string name="missing_presence_updates">Обновления присутствия недоступны</string>
     <string name="request_presence_updates">Пожалуйста, прежде запросите обновления присутствия у вашего собеседника.\n\n<small>Эта информация будет использоваться для определения того, каким клиентом(ами) пользуетя ваш собеседник.</small></string>
     <string name="request_now">Запросить сейчас</string>
     <string name="delete_fingerprint">Удалить Контрольную Сумму</string>

@@ -73,8 +73,6 @@
     <string name="pref_sound_summary">Reprodueix el to de trucada amb la notificació</string>
     <string name="pref_conference_notifications">Notificacions de conferència</string>
     <string name="pref_conference_notifications_summary">Sempre notifica quan arriba un nou missatge de conferència en comptes de només quan està destacat</string>
-    <string name="pref_notification_grace_period">Notificació del període d\'espera</string>
-    <string name="pref_notification_grace_period_summary">Desactiva les notificacions durant un breu termini després de rebre una còpia de missatges carbon</string>
     <string name="pref_advanced_options">Opcions avançades</string>
     <string name="pref_never_send_crash">Mai enviïs informes d\'errors</string>
     <string name="pref_never_send_crash_summary">Enviant traces d\'execució ajudes al futur desenvolupament del Conversations.</string>

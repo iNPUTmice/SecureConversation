@@ -101,8 +101,6 @@
     <string name="pref_sound_summary">Play ringtone with notification</string>
     <string name="pref_conference_notifications">Conference notifications</string>
     <string name="pref_conference_notifications_summary">Always notify when a new conference message arrives instead of only when highlighted</string>
-    <string name="pref_notification_grace_period">Notification grace period</string>
-    <string name="pref_notification_grace_period_summary">Disable notifications for a short time after a carbon copy was received</string>
     <string name="pref_advanced_options">Advanced Options</string>
     <string name="pref_never_send_crash">Never send crash reports</string>
     <string name="pref_never_send_crash_summary">By sending in stack traces you are helping the ongoing development of Conversations</string>
@@ -144,7 +142,6 @@
     <string name="encryption_choice_none">Plain text</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Edit account</string>
     <string name="mgmt_account_delete">Delete account</string>
     <string name="mgmt_account_disable">Temporarily disable</string>
     <string name="mgmt_account_publish_avatar">Publish avatar</string>
@@ -238,7 +235,6 @@
     <string name="enable">Enable</string>
     <string name="conference_requires_password">Conference requires password</string>
     <string name="enter_password">Enter password</string>
-    <string name="missing_presence_updates">Missing presence updates from contact</string>
     <string name="request_presence_updates">Please request presence updates from your contact first.\n\n<small>This will be used to determine what client(s) your contact is using.</small></string>
     <string name="request_now">Request now</string>
     <string name="delete_fingerprint">Delete Fingerprint</string>
