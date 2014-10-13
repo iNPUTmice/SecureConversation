@@ -11,7 +11,8 @@
         android:layout_height="48dp"
         android:layout_alignParentLeft="true"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_profile" >
+        android:src="@drawable/ic_profile"
+        android:paddingLeft="5dp">
     </ImageView>
 
     <LinearLayout
