@@ -38,14 +38,17 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Spinner;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.ListItem;
+import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.ListItemAdapter;
@@ -157,13 +160,65 @@ public class StartConversationActivity extends XmppActivity {
 				public void run() {
 					if (mSearchEditText != null) {
 						filter(mSearchEditText.getText().toString());
+						updateStatusIndicators();
 					}
+				}
+			});
+		}
+	};
+	private OnAccountUpdate accountUpdate = new OnAccountUpdate() {
+
+		@Override
+		public void onAccountUpdate() {
+			runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					updateStatusIndicators();
 				}
 			});
 		}
 	};
 	private MenuItem mMenuSearchView;
 	private String mInitialJid;
+
+	private void updateStatusIndicators() {
+        for (final Account account : xmppConnectionService.getAccounts()) {
+			for (final Contact contact : account.getRoster().getContacts()) {
+                if (mContactsAdapter != null) {
+                    final int pos = mContactsAdapter.getPosition(contact);
+                    if (pos != -1 && mContactsListFragment != null) {
+                        final ListView listView = mContactsListFragment.getListView();
+                        if (listView != null) {
+                            final View contactView = listView.getChildAt(pos);
+                            if (contactView != null) {
+                                final ImageView picture = (ImageView) contactView.findViewById(R.id.contact_photo);
+                                if (picture != null) {
+                                    switch (contact.getMostAvailableStatus()) {
+                                        case Presences.CHAT:
+                                        case Presences.ONLINE:
+                                            picture.setBackgroundColor(mColorGreen);
+                                            break;
+                                        case Presences.AWAY:
+                                        case Presences.XA:
+                                            picture.setBackgroundColor(mColorOrange);
+                                            break;
+                                        case Presences.DND:
+                                            picture.setBackgroundColor(mColorRed);
+                                            break;
+                                        case Presences.OFFLINE:
+                                        default:
+                                            picture.setBackgroundColor(mSecondaryTextColor);
+                                            break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+			}
+		}
+	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -223,7 +278,6 @@ public class StartConversationActivity extends XmppActivity {
 						openConversationForContact(position);
 					}
 				});
-
 	}
 
 	@Override
