@@ -101,8 +101,6 @@
     <string name="pref_sound_summary">Přehrát zvuk společně s upozorněním</string>
     <string name="pref_conference_notifications">Upozornění při konferencích</string>
     <string name="pref_conference_notifications_summary">Vždy upozorňovat při nové konferenční zprávě, nejen pokud je vybrána</string>
-    <string name="pref_notification_grace_period">Četnost upozornění</string>
-    <string name="pref_notification_grace_period_summary">Neupozorňovat krátce poté co byla obdržena kopie zprávy</string>
     <string name="pref_advanced_options">Pokročilé nastavení</string>
     <string name="pref_never_send_crash">Neodesílat detaily o pádu aplikace</string>
     <string name="pref_never_send_crash_summary">Zasláním detailů o důvodu selhání pomůžete dalšímu vývoji aplikace Konverzace</string>
@@ -144,7 +142,6 @@
     <string name="encryption_choice_none">Čistý text</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Upravit účet</string>
     <string name="mgmt_account_delete">Smazat účet</string>
     <string name="mgmt_account_disable">Dočasně vypnout</string>
     <string name="mgmt_account_publish_avatar">Zveřejnit avatar</string>
@@ -238,7 +235,6 @@
     <string name="enable">Povolit</string>
     <string name="conference_requires_password">Konference vyžaduje heslo</string>
     <string name="enter_password">Vložit heslo</string>
-    <string name="missing_presence_updates">Kontakt nezasílá informace o změně stavu</string>
     <string name="request_presence_updates">Nejdříve si prosím vyžádejte povolení o zasílání změn stavu kontatku.\n\n<small>To bude poté použito pro zjištění jakou aplikaci tento kontakt používá.</small></string>
     <string name="request_now">Ihned vyžádat</string>
     <string name="delete_fingerprint">Smazat identifikátor</string>

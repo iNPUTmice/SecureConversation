@@ -99,8 +99,6 @@
     <string name="pref_sound_summary">收到新訊息時播放鈴聲</string>
     <string name="pref_conference_notifications">群組通知</string>
     <string name="pref_conference_notifications_summary">當有新訊息時總是通知，而不是被標記時才通知</string>
-    <string name="pref_notification_grace_period">通知限期</string>
-    <string name="pref_notification_grace_period_summary">收到副本後，關閉通知一小段時間</string>
     <string name="pref_advanced_options">進階選項</string>
     <string name="pref_never_send_crash">總是不發送故障報告</string>
     <string name="pref_never_send_crash_summary">發送「堆疊追蹤」給 Conversations 的開發人員能幫助改進本程式</string>
@@ -142,7 +140,6 @@
     <string name="encryption_choice_none">純文字內容</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">編輯帳戶</string>
     <string name="mgmt_account_delete">刪除帳戶</string>
     <string name="mgmt_account_disable">暫時停用</string>
     <string name="mgmt_account_publish_avatar">發佈頭像</string>
@@ -236,7 +233,6 @@
     <string name="enable">打開通知</string>
     <string name="conference_requires_password">群組設有密碼</string>
     <string name="enter_password">輸入密碼</string>
-    <string name="missing_presence_updates">缺少聯絡人狀態訊息</string>
     <string name="request_presence_updates">請先發送關注狀態訊息請求。\n\n<small>這將用來判斷您的聯絡人所用的客戶端類型。</small></string>
     <string name="request_now">現在發送請求</string>
     <string name="delete_fingerprint">刪除指紋</string>

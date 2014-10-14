@@ -98,7 +98,6 @@
     <string name="pref_sound_summary">Spela ljud med notifiering</string>
     <string name="pref_conference_notifications">Konferensnotifieringar</string>
     <string name="pref_conference_notifications_summary">Notifiera alltid när nytt konferensmeddelande tagits emot istället för endast vid highlight</string>
-    <string name="pref_notification_grace_period">Notifieringsfrist</string>
     <string name="pref_advanced_options">Avancerade inställningar</string>
     <string name="pref_never_send_crash">Skicka aldrig krasch-rapporter</string>
     <string name="pref_never_send_crash_summary">Genom att skicka in stack traces hjälper du utvecklarna av Conversations</string>
@@ -138,7 +137,6 @@
     <string name="encryption_choice_none">Klartext</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Ändra konto</string>
     <string name="mgmt_account_delete">Ta bort</string>
     <string name="mgmt_account_enable">Aktivera</string>
     <string name="mgmt_account_are_you_sure">Är du säker?</string>
@@ -234,7 +232,6 @@
     <string name="pref_dont_save_encrypted">Spara in krypterade meddelanden</string>
     <string name="pref_encryption_settings">Krypteringsinställningar</string>
     <string name="pref_use_send_button_to_indicate_status_summary">Färglägg skickaknappen för att indikera kontaktens status</string>
-    <string name="missing_presence_updates">Saknar tillgänglighetsuppdateringar från kontakt</string>
     <string name="pref_expert_options">Expertinställningar</string>
     <string name="pref_force_encryption_summary">Sänd alltid krypterade meddelanden (utom för konferenser)</string>
     <string name="pref_expert_options_summary">Var försiktig med dem</string>
@@ -253,7 +250,6 @@
     <string name="title_activity_conversations">Conversations</string>
     <string name="publish_avatar_explanation">Notera: Alla som kan se dina tillgänglighetsuppdateringar kommer se denna bild.</string>
     <string name="choose_presence">Välj tillgänglighet till kontakt</string>
-    <string name="pref_notification_grace_period_summary">Inaktivera notifieringar en kort stund efter att en carbon copy tagits emot</string>
     <string name="account_status_disabled">Tillfälligt inaktiverad</string>
     <string name="mgmt_account_disable">Inaktivera tillfälligt</string>
 

@@ -101,8 +101,6 @@
     <string name="pref_sound_summary">Reproduce tono con la notificación</string>
     <string name="pref_conference_notifications">Notificaciones de conferencia</string>
     <string name="pref_conference_notifications_summary">Siempre notifica cuando llega un mensaje de conferencia y no solo cuando llega un mensaje destacado</string>
-    <string name="pref_notification_grace_period">Notificaciones Carbons</string>
-    <string name="pref_notification_grace_period_summary">Deshabilita las notificaciones durante un corto periodo de tiempo después de recibir la copia del mensaje carbon</string>
     <string name="pref_advanced_options">Opciones avanzadas</string>
     <string name="pref_never_send_crash">Nunca enviar informe de fallos</string>
     <string name="pref_never_send_crash_summary">Si envías registros de error ayudas al desarrollo de Conversations</string>
@@ -144,7 +142,6 @@
     <string name="encryption_choice_none">Texto plano</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Editar cuenta</string>
     <string name="mgmt_account_delete">Eliminar cuenta</string>
     <string name="mgmt_account_disable">Deshabilitar temporalmente</string>
     <string name="mgmt_account_publish_avatar">Imagen de perfil</string>
@@ -238,7 +235,6 @@
     <string name="enable">Habilitar</string>
     <string name="conference_requires_password">La conferencia requiere contraseña</string>
     <string name="enter_password">Introduce la contraseña</string>
-    <string name="missing_presence_updates">Suscripción de actualizaciones de presencia del contacto perdida</string>
     <string name="request_presence_updates">Por favor, solicita la suscripción de presencia a tu contacto primero.\n\n<small>Esto será usado para determinar qué cliente(s) está usando tu contacto.</small></string>
     <string name="request_now">Solicitar ahora</string>
     <string name="delete_fingerprint">Eliminar Clave OTR</string>

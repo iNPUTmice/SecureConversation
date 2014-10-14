@@ -47,6 +47,7 @@ public class KnownHostsAdapter extends ArrayAdapter<String> {
 		@Override
 		protected void publishResults(CharSequence constraint,
 				FilterResults results) {
+			@SuppressWarnings("unchecked")
 			ArrayList<String> filteredList = (ArrayList<String>) results.values;
 			if (results != null && results.count > 0) {
 				clear();

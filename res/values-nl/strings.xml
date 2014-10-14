@@ -96,8 +96,6 @@
     <string name="pref_sound_summary">Speel ringtone af bij notificatie</string>
     <string name="pref_conference_notifications">Groepsconversatie notificaties</string>
     <string name="pref_conference_notifications_summary">Toon altijd notificaties als er nieuwe berichten arriveren in groepsconversaties in plaats van alleen bij highlighting</string>
-    <string name="pref_notification_grace_period">Notificatie uitstel periode</string>
-    <string name="pref_notification_grace_period_summary">Zet notificaties voor korte tijd uit als er een carbon copy wordt ontvangen</string>
     <string name="pref_advanced_options">Geadvanceerde Opties</string>
     <string name="pref_never_send_crash">Verstuur nooit crash rapportages</string>
     <string name="pref_never_send_crash_summary">Door crash rapportages te versturen helpt U mee aan de ontwikkeling van Conversaties</string>
@@ -138,7 +136,6 @@
     <string name="encryption_choice_none">Onversleuteld</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">Bewerk account</string>
     <string name="mgmt_account_delete">Verwijder</string>
     <string name="mgmt_account_disable">Tijdelijk uitzetten</string>
     <string name="mgmt_account_enable">Aanzetten</string>

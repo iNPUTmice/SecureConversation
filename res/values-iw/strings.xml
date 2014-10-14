@@ -100,8 +100,6 @@
     <string name="pref_sound_summary">נגן צלצול עם התראה</string>
     <string name="pref_conference_notifications">התראות ועידה</string>
     <string name="pref_conference_notifications_summary">תמיד תודיע כאשר הודעת ועידה חדשה מגיעה במקום רק כאשר מודגשת</string>
-    <string name="pref_notification_grace_period">משך ארכת התראה</string>
-    <string name="pref_notification_grace_period_summary">נטרל התראות לזמן קצר לאחר שהודעת פחם התקבלה</string>
     <string name="pref_advanced_options">אפשרויות מתקדמות</string>
     <string name="pref_never_send_crash">לעולם אל תשלח דיווחי קריסה</string>
     <string name="pref_never_send_crash_summary">על ידי שליחת עקבות מחסנית אתה עוזר להתקדמות הפיתוח של Conversations</string>
@@ -142,7 +140,6 @@
     <string name="encryption_choice_none">טקסט גלוי</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">ערוך חשבון</string>
     <string name="mgmt_account_delete">מחק</string>
     <string name="mgmt_account_disable">נטרל זמנית</string>
     <string name="mgmt_account_publish_avatar">פרסם אווטאר</string>

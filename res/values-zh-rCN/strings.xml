@@ -101,8 +101,6 @@
     <string name="pref_sound_summary">收到新消息时播放铃声</string>
     <string name="pref_conference_notifications">讨论组通知</string>
     <string name="pref_conference_notifications_summary">当有新的消息时总是通知而不是亮屏时才通知</string>
-    <string name="pref_notification_grace_period">通知限期</string>
-    <string name="pref_notification_grace_period_summary">接收副本短时间内关闭通知</string>
     <string name="pref_advanced_options">高级选项</string>
     <string name="pref_never_send_crash">总不发送故障报告</string>
     <string name="pref_never_send_crash_summary">发送堆栈跟踪帮助Conversations开发人员</string>
@@ -144,7 +142,6 @@
     <string name="encryption_choice_none">纯文本内容</string>
     <string name="encryption_choice_otr">OTR</string>
     <string name="encryption_choice_pgp">OpenPGP</string>
-    <string name="mgmt_account_edit">编辑账号</string>
     <string name="mgmt_account_delete">删除账号</string>
     <string name="mgmt_account_disable">暂时不可用</string>
     <string name="mgmt_account_publish_avatar">发布头像</string>
@@ -238,7 +235,6 @@
     <string name="enable">打开通知</string>
     <string name="conference_requires_password">讨论组设有密码</string>
     <string name="enter_password">输入密码</string>
-    <string name="missing_presence_updates">缺少在线联系人更新</string>
     <string name="request_presence_updates">请先发送更新在线联系人请求.\n\n<small>这将用来判断您的联系人所用的客户端类型人.</small></string>
     <string name="request_now">现在发送请求</string>
     <string name="delete_fingerprint">删除指纹</string>
