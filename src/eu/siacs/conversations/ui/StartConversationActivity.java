@@ -554,6 +554,9 @@ public class StartConversationActivity extends XmppActivity {
 	}
 
 	protected boolean handleJid(String jid) {
+		if (xmppConnectionService == null) {
+			return super.handleJid(jid);
+		}
 		List<Contact> contacts = xmppConnectionService.findContacts(jid);
 		if (contacts.size() == 0) {
 			showCreateContactDialog(jid);

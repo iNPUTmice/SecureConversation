@@ -17,7 +17,7 @@ public final class Config {
 
 	public static final int MESSAGE_MERGE_WINDOW = 20;
 
-	public static final boolean BEAM_CONFIG = true;
+	public static final boolean BEAM_CONFIG = false;
 
 	public enum TransformEmoticons { NONE, DISPLAY, SEND, BOTH, };
 
