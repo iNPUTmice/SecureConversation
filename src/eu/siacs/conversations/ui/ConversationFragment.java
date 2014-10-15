@@ -206,9 +206,9 @@ public class ConversationFragment extends Fragment {
 			}
 			return;
 		}
-		Message message = new Message(conversation, mEditMessage.getText()
-				.toString(), conversation.getNextEncryption(activity
-				.forceEncryption()));
+		Message message = new Message(conversation, UIHelper.transformAsciiEmoticons(
+				mEditMessage.getText().toString(), ""), conversation.getNextEncryption(
+				activity.forceEncryption()));
 		if (conversation.getMode() == Conversation.MODE_MULTI) {
 			if (conversation.getNextPresence() != null) {
 				message.setPresence(conversation.getNextPresence());

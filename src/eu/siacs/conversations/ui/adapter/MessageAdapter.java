@@ -238,9 +238,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						viewHolder.messageBody.setText(message.getBody());
 					}
 				} else {
-					String body = Config.PARSE_EMOTICONS ? UIHelper
-							.transformAsciiEmoticons(message.getMergedBody())
-							: message.getMergedBody();
+					String body = UIHelper
+							.transformAsciiEmoticons(message.getMergedBody(), null);
 					viewHolder.messageBody.setText(body);
 				}
 			} else {
