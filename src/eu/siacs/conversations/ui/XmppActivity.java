@@ -1,7 +1,9 @@
 package eu.siacs.conversations.ui;
 
 import java.io.FileNotFoundException;
+import java.io.UnsupportedEncodingException;
 import java.lang.ref.WeakReference;
+import java.net.URLDecoder;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -12,9 +14,12 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Presences;
+import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.XmppConnectionBinder;
 import eu.siacs.conversations.utils.ExceptionHelper;
+import eu.siacs.conversations.utils.Beam;
+import eu.siacs.conversations.utils.QrCode;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -56,6 +61,7 @@ public abstract class XmppActivity extends Activity {
 	public XmppConnectionService xmppConnectionService;
 	public boolean xmppConnectionServiceBound = false;
 	protected boolean handledViewIntent = false;
+	protected Beam mBeam = new Beam();
 
 	protected int mPrimaryTextColor;
 	protected int mSecondaryTextColor;
@@ -189,6 +195,25 @@ public abstract class XmppActivity extends Activity {
 			break;
 		case R.id.action_accounts:
 			startActivity(new Intent(this, ManageAccountActivity.class));
+			break;
+		case R.id.action_qrcode_scan:
+			QrCode.doScan(this, this.getApplicationContext());
+			break;
+		case R.id.action_qrcode_show:
+			String jid = getMyJid();
+			if (jid != null) {
+				final int width = 800; // TODO: use screensize
+				Bitmap bitmap = QrCode.getQRCodeBitmap(jid, width);
+				Log.d(Config.LOGTAG, "created qrcode bitmap");
+				ImageView view = new ImageView(getApplicationContext());
+				view.setImageBitmap(bitmap);
+				view.setPadding(width/8, width/8, width/8, width/8);
+				Builder builder = new Builder(this);
+				builder.setTitle(jid);
+				builder.setView(view);
+				//builder.setIcon(new android.graphics.drawable.BitmapDrawable(getResources(), bitmap));
+				builder.create().show();
+			}
 			break;
 		case android.R.id.home:
 			finish();
@@ -492,6 +517,7 @@ public abstract class XmppActivity extends Activity {
 	protected void onActivityResult(int requestCode, int resultCode,
 			final Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
+		String uri;
 		if (requestCode == REQUEST_INVITE_TO_CONVERSATION
 				&& resultCode == RESULT_OK) {
 			String contactJid = data.getStringExtra("contact");
@@ -503,6 +529,8 @@ public abstract class XmppActivity extends Activity {
 			}
 			Log.d(Config.LOGTAG, "inviting " + contactJid + " to "
 					+ conversation.getName());
+		} else if ((uri = QrCode.onActivityResult(requestCode, resultCode, data)) != null) {
+			handleJid(jidFromUri(uri));
 		}
 	}
 
@@ -623,5 +651,44 @@ public abstract class XmppActivity extends Activity {
 		public BitmapWorkerTask getBitmapWorkerTask() {
 			return bitmapWorkerTaskReference.get();
 		}
+	}
+
+	String jidFromUri(String uri) {
+		if (uri.startsWith("xmpp:"))
+			return uri.substring(5);
+		return null;
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		String uri = mBeam.activate(this, getApplicationContext(), getIntent(), Config.BEAM_CONFIG, getMyJid());
+		if (uri != null) {
+			handleJid(jidFromUri(uri));
+		}
+	}
+
+	protected boolean handleJid(String jid) {
+		Log.d(Config.LOGTAG, "handleJid jid=" + jid);
+		// TODO: isnt there a shorter way doing this:
+		Intent intent = new Intent(Intent.ACTION_VIEW);
+		intent.setData(Uri.parse("xmpp:" + jid));
+		startActivity(intent);
+		return true;
+	}
+
+	/**
+	 * Return the jid of the first account found.
+	 */
+	String getMyJid() {
+		DatabaseBackend databaseBackend = DatabaseBackend.getInstance(getApplicationContext());
+		List<Account> accounts = databaseBackend.getAccounts();
+		for (Account account : accounts) {
+			String jid = "xmpp:" + account.getJid();
+			Log.d(Config.LOGTAG, "getMyJid jid=" + jid);
+			return jid;
+			// TODO show a chooser if more than one account is configured?
+		}
+		return null;
 	}
 }

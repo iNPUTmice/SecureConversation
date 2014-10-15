@@ -17,7 +17,11 @@ public final class Config {
 
 	public static final int MESSAGE_MERGE_WINDOW = 20;
 
-	public static final boolean PARSE_EMOTICONS = false;
+	public static final boolean BEAM_CONFIG = true;
+
+	public enum TransformEmoticons { NONE, DISPLAY, SEND, BOTH, };
+
+	public static final TransformEmoticons TRANSFORM_EMOTICONS = TransformEmoticons.NONE;
 
 	private Config() {
 
