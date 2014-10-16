@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
@@ -253,6 +254,10 @@ public class ConversationActivity extends XmppActivity implements
 				.findItem(R.id.action_invite);
 		MenuItem menuMute = (MenuItem) menu.findItem(R.id.action_mute);
 
+		if (Config.QRCODE_OFFERED) {
+			((MenuItem)menu.findItem(R.id.action_qrcode_show)).setVisible(true);
+			((MenuItem)menu.findItem(R.id.action_qrcode_scan)).setVisible(true);
+		}
 		if (isConversationsOverviewVisable()
 				&& isConversationsOverviewHideable()) {
 			menuArchive.setVisible(false);

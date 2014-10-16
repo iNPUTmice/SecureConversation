@@ -18,6 +18,7 @@ public final class Config {
 	public static final int MESSAGE_MERGE_WINDOW = 20;
 
 	public static final boolean BEAM_CONFIG = false;
+	public static final boolean QRCODE_OFFERED = false;
 
 	public enum TransformEmoticons { NONE, DISPLAY, SEND, BOTH, };
 
