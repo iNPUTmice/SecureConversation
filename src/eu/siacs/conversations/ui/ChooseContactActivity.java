@@ -19,6 +19,7 @@ import android.widget.ListView;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.ui.adapter.ListItemAdapter;
 
@@ -133,7 +134,9 @@ public class ChooseContactActivity extends XmppActivity {
 			if (account.getStatus() != Account.STATUS_DISABLED) {
 				for (Contact contact : account.getRoster().getContacts()) {
 					if (contact.showInRoster() && contact.match(needle)) {
-						this.contacts.add(contact);
+						if (!getPreferences().getBoolean("hide_offline_contacts", false) || contact.getMostAvailableStatus() != Presences.OFFLINE) {
+							this.contacts.add(contact);
+						}
 					}
 				}
 			}
