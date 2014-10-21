@@ -40,6 +40,7 @@ public class EditAccountActivity extends XmppActivity {
 
 	private LinearLayout mStats;
 	private TextView mServerInfoSm;
+	private TextView mServerInfoRosterVersion;
 	private TextView mServerInfoCarbons;
 	private TextView mServerInfoCSI;
 	private TextView mServerInfoPep;
@@ -275,6 +276,7 @@ public class EditAccountActivity extends XmppActivity {
 		this.mRegisterNew = (CheckBox) findViewById(R.id.account_register_new);
 		this.mStats = (LinearLayout) findViewById(R.id.stats);
 		this.mSessionEst = (TextView) findViewById(R.id.session_est);
+		this.mServerInfoRosterVersion = (TextView) findViewById(R.id.server_info_roster_version);
 		this.mServerInfoCarbons = (TextView) findViewById(R.id.server_info_carbons);
 		this.mServerInfoCSI = (TextView) findViewById(R.id.server_info_csi);
 		this.mServerInfoSm = (TextView) findViewById(R.id.server_info_sm);
@@ -362,6 +364,11 @@ public class EditAccountActivity extends XmppActivity {
 					getApplicationContext(), this.mAccount.getXmppConnection()
 							.getLastSessionEstablished()));
 			Features features = this.mAccount.getXmppConnection().getFeatures();
+			if (features.rosterVersioning()) {
+				this.mServerInfoRosterVersion.setText(R.string.server_info_available);
+			} else {
+				this.mServerInfoRosterVersion.setText(R.string.server_info_unavailable);
+			}
 			if (features.carbons()) {
 				this.mServerInfoCarbons.setText(R.string.server_info_available);
 			} else {
