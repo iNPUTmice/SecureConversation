@@ -172,6 +172,7 @@
     <string name="muc_details_conference">Conference</string>
     <string name="muc_details_other_members">Other Members</string>
     <string name="server_info_carbon_messages">XEP-0280: Message Carbons</string>
+    <string name="server_info_csi">XEP-0352: Client State Indication</string>
     <string name="server_info_stream_management">XEP-0198: Stream Management</string>
     <string name="server_info_pep">XEP-0163: PEP (Avatars)</string>
     <string name="server_info_available">available</string>

@@ -41,6 +41,7 @@ public class EditAccountActivity extends XmppActivity {
 	private LinearLayout mStats;
 	private TextView mServerInfoSm;
 	private TextView mServerInfoCarbons;
+	private TextView mServerInfoCSI;
 	private TextView mServerInfoPep;
 	private TextView mSessionEst;
 	private TextView mOtrFingerprint;
@@ -275,6 +276,7 @@ public class EditAccountActivity extends XmppActivity {
 		this.mStats = (LinearLayout) findViewById(R.id.stats);
 		this.mSessionEst = (TextView) findViewById(R.id.session_est);
 		this.mServerInfoCarbons = (TextView) findViewById(R.id.server_info_carbons);
+		this.mServerInfoCSI = (TextView) findViewById(R.id.server_info_csi);
 		this.mServerInfoSm = (TextView) findViewById(R.id.server_info_sm);
 		this.mServerInfoPep = (TextView) findViewById(R.id.server_info_pep);
 		this.mOtrFingerprint = (TextView) findViewById(R.id.otr_fingerprint);
@@ -365,6 +367,11 @@ public class EditAccountActivity extends XmppActivity {
 			} else {
 				this.mServerInfoCarbons
 						.setText(R.string.server_info_unavailable);
+			}
+			if (features.csi()) {
+				this.mServerInfoCSI.setText(R.string.server_info_available);
+			} else {
+				this.mServerInfoCSI.setText(R.string.server_info_unavailable);
 			}
 			if (features.sm()) {
 				this.mServerInfoSm.setText(R.string.server_info_available);
