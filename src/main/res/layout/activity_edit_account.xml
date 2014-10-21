@@ -172,6 +172,26 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
+                            android:text="@string/server_info_roster_version"
+                            android:textColor="@color/primarytext"
+                            android:textSize="?attr/TextSizeBody" />
+
+                        <TextView
+                            android:id="@+id/server_info_roster_version"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="right"
+                            android:textColor="@color/primarytext"
+                            android:textSize="?attr/TextSizeBody" />
+                    </TableRow>
+
+                    <TableRow
+                        android:layout_width="fill_parent"
+                        android:layout_height="wrap_content" >
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
                             android:text="@string/server_info_carbon_messages"
                             android:textColor="@color/primarytext"
                             android:textSize="?attr/TextSizeBody" />
