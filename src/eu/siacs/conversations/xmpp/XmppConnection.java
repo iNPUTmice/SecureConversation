@@ -634,10 +634,10 @@ public class XmppConnection implements Runnable {
 				&& shouldAuthenticate && usingEncryption) {
 			List<String> mechanisms = extractMechanisms(streamFeatures
 					.findChild("mechanisms"));
-			if (mechanisms.contains("PLAIN")) {
-				sendSaslAuthPlain();
-			} else if (mechanisms.contains("DIGEST-MD5")) {
+			if (mechanisms.contains("DIGEST-MD5")) {
 				sendSaslAuthDigestMd5();
+			} else if (mechanisms.contains("PLAIN") && usingEncryption) {
+				sendSaslAuthPlain();
 			}
 		} else if (this.streamFeatures.hasChild("sm", "urn:xmpp:sm:"
 				+ smVersion)
