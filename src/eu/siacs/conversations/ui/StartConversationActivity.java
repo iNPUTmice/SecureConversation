@@ -102,6 +102,16 @@ public class StartConversationActivity extends XmppActivity {
 		public void onPageSelected(int position) {
 			getActionBar().setSelectedNavigationItem(position);
 			onTabChanged();
+			runOnUiThread(new Runnable() {
+
+				@Override
+				public void run() {
+					if (mSearchEditText != null) {
+						filter(mSearchEditText.getText().toString());
+						updateStatusIndicators();
+					}
+				}
+			});
 		}
 	};
 
@@ -183,39 +193,39 @@ public class StartConversationActivity extends XmppActivity {
 	private String mInitialJid;
 
 	private void updateStatusIndicators() {
-        for (final Account account : xmppConnectionService.getAccounts()) {
+		for (final Account account : xmppConnectionService.getAccounts()) {
 			for (final Contact contact : account.getRoster().getContacts()) {
-                if (mContactsAdapter != null) {
-                    final int pos = mContactsAdapter.getPosition(contact);
-                    if (pos != -1 && mContactsListFragment != null) {
-                        final ListView listView = mContactsListFragment.getListView();
-                        if (listView != null) {
-                            final View contactView = listView.getChildAt(pos);
-                            if (contactView != null) {
-                                final ImageView picture = (ImageView) contactView.findViewById(R.id.contact_photo);
-                                if (picture != null) {
-                                    switch (contact.getMostAvailableStatus()) {
-                                        case Presences.CHAT:
-                                        case Presences.ONLINE:
-                                            picture.setBackgroundColor(mColorGreen);
-                                            break;
-                                        case Presences.AWAY:
-                                        case Presences.XA:
-                                            picture.setBackgroundColor(mColorOrange);
-                                            break;
-                                        case Presences.DND:
-                                            picture.setBackgroundColor(mColorRed);
-                                            break;
-                                        case Presences.OFFLINE:
-                                        default:
-                                            picture.setBackgroundColor(mSecondaryTextColor);
-                                            break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+				if (mContactsAdapter != null) {
+					final int pos = mContactsAdapter.getPosition(contact);
+					if (pos != -1 && mContactsListFragment != null) {
+						final ListView listView = mContactsListFragment.getListView();
+						if (listView != null) {
+							final View contactView = listView.getChildAt(pos);
+							if (contactView != null) {
+								final ImageView picture = (ImageView) contactView.findViewById(R.id.contact_photo);
+								if (picture != null) {
+									switch (contact.getMostAvailableStatus()) {
+										case Presences.CHAT:
+										case Presences.ONLINE:
+											picture.setBackgroundColor(mColorGreen);
+											break;
+										case Presences.AWAY:
+										case Presences.XA:
+											picture.setBackgroundColor(mColorOrange);
+											break;
+										case Presences.DND:
+											picture.setBackgroundColor(mColorRed);
+											break;
+										case Presences.OFFLINE:
+										default:
+											picture.setBackgroundColor(mSecondaryTextColor);
+											break;
+									}
+								}
+							}
+						}
+					}
+				}
 			}
 		}
 	}
