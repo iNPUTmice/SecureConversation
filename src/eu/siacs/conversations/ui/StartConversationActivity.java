@@ -108,8 +108,8 @@ public class StartConversationActivity extends XmppActivity {
 				public void run() {
 					if (mSearchEditText != null) {
 						filter(mSearchEditText.getText().toString());
-						updateStatusIndicators();
 					}
+					updateStatusIndicators();
 				}
 			});
 		}
@@ -288,6 +288,18 @@ public class StartConversationActivity extends XmppActivity {
 						openConversationForContact(position);
 					}
 				});
+	}
+
+	@Override
+	public void onWindowFocusChanged(final boolean hasFocus) {
+		super.onWindowFocusChanged(hasFocus);
+		runOnUiThread(new Runnable() {
+
+			@Override
+			public void run() {
+				updateStatusIndicators();
+			}
+		});
 	}
 
 	@Override
