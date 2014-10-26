@@ -293,13 +293,15 @@ public class StartConversationActivity extends XmppActivity {
 	@Override
 	public void onWindowFocusChanged(final boolean hasFocus) {
 		super.onWindowFocusChanged(hasFocus);
-		runOnUiThread(new Runnable() {
+		if (hasFocus) {
+			runOnUiThread(new Runnable() {
 
-			@Override
-			public void run() {
-				updateStatusIndicators();
-			}
-		});
+				@Override
+				public void run() {
+					updateStatusIndicators();
+				}
+			});
+		}
 	}
 
 	@Override
