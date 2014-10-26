@@ -65,6 +65,7 @@ public abstract class XmppActivity extends Activity {
 	protected int mColorRed;
 	protected int mColorOrange;
 	protected int mColorGreen;
+	protected int mColorGray;
 	protected int mPrimaryColor;
 
 	protected boolean mUseSubject = true;
@@ -209,6 +210,7 @@ public abstract class XmppActivity extends Activity {
 		mColorRed = getResources().getColor(R.color.red);
 		mColorOrange = getResources().getColor(R.color.orange);
 		mColorGreen = getResources().getColor(R.color.green);
+		mColorGray = getResources().getColor(R.color.gray);
 		mPrimaryColor = getResources().getColor(R.color.primary);
 		mSecondaryBackgroundColor = getResources().getColor(
 				R.color.secondarybackground);

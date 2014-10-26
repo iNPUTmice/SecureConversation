@@ -218,7 +218,7 @@ public class StartConversationActivity extends XmppActivity {
 											break;
 										case Presences.OFFLINE:
 										default:
-											statusBar.setBackgroundColor(mSecondaryTextColor);
+											statusBar.setBackgroundColor(mColorGray);
 											break;
 									}
 								}
