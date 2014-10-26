@@ -29,6 +29,7 @@ import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
@@ -38,7 +39,6 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.CheckBox;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Spinner;
 import eu.siacs.conversations.R;
@@ -202,23 +202,23 @@ public class StartConversationActivity extends XmppActivity {
 						if (listView != null) {
 							final View contactView = listView.getChildAt(pos);
 							if (contactView != null) {
-								final ImageView picture = (ImageView) contactView.findViewById(R.id.contact_photo);
-								if (picture != null) {
+								final SurfaceView statusBar = (SurfaceView) contactView.findViewById(R.id.contact_status);
+								if (statusBar != null) {
 									switch (contact.getMostAvailableStatus()) {
 										case Presences.CHAT:
 										case Presences.ONLINE:
-											picture.setBackgroundColor(mColorGreen);
+											statusBar.setBackgroundColor(mColorGreen);
 											break;
 										case Presences.AWAY:
 										case Presences.XA:
-											picture.setBackgroundColor(mColorOrange);
+											statusBar.setBackgroundColor(mColorOrange);
 											break;
 										case Presences.DND:
-											picture.setBackgroundColor(mColorRed);
+											statusBar.setBackgroundColor(mColorRed);
 											break;
 										case Presences.OFFLINE:
 										default:
-											picture.setBackgroundColor(mSecondaryTextColor);
+											statusBar.setBackgroundColor(mSecondaryTextColor);
 											break;
 									}
 								}
