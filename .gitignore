@@ -4,3 +4,8 @@ bin/**
 .settings
 local.properties
 gen
+.gradle
+build
+gradle.properties
+.idea
+*.iml
