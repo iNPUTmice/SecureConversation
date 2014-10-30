@@ -5,13 +5,21 @@
     android:background="?android:attr/activatedBackgroundIndicator"
     android:padding="8dp" >
 
+		<SurfaceView
+			android:id="@+id/contact_status"
+			android:layout_width="5dp"
+			android:layout_height="48dp"
+			android:layout_alignParentLeft="true"
+			android:background="#83000000">
+		</SurfaceView>
+
     <ImageView
         android:id="@+id/contact_photo"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_alignParentLeft="true"
+				android:layout_toRightOf="@id/contact_status"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_profile" >
+				android:src="@drawable/ic_profile">
     </ImageView>
 
     <LinearLayout
