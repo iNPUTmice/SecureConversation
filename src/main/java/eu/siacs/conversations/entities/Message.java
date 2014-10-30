@@ -16,7 +16,6 @@ public class Message extends AbstractEntity {
 	public static final int STATUS_UNSEND = 1;
 	public static final int STATUS_SEND = 2;
 	public static final int STATUS_SEND_FAILED = 3;
-	public static final int STATUS_SEND_REJECTED = 4;
 	public static final int STATUS_WAITING = 5;
 	public static final int STATUS_OFFERED = 6;
 	public static final int STATUS_SEND_RECEIVED = 7;
@@ -366,13 +365,13 @@ public class Message extends AbstractEntity {
 			return prev.mergable(this);
 		}
 	}
+	
+	public boolean trusted() {
+		Contact contact = this.getContact();
+		return (status > STATUS_RECEIVED || (contact != null && contact.trusted()));
+	}
 
 	public boolean bodyContainsDownloadable() {
-		Contact contact = this.getContact();
-		if (status <= STATUS_RECEIVED
-				&& (contact == null || !contact.trusted())) {
-			return false;
-		}
 		try {
 			URL url = new URL(this.getBody());
 			if (!url.getProtocol().equalsIgnoreCase("http")
@@ -383,7 +382,12 @@ public class Message extends AbstractEntity {
 				return false;
 			}
 			String[] pathParts = url.getPath().split("/");
-			String filename = pathParts[pathParts.length - 1];
+			String filename;
+			if (pathParts.length > 0) {
+				filename = pathParts[pathParts.length - 1];
+			} else {
+				filename = pathParts[0];
+			}
 			String[] extensionParts = filename.split("\\.");
 			if (extensionParts.length == 2
 					&& Arrays.asList(Downloadable.VALID_EXTENSIONS).contains(
@@ -405,14 +409,18 @@ public class Message extends AbstractEntity {
 	}
 
 	public ImageParams getImageParams() {
-		ImageParams params = new ImageParams();
+		ImageParams params = getLegacyImageParams();
+		if (params!=null) {
+			return params;
+		}
+		params = new ImageParams();
 		if (this.downloadable != null) {
 			params.size = this.downloadable.getFileSize();
 		}
 		if (body == null) {
 			return params;
 		}
-		String parts[] = body.split(",");
+		String parts[] = body.split("\\|");
 		if (parts.length == 1) {
 			try {
 				params.size = Long.parseLong(parts[0]);
@@ -464,6 +472,34 @@ public class Message extends AbstractEntity {
 			}
 		}
 		return params;
+	}
+	
+	public ImageParams getLegacyImageParams() {
+		ImageParams params = new ImageParams();
+		if (body == null) {
+			return params;
+		}
+		String parts[] = body.split(",");
+		if (parts.length == 3) {
+			try {
+				params.size = Long.parseLong(parts[0]);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+			try {
+				params.width = Integer.parseInt(parts[1]);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+			try {
+				params.height = Integer.parseInt(parts[2]);
+			} catch (NumberFormatException e) {
+				return null;
+			}
+			return params;
+		} else {
+			return null;
+		}
 	}
 
 	public class ImageParams {

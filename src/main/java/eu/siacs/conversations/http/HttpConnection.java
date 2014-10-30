@@ -65,6 +65,8 @@ public class HttpConnection implements Downloadable {
 			String path = mUrl.getPath();
 			if (path != null && (path.endsWith(".pgp") || path.endsWith(".gpg"))) {
 				this.message.setEncryption(Message.ENCRYPTION_PGP);
+			} else if (message.getEncryption() != Message.ENCRYPTION_OTR) {
+				this.message.setEncryption(Message.ENCRYPTION_NONE);
 			}
 			this.file = mXmppConnectionService.getFileBackend().getFile(
 					message, false);
@@ -244,8 +246,8 @@ public class HttpConnection implements Downloadable {
 			BitmapFactory.decodeFile(file.getAbsolutePath(), options);
 			int imageHeight = options.outHeight;
 			int imageWidth = options.outWidth;
-			message.setBody(mUrl.toString() + "," + file.getSize() + ','
-					+ imageWidth + ',' + imageHeight);
+			message.setBody(mUrl.toString() + "|" + file.getSize() + '|'
+					+ imageWidth + '|' + imageHeight);
 			message.setType(Message.TYPE_IMAGE);
 			mXmppConnectionService.updateMessage(message);
 		}

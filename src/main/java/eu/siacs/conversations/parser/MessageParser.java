@@ -256,7 +256,6 @@ public class MessageParser extends AbstractParser implements
 				return null;
 			}
 		}
-
 		return finishedMessage;
 	}
 
@@ -478,13 +477,21 @@ public class MessageParser extends AbstractParser implements
 		}
 		Conversation conversation = message.getConversation();
 		conversation.add(message);
+
+		if (message.getStatus() == Message.STATUS_RECEIVED
+				&& conversation.getOtrSession() != null
+				&& !conversation.getOtrSession().getSessionID().getUserID()
+						.equals(message.getPresence())) {
+			conversation.endOtrIfNeeded();
+		}
+
 		if (packet.getType() != MessagePacket.TYPE_ERROR) {
 			if (message.getEncryption() == Message.ENCRYPTION_NONE
 					|| mXmppConnectionService.saveEncryptedMessages()) {
 				mXmppConnectionService.databaseBackend.createMessage(message);
 			}
 		}
-		if (message.bodyContainsDownloadable()) {
+		if (message.trusted() && message.bodyContainsDownloadable()) {
 			this.mXmppConnectionService.getHttpConnectionManager()
 					.createNewConnection(message);
 			notify = false;

@@ -27,7 +27,7 @@ android {
         minSdkVersion 14
         targetSdkVersion 19
         versionCode 32
-        versionName "0.8-alpha"
+        versionName "0.8"
     }
 
     compileOptions {

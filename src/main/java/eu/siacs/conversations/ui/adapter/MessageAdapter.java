@@ -100,6 +100,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			if (params.size != 0) {
 				filesize = params.size / 1024 + " KB";
 			}
+			if (message.getDownloadable() != null && message.getDownloadable().getStatus() == Downloadable.STATUS_FAILED) {
+				error = true;
+			}
 		}
 		switch (message.getMergedStatus()) {
 		case Message.STATUS_WAITING:
@@ -123,10 +126,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			break;
 		case Message.STATUS_SEND_FAILED:
 			info = getContext().getString(R.string.send_failed);
-			error = true;
-			break;
-		case Message.STATUS_SEND_REJECTED:
-			info = getContext().getString(R.string.send_rejected);
 			error = true;
 			break;
 		default:
@@ -314,11 +313,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			viewHolder = new ViewHolder();
 			switch (type) {
 			case NULL:
-				view = (View) activity.getLayoutInflater().inflate(
+				view = activity.getLayoutInflater().inflate(
 						R.layout.message_null, parent, false);
 				break;
 			case SENT:
-				view = (View) activity.getLayoutInflater().inflate(
+				view = activity.getLayoutInflater().inflate(
 						R.layout.message_sent, parent, false);
 				viewHolder.message_box = (LinearLayout) view
 						.findViewById(R.id.message_box);
@@ -343,7 +342,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				view.setTag(viewHolder);
 				break;
 			case RECEIVED:
-				view = (View) activity.getLayoutInflater().inflate(
+				view = activity.getLayoutInflater().inflate(
 						R.layout.message_received, parent, false);
 				viewHolder.message_box = (LinearLayout) view
 						.findViewById(R.id.message_box);
@@ -367,7 +366,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				view.setTag(viewHolder);
 				break;
 			case STATUS:
-				view = (View) activity.getLayoutInflater().inflate(
+				view = activity.getLayoutInflater().inflate(
 						R.layout.message_status, parent, false);
 				viewHolder.contact_picture = (ImageView) view
 						.findViewById(R.id.message_photo);
@@ -484,6 +483,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 					&& d.getStatus() == Downloadable.STATUS_OFFER_CHECK_FILESIZE) {
 				displayDownloadableMessage(viewHolder, item,
 						R.string.check_image_filesize);
+			} else if (d != null && d.getStatus() == Downloadable.STATUS_FAILED) {
+				displayInfoMessage(viewHolder, R.string.image_transmission_failed);
 			} else if ((item.getEncryption() == Message.ENCRYPTION_DECRYPTED)
 					|| (item.getEncryption() == Message.ENCRYPTION_NONE)
 					|| (item.getEncryption() == Message.ENCRYPTION_OTR)) {

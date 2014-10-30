@@ -127,7 +127,11 @@ public class XmppConnectionService extends Service {
 		public void onContactStatusChanged(Contact contact, boolean online) {
 			Conversation conversation = find(getConversations(), contact);
 			if (conversation != null) {
-				conversation.endOtrIfNeeded();
+				if (online && contact.getPresences().size() > 1) {
+					conversation.endOtrIfNeeded();
+				} else {
+					conversation.resetOtrSession();
+				}
 				if (online && (contact.getPresences().size() == 1)) {
 					sendUnsendMessages(conversation);
 				}
@@ -567,13 +571,14 @@ public class XmppConnectionService extends Service {
 								&& conv.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) {
 							mJingleConnectionManager
 									.createNewConnection(message);
-						} else if (message.getPresence() == null) {
-							message.setStatus(Message.STATUS_WAITING);
 						}
 					} else {
 						mJingleConnectionManager.createNewConnection(message);
 					}
 				} else {
+					if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+						conv.startOtrIfNeeded();
+					}
 					message.setStatus(Message.STATUS_WAITING);
 				}
 			} else {
@@ -590,6 +595,7 @@ public class XmppConnectionService extends Service {
 						send = true;
 
 					} else if (message.getPresence() == null) {
+						conv.startOtrIfNeeded();
 						message.setStatus(Message.STATUS_WAITING);
 					}
 				} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
@@ -922,9 +928,9 @@ public class XmppConnectionService extends Service {
 	public Conversation find(List<Conversation> haystack, Account account,
 			String jid) {
 		for (Conversation conversation : haystack) {
-			if ((account == null || conversation.getAccount().equals(account))
+			if ((account == null || conversation.getAccount() == account)
 					&& (conversation.getContactJid().split("/", 2)[0]
-							.equals(jid))) {
+							.equalsIgnoreCase(jid))) {
 				return conversation;
 			}
 		}
@@ -991,7 +997,6 @@ public class XmppConnectionService extends Service {
 
 	public void clearConversationHistory(Conversation conversation) {
 		this.databaseBackend.deleteMessagesInConversation(conversation);
-		this.fileBackend.removeFiles(conversation);
 		conversation.getMessages().clear();
 		updateConversationUi();
 	}

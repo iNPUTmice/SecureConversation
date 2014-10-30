@@ -11,7 +11,6 @@ import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
-import eu.siacs.conversations.entities.Downloadable;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presences;
@@ -361,8 +360,7 @@ public class ConversationFragment extends Fragment {
 				copyText.setVisible(false);
 			}
 			if (this.selectedMessage.getType() != Message.TYPE_IMAGE
-					|| (this.selectedMessage.getDownloadable() != null && this.selectedMessage
-							.getDownloadable().getStatus() == Downloadable.STATUS_DELETED)) {
+					|| this.selectedMessage.getDownloadable() != null) {
 				shareImage.setVisible(false);
 			}
 			if (this.selectedMessage.getStatus() != Message.STATUS_SEND_FAILED) {
@@ -399,6 +397,7 @@ public class ConversationFragment extends Fragment {
 			return true;
 		case R.id.download_image:
 			downloadImage(selectedMessage);
+			return true;
 		default:
 			return super.onContextItemSelected(item);
 		}
@@ -568,7 +567,7 @@ public class ConversationFragment extends Fragment {
 			this.messageListAdapter.notifyDataSetChanged();
 			if (conversation.getMode() == Conversation.MODE_SINGLE) {
 				if (messageList.size() >= 1) {
-					makeFingerprintWarning(conversation.getLatestEncryption());
+					makeFingerprintWarning();
 				}
 			} else {
 				if (!conversation.getMucOptions().online()
@@ -720,14 +719,13 @@ public class ConversationFragment extends Fragment {
 		}
 	}
 
-	protected void makeFingerprintWarning(int latestEncryption) {
+	protected void makeFingerprintWarning() {
 		Set<String> knownFingerprints = conversation.getContact()
 				.getOtrFingerprints();
-		if ((latestEncryption == Message.ENCRYPTION_OTR)
-				&& (conversation.hasValidOtrSession()
+		if (conversation.hasValidOtrSession()
 						&& (!conversation.isMuted())
 						&& (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) && (!knownFingerprints
-							.contains(conversation.getOtrFingerprint())))) {
+							.contains(conversation.getOtrFingerprint()))) {
 			showSnackbar(R.string.unknown_otr_fingerprint, R.string.verify,
 					new OnClickListener() {
 

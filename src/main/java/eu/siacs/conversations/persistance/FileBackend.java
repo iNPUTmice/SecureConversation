@@ -20,7 +20,6 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.RectF;
-import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -29,11 +28,11 @@ import android.util.Base64OutputStream;
 import android.util.Log;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.ExifHelper;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 
 public class FileBackend {
@@ -181,23 +180,12 @@ public class FileBackend {
 				return -1;
 			}
 		} else {
-			ExifInterface exif;
 			try {
-				exif = new ExifInterface(image.toString());
-				if (exif.getAttribute(ExifInterface.TAG_ORIENTATION)
-						.equalsIgnoreCase("6")) {
-					return 90;
-				} else if (exif.getAttribute(ExifInterface.TAG_ORIENTATION)
-						.equalsIgnoreCase("8")) {
-					return 270;
-				} else if (exif.getAttribute(ExifInterface.TAG_ORIENTATION)
-						.equalsIgnoreCase("3")) {
-					return 180;
-				} else {
-					return 0;
-				}
-			} catch (IOException e) {
-				return -1;
+				InputStream is = mXmppConnectionService.getContentResolver()
+						.openInputStream(image);
+				return ExifHelper.getOrientation(is);
+			} catch (FileNotFoundException e) {
+				return 0;
 			}
 		}
 	}
@@ -224,27 +212,6 @@ public class FileBackend {
 					thumbnail);
 		}
 		return thumbnail;
-	}
-
-	public void removeFiles(Conversation conversation) {
-		String prefix = mXmppConnectionService.getFilesDir().getAbsolutePath();
-		String path = prefix + "/" + conversation.getAccount().getJid() + "/"
-				+ conversation.getContactJid();
-		File file = new File(path);
-		try {
-			this.deleteFile(file);
-		} catch (IOException e) {
-			Log.d(Config.LOGTAG,
-					"error deleting file: " + file.getAbsolutePath());
-		}
-	}
-
-	private void deleteFile(File f) throws IOException {
-		if (f.isDirectory()) {
-			for (File c : f.listFiles())
-				deleteFile(c);
-		}
-		f.delete();
 	}
 
 	public Uri getTakePhotoUri() {
