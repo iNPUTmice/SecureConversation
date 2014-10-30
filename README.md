@@ -272,8 +272,7 @@ Make sure to have ANDROID_HOME point to your Android SDK
     git clone https://github.com/siacs/Conversations.git
     cd Conversations
     git submodule update --init --recursive
-    ant clean
-    ant debug
+    ./gradlew --info clean assembleDebug
 
 #### How do I debug Conversations
 

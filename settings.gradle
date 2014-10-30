@@ -1,0 +1,8 @@
+include 'libs:minidns'
+include 'libs:MemorizingTrustManager'
+include 'libs:openpgp-api-lib'
+include 'libs:otr4j'
+include 'libs:bc-java:core'
+include 'libs:bc-java:prov'
+
+rootProject.name = 'Conversations'
