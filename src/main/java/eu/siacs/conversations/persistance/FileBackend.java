@@ -20,6 +20,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.RectF;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -175,18 +176,50 @@ public class FileBackend {
 					return -1;
 				}
 				cursor.moveToFirst();
-				return cursor.getInt(0);
+				int orientation = cursor.getInt(0);
+				Log.d(Config.LOGTAG, "orientation=" + orientation + ", image=" + image);
+				if (orientation != 0) {
+					return orientation;
+				}
 			} catch (IllegalArgumentException e) {
 				return -1;
 			}
 		} else {
 			try {
-				InputStream is = mXmppConnectionService.getContentResolver()
-						.openInputStream(image);
-				return ExifHelper.getOrientation(is);
-			} catch (FileNotFoundException e) {
-				return 0;
+				ExifInterface exif = new ExifInterface(image.toString());
+				int tag_orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, -1);
+				switch (tag_orientation) {
+				case ExifInterface.ORIENTATION_NORMAL:
+					return 0;
+				case ExifInterface.ORIENTATION_ROTATE_90:
+					return 90;
+				case ExifInterface.ORIENTATION_ROTATE_180:
+					return 180;
+				case ExifInterface.ORIENTATION_ROTATE_270:
+					return 270;
+				case ExifInterface.ORIENTATION_TRANSPOSE:
+				case ExifInterface.ORIENTATION_TRANSVERSE:
+				case ExifInterface.ORIENTATION_FLIP_HORIZONTAL:
+				case ExifInterface.ORIENTATION_FLIP_VERTICAL:
+					Log.e(Config.LOGTAG, "unsupported tag_orientation=" + tag_orientation);
+					return -1;
+				case ExifInterface.ORIENTATION_UNDEFINED:
+				default:
+					break;
+				}
+			} catch (IOException ignore) {
+				return -1;
 			}
+		}
+		Log.w(Config.LOGTAG, "broken exif api, jump to own code");
+		try {
+			InputStream is = mXmppConnectionService.getContentResolver().openInputStream(image);
+			int orientation = ExifHelper.getOrientation(is);
+			Log.d(Config.LOGTAG, "orientation=" + orientation);
+			return orientation;
+		} catch (FileNotFoundException e) {
+			Log.d(Config.LOGTAG, "orientation=" + e);
+			return -1;
 		}
 	}
 
