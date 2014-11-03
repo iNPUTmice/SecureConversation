@@ -24,6 +24,7 @@ import android.support.v13.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.KeyEvent;
@@ -40,6 +41,7 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Spinner;
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
@@ -50,6 +52,7 @@ import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.ListItemAdapter;
 import eu.siacs.conversations.utils.Validator;
+import eu.siacs.conversations.utils.QrCode;
 
 public class StartConversationActivity extends XmppActivity {
 
@@ -520,7 +523,7 @@ public class StartConversationActivity extends XmppActivity {
 		this.mKnownHosts = xmppConnectionService.getKnownHosts();
 		this.mKnownConferenceHosts = xmppConnectionService
 				.getKnownConferenceHosts();
-		if (!startByIntent()) {
+		if (!startByIntent(getIntent())) {
 			if (mSearchEditText != null) {
 				filter(mSearchEditText.getText().toString());
 			} else {
@@ -529,29 +532,31 @@ public class StartConversationActivity extends XmppActivity {
 		}
 	}
 
-	protected boolean startByIntent() {
-		if (getIntent() != null
-				&& Intent.ACTION_SENDTO.equals(getIntent().getAction())) {
+	private boolean startByIntent(Intent intent) {
+		Log.d(Config.LOGTAG, "startByIntent intent=" + intent);
+		if (intent == null)
+			return false;
+		if (Intent.ACTION_SENDTO.equals(intent.getAction())) {
+			setIntent(null);
 			try {
-				String jid = URLDecoder.decode(
-						getIntent().getData().getEncodedPath(), "UTF-8").split(
-						"/")[1];
-				setIntent(null);
+				Uri uri = intent.getData();
+				String jid = URLDecoder.decode(uri.getEncodedPath(), "UTF-8").split("/")[1];
 				return handleJid(jid);
 			} catch (UnsupportedEncodingException e) {
-				setIntent(null);
-				return false;
+				// ignore and fail
 			}
-		} else if (getIntent() != null
-				&& Intent.ACTION_VIEW.equals(getIntent().getAction())) {
-			Uri uri = getIntent().getData();
+		} else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+			Uri uri = intent.getData();
 			String jid = uri.getSchemeSpecificPart().split("\\?")[0];
 			return handleJid(jid);
 		}
 		return false;
 	}
 
-	private boolean handleJid(String jid) {
+	protected boolean handleJid(String jid) {
+		if (xmppConnectionService == null) {
+			return super.handleJid(jid);
+		}
 		List<Contact> contacts = xmppConnectionService.findContacts(jid);
 		if (contacts.size() == 0) {
 			showCreateContactDialog(jid);
