@@ -418,7 +418,13 @@ public class ConversationActivity extends XmppActivity implements
 					inviteToConversation(getSelectedConversation());
 					break;
 				case R.id.action_security:
-					selectEncryptionDialog(getSelectedConversation());
+					if (forceEncryption() && disablePGP()) {
+                    				if(getSelectedConversation().getNextEncryption(false) == Message.ENCRYPTION_OTR && getSelectedConversation().getOtrFingerprint() != "") {
+                        				View snackbar = ((ConversationFragment) getFragmentManager().findFragmentByTag("conversation")).getSnackbar();
+                        				UIHelper.getVerifyFingerprintDialog(ConversationActivity.this, getSelectedConversation(), snackbar).show();
+                    				}
+                			}
+			                else selectEncryptionDialog(getSelectedConversation());
 					break;
 				case R.id.action_clear_history:
 					clearHistoryDialog(getSelectedConversation());
@@ -550,15 +556,13 @@ public class ConversationActivity extends XmppActivity implements
 			});
 			popup.inflate(R.menu.encryption_choices);
 			MenuItem otr = popup.getMenu().findItem(R.id.encryption_choice_otr);
-			MenuItem none = popup.getMenu().findItem(
-					R.id.encryption_choice_none);
-			if (conversation.getMode() == Conversation.MODE_MULTI) {
-				otr.setEnabled(false);
-			} else {
-				if (forceEncryption()) {
-					none.setVisible(false);
-				}
-			}
+			MenuItem pgp = popup.getMenu().findItem(R.id.encryption_choice_pgp);
+        		MenuItem none = popup.getMenu().findItem(R.id.encryption_choice_none);
+
+			if (conversation.getMode() == Conversation.MODE_MULTI) otr.setEnabled(false);
+        		if (disablePGP()) pgp.setVisible(false);
+			if (forceEncryption()) none.setVisible(false);
+			
 			switch (conversation.getNextEncryption(forceEncryption())) {
 				case Message.ENCRYPTION_NONE:
 					none.setChecked(true);
@@ -567,12 +571,10 @@ public class ConversationActivity extends XmppActivity implements
 					otr.setChecked(true);
 					break;
 				case Message.ENCRYPTION_PGP:
-					popup.getMenu().findItem(R.id.encryption_choice_pgp)
-							.setChecked(true);
+					pgp.setChecked(true);
 					break;
 				default:
-					popup.getMenu().findItem(R.id.encryption_choice_none)
-							.setChecked(true);
+					none.setChecked(true);
 					break;
 			}
 			popup.show();
@@ -891,6 +893,10 @@ public class ConversationActivity extends XmppActivity implements
 
 					}
 				});
+	}
+	
+	public boolean disablePGP() {
+		return getPreferences().getBoolean("disable_pgp", false);
 	}
 
 	public boolean forceEncryption() {
