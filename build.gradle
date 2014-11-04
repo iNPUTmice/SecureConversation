@@ -28,13 +28,14 @@ repositories {
 }
 
 dependencies {
-	compile project(':libs/minidns')
-	compile project(':libs/openpgp-api-lib')
-	compile project(':libs/MemorizingTrustManager')
+	compile project(':libs:minidns')
+	compile project(':libs:openpgp-api-lib')
+	compile project(':libs:MemorizingTrustManager')
 	compile 'com.android.support:support-v13:19.1.0'
 	compile 'org.bouncycastle:bcprov-jdk15on:1.50'
 	compile 'net.java:otr4j:0.21'
-	compile fileTree(dir: 'libs', include: ['*.jar'])
+	compile 'com.google.zxing:core:3.1.0'
+	compile 'com.google.zxing:android-integration:3.1.0'
 }
 
 android {
@@ -44,8 +45,8 @@ android {
 	defaultConfig {
 		minSdkVersion 14
 		targetSdkVersion 19
-		versionCode 32
-		versionName "0.8-alpha"
+		versionCode 33
+		versionName "0.8.1"
 	}
 
 	compileOptions {
@@ -80,10 +81,6 @@ android {
 	}
 
 	buildTypes {
-		release {
-			runProguard true
-			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
-		}
 		applicationVariants.all { variant ->
 			def fileName = variant.packageApplication.outputFile.name.replace(".apk",
 					"-" + defaultConfig.versionName + ".apk")
