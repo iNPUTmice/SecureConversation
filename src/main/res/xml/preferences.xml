@@ -91,6 +91,11 @@
                     android:title="@string/pref_dont_save_encrypted" />
                 <CheckBoxPreference
                     android:defaultValue="false"
+                    android:key="disable_pgp"
+                    android:summary="@string/pref_disable_pgp_summary"
+                    android:title="@string/pref_disable_pgp" />
+                <CheckBoxPreference
+                    android:defaultValue="false"
                     android:key="enable_legacy_ssl"
                     android:summary="@string/pref_enable_legacy_ssl_summary"
                     android:title="@string/pref_enable_legacy_ssl" />
