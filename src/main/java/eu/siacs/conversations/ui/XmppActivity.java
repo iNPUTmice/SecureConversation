@@ -629,44 +629,54 @@ public abstract class XmppActivity extends Activity {
 		return false;
 	}
 
-	protected void registerNdefPushMessageCallback() {
-			NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-			if (nfcAdapter != null && nfcAdapter.isEnabled()) {
+	private void registerNdefPushMessageCallback(boolean enable) {
+		NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
+		if (nfcAdapter != null && nfcAdapter.isEnabled() && nfcAdapter.isNdefPushEnabled()) {
+			if (enable) {
 				nfcAdapter.setNdefPushMessageCallback(new NfcAdapter.CreateNdefMessageCallback() {
 					@Override
 					public NdefMessage createNdefMessage(NfcEvent nfcEvent) {
-                        return new NdefMessage(new NdefRecord[]{
-                                NdefRecord.createUri(getShareableUri()),
-                                NdefRecord.createApplicationRecord("eu.siacs.conversations")
-                        });
+						String uri = getShareableUri();
+						NdefRecord[] records = uri == null?
+						new NdefRecord[]{
+								NdefRecord.createApplicationRecord("eu.siacs.conversations")
+						}:
+						new NdefRecord[]{
+								NdefRecord.createUri(uri),
+								NdefRecord.createApplicationRecord("eu.siacs.conversations")
+						};
+						NdefMessage msg = new NdefMessage(records);
+						Log.d(Config.LOGTAG, "createNdefMessage msg=" + msg + ", uri=" + getShareableUri());
+						return msg;
 					}
 				}, this);
+			} else {
+				nfcAdapter.setNdefPushMessageCallback(null, this);
 			}
-	}
-
-	protected void unregisterNdefPushMessageCallback() {
-		NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
-		if (nfcAdapter != null && nfcAdapter.isEnabled()) {
-			nfcAdapter.setNdefPushMessageCallback(null,this);
 		}
 	}
 
 	protected String getShareableUri() {
-		return null;
+		String uri = null;
+		// if we have exactly one account we always share the jid from that one
+		List<Account> accounts = xmppConnectionService.getAccounts();
+		if (accounts.size() == 1) {
+			uri = "xmpp:" + accounts.get(0).getJid().toBareJid();
+		}
+		Log.d(Config.LOGTAG, "getShareableUri uri=" + uri);
+		return uri;
 	}
 
 	@Override
 	public void onResume() {
 		super.onResume();
-		if (this.getShareableUri()!=null) {
-			this.registerNdefPushMessageCallback();
-		}
+		this.registerNdefPushMessageCallback(true);
 	}
 
 	@Override
 	public void onPause() {
 		super.onPause();
-		this.unregisterNdefPushMessageCallback();
+		this.registerNdefPushMessageCallback(false);
 	}
 
 	protected void showQrCode() {
