@@ -20,6 +20,20 @@
         <item>524288</item>
         <item>1048576</item>
     </string-array>
+    
+    <string-array name="minimum_encryption">
+        <item>SSL 3.0</item>
+        <item>TLS 1.0</item>
+        <item>TLS 1.1</item>
+        <item>TLS 1.2</item>
+    </string-array>
+    <string-array name="minimum_ciphers">
+        <item>Insecure</item>
+        <item>Low Strength</item>
+        <item>Medium Strength</item>
+        <item>High Strength</item>
+    </string-array>
+    
     <string-array name="mute_options_descriptions">
         <item>30 minutes</item>
         <item>1 hour</item>
@@ -27,7 +41,6 @@
         <item>8 hours</item>
         <item>until further notice</item>
     </string-array>
-
     <integer-array name="mute_options_durations">
         <item>1800</item>
         <item>3600</item>
