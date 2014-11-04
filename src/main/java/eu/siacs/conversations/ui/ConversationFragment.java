@@ -742,6 +742,10 @@ public class ConversationFragment extends Fragment {
 					});
 		}
 	}
+	
+	public RelativeLayout getSnackbar() {
+		return snackbar;
+	}
 
 	protected void showSnackbar(int message, int action,
 			OnClickListener clickListener) {
