@@ -549,9 +549,8 @@ public class XmppConnection implements Runnable {
 				.getDefaultSharedPreferences(applicationContext);
 	}
 
-	private boolean enableLegacySSL() {
-		return getPreferences().getBoolean("enable_legacy_ssl", false);
-	}
+    // TLS Functions
+
 
 	private void switchOverToTls(Tag currentTag) throws XmlPullParserException,
 			IOException {
@@ -573,21 +572,68 @@ public class XmppConnection implements Runnable {
 					socket.getInetAddress().getHostAddress(), socket.getPort(),
 					true);
 
-			// Support all protocols except legacy SSL.
-			// The min SDK version prevents us having to worry about SSLv2. In
-			// future, this may be
-			// true of SSLv3 as well.
+            // Set minimum encryption protocols
 			final String[] supportProtocols;
-			if (enableLegacySSL()) {
-				supportProtocols = sslSocket.getSupportedProtocols();
-			} else {
-				final List<String> supportedProtocols = new LinkedList<String>(
-						Arrays.asList(sslSocket.getSupportedProtocols()));
-				supportedProtocols.remove("SSLv3");
-				supportProtocols = new String[supportedProtocols.size()];
-				supportedProtocols.toArray(supportProtocols);
-			}
-			sslSocket.setEnabledProtocols(supportProtocols);
+			final List<String> supportedProtocols = new LinkedList<String>(Arrays.asList(sslSocket.getSupportedProtocols()));
+            String minimumProtocol = getPreferences().getString("minimum_encryption", "TLS 1.0");
+            if (minimumProtocol.equals("TLS 1.0")) {
+                supportedProtocols.remove("SSLv3");
+            } else
+            if (minimumProtocol.equals("TLS 1.1")) {
+                supportedProtocols.remove("SSLv3");
+                supportedProtocols.remove("TLSv1");
+            } else
+            if (minimumProtocol.equals("TLS 1.2")) {
+                supportedProtocols.remove("SSLv3");
+                supportedProtocols.remove("TLSv1");
+                supportedProtocols.remove("TLSv1.1");
+            }
+            supportProtocols = new String[supportedProtocols.size()];
+            supportedProtocols.toArray(supportProtocols);
+            sslSocket.setEnabledProtocols(supportProtocols);
+
+
+            for(String s : factory.getSupportedCipherSuites())  Log.d("CRYPTOTEST", "b = "+s);
+            Log.d("CRYPTOTEST", "LEN = "+factory.getSupportedCipherSuites().length);
+
+            // Set minimum encryption ciphers
+            final String[] supportCiphers;
+            final List<String> supportedCiphers = new LinkedList<String>(Arrays.asList(sslSocket.getSupportedCipherSuites()));
+            String[] rLowCiphers = { "anon", "EMPTY", "EXPORT", "NULL", "FALLBACK" };               // Low Strength = anything but export ciphers
+            String[] rMediumCiphers = { "DES", "MD5", "RC4", "PSK" };                               // Medium Strength = anything but weak ciphers
+            String[] rHighCiphers = { "TLS_RSA", "SSL_RSA", "DH_" };                                // High Strength = only PFS ciphers
+            String minimumCiphers = getPreferences().getString("minimum_ciphers", "Low Strength");
+            if (minimumCiphers.equals("Low Strength")) {
+                for (int c = 0; c < supportedCiphers.size(); c++) {
+                    String cipher = supportedCiphers.get(c);
+                    boolean removeCipher = false;
+                    for (int x = 0; x < rLowCiphers.length; x++) { if(cipher.contains(rLowCiphers[x])) { removeCipher = true; break; } }
+                    if(removeCipher) { supportedCiphers.remove(cipher); c--; }
+                }
+            } else
+            if (minimumCiphers.equals("Medium Strength")) {
+                for (int c = 0; c < supportedCiphers.size(); c++) {
+                    String cipher = supportedCiphers.get(c);
+                    boolean removeCipher = false;
+                    for (int x = 0; x < rLowCiphers.length; x++) { if(cipher.contains(rLowCiphers[x])) { removeCipher = true; break; } }
+                    for (int x = 0; x < rMediumCiphers.length; x++) { if(cipher.contains(rMediumCiphers[x])) { removeCipher = true; break; } }
+                    if(removeCipher) { supportedCiphers.remove(cipher); c--; }
+                }
+            } else
+            if (minimumCiphers.equals("High Strength")) {
+                for (int c = 0; c < supportedCiphers.size(); c++) {
+                    String cipher = supportedCiphers.get(c);
+                    boolean removeCipher = false;
+                    for (int x = 0; x < rLowCiphers.length; x++) { if(cipher.contains(rLowCiphers[x])) { removeCipher = true; break; } }
+                    for (int x = 0; x < rMediumCiphers.length; x++) { if(cipher.contains(rMediumCiphers[x])) { removeCipher = true; break; } }
+                    for (int x = 0; x < rHighCiphers.length; x++) { if(cipher.contains(rHighCiphers[x])) { removeCipher = true; break; } }
+                    if(removeCipher) { supportedCiphers.remove(cipher); c--; }
+                }
+            }
+            supportCiphers = new String[supportedCiphers.size()];
+            supportedCiphers.toArray(supportCiphers);
+            for(String s : supportedCiphers) { Log.d("CRYPTOTEST", "c = "+s); }
+            sslSocket.setEnabledCipherSuites(supportCiphers);
 
 			if (verifier != null
 					&& !verifier.verify(account.getServer(),
@@ -598,8 +644,7 @@ public class XmppConnection implements Runnable {
 			tagReader.setInputStream(sslSocket.getInputStream());
 			tagWriter.setOutputStream(sslSocket.getOutputStream());
 			sendStartStream();
-			Log.d(Config.LOGTAG, account.getJid()
-					+ ": TLS connection established");
+			Log.d(Config.LOGTAG, account.getJid() + ": TLS connection established");
 			usingEncryption = true;
 			processStream(tagReader.readTag());
 			sslSocket.close();
