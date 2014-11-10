@@ -19,9 +19,13 @@ import android.util.DisplayMetrics;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -47,6 +51,7 @@ public class NotificationService {
 	}
 
 	public boolean notify(Message message) {
+		notifyPebble(message);
 		return (message.getStatus() == Message.STATUS_RECEIVED)
 				&& notificationsEnabled()
 				&& !message.getConversation().isMuted()
@@ -55,6 +60,23 @@ public class NotificationService {
 					|| wasHighlightedOrPrivate(message)
 					);
 	}
+
+	public void notifyPebble(Message message) {
+		final Intent i = new Intent("com.getpebble.action.SEND_NOTIFICATION");
+
+		final HashMap data = new HashMap();
+		data.put("title", message.getConversation().getName());
+		data.put("body", message.getBody());
+		final JSONObject jsonData = new JSONObject(data);
+		final String notificationData = new JSONArray().put(jsonData).toString();
+
+		i.putExtra("messageType", "PEBBLE_ALERT");
+		i.putExtra("sender", "Conversations"); /* XXX: Shouldn't be hardcoded, e.g., AbstractGenerator.APP_NAME); */
+		i.putExtra("notificationData", notificationData);
+
+		mXmppConnectionService.sendBroadcast(i);
+	}
+
 
 	public boolean notificationsEnabled() {
 		return mXmppConnectionService.getPreferences().getBoolean("show_notification", true);
