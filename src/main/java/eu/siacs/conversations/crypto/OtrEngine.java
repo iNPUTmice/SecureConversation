@@ -85,13 +85,11 @@ public class OtrEngine implements OtrEngineHost {
 			this.account.setKey("otr_p", privateKeySpec.getP().toString(16));
 			this.account.setKey("otr_q", privateKeySpec.getQ().toString(16));
 			this.account.setKey("otr_y", publicKeySpec.getY().toString(16));
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-		} catch (InvalidKeySpecException e) {
+		} catch (final NoSuchAlgorithmException | InvalidKeySpecException e) {
 			e.printStackTrace();
 		}
 
-	}
+    }
 
 	@Override
 	public void askForSecret(SessionID arg0, InstanceTag arg1, String arg2) {
@@ -155,11 +153,11 @@ public class OtrEngine implements OtrEngineHost {
 	public void injectMessage(SessionID session, String body)
 			throws OtrException {
 		MessagePacket packet = new MessagePacket();
-		packet.setFrom(account.getFullJid());
+		packet.setFrom(account.getJid());
 		if (session.getUserID().isEmpty()) {
-			packet.setTo(session.getAccountID());
+			packet.setAttribute("to", session.getAccountID());
 		} else {
-			packet.setTo(session.getAccountID() + "/" + session.getUserID());
+			packet.setAttribute("to", session.getAccountID() + "/" + session.getUserID());
 		}
 		packet.setBody(body);
 		packet.addChild("private", "urn:xmpp:carbons:2");

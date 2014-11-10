@@ -29,7 +29,7 @@ public class AvatarService {
 	private static final String PREFIX_ACCOUNT = "account";
 	private static final String PREFIX_GENERIC = "generic";
 
-	private ArrayList<Integer> sizes = new ArrayList<Integer>();
+	final private ArrayList<Integer> sizes = new ArrayList<>();
 
 	protected XmppConnectionService mXmppConnectionService = null;
 
@@ -37,7 +37,7 @@ public class AvatarService {
 		this.mXmppConnectionService = service;
 	}
 
-	public Bitmap get(Contact contact, int size) {
+	public Bitmap get(final Contact contact, final int size) {
 		final String KEY = key(contact, size);
 		Bitmap avatar = this.mXmppConnectionService.getBitmapCache().get(KEY);
 		if (avatar != null) {
@@ -50,7 +50,7 @@ public class AvatarService {
 			avatar = mXmppConnectionService.getFileBackend().getAvatar(contact.getAvatar(), size);
 		}
 		if (avatar == null) {
-			avatar = get(contact.getDisplayName(), size);
+            avatar = get(contact.getDisplayName(), size);
 		}
 		this.mXmppConnectionService.getBitmapCache().put(KEY, avatar);
 		return avatar;
@@ -69,7 +69,7 @@ public class AvatarService {
 				this.sizes.add(size);
 			}
 		}
-		return PREFIX_CONTACT + "_" + contact.getAccount().getJid() + "_"
+		return PREFIX_CONTACT + "_" + contact.getAccount().getJid().toBareJid() + "_"
 				+ contact.getJid() + "_" + String.valueOf(size);
 	}
 
@@ -174,7 +174,7 @@ public class AvatarService {
 		avatar = mXmppConnectionService.getFileBackend().getAvatar(
 				account.getAvatar(), size);
 		if (avatar == null) {
-			avatar = get(account.getJid(), size);
+			avatar = get(account.getJid().toBareJid().toString(), size);
 		}
 		mXmppConnectionService.getBitmapCache().put(KEY, avatar);
 		return avatar;
@@ -197,7 +197,7 @@ public class AvatarService {
 				+ String.valueOf(size);
 	}
 
-	public Bitmap get(String name, int size) {
+	public Bitmap get(final String name, final int size) {
 		final String KEY = key(name, size);
 		Bitmap bitmap = mXmppConnectionService.getBitmapCache().get(KEY);
 		if (bitmap != null) {

@@ -21,6 +21,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnIqPacketReceived;
+import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Content;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.jingle.stanzas.Reason;
@@ -49,10 +50,10 @@ public class JingleConnection implements Downloadable {
 	private Message message;
 	private String sessionId;
 	private Account account;
-	private String initiator;
-	private String responder;
-	private List<JingleCandidate> candidates = new ArrayList<JingleCandidate>();
-	private ConcurrentHashMap<String, JingleSocks5Transport> connections = new ConcurrentHashMap<String, JingleSocks5Transport>();
+	private Jid initiator;
+	private Jid responder;
+	private List<JingleCandidate> candidates = new ArrayList<>();
+	private ConcurrentHashMap<String, JingleSocks5Transport> connections = new ConcurrentHashMap<>();
 
 	private String transportId;
 	private Element fileOffer;
@@ -82,7 +83,7 @@ public class JingleConnection implements Downloadable {
 
 		@Override
 		public void onFileTransmitted(DownloadableFile file) {
-			if (responder.equals(account.getFullJid())) {
+			if (responder.equals(account.getJid())) {
 				sendSuccess();
 				if (acceptedAutomatically) {
 					message.markUnread();
@@ -121,7 +122,7 @@ public class JingleConnection implements Downloadable {
 
 		@Override
 		public void success() {
-			if (initiator.equals(account.getFullJid())) {
+			if (initiator.equals(account.getJid())) {
 				Log.d(Config.LOGTAG, "we were initiating. sending file");
 				transport.send(file, onFileTransmissionSatusChanged);
 			} else {
@@ -150,7 +151,7 @@ public class JingleConnection implements Downloadable {
 		return this.account;
 	}
 
-	public String getCounterPart() {
+	public Jid getCounterPart() {
 		return this.message.getCounterpart();
 	}
 
@@ -203,7 +204,7 @@ public class JingleConnection implements Downloadable {
 		this.contentName = this.mJingleConnectionManager.nextRandomId();
 		this.message = message;
 		this.account = message.getConversation().getAccount();
-		this.initiator = this.account.getFullJid();
+		this.initiator = this.account.getJid();
 		this.responder = this.message.getCounterpart();
 		this.sessionId = this.mJingleConnectionManager.nextRandomId();
 		if (this.candidates.size() > 0) {
@@ -254,17 +255,17 @@ public class JingleConnection implements Downloadable {
 		this.mJingleStatus = JINGLE_STATUS_INITIATED;
 		Conversation conversation = this.mXmppConnectionService
 				.findOrCreateConversation(account,
-						packet.getFrom().split("/", 2)[0], false);
+						packet.getFrom().toBareJid(), false);
 		this.message = new Message(conversation, "", Message.ENCRYPTION_NONE);
 		this.message.setStatus(Message.STATUS_RECEIVED);
 		this.message.setType(Message.TYPE_IMAGE);
 		this.mStatus = Downloadable.STATUS_OFFER;
 		this.message.setDownloadable(this);
-		String[] fromParts = packet.getFrom().split("/", 2);
-		this.message.setPresence(fromParts[1]);
+        final Jid from = packet.getFrom();
+		this.message.setCounterpart(from);
 		this.account = account;
 		this.initiator = packet.getFrom();
-		this.responder = this.account.getFullJid();
+		this.responder = this.account.getJid();
 		this.sessionId = packet.getSessionId();
 		Content content = packet.getJingleContent();
 		this.contentCreator = content.getAttribute("creator");
@@ -375,7 +376,7 @@ public class JingleConnection implements Downloadable {
 	}
 
 	private List<Element> getCandidatesAsElements() {
-		List<Element> elements = new ArrayList<Element>();
+		List<Element> elements = new ArrayList<>();
 		for (JingleCandidate c : this.candidates) {
 			elements.add(c.toElement());
 		}
@@ -443,7 +444,7 @@ public class JingleConnection implements Downloadable {
 	private JinglePacket bootstrapPacket(String action) {
 		JinglePacket packet = new JinglePacket();
 		packet.setAction(action);
-		packet.setFrom(account.getFullJid());
+		packet.setFrom(account.getJid());
 		packet.setTo(this.message.getCounterpart());
 		packet.setSessionId(this.sessionId);
 		packet.setInitiator(this.initiator);
@@ -532,7 +533,7 @@ public class JingleConnection implements Downloadable {
 		if (connection == null) {
 			Log.d(Config.LOGTAG, "could not find suitable candidate");
 			this.disconnect();
-			if (this.initiator.equals(account.getFullJid())) {
+			if (this.initiator.equals(account.getJid())) {
 				this.sendFallbackToIbb();
 			}
 		} else {
@@ -547,7 +548,7 @@ public class JingleConnection implements Downloadable {
 					activation.query("http://jabber.org/protocol/bytestreams")
 							.setAttribute("sid", this.getSessionId());
 					activation.query().addChild("activate")
-							.setContent(this.getCounterPart());
+							.setContent(this.getCounterPart().toString());
 					this.account.getXmppConnection().sendIqPacket(activation,
 							new OnIqPacketReceived() {
 
@@ -570,7 +571,7 @@ public class JingleConnection implements Downloadable {
 									+ " was a proxy. waiting for other party to activate");
 				}
 			} else {
-				if (initiator.equals(account.getFullJid())) {
+				if (initiator.equals(account.getJid())) {
 					Log.d(Config.LOGTAG, "we were initiating. sending file");
 					connection.send(file, onFileTransmissionSatusChanged);
 				} else {
@@ -600,7 +601,7 @@ public class JingleConnection implements Downloadable {
 					} else if (connection.getCandidate().getPriority() == currentConnection
 							.getCandidate().getPriority()) {
 						// Log.d(Config.LOGTAG,"found two candidates with same priority");
-						if (initiator.equals(account.getFullJid())) {
+						if (initiator.equals(account.getJid())) {
 							if (currentConnection.getCandidate().isOurs()) {
 								connection = currentConnection;
 							}
@@ -709,7 +710,7 @@ public class JingleConnection implements Downloadable {
 		this.mJingleStatus = JINGLE_STATUS_CANCELED;
 		this.disconnect();
 		if (this.message != null) {
-			if (this.responder.equals(account.getFullJid())) {
+			if (this.responder.equals(account.getJid())) {
 				this.mStatus = Downloadable.STATUS_FAILED;
 				this.mXmppConnectionService.updateConversationUi();
 			} else {
@@ -810,11 +811,11 @@ public class JingleConnection implements Downloadable {
 		this.sendJinglePacket(packet);
 	}
 
-	public String getInitiator() {
+	public Jid getInitiator() {
 		return this.initiator;
 	}
 
-	public String getResponder() {
+	public Jid getResponder() {
 		return this.responder;
 	}
 
