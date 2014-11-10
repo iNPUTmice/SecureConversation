@@ -254,8 +254,22 @@
     <string name="pref_enable_legacy_ssl_summary">Habilita soporte SSLv3 para servidores heredados. Advertencia: SSLv3 se considera no seguro.</string>
     <string name="pref_expert_options">Ajustes avanzados</string>
     <string name="pref_expert_options_summary">Por favor, cuidado con estas opciones</string>
-    <string name="title_activity_about">About Conversations</string>
-    <string name="pref_about_conversations_summary">Build and licensing information</string>
+    <string name="title_activity_about">Acerca de Conversations</string>
+    <string name="pref_about_conversations_summary">Información sobre cómo se ha hecho y su licencia</string>
+    <string name="pref_about_message">Conversations © 2014 Daniel Gultsch\n
+\nEste programa es software libre; puedes redistribuirlo y/o modificarlo
+bajo los términos de la GNU General Public License versión 3 según publicó
+la Free Software Foundation.
+\nhttps://www.gnu.org/licenses/gpl-3.0.html\n
+\pLa licencia de la API de OpenPGP API es Apache, Versión 2.0
+\nhttps://www.apache.org/licenses/LICENSE-2.0\n
+\nMinidns © 2014 Rene Treffer and is provided under the WTFPL
+\nhttp://wtfpl.org\n
+\nMemorizingTrustManager © 2010 Georg Lukas está bajo los términos de uso de la licencia MIT
+\nhttp://opensource.org/licenses/MIT\n
+\nDescarga todo el código fuente en
+\nhttps://github.com/siacs/Conversations
+</string>
     <string name="pref_use_larger_font">Incrementar tamaño de fuente</string>
     <string name="pref_use_larger_font_summary">Usar fuentes grandes en toda la aplicación</string>
     <string name="pref_use_send_button_to_indicate_status">Botón enviar indica estado</string>
