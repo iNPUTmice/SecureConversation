@@ -59,10 +59,20 @@ public final class Jid {
 		return new Jid(out);
 	}
 
+	static private int countChar(String in, char s) {
+		int i = 0;
+		int k = in.length();
+		for (int j=0;j<k;j++) {
+			if (in.charAt(j) == s) {
+				i++;
+			}
+		}
+		return i;
+	}
+
 	private Jid(final String jid) throws InvalidJidException {
-		// Hackish Android way to count the number of chars in a string... should work everywhere.
-		final int atCount = jid.length() - jid.replace("@", "").length();
-		final int slashCount = jid.length() - jid.replace("/", "").length();
+		final int atCount = countChar(jid, '@');
+		final int slashCount = countChar(jid, '/');
 
 		// Throw an error if there's anything obvious wrong with the JID...
 		if (jid.isEmpty() || jid.length() > 3071) {
