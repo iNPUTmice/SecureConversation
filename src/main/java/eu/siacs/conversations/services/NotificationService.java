@@ -51,7 +51,6 @@ public class NotificationService {
 	}
 
 	public boolean notify(Message message) {
-		notifyPebble(message);
 		return (message.getStatus() == Message.STATUS_RECEIVED)
 				&& notificationsEnabled()
 				&& !message.getConversation().isMuted()
@@ -61,7 +60,8 @@ public class NotificationService {
 					);
 	}
 
-	public void notifyPebble(Message message) {
+	public void notifyPebble(Message message, boolean notify) {
+		if (!notify) { return; }
 		final Intent i = new Intent("com.getpebble.action.SEND_NOTIFICATION");
 
 		final HashMap data = new HashMap();
@@ -110,9 +110,11 @@ public class NotificationService {
 				notifications.put(conversationUuid, mList);
 			}
 			Account account = message.getConversation().getAccount();
-			updateNotification((!(this.mIsInForeground && this.mOpenConversation == null) || !isScreenOn)
+			boolean doNotify = (!(this.mIsInForeground && this.mOpenConversation == null) || !isScreenOn)
 					&& !account.inGracePeriod()
-					&& !this.inMiniGracePeriod(account));
+					&& !this.inMiniGracePeriod(account);
+			updateNotification(doNotify);
+			notifyPebble(message, doNotify);
 		}
 
 	}
