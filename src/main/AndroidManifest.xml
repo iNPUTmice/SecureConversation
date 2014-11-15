@@ -129,6 +129,8 @@
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value="eu.siacs.conversations.ui.SettingsActivity" />
         </activity>
+        <meta-data android:name="android.nfc.disable_beam_default"
+         android:value="true" />
     </application>
 
 </manifest>

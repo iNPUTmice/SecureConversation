@@ -15,6 +15,7 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
@@ -106,12 +108,23 @@ public class ConversationActivity extends XmppActivity implements
 
 	@Override
 	protected String getShareableUri() {
+		String uri = null;
 		Conversation conversation = getSelectedConversation();
-		if (conversation != null) {
-			return "xmpp:" + conversation.getAccount().getJid().toBareJid();
-		} else {
-			return "";
+		if (conversation == null) {
+			uri = "";
 		}
+		else if (isConversationsOverviewVisable()) {
+			uri = super.getShareableUri();
+		}
+		else if (conversation.getMode() == Conversation.MODE_MULTI) {
+			uri = "xmpp:" + conversation.getAccount().getJid().toBareJid() + "?join";
+			Log.d(Config.LOGTAG, "getShareableUri uri=" + uri);
+		}
+		else {
+			uri = "xmpp:" + conversation.getAccount().getJid().toBareJid();
+			Log.d(Config.LOGTAG, "getShareableUri uri=" + uri);
+		}
+		return uri;
 	}
 
 	public void hideConversationsOverview() {
