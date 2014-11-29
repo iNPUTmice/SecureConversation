@@ -4,4 +4,21 @@
         android:id="@+id/start_conversation"
         android:title="@string/start_conversation"
         />
+    <item
+        android:id="@+id/occupant_actions"
+        android:title="@string/muc_occupant_actions">
+        <menu>
+            <item
+                android:id="@+id/muc_able_to_invite_others"
+                android:title="@string/muc_able_to_invite_others"
+                android:checkable="true"
+                android:enabled="false"
+                />
+            <item
+                android:id="@+id/muc_remove_participant"
+                android:title="@string/muc_remove_participant"
+                android:enabled="false"
+                />
+        </menu>
+    </item>
 </menu>

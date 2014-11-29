@@ -1330,6 +1330,8 @@ public class XmppConnectionService extends Service {
 			}
 			packet.addChild(x);
 			sendPresencePacket(account, packet);
+			List<String> feature = readConferenceInfo(conversation);
+			conversation.getMucOptions().setConferenceFeature(feature);
 			if (!joinJid.equals(conversation.getContactJid())) {
 				conversation.setContactJid(joinJid);
 				databaseBackend.updateConversation(conversation);
@@ -1528,6 +1530,31 @@ public class XmppConnectionService extends Service {
 				}
 			}
 		});
+	}
+
+	public List<String> readConferenceInfo(final Conversation conversation) {
+		final List<String> features = new ArrayList<String>();
+		IqPacket request = new IqPacket(IqPacket.TYPE_GET);
+		request.setTo(conversation.getContactJid().toBareJid());
+		request.query("http://jabber.org/protocol/disco#info");
+		sendIqPacket(conversation.getAccount(), request, new OnIqPacketReceived() {
+
+			@Override
+			public void onIqPacketReceived(Account account, IqPacket packet) {
+				if (packet.getType() != IqPacket.TYPE_ERROR) {
+					for (Element child : packet.query().getChildren()) {
+						if (child != null && child.getName().equals("feature")) {
+							String var = child.getAttribute("var");
+							if (var != null) {
+								features.add(var);
+							}
+						}
+					}
+				}
+			}
+		});
+
+		return features;
 	}
 
 	public void disconnect(Account account, boolean force) {
@@ -2149,6 +2176,18 @@ public class XmppConnectionService extends Service {
 		for (Message msg : messages) {
 			markMessage(msg, Message.STATUS_WAITING);
 			this.resendMessage(msg);
+		}
+	}
+
+	public void setMucUserAffliliation(Conversation conversation, String jid, String affiliation) {
+		if (conversation.getMode() == Conversation.MODE_MULTI) {
+			IqPacket setAffiliation = new IqPacket(IqPacket.TYPE_SET);
+			setAffiliation.setTo(conversation.getContactJid().toBareJid());
+			setAffiliation.setFrom(conversation.getAccount().getJid());
+			Element item = setAffiliation.query("http://jabber.org/protocol/muc#admin").addChild("item");
+			item.setAttribute("jid", jid);
+			item.setAttribute("affiliation", affiliation);
+			sendIqPacket(conversation.getAccount(), setAffiliation, null);
 		}
 	}
 

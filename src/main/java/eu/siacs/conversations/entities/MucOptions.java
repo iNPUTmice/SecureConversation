@@ -22,6 +22,7 @@ public class MucOptions {
 
 	public static final int KICKED_FROM_ROOM = 9;
 
+	public static final String STATUS_CODE_ROOM_CONFIG_CHANGED = "104";
 	public static final String STATUS_CODE_SELF_PRESENCE = "110";
 	public static final String STATUS_CODE_BANNED = "301";
 	public static final String STATUS_CODE_CHANGED_NICK = "303";
@@ -46,8 +47,8 @@ public class MucOptions {
 		public static final int ROLE_NONE = 0;
 		public static final int ROLE_PARTICIPANT = 2;
 		public static final int ROLE_VISITOR = 1;
-		public static final int AFFILIATION_ADMIN = 4;
-		public static final int AFFILIATION_OWNER = 3;
+		public static final int AFFILIATION_OWNER = 4;
+		public static final int AFFILIATION_ADMIN = 3;
 		public static final int AFFILIATION_MEMBER = 2;
 		public static final int AFFILIATION_OUTCAST = 1;
 		public static final int AFFILIATION_NONE = 0;
@@ -138,6 +139,7 @@ public class MucOptions {
 	private String subject = null;
 	private String password = null;
 	private boolean mNickChangingInProgress = false;
+	private List<String> conferenceFeatures = new ArrayList<String>();
 
 	public MucOptions(Conversation conversation) {
 		this.account = conversation.getAccount();
@@ -273,6 +275,14 @@ public class MucOptions {
 			}
 		}
 		return codes;
+	}
+
+	public void setConferenceFeature(List<String> features) {
+		conferenceFeatures = features;
+	}
+
+	public List<String> getConferenceFeature() {
+		return conferenceFeatures;
 	}
 
 	public List<User> getUsers() {

@@ -11,6 +11,7 @@ import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -21,9 +22,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
@@ -56,7 +54,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 	private LinearLayout mMoreDetails;
 	private Button mInviteButton;
 	private String uuid = null;
-	private List<User> users = new ArrayList<>();
 	private User mSelectedUser = null;
 
 	private UiCallback<Conversation> renameCallback = new UiCallback<Conversation>() {
@@ -239,8 +236,44 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 			if (user.getJid() == null) {
 				startConversation.setVisible(false);
 			}
+
+			MenuItem occupantActions = menu.findItem(R.id.occupant_actions);
+			SubMenu submenu = occupantActions.getSubMenu();
+			submenu.setHeaderTitle(name);
+
+			if (!mConversation.getMucOptions().getConferenceFeature().contains("muc_membersonly")) {
+				occupantActions.setVisible(false);
+			}
+
+			switch (mConversation.getMucOptions().getSelf().getAffiliation()) {
+				case User.AFFILIATION_OWNER:
+					submenu.findItem(R.id.muc_able_to_invite_others).setEnabled(true);
+					/* fall-through */
+				case User.AFFILIATION_ADMIN:
+					submenu.findItem(R.id.muc_remove_participant).setEnabled(true);
+					break;
+				case User.AFFILIATION_MEMBER:
+					/* fall-through */
+				default:
+					occupantActions.setVisible(false);
+					break;
+			}
+
+			switch (user.getAffiliation()) {
+				case User.AFFILIATION_OWNER:
+					submenu.findItem(R.id.muc_able_to_invite_others).setEnabled(false);
+					/* fall-through */
+				case User.AFFILIATION_ADMIN:
+					submenu.findItem(R.id.muc_remove_participant).setEnabled(false);
+					submenu.findItem(R.id.muc_able_to_invite_others).setChecked(true);
+					/* fall-through */
+				case User.AFFILIATION_MEMBER:
+					/* fall-through */
+				default:
+					break;
+			}
 		}
-		super.onCreateContextMenu(menu,v,menuInfo);
+		super.onCreateContextMenu(menu, v, menuInfo);
 	}
 
 	@Override
@@ -248,6 +281,16 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		switch (item.getItemId()) {
 			case R.id.start_conversation:
 				startConversation(mSelectedUser);
+				return true;
+			case R.id.muc_remove_participant:
+				setMucUserAffiliation(mConversation, mSelectedUser, "none");
+				return true;
+			case R.id.muc_able_to_invite_others:
+				if (item.isChecked()) {
+					setMucUserAffiliation(mConversation, mSelectedUser, "member");
+				} else {
+					setMucUserAffiliation(mConversation, mSelectedUser, "admin");
+				}
 				return true;
 			default:
 				return super.onContextItemSelected(item);
@@ -275,6 +318,11 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		bookmark.unregisterConversation();
 		account.getBookmarks().remove(bookmark);
 		xmppConnectionService.pushBookmarks(account);
+	}
+
+	protected void setMucUserAffiliation(Conversation conversation, User user, String affiliation) {
+		String jid = user.getJid().toBareJid().toString();
+		xmppConnectionService.setMucUserAffliliation(conversation, jid, affiliation);
 	}
 
 	@Override
@@ -317,8 +365,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 					break;
 			}
 		}
-		this.users.clear();
-		this.users.addAll(mConversation.getMucOptions().getUsers());
+		if (mConversation.getMucOptions().getConferenceFeature().contains("muc_membersonly")
+				&& mConversation.getMucOptions().getSelf().getAffiliation() < User.AFFILIATION_ADMIN) {
+			mInviteButton.setVisibility(View.GONE);
+		} else {
+			mInviteButton.setVisibility(View.VISIBLE);
+		}
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		membersView.removeAllViews();
 		for (final User user : mConversation.getMucOptions().getUsers()) {

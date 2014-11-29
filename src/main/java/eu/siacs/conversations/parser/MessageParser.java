@@ -10,11 +10,11 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -146,8 +146,19 @@ public class MessageParser extends AbstractParser implements
 			mXmppConnectionService.updateConversationUi();
 			return null;
 		}
-		if (from.isBareJid()) {
+		final Element x = packet.findChild("x", "http://jabber.org/protocol/muc#user");
+		if (from.isBareJid() && (x == null || !x.hasChild("status"))) {
 			return null;
+		} else if (from.isBareJid() && x.hasChild("status")) {
+			for(Element child : x.getChildren()) {
+				if (child.getName().equals("status")) {
+					String code = child.getAttribute("code");
+					if (code.contains(MucOptions.STATUS_CODE_ROOM_CONFIG_CHANGED)) {
+						conversation.getMucOptions().setConferenceFeature(mXmppConnectionService
+								.readConferenceInfo(conversation));
+					}
+				}
+			}
 		}
 		if (from.getResourcepart().equals(conversation.getMucOptions().getActualNick())) {
 			if (mXmppConnectionService.markMessage(conversation,

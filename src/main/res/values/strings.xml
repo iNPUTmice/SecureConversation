@@ -360,4 +360,7 @@
     <string name="reset">Reset</string>
     <string name="account_image_description">Account avatar</string>
     <string name="copy_otr_clipboard_description">Copy OTR fingerprint to clipboard</string>
+    <string name="muc_occupant_actions">Occupant Actions</string>
+    <string name="muc_able_to_invite_others">able to invite other users</string>
+    <string name="muc_remove_participant">remove participant</string>
 </resources>
