@@ -35,6 +35,7 @@ import net.java.otr4j.session.SessionStatus;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import eu.siacs.conversations.R;
@@ -503,6 +504,8 @@ public class ConversationFragment extends Fragment {
 		}
 		this.activity = (ConversationActivity) getActivity();
 		this.conversation = conversation;
+		this.mDecryptJobRunning = false;
+		this.mEncryptedMessages.clear();
 		if (this.conversation.getMode() == Conversation.MODE_MULTI) {
 			this.conversation.setNextCounterpart(null);
 		}
@@ -577,23 +580,23 @@ public class ConversationFragment extends Fragment {
 							break;
 					}
 				}
-				for (Message message : this.conversation.getMessages()) {
-					if (message.getEncryption() == Message.ENCRYPTION_PGP
-							&& (message.getStatus() == Message.STATUS_RECEIVED || message
-							.getStatus() >= Message.STATUS_SEND)
-							&& message.getDownloadable() == null) {
-						if (!mEncryptedMessages.contains(message)) {
-							mEncryptedMessages.add(message);
-						}
-					}
-				}
-				decryptNext();
 				this.messageList.clear();
 				if (this.conversation.getMessages().size() == 0) {
 					messagesLoaded = false;
 				} else {
 					this.messageList.addAll(this.conversation.getMessages());
 					messagesLoaded = true;
+					for (Message message : this.messageList) {
+						if (message.getEncryption() == Message.ENCRYPTION_PGP
+								&& (message.getStatus() == Message.STATUS_RECEIVED || message
+								.getStatus() >= Message.STATUS_SEND)
+								&& message.getDownloadable() == null) {
+							if (!mEncryptedMessages.contains(message)) {
+								mEncryptedMessages.add(message);
+							}
+						}
+					}
+					decryptNext();
 					updateStatusMessages();
 				}
 				this.messageListAdapter.notifyDataSetChanged();
@@ -626,7 +629,11 @@ public class ConversationFragment extends Fragment {
 				@Override
 				public void success(Message message) {
 					mDecryptJobRunning = false;
-					mEncryptedMessages.remove();
+					try {
+						mEncryptedMessages.remove();
+					} catch (final NoSuchElementException ignored) {
+
+					}
 					activity.xmppConnectionService.updateMessage(message);
 				}
 
@@ -634,7 +641,11 @@ public class ConversationFragment extends Fragment {
 				public void error(int error, Message message) {
 					message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
 					mDecryptJobRunning = false;
-					mEncryptedMessages.remove();
+					try {
+						mEncryptedMessages.remove();
+					} catch (final NoSuchElementException ignored) {
+
+					}
 					activity.xmppConnectionService.updateConversationUi();
 				}
 			});

@@ -181,7 +181,7 @@ public class MucOptions {
 						user.setAffiliation(item.getAttribute("affiliation"));
 						user.setRole(item.getAttribute("role"));
 						user.setJid(item.getAttributeAsJid("jid"));
-						if (codes.contains(STATUS_CODE_SELF_PRESENCE)) {
+						if (codes.contains(STATUS_CODE_SELF_PRESENCE) || packet.getFrom().equals(this.conversation.getContactJid())) {
 							this.isOnline = true;
 							this.error = ERROR_NO_ERROR;
 							self = user;
@@ -192,8 +192,6 @@ public class MucOptions {
 								this.onJoinListener.onSuccess();
 								this.onJoinListener = null;
 							}
-						} else if (packet.getFrom().equals(this.conversation.getContactJid())) {
-							self = user;
 						} else {
 							addUser(user);
 						}
@@ -291,14 +289,13 @@ public class MucOptions {
 
 	public String getProposedNick() {
 		if (conversation.getBookmark() != null
-				&& conversation.getBookmark().getNick() != null) {
+				&& conversation.getBookmark().getNick() != null
+				&& !conversation.getBookmark().getNick().isEmpty()) {
 			return conversation.getBookmark().getNick();
+		} else if (!conversation.getContactJid().isBareJid()) {
+			return conversation.getContactJid().getResourcepart();
 		} else {
-			if (!conversation.getContactJid().isBareJid()) {
-				return conversation.getContactJid().getResourcepart();
-			} else {
-				return account.getUsername();
-			}
+			return account.getUsername();
 		}
 	}
 
