@@ -1,7 +1,10 @@
 package eu.siacs.conversations.ui.adapter;
 
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
@@ -22,13 +25,16 @@ import java.util.List;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Downloadable;
+import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Message.ImageParams;
 import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class MessageAdapter extends ArrayAdapter<Message> {
 
@@ -95,10 +101,11 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		}
 		boolean multiReceived = message.getConversation().getMode() == Conversation.MODE_MULTI
 				&& message.getMergedStatus() <= Message.STATUS_RECEIVED;
-		if (message.getType() == Message.TYPE_IMAGE
-				|| message.getDownloadable() != null) {
+		if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE || message.getDownloadable() != null) {
 			ImageParams params = message.getImageParams();
-			if (params.size != 0) {
+			if (params.size > (1.5 * 1024 * 1024)) {
+				filesize = params.size / (1024 * 1024)+ " MB";
+			} else if (params.size > 0) {
 				filesize = params.size / 1024 + " KB";
 			}
 			if (message.getDownloadable() != null && message.getDownloadable().getStatus() == Downloadable.STATUS_FAILED) {
@@ -110,7 +117,12 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			info = getContext().getString(R.string.waiting);
 			break;
 		case Message.STATUS_UNSEND:
-			info = getContext().getString(R.string.sending);
+			Downloadable d = message.getDownloadable();
+			if (d!=null) {
+				info = getContext().getString(R.string.sending_file,d.getProgress());
+			} else {
+				info = getContext().getString(R.string.sending);
+			}
 			break;
 		case Message.STATUS_OFFERED:
 			info = getContext().getString(R.string.offering);
@@ -135,11 +147,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				if (contact != null) {
 					info = contact.getDisplayName();
 				} else {
-					if (message.getPresence() != null) {
-						info = message.getPresence();
-					} else {
-						info = message.getCounterpart();
-					}
+					info = getDisplayedMucCounterpart(message.getCounterpart());
 				}
 			}
 			break;
@@ -184,13 +192,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		}
 	}
 
-	private void displayInfoMessage(ViewHolder viewHolder, int r) {
+	private void displayInfoMessage(ViewHolder viewHolder, String text) {
 		if (viewHolder.download_button != null) {
 			viewHolder.download_button.setVisibility(View.GONE);
 		}
 		viewHolder.image.setVisibility(View.GONE);
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
-		viewHolder.messageBody.setText(getContext().getString(r));
+		viewHolder.messageBody.setText(text);
 		viewHolder.messageBody.setTextColor(activity.getSecondaryTextColor());
 		viewHolder.messageBody.setTypeface(null, Typeface.ITALIC);
 		viewHolder.messageBody.setTextIsSelectable(false);
@@ -227,14 +235,13 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 					privateMarker = activity
 							.getString(R.string.private_message);
 				} else {
-					String to;
-					if (message.getPresence() != null) {
-						to = message.getPresence();
+					final String to;
+					if (message.getCounterpart() != null) {
+						to = message.getCounterpart().getResourcepart();
 					} else {
-						to = message.getCounterpart();
+						to = "";
 					}
-					privateMarker = activity.getString(
-							R.string.private_message_to, to);
+					privateMarker = activity.getString(R.string.private_message_to, to);
 				}
 				SpannableString span = new SpannableString(privateMarker + " "
 						+ message.getBody());
@@ -256,16 +263,32 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 	}
 
 	private void displayDownloadableMessage(ViewHolder viewHolder,
-			final Message message, int resid) {
+			final Message message, String text) {
 		viewHolder.image.setVisibility(View.GONE);
 		viewHolder.messageBody.setVisibility(View.GONE);
 		viewHolder.download_button.setVisibility(View.VISIBLE);
-		viewHolder.download_button.setText(resid);
+		viewHolder.download_button.setText(text);
 		viewHolder.download_button.setOnClickListener(new OnClickListener() {
 
 			@Override
 			public void onClick(View v) {
 				startDonwloadable(message);
+			}
+		});
+		viewHolder.download_button.setOnLongClickListener(openContextMenu);
+	}
+
+	private void displayOpenableMessage(ViewHolder viewHolder,final Message message) {
+		final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+		viewHolder.image.setVisibility(View.GONE);
+		viewHolder.messageBody.setVisibility(View.GONE);
+		viewHolder.download_button.setVisibility(View.VISIBLE);
+		viewHolder.download_button.setText(activity.getString(R.string.open_file,file.getMimeType()));
+		viewHolder.download_button.setOnClickListener(new OnClickListener() {
+
+			@Override
+			public void onClick(View v) {
+				openDonwloadable(file);
 			}
 		});
 		viewHolder.download_button.setOnLongClickListener(openContextMenu);
@@ -305,9 +328,21 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.image.setOnLongClickListener(openContextMenu);
 	}
 
+	private String getDisplayedMucCounterpart(final Jid counterpart) {
+		if (counterpart==null) {
+			return "";
+		} else if (!counterpart.isBareJid()) {
+			return counterpart.getResourcepart();
+		} else {
+			return counterpart.toString();
+		}
+	}
+
 	@Override
 	public View getView(int position, View view, ViewGroup parent) {
-		final Message item = getItem(position);
+		final Message message = getItem(position);
+		final Conversation conversation = message.getConversation();
+		final Account account = conversation.getAccount();
 		int type = getItemViewType(position);
 		ViewHolder viewHolder;
 		if (view == null) {
@@ -375,10 +410,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		}
 
 		if (type == STATUS) {
-			if (item.getConversation().getMode() == Conversation.MODE_SINGLE) {
+			if (conversation.getMode() == Conversation.MODE_SINGLE) {
 				viewHolder.contact_picture.setImageBitmap(activity
-						.avatarService().get(
-								item.getConversation().getContact(),
+						.avatarService().get(conversation.getContact(),
 								activity.getPixel(32)));
 				viewHolder.contact_picture.setAlpha(0.5f);
 				viewHolder.contact_picture
@@ -386,8 +420,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 							@Override
 							public void onClick(View v) {
-								String name = item.getConversation()
-										.getName();
+								String name = conversation.getName();
 								String read = getContext()
 										.getString(
 												R.string.contact_has_read_up_to_this_point,
@@ -409,21 +442,18 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			view.setLayoutParams(view.getLayoutParams());
 			return view;
 		} else if (type == RECEIVED) {
-			Contact contact = item.getContact();
+			Contact contact = message.getContact();
 			if (contact != null) {
 				viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(contact, activity.getPixel(48)));
-			} else if (item.getConversation().getMode() == Conversation.MODE_MULTI) {
-				String name = item.getPresence();
-				if (name == null) {
-					name = item.getCounterpart();
-				}
-				viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(name, activity.getPixel(48)));
+			} else if (conversation.getMode() == Conversation.MODE_MULTI) {
+				viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(getDisplayedMucCounterpart(message.getCounterpart()),
+                        activity.getPixel(48)));
 			}
-		} else if (type == SENT) {
-			viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(item.getConversation().getAccount(), activity.getPixel(48)));
+		} else if (type == SENT && viewHolder.contact_picture != null) {
+			viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(account, activity.getPixel(48)));
 		}
 
-		if (viewHolder.contact_picture != null) {
+		if (viewHolder != null && viewHolder.contact_picture != null) {
 			viewHolder.contact_picture
 					.setOnClickListener(new OnClickListener() {
 
@@ -431,7 +461,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						public void onClick(View v) {
 							if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
 								MessageAdapter.this.mOnContactPictureClickedListener
-										.onContactPictureClicked(item);
+										.onContactPictureClicked(message);
 							}
 
 						}
@@ -443,7 +473,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						public boolean onLongClick(View v) {
 							if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
 								MessageAdapter.this.mOnContactPictureLongClickedListener
-										.onContactPictureLongClicked(item);
+										.onContactPictureLongClicked(message);
 								return true;
 							} else {
 								return false;
@@ -452,42 +482,52 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 					});
 		}
 
-		if (item.getType() == Message.TYPE_IMAGE
-				|| item.getDownloadable() != null) {
-			Downloadable d = item.getDownloadable();
-			if (d != null && d.getStatus() == Downloadable.STATUS_DOWNLOADING) {
-				displayInfoMessage(viewHolder, R.string.receiving_image);
-			} else if (d != null
-					&& d.getStatus() == Downloadable.STATUS_CHECKING) {
-				displayInfoMessage(viewHolder, R.string.checking_image);
-			} else if (d != null
-					&& d.getStatus() == Downloadable.STATUS_DELETED) {
-				displayInfoMessage(viewHolder, R.string.image_file_deleted);
-			} else if (d != null && d.getStatus() == Downloadable.STATUS_OFFER) {
-				displayDownloadableMessage(viewHolder, item,
-						R.string.download_image);
-			} else if (d != null
-					&& d.getStatus() == Downloadable.STATUS_OFFER_CHECK_FILESIZE) {
-				displayDownloadableMessage(viewHolder, item,
-						R.string.check_image_filesize);
-			} else if (d != null && d.getStatus() == Downloadable.STATUS_FAILED) {
-				displayInfoMessage(viewHolder, R.string.image_transmission_failed);
-			} else if ((item.getEncryption() == Message.ENCRYPTION_DECRYPTED)
-					|| (item.getEncryption() == Message.ENCRYPTION_NONE)
-					|| (item.getEncryption() == Message.ENCRYPTION_OTR)) {
-				displayImageMessage(viewHolder, item);
-			} else if (item.getEncryption() == Message.ENCRYPTION_PGP) {
-				displayInfoMessage(viewHolder, R.string.encrypted_message);
-			} else {
-				displayDecryptionFailed(viewHolder);
-			}
-		} else {
-			if (item.getEncryption() == Message.ENCRYPTION_PGP) {
-				if (activity.hasPgp()) {
-					displayInfoMessage(viewHolder, R.string.encrypted_message);
+		if (message.getDownloadable() != null && message.getDownloadable().getStatus() != Downloadable.STATUS_UPLOADING) {
+			Downloadable d = message.getDownloadable();
+			if (d.getStatus() == Downloadable.STATUS_DOWNLOADING) {
+				if (message.getType() == Message.TYPE_FILE) {
+					displayInfoMessage(viewHolder,activity.getString(R.string.receiving_file,d.getMimeType(),d.getProgress()));
 				} else {
-					displayInfoMessage(viewHolder,
-							R.string.install_openkeychain);
+					displayInfoMessage(viewHolder,activity.getString(R.string.receiving_image,d.getProgress()));
+				}
+			} else if (d.getStatus() == Downloadable.STATUS_CHECKING) {
+				displayInfoMessage(viewHolder,activity.getString(R.string.checking_image));
+			} else if (d.getStatus() == Downloadable.STATUS_DELETED) {
+				if (message.getType() == Message.TYPE_FILE) {
+					displayInfoMessage(viewHolder, activity.getString(R.string.file_deleted));
+				} else {
+					displayInfoMessage(viewHolder, activity.getString(R.string.image_file_deleted));
+				}
+			} else if (d.getStatus() == Downloadable.STATUS_OFFER) {
+				if (message.getType() == Message.TYPE_FILE) {
+					displayDownloadableMessage(viewHolder,message,activity.getString(R.string.download_file,d.getMimeType()));
+				} else {
+					displayDownloadableMessage(viewHolder, message,activity.getString(R.string.download_image));
+				}
+			} else if (d.getStatus() == Downloadable.STATUS_OFFER_CHECK_FILESIZE) {
+				displayDownloadableMessage(viewHolder, message,activity.getString(R.string.check_image_filesize));
+			} else if (d.getStatus() == Downloadable.STATUS_FAILED) {
+				if (message.getType() == Message.TYPE_FILE) {
+					displayInfoMessage(viewHolder, activity.getString(R.string.file_transmission_failed));
+				} else {
+					displayInfoMessage(viewHolder, activity.getString(R.string.image_transmission_failed));
+				}
+			}
+		} else if (message.getType() == Message.TYPE_IMAGE && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
+			displayImageMessage(viewHolder, message);
+		} else if (message.getType() == Message.TYPE_FILE && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
+			if (message.getImageParams().width > 0) {
+				displayImageMessage(viewHolder,message);
+			} else {
+				displayOpenableMessage(viewHolder, message);
+			}
+		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+			if (activity.hasPgp()) {
+				displayInfoMessage(viewHolder,activity.getString(R.string.encrypted_message));
+			} else {
+				displayInfoMessage(viewHolder,
+						activity.getString(R.string.install_openkeychain));
+				if (viewHolder != null) {
 					viewHolder.message_box
 							.setOnClickListener(new OnClickListener() {
 
@@ -497,14 +537,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 								}
 							});
 				}
-			} else if (item.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
-				displayDecryptionFailed(viewHolder);
-			} else {
-				displayTextMessage(viewHolder, item);
 			}
+		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
+			displayDecryptionFailed(viewHolder);
+		} else {
+			displayTextMessage(viewHolder, message);
 		}
 
-		displayStatus(viewHolder, item);
+		displayStatus(viewHolder, message);
 
 		return view;
 	}
@@ -516,6 +556,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				Toast.makeText(activity, R.string.not_connected_try_again,
 						Toast.LENGTH_SHORT).show();
 			}
+		}
+	}
+
+	public void openDonwloadable(DownloadableFile file) {
+		if (!file.exists()) {
+			Toast.makeText(activity,R.string.file_deleted,Toast.LENGTH_SHORT).show();
+			return;
+		}
+		Intent openIntent = new Intent(Intent.ACTION_VIEW);
+		openIntent.setDataAndType(Uri.fromFile(file), file.getMimeType());
+		PackageManager manager = activity.getPackageManager();
+		List<ResolveInfo> infos = manager.queryIntentActivities(openIntent, 0);
+		if (infos.size() > 0) {
+			getContext().startActivity(openIntent);
+		} else {
+			Toast.makeText(activity,R.string.no_application_found_to_open_file,Toast.LENGTH_SHORT).show();
 		}
 	}
 

@@ -35,7 +35,7 @@ import net.java.otr4j.session.SessionStatus;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import eu.siacs.conversations.R;
@@ -43,6 +43,9 @@ import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Downloadable;
+import eu.siacs.conversations.entities.DownloadableFile;
+import eu.siacs.conversations.entities.DownloadablePlaceholder;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presences;
@@ -53,7 +56,7 @@ import eu.siacs.conversations.ui.XmppActivity.OnValueEdited;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureClicked;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureLongClicked;
-import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationFragment extends Fragment {
 
@@ -92,11 +95,9 @@ public class ConversationFragment extends Fragment {
 		}
 	};
 	protected ListView messagesView;
-	protected LayoutInflater inflater;
-	protected List<Message> messageList = new ArrayList<Message>();
+	final protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
 	protected Contact contact;
-	protected String queuedPqpMessage = null;
 	private EditMessage mEditMessage;
 	private ImageButton mSendButton;
 	private RelativeLayout snackbar;
@@ -114,19 +115,20 @@ public class ConversationFragment extends Fragment {
 		@Override
 		public void onScroll(AbsListView view, int firstVisibleItem,
 							 int visibleItemCount, int totalItemCount) {
-			if (firstVisibleItem == 0 && messagesLoaded) {
-				long timestamp = messageList.get(0).getTimeSent();
-				messagesLoaded = false;
-				int size = activity.xmppConnectionService.loadMoreMessages(
-						conversation, timestamp);
-				messageList.clear();
-				messageList.addAll(conversation.getMessages());
-				updateStatusMessages();
-				messageListAdapter.notifyDataSetChanged();
-				if (size != 0) {
-					messagesLoaded = true;
+			synchronized (ConversationFragment.this.messageList) {
+				if (firstVisibleItem == 0 && messagesLoaded) {
+					long timestamp = ConversationFragment.this.messageList.get(0).getTimeSent();
+					messagesLoaded = false;
+					int size = activity.xmppConnectionService.loadMoreMessages(conversation, timestamp);
+					ConversationFragment.this.messageList.clear();
+					ConversationFragment.this.messageList.addAll(conversation.getMessages());
+					updateStatusMessages();
+					messageListAdapter.notifyDataSetChanged();
+					if (size != 0) {
+						messagesLoaded = true;
+					}
+					messagesView.setSelectionFromTop(size + 1, 0);
 				}
-				messagesView.setSelectionFromTop(size + 1, 0);
 			}
 		}
 	};
@@ -147,7 +149,20 @@ public class ConversationFragment extends Fragment {
 			}
 		}
 	};
-	private ConcurrentLinkedQueue<Message> mEncryptedMessages = new ConcurrentLinkedQueue<Message>();
+	protected OnClickListener clickToVerify = new OnClickListener() {
+
+		@Override
+		public void onClick(View v) {
+			if (conversation.getOtrFingerprint() != null) {
+				Intent intent = new Intent(getActivity(), VerifyOTRActivity.class);
+				intent.setAction(VerifyOTRActivity.ACTION_VERIFY_CONTACT);
+				intent.putExtra("contact", conversation.getContact().getJid().toBareJid().toString());
+				intent.putExtra("account", conversation.getAccount().getJid().toBareJid().toString());
+				startActivity(intent);
+			}
+		}
+	};
+	private ConcurrentLinkedQueue<Message> mEncryptedMessages = new ConcurrentLinkedQueue<>();
 	private boolean mDecryptJobRunning = false;
 	private OnEditorActionListener mEditorActionListener = new OnEditorActionListener() {
 
@@ -191,7 +206,7 @@ public class ConversationFragment extends Fragment {
 		}
 		if (mEditMessage.getText().length() < 1) {
 			if (this.conversation.getMode() == Conversation.MODE_MULTI) {
-				conversation.setNextPresence(null);
+				conversation.setNextCounterpart(null);
 				updateChatMsgHint();
 			}
 			return;
@@ -200,10 +215,10 @@ public class ConversationFragment extends Fragment {
 				.toString(), conversation.getNextEncryption(activity
 				.forceEncryption()));
 		if (conversation.getMode() == Conversation.MODE_MULTI) {
-			if (conversation.getNextPresence() != null) {
-				message.setPresence(conversation.getNextPresence());
+			if (conversation.getNextCounterpart() != null) {
+				message.setCounterpart(conversation.getNextCounterpart());
 				message.setType(Message.TYPE_PRIVATE);
-				conversation.setNextPresence(null);
+				conversation.setNextCounterpart(null);
 			}
 		}
 		if (conversation.getNextEncryption(activity.forceEncryption()) == Message.ENCRYPTION_OTR) {
@@ -217,10 +232,10 @@ public class ConversationFragment extends Fragment {
 
 	public void updateChatMsgHint() {
 		if (conversation.getMode() == Conversation.MODE_MULTI
-				&& conversation.getNextPresence() != null) {
+				&& conversation.getNextCounterpart() != null) {
 			this.mEditMessage.setHint(getString(
 					R.string.send_private_message_to,
-					conversation.getNextPresence()));
+					conversation.getNextCounterpart().getResourcepart()));
 		} else {
 			switch (conversation.getNextEncryption(activity.forceEncryption())) {
 				case Message.ENCRYPTION_NONE:
@@ -271,20 +286,19 @@ public class ConversationFragment extends Fragment {
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
 		messagesView.setOnScrollListener(mOnScrollListener);
 		messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
-		messageListAdapter = new MessageAdapter(
-				(ConversationActivity) getActivity(), this.messageList);
-		messageListAdapter
-				.setOnContactPictureClicked(new OnContactPictureClicked() {
+		messageListAdapter = new MessageAdapter((ConversationActivity) getActivity(), this.messageList);
+		messageListAdapter.setOnContactPictureClicked(new OnContactPictureClicked() {
 
 					@Override
 					public void onContactPictureClicked(Message message) {
 						if (message.getStatus() <= Message.STATUS_RECEIVED) {
 							if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-								if (message.getPresence() != null) {
-									highlightInConference(message.getPresence());
-								} else {
-									highlightInConference(message
-											.getCounterpart());
+								if (message.getCounterpart() != null) {
+									if (!message.getCounterpart().isBareJid()) {
+										highlightInConference(message.getCounterpart().getResourcepart());
+									} else {
+										highlightInConference(message.getCounterpart().toString());
+									}
 								}
 							} else {
 								Contact contact = message.getConversation()
@@ -296,10 +310,10 @@ public class ConversationFragment extends Fragment {
 											.getConversation());
 								}
 							}
-						}  else {
+						} else {
 							Account account = message.getConversation().getAccount();
 							Intent intent = new Intent(activity, EditAccountActivity.class);
-							intent.putExtra("jid", account.getJid());
+							intent.putExtra("jid", account.getJid().toBareJid().toString());
 							startActivity(intent);
 						}
 					}
@@ -311,9 +325,7 @@ public class ConversationFragment extends Fragment {
 					public void onContactPictureLongClicked(Message message) {
 						if (message.getStatus() <= Message.STATUS_RECEIVED) {
 							if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-								if (message.getPresence() != null) {
-									privateMessageWith(message.getPresence());
-								} else {
+								if (message.getCounterpart() != null) {
 									privateMessageWith(message.getCounterpart());
 								}
 							}
@@ -330,10 +342,12 @@ public class ConversationFragment extends Fragment {
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
 									ContextMenuInfo menuInfo) {
-		super.onCreateContextMenu(menu, v, menuInfo);
-		AdapterView.AdapterContextMenuInfo acmi = (AdapterContextMenuInfo) menuInfo;
-		this.selectedMessage = this.messageList.get(acmi.position);
-		populateContextMenu(menu);
+		synchronized (this.messageList) {
+			super.onCreateContextMenu(menu, v, menuInfo);
+			AdapterView.AdapterContextMenuInfo acmi = (AdapterContextMenuInfo) menuInfo;
+			this.selectedMessage = this.messageList.get(acmi.position);
+			populateContextMenu(menu);
+		}
 	}
 
 	private void populateContextMenu(ContextMenu menu) {
@@ -345,6 +359,7 @@ public class ConversationFragment extends Fragment {
 			MenuItem sendAgain = menu.findItem(R.id.send_again);
 			MenuItem copyUrl = menu.findItem(R.id.copy_url);
 			MenuItem downloadImage = menu.findItem(R.id.download_image);
+			MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
 			if (this.selectedMessage.getType() != Message.TYPE_TEXT
 					|| this.selectedMessage.getDownloadable() != null) {
 				copyText.setVisible(false);
@@ -361,11 +376,14 @@ public class ConversationFragment extends Fragment {
 					|| this.selectedMessage.getImageParams().url == null) {
 				copyUrl.setVisible(false);
 			}
-
 			if (this.selectedMessage.getType() != Message.TYPE_TEXT
 					|| this.selectedMessage.getDownloadable() != null
 					|| !this.selectedMessage.bodyContainsDownloadable()) {
 				downloadImage.setVisible(false);
+			}
+			if (this.selectedMessage.getDownloadable() == null
+					|| this.selectedMessage.getDownloadable() instanceof DownloadablePlaceholder) {
+				cancelTransmission.setVisible(false);
 			}
 		}
 	}
@@ -387,6 +405,9 @@ public class ConversationFragment extends Fragment {
 				return true;
 			case R.id.download_image:
 				downloadImage(selectedMessage);
+				return true;
+			case R.id.cancel_transmission:
+				cancelTransmission(selectedMessage);
 				return true;
 			default:
 				return super.onContextItemSelected(item);
@@ -414,6 +435,14 @@ public class ConversationFragment extends Fragment {
 	}
 
 	private void resendMessage(Message message) {
+		if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
+			DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+			if (!file.exists()) {
+				Toast.makeText(activity,R.string.file_deleted,Toast.LENGTH_SHORT).show();
+				message.setDownloadable(new DownloadablePlaceholder(Downloadable.STATUS_DELETED));
+				return;
+			}
+		}
 		activity.xmppConnectionService.resendFailedMessages(message);
 	}
 
@@ -430,9 +459,16 @@ public class ConversationFragment extends Fragment {
 				.createNewConnection(message);
 	}
 
-	protected void privateMessageWith(String counterpart) {
+	private void cancelTransmission(Message message) {
+		Downloadable downloadable = message.getDownloadable();
+		if (downloadable!=null) {
+			downloadable.cancel();
+		}
+	}
+
+	protected void privateMessageWith(final Jid counterpart) {
 		this.mEditMessage.setText("");
-		this.conversation.setNextPresence(counterpart);
+		this.conversation.setNextCounterpart(counterpart);
 		updateChatMsgHint();
 	}
 
@@ -460,13 +496,18 @@ public class ConversationFragment extends Fragment {
 	}
 
 	public void reInit(Conversation conversation) {
+		if (conversation == null) {
+			return;
+		}
 		if (this.conversation != null) {
 			this.conversation.setNextMessage(mEditMessage.getText().toString());
 		}
 		this.activity = (ConversationActivity) getActivity();
 		this.conversation = conversation;
+		this.mDecryptJobRunning = false;
+		this.mEncryptedMessages.clear();
 		if (this.conversation.getMode() == Conversation.MODE_MULTI) {
-			this.conversation.setNextPresence(null);
+			this.conversation.setNextCounterpart(null);
 		}
 		this.mEditMessage.setText("");
 		this.mEditMessage.append(this.conversation.getNextMessage());
@@ -475,73 +516,47 @@ public class ConversationFragment extends Fragment {
 	}
 
 	public void updateMessages() {
-		if (getView() == null) {
-			return;
-		}
-		hideSnackbar();
-		final ConversationActivity activity = (ConversationActivity) getActivity();
-		if (this.conversation != null) {
-			final Contact contact = this.conversation.getContact();
-			if (this.conversation.isMuted()) {
-				showSnackbar(R.string.notifications_disabled, R.string.enable,
-						new OnClickListener() {
+		synchronized (this.messageList) {
+			if (getView() == null) {
+				return;
+			}
+			hideSnackbar();
+			final ConversationActivity activity = (ConversationActivity) getActivity();
+			if (this.conversation != null) {
+				final Contact contact = this.conversation.getContact();
+				if (this.conversation.isMuted()) {
+					showSnackbar(R.string.notifications_disabled, R.string.enable,
+							new OnClickListener() {
 
-							@Override
-							public void onClick(View v) {
-								conversation.setMutedTill(0);
-								activity.xmppConnectionService.databaseBackend
-										.updateConversation(conversation);
-								updateMessages();
-							}
-						});
-			} else if (!contact.showInRoster()
-					&& contact
-					.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
-				showSnackbar(R.string.contact_added_you, R.string.add_back,
-						new OnClickListener() {
+								@Override
+								public void onClick(View v) {
+									activity.unmuteConversation(conversation);
+								}
+							});
+				} else if (!contact.showInRoster()
+						&& contact
+						.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
+					showSnackbar(R.string.contact_added_you, R.string.add_back,
+							new OnClickListener() {
 
-							@Override
-							public void onClick(View v) {
-								activity.xmppConnectionService
-										.createContact(contact);
-								activity.switchToContactDetails(contact);
-							}
-						});
-			}
-			for (Message message : this.conversation.getMessages()) {
-				if (message.getEncryption() == Message.ENCRYPTION_PGP
-						&& (message.getStatus() == Message.STATUS_RECEIVED || message
-						.getStatus() >= Message.STATUS_SEND)
-						&& message.getDownloadable() == null) {
-					if (!mEncryptedMessages.contains(message)) {
-						mEncryptedMessages.add(message);
-					}
-				}
-			}
-			decryptNext();
-			this.messageList.clear();
-			if (this.conversation.getMessages().size() == 0) {
-				messagesLoaded = false;
-			} else {
-				this.messageList.addAll(this.conversation.getMessages());
-				messagesLoaded = true;
-				updateStatusMessages();
-			}
-			this.messageListAdapter.notifyDataSetChanged();
-			if (conversation.getMode() == Conversation.MODE_SINGLE) {
-				if (messageList.size() >= 1) {
+								@Override
+								public void onClick(View v) {
+									activity.xmppConnectionService
+											.createContact(contact);
+									activity.switchToContactDetails(contact);
+								}
+							});
+				} else if (conversation.getMode() == Conversation.MODE_SINGLE) {
 					makeFingerprintWarning();
-				}
-			} else {
-				if (!conversation.getMucOptions().online()
-						&& conversation.getAccount().getStatus() == Account.STATUS_ONLINE) {
+				} else if (!conversation.getMucOptions().online()
+						&& conversation.getAccount().getStatus() == Account.State.ONLINE) {
 					int error = conversation.getMucOptions().getError();
 					switch (error) {
 						case MucOptions.ERROR_NICK_IN_USE:
 							showSnackbar(R.string.nick_in_use, R.string.edit,
 									clickToMuc);
 							break;
-						case MucOptions.ERROR_ROOM_NOT_FOUND:
+						case MucOptions.ERROR_UNKNOWN:
 							showSnackbar(R.string.conference_not_found,
 									R.string.leave, leaveMuc);
 							break;
@@ -565,13 +580,33 @@ public class ConversationFragment extends Fragment {
 							break;
 					}
 				}
+				this.messageList.clear();
+				if (this.conversation.getMessages().size() == 0) {
+					messagesLoaded = false;
+				} else {
+					this.messageList.addAll(this.conversation.getMessages());
+					messagesLoaded = true;
+					for (Message message : this.messageList) {
+						if (message.getEncryption() == Message.ENCRYPTION_PGP
+								&& (message.getStatus() == Message.STATUS_RECEIVED || message
+								.getStatus() >= Message.STATUS_SEND)
+								&& message.getDownloadable() == null) {
+							if (!mEncryptedMessages.contains(message)) {
+								mEncryptedMessages.add(message);
+							}
+						}
+					}
+					decryptNext();
+					updateStatusMessages();
+				}
+				this.messageListAdapter.notifyDataSetChanged();
+				updateChatMsgHint();
+				if (!activity.isConversationsOverviewVisable() || !activity.isConversationsOverviewHideable()) {
+					activity.xmppConnectionService.markRead(conversation, true);
+					activity.updateConversationList();
+				}
+				this.updateSendButton();
 			}
-			updateChatMsgHint();
-			if (!activity.isConversationsOverviewVisable() || !activity.isConversationsOverviewHideable()) {
-				activity.xmppConnectionService.markRead(conversation, true);
-				activity.updateConversationList();
-			}
-			this.updateSendButton();
 		}
 	}
 
@@ -594,7 +629,11 @@ public class ConversationFragment extends Fragment {
 				@Override
 				public void success(Message message) {
 					mDecryptJobRunning = false;
-					mEncryptedMessages.remove();
+					try {
+						mEncryptedMessages.remove();
+					} catch (final NoSuchElementException ignored) {
+
+					}
 					activity.xmppConnectionService.updateMessage(message);
 				}
 
@@ -602,7 +641,11 @@ public class ConversationFragment extends Fragment {
 				public void error(int error, Message message) {
 					message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
 					mDecryptJobRunning = false;
-					mEncryptedMessages.remove();
+					try {
+						mEncryptedMessages.remove();
+					} catch (final NoSuchElementException ignored) {
+
+					}
 					activity.xmppConnectionService.updateConversationUi();
 				}
 			});
@@ -619,7 +662,7 @@ public class ConversationFragment extends Fragment {
 	public void updateSendButton() {
 		Conversation c = this.conversation;
 		if (activity.useSendButtonToIndicateStatus() && c != null
-				&& c.getAccount().getStatus() == Account.STATUS_ONLINE) {
+				&& c.getAccount().getStatus() == Account.State.ONLINE) {
 			if (c.getMode() == Conversation.MODE_SINGLE) {
 				switch (c.getContact().getMostAvailableStatus()) {
 					case Presences.CHAT:
@@ -666,15 +709,17 @@ public class ConversationFragment extends Fragment {
 	}
 
 	protected void updateStatusMessages() {
-		if (conversation.getMode() == Conversation.MODE_SINGLE) {
-			for (int i = this.messageList.size() - 1; i >= 0; --i) {
-				if (this.messageList.get(i).getStatus() == Message.STATUS_RECEIVED) {
-					return;
-				} else {
-					if (this.messageList.get(i).getStatus() == Message.STATUS_SEND_DISPLAYED) {
-						this.messageList.add(i + 1,
-								Message.createStatusMessage(conversation));
+		synchronized (this.messageList) {
+			if (conversation.getMode() == Conversation.MODE_SINGLE) {
+				for (int i = this.messageList.size() - 1; i >= 0; --i) {
+					if (this.messageList.get(i).getStatus() == Message.STATUS_RECEIVED) {
 						return;
+					} else {
+						if (this.messageList.get(i).getStatus() == Message.STATUS_SEND_DISPLAYED) {
+							this.messageList.add(i + 1,
+									Message.createStatusMessage(conversation));
+							return;
+						}
 					}
 				}
 			}
@@ -682,26 +727,11 @@ public class ConversationFragment extends Fragment {
 	}
 
 	protected void makeFingerprintWarning() {
-		Set<String> knownFingerprints = conversation.getContact()
-				.getOtrFingerprints();
-		if (conversation.hasValidOtrSession()
-				&& (!conversation.isMuted())
-				&& (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED) && (!knownFingerprints
-				.contains(conversation.getOtrFingerprint()))) {
-			showSnackbar(R.string.unknown_otr_fingerprint, R.string.verify,
-					new OnClickListener() {
-
-						@Override
-						public void onClick(View v) {
-							if (conversation.getOtrFingerprint() != null) {
-								AlertDialog dialog = UIHelper
-										.getVerifyFingerprintDialog(
-												(ConversationActivity) getActivity(),
-												conversation, snackbar);
-								dialog.show();
-							}
-						}
-					});
+		if (conversation.smpRequested()) {
+			showSnackbar(R.string.smp_requested, R.string.verify, clickToVerify);
+		} else if (conversation.hasValidOtrSession() && (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED)
+				&& (!conversation.isOtrFingerprintVerified())) {
+			showSnackbar(R.string.unknown_otr_fingerprint, R.string.verify, clickToVerify);
 		}
 	}
 
@@ -827,21 +857,16 @@ public class ConversationFragment extends Fragment {
 	protected void sendOtrMessage(final Message message) {
 		final ConversationActivity activity = (ConversationActivity) getActivity();
 		final XmppConnectionService xmppService = activity.xmppConnectionService;
-		if (conversation.hasValidOtrSession()) {
-			activity.xmppConnectionService.sendMessage(message);
-			messageSent();
-		} else {
-			activity.selectPresence(message.getConversation(),
-					new OnPresenceSelected() {
+		activity.selectPresence(message.getConversation(),
+				new OnPresenceSelected() {
 
-						@Override
-						public void onPresenceSelected() {
-							message.setPresence(conversation.getNextPresence());
-							xmppService.sendMessage(message);
-							messageSent();
-						}
-					});
-		}
+					@Override
+					public void onPresenceSelected() {
+						message.setCounterpart(conversation.getNextCounterpart());
+						xmppService.sendMessage(message);
+						messageSent();
+					}
+				});
 	}
 
 	public void appendText(String text) {

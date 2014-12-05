@@ -4,11 +4,13 @@ import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
+import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
 public class PresenceParser extends AbstractParser implements
@@ -20,27 +22,17 @@ public class PresenceParser extends AbstractParser implements
 
 	public void parseConferencePresence(PresencePacket packet, Account account) {
 		PgpEngine mPgpEngine = mXmppConnectionService.getPgpEngine();
-		if (packet.hasChild("x", "http://jabber.org/protocol/muc#user")) {
-			Conversation muc = mXmppConnectionService.find(account, packet
-					.getAttribute("from").split("/", 2)[0]);
-			if (muc != null) {
-				boolean before = muc.getMucOptions().online();
-				muc.getMucOptions().processPacket(packet, mPgpEngine);
-				if (before != muc.getMucOptions().online()) {
-					mXmppConnectionService.updateConversationUi();
-				}
-				mXmppConnectionService.getAvatarService().clear(muc);
-			}
-		} else if (packet.hasChild("x", "http://jabber.org/protocol/muc")) {
-			Conversation muc = mXmppConnectionService.find(account, packet
-					.getAttribute("from").split("/", 2)[0]);
-			if (muc != null) {
-				boolean before = muc.getMucOptions().online();
-				muc.getMucOptions().processPacket(packet, mPgpEngine);
-				if (before != muc.getMucOptions().online()) {
-					mXmppConnectionService.updateConversationUi();
-				}
-				mXmppConnectionService.getAvatarService().clear(muc);
+		final Conversation conversation = packet.getFrom() == null ? null : mXmppConnectionService.find(account, packet.getFrom().toBareJid());
+		if (conversation != null) {
+			final MucOptions mucOptions = conversation.getMucOptions();
+			boolean before = mucOptions.online();
+			int count = mucOptions.getUsers().size();
+			mucOptions.processPacket(packet, mPgpEngine);
+			mXmppConnectionService.getAvatarService().clear(conversation);
+			if (before != mucOptions.online() || (mucOptions.online() && count != mucOptions.getUsers().size())) {
+				mXmppConnectionService.updateConversationUi();
+			} else if (mucOptions.online()) {
+				mXmppConnectionService.updateMucRosterUi();
 			}
 		}
 	}
@@ -51,15 +43,15 @@ public class PresenceParser extends AbstractParser implements
 		if (packet.getFrom() == null) {
 			return;
 		}
-		String[] fromParts = packet.getFrom().split("/", 2);
+		final Jid from = packet.getFrom();
 		String type = packet.getAttribute("type");
-		if (fromParts[0].equals(account.getJid())) {
-			if (fromParts.length == 2) {
+		if (from.toBareJid().equals(account.getJid().toBareJid())) {
+			if (!from.isBareJid()) {
 				if (type == null) {
-					account.updatePresence(fromParts[1],
+					account.updatePresence(from.getResourcepart(),
 							Presences.parseShow(packet.findChild("show")));
 				} else if (type.equals("unavailable")) {
-					account.removePresence(fromParts[1]);
+					account.removePresence(from.getResourcepart());
 					account.deactivateGracePeriod();
 				}
 			}
@@ -67,8 +59,8 @@ public class PresenceParser extends AbstractParser implements
 			Contact contact = account.getRoster().getContact(packet.getFrom());
 			if (type == null) {
 				String presence;
-				if (fromParts.length >= 2) {
-					presence = fromParts[1];
+				if (!from.isBareJid()) {
+					presence = from.getResourcepart();
 				} else {
 					presence = "";
 				}
@@ -95,10 +87,10 @@ public class PresenceParser extends AbstractParser implements
 				mXmppConnectionService.onContactStatusChanged
 						.onContactStatusChanged(contact, online);
 			} else if (type.equals("unavailable")) {
-				if (fromParts.length != 2) {
+				if (from.isBareJid()) {
 					contact.clearPresences();
 				} else {
-					contact.removePresence(fromParts[1]);
+					contact.removePresence(from.getResourcepart());
 				}
 				mXmppConnectionService.onContactStatusChanged
 						.onContactStatusChanged(contact, false);
