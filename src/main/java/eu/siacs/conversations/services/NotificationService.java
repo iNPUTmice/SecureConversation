@@ -71,9 +71,10 @@ public class NotificationService {
 		final Intent i = new Intent("com.getpebble.action.SEND_NOTIFICATION");
 
 		final HashMap data = new HashMap();
-		data.put("title", message.getConversation().getName() +
-				" <" + message.getConversation().getContactJid()
-						.split("/")[0] + ">");
+		final Conversation conversation = message.getConversation();
+		data.put("title", conversation.getName() +
+				" <" + conversation.getContactJid()
+						.toString().split("/")[0] + ">");
 		data.put("body", message.getBody());
 		final JSONObject jsonData = new JSONObject(data);
 		final String notificationData = new JSONArray().put(jsonData).toString();
