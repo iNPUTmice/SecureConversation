@@ -15,7 +15,6 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,6 +34,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
@@ -302,6 +302,10 @@ public class ConversationActivity extends XmppActivity implements
 				if (this.getSelectedConversation().getMode() == Conversation.MODE_MULTI) {
 					menuContactDetails.setVisible(false);
 					menuAttach.setVisible(false);
+					if (mSelectedConversation.getMucOptions().getConferenceFeature().contains("muc_membersonly")
+							&& mSelectedConversation.getMucOptions().getSelf().getAffiliation() < MucOptions.User.AFFILIATION_ADMIN) {
+						menuInviteContact.setVisible(false);
+					}
 				} else {
 					menuMucDetails.setVisible(false);
 					menuInviteContact.setTitle(R.string.conference_with);
