@@ -113,7 +113,7 @@ public class ContactDetailsActivity extends XmppActivity implements OnAccountUpd
 			intent.setType(Contacts.CONTENT_ITEM_TYPE);
 			intent.putExtra(Intents.Insert.IM_HANDLE, contact.getJid().toString());
 			intent.putExtra(Intents.Insert.IM_PROTOCOL,
-					CommonDataKinds.Im.PROTOCOL_JABBER);
+					Integer.toString(CommonDataKinds.Im.PROTOCOL_JABBER));
 			intent.putExtra("finishActivityOnSaveCompleted", true);
 			ContactDetailsActivity.this.startActivityForResult(intent, 0);
 		}
