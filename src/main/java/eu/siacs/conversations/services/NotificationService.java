@@ -87,6 +87,10 @@ public class NotificationService {
 		return mXmppConnectionService.getPreferences().getBoolean("always_notify_in_conference", false);
 	}
 
+	private boolean notifyOnActiveConversation() {
+		return mXmppConnectionService.getPreferences().getBoolean("notify_on_active_conversation", false);
+	}
+
 	public void push(final Message message) {
 		if (!notify(message)) {
 			return;
@@ -95,7 +99,7 @@ public class NotificationService {
 			.getSystemService(Context.POWER_SERVICE);
 		final boolean isScreenOn = pm.isScreenOn();
 
-		if (this.mIsInForeground && isScreenOn
+		if (!notifyOnActiveConversation() && this.mIsInForeground && isScreenOn
 				&& this.mOpenConversation == message.getConversation()) {
 			return;
 				}
