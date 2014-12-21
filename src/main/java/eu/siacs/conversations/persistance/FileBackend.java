@@ -469,19 +469,26 @@ public class FileBackend {
 		updateFileParams(message,null);
 	}
 
-	public void updateFileParams(Message message, URL url) {
-		DownloadableFile file = getFile(message);
+	public void updateFileParams(final Message message, final URL url) {
+		final DownloadableFile file = getFile(message);
 		if (message.getType() == Message.TYPE_IMAGE || file.getMimeType().startsWith("image/")) {
-			BitmapFactory.Options options = new BitmapFactory.Options();
-			options.inJustDecodeBounds = true;
-			BitmapFactory.decodeFile(file.getAbsolutePath(), options);
-			int imageHeight = options.outHeight;
-			int imageWidth = options.outWidth;
-			if (url == null) {
-				message.setBody(Long.toString(file.getSize()) + '|' + imageWidth + '|' + imageHeight);
-			} else {
-				message.setBody(url.toString()+"|"+Long.toString(file.getSize()) + '|' + imageWidth + '|' + imageHeight);
-			}
+            BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inJustDecodeBounds = true;
+            BitmapFactory.decodeFile(file.getAbsolutePath(), options);
+            final int imageHeight = options.outHeight;
+            final int imageWidth = options.outWidth;
+            if (url == null) {
+                message.setBody(Long.toString(file.getSize()) + '|' + imageWidth + '|' + imageHeight);
+            } else {
+                message.setBody(url.toString() + "|" + Long.toString(file.getSize()) + '|' + imageWidth + '|' + imageHeight);
+            }
+        } else if (message.getType() == Message.TYPE_AUDIO || file.getMimeType().startsWith("audio/")) {
+            // TODO: Add audio length?
+            if (url == null) {
+                message.setBody(Long.toString(file.getSize()));
+            } else {
+                message.setBody(url.toString() + "|" + Long.toString(file.getSize()));
+            }
 		} else {
 			message.setBody(Long.toString(file.getSize()));
 		}

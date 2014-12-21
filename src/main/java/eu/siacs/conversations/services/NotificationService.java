@@ -261,7 +261,7 @@ public class NotificationService {
 		}
 	}
 
-	private Message getImage(final ArrayList<Message> messages) {
+	private Message getImage(final Iterable<Message> messages) {
 		for (final Message message : messages) {
 			if (message.getType() == Message.TYPE_IMAGE
 					&& message.getDownloadable() == null
@@ -289,7 +289,9 @@ public class NotificationService {
 					.getDownloadable().getStatus() == Downloadable.STATUS_OFFER_CHECK_FILESIZE)) {
 			if (message.getType() == Message.TYPE_FILE) {
 				return mXmppConnectionService.getString(R.string.file_offered_for_download);
-			} else {
+			} else if (message.getType() == Message.TYPE_AUDIO) {
+                return mXmppConnectionService.getText(R.string.audio_offered_for_download).toString();
+            } else {
 				return mXmppConnectionService.getText(
 						R.string.image_offered_for_download).toString();
 			}
@@ -300,11 +302,12 @@ public class NotificationService {
 			return mXmppConnectionService.getText(R.string.decryption_failed)
 				.toString();
 		} else if (message.getType() == Message.TYPE_FILE) {
-			DownloadableFile file = mXmppConnectionService.getFileBackend().getFile(message);
+			final DownloadableFile file = mXmppConnectionService.getFileBackend().getFile(message);
 			return mXmppConnectionService.getString(R.string.file,file.getMimeType());
 		} else if (message.getType() == Message.TYPE_IMAGE) {
-			return mXmppConnectionService.getText(R.string.image_file)
-				.toString();
+            return mXmppConnectionService.getText(R.string.image_file).toString();
+        } else if (message.getType() == Message.TYPE_AUDIO) {
+            return mXmppConnectionService.getText(R.string.audio_file).toString();
 		} else {
 			return message.getBody().trim();
 		}

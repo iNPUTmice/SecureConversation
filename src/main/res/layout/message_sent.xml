@@ -38,6 +38,15 @@
                 android:paddingBottom="2dp"
                 android:scaleType="centerCrop" />
 
+            <eu.siacs.conversations.ui.AudioViewGroup
+                android:id="@+id/message_audio"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:adjustViewBounds="true"
+                android:background="@color/primarytext"
+                android:paddingBottom="2dp"
+                android:scaleType="centerCrop" />
+
             <TextView
                 android:id="@+id/message_body"
                 android:layout_width="wrap_content"

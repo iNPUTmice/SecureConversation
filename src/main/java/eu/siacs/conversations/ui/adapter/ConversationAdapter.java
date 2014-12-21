@@ -75,9 +75,8 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 			convName.setTypeface(null, Typeface.NORMAL);
 		}
 
-		if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE
-				|| message.getDownloadable() != null) {
-			Downloadable d = message.getDownloadable();
+		if (message.isDownloadable() || message.getDownloadable() != null) {
+			final Downloadable d = message.getDownloadable();
 			if (conversation.isRead()) {
 				mLastMessage.setTypeface(null, Typeface.ITALIC);
 			} else {
@@ -89,13 +88,13 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 				if (d.getStatus() == Downloadable.STATUS_CHECKING) {
 					mLastMessage.setText(R.string.checking_image);
 				} else if (d.getStatus() == Downloadable.STATUS_DOWNLOADING) {
-					if (message.getType() == Message.TYPE_FILE) {
+					if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_AUDIO) {
 						mLastMessage.setText(getContext().getString(R.string.receiving_file,d.getMimeType(), d.getProgress()));
 					} else {
 						mLastMessage.setText(getContext().getString(R.string.receiving_image, d.getProgress()));
 					}
 				} else if (d.getStatus() == Downloadable.STATUS_OFFER) {
-					if (message.getType() == Message.TYPE_FILE) {
+					if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_AUDIO) {
 						mLastMessage.setText(R.string.file_offered_for_download);
 					} else {
 						mLastMessage.setText(R.string.image_offered_for_download);
@@ -103,13 +102,13 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 				} else if (d.getStatus() == Downloadable.STATUS_OFFER_CHECK_FILESIZE) {
 					mLastMessage.setText(R.string.image_offered_for_download);
 				} else if (d.getStatus() == Downloadable.STATUS_DELETED) {
-					if (message.getType() == Message.TYPE_FILE) {
+					if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_AUDIO) {
 						mLastMessage.setText(R.string.file_deleted);
 					} else {
 						mLastMessage.setText(R.string.image_file_deleted);
 					}
 				} else if (d.getStatus() == Downloadable.STATUS_FAILED) {
-					if (message.getType() == Message.TYPE_FILE) {
+					if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_AUDIO) {
 						mLastMessage.setText(R.string.file_transmission_failed);
 					} else {
 						mLastMessage.setText(R.string.image_transmission_failed);
@@ -125,8 +124,8 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 				imagePreview.setVisibility(View.GONE);
 				mLastMessage.setVisibility(View.VISIBLE);
 				mLastMessage.setText(R.string.encrypted_message_received);
-			} else if (message.getType() == Message.TYPE_FILE && message.getImageParams().width <= 0) {
-				DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+			} else if ((message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_AUDIO) && message.getImageParams().width <= 0) {
+				final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
 				mLastMessage.setVisibility(View.VISIBLE);
 				imagePreview.setVisibility(View.GONE);
 				mLastMessage.setText(getContext().getString(R.string.file,file.getMimeType()));

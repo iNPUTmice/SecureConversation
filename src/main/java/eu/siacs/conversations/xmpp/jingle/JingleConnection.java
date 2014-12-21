@@ -279,17 +279,24 @@ public class JingleConnection implements Downloadable {
 			Element fileSize = fileOffer.findChild("size");
 			Element fileNameElement = fileOffer.findChild("name");
 			if (fileNameElement != null) {
-				String[] filename = fileNameElement.getContent()
+				final String[] filename = fileNameElement.getContent()
 						.toLowerCase(Locale.US).split("\\.");
 				if (Arrays.asList(VALID_IMAGE_EXTENSIONS).contains(
 						filename[filename.length - 1])) {
-					message.setType(Message.TYPE_IMAGE);
+                    message.setType(Message.TYPE_IMAGE);
+                } else if (Arrays.asList(VALID_AUDIO_EXTENSOINS).contains(
+                        filename[filename.length - 1]
+                )) {
+                    message.setType(Message.TYPE_AUDIO);
 				} else if (Arrays.asList(VALID_CRYPTO_EXTENSIONS).contains(
 						filename[filename.length - 1])) {
 					if (filename.length == 3) {
 						if (Arrays.asList(VALID_IMAGE_EXTENSIONS).contains(
 								filename[filename.length - 2])) {
-							message.setType(Message.TYPE_IMAGE);
+                            message.setType(Message.TYPE_IMAGE);
+                        } else if (Arrays.asList(VALID_AUDIO_EXTENSOINS).contains(
+                                filename[filename.length - 2]))  {
+                            message.setType(Message.TYPE_AUDIO);
 						} else {
 							message.setType(Message.TYPE_FILE);
 						}
@@ -305,7 +312,7 @@ public class JingleConnection implements Downloadable {
 				if (message.getType() == Message.TYPE_FILE) {
 					String suffix = "";
 					if (!fileNameElement.getContent().isEmpty()) {
-						String parts[] = fileNameElement.getContent().split("/");
+						final String[] parts = fileNameElement.getContent().split("/");
 						suffix = parts[parts.length - 1];
 						if (message.getEncryption() == Message.ENCRYPTION_OTR  && suffix.endsWith(".otr")) {
 							suffix = suffix.substring(0,suffix.length() - 4);
@@ -361,9 +368,9 @@ public class JingleConnection implements Downloadable {
 
 	private void sendInitRequest() {
 		this.mXmppConnectionService.markMessage(this.message, Message.STATUS_OFFERED);
-		JinglePacket packet = this.bootstrapPacket("session-initiate");
-		Content content = new Content(this.contentCreator, this.contentName);
-		if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+		final JinglePacket packet = this.bootstrapPacket("session-initiate");
+		final Content content = new Content(this.contentCreator, this.contentName);
+		if (message.isDownloadable()) {
 			content.setTransportId(this.transportId);
 			this.file = this.mXmppConnectionService.getFileBackend().getFile(
 					message, false);
@@ -954,12 +961,11 @@ public class JingleConnection implements Downloadable {
 
 	@Override
 	public String getMimeType() {
-		if (this.message.getType() == Message.TYPE_FILE) {
-			String mime = null;
-			String path = this.message.getRelativeFilePath();
+		if (this.message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_AUDIO) {
+			final String path = this.message.getRelativeFilePath();
 			if (path != null && !this.message.getRelativeFilePath().isEmpty()) {
-				mime = URLConnection.guessContentTypeFromName(this.message.getRelativeFilePath());
-				if (mime!=null) {
+				final String mime = URLConnection.guessContentTypeFromName(this.message.getRelativeFilePath());
+				if (mime != null) {
 					return  mime;
 				} else {
 					return "";

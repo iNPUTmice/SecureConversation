@@ -35,6 +35,7 @@ public class Message extends AbstractEntity {
 	public static final int TYPE_FILE = 2;
 	public static final int TYPE_STATUS = 3;
 	public static final int TYPE_PRIVATE = 4;
+    public static final int TYPE_AUDIO = 5;
 
 	public static String CONVERSATION = "conversationUuid";
 	public static String COUNTERPART = "counterpart";
@@ -290,6 +291,10 @@ public class Message extends AbstractEntity {
 	public int getType() {
 		return this.type;
 	}
+
+    public boolean isDownloadable() {
+        return type == TYPE_IMAGE || type == TYPE_AUDIO || type == TYPE_FILE;
+    }
 
 	public void setType(int type) {
 		this.type = type;

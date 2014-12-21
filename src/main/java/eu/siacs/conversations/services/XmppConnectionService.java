@@ -36,6 +36,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
@@ -313,7 +314,12 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 					conversation.getNextEncryption(forceEncryption()));
 		}
 		message.setCounterpart(conversation.getNextCounterpart());
-		message.setType(Message.TYPE_FILE);
+        final String[] parts = uri.toString().split("\\.");
+        if (Arrays.asList(Downloadable.VALID_AUDIO_EXTENSOINS).contains(parts[parts.length - 1])) {
+            message.setType(Message.TYPE_AUDIO);
+        } else {
+            message.setType(Message.TYPE_FILE);
+        }
 		message.setStatus(Message.STATUS_OFFERED);
 		String path = getFileBackend().getOriginalPath(uri);
 		if (path!=null) {
@@ -607,7 +613,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		boolean send = false;
 		if (account.getStatus() == Account.State.ONLINE
 				&& account.getXmppConnection() != null) {
-			if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+			if (message.isDownloadable()) {
 				if (message.getCounterpart() != null) {
 					if (message.getEncryption() == Message.ENCRYPTION_OTR) {
 						if (!conv.hasValidOtrSession()) {
@@ -737,7 +743,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 						if (message.getType() == Message.TYPE_TEXT) {
 							packet = mMessageGenerator.generateOtrChat(message,
 									true);
-						} else if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+						} else if (message.isDownloadable()) {
 							mJingleConnectionManager.createNewConnection(message);
 						}
 					} catch (final InvalidJidException ignored) {
@@ -752,19 +758,19 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 					|| (message.getEncryption() == Message.ENCRYPTION_PGP)) {
 				packet = mMessageGenerator.generatePgpChat(message, true);
 					}
-		} else if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
-			Contact contact = message.getConversation().getContact();
-			Presences presences = contact.getPresences();
+		} else if (message.isDownloadable()) {
+			final Contact contact = message.getConversation().getContact();
+			final Presences presences = contact.getPresences();
 			if ((message.getCounterpart() != null)
 					&& (presences.has(message.getCounterpart().getResourcepart()))) {
 				markMessage(message, Message.STATUS_OFFERED);
 				mJingleConnectionManager.createNewConnection(message);
 			} else {
 				if (presences.size() == 1) {
-					String presence = presences.asStringArray()[0];
+					final String presence = presences.asStringArray()[0];
 					try {
 						message.setCounterpart(Jid.fromParts(contact.getJid().getLocalpart(), contact.getJid().getDomainpart(), presence));
-					} catch (InvalidJidException e) {
+					} catch (final InvalidJidException e) {
 						return;
 					}
 					markMessage(message, Message.STATUS_OFFERED);
@@ -923,9 +929,9 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		});
 	}
 
-	private void markFileDeleted(String uuid) {
-		for (Conversation conversation : getConversations()) {
-			Message message = conversation.findMessageWithFileAndUuid(uuid);
+	private void markFileDeleted(final String uuid) {
+		for (final Conversation conversation : getConversations()) {
+			final Message message = conversation.findMessageWithFileAndUuid(uuid);
 			if (message != null) {
 				if (!getFileBackend().isFileAvailable(message)) {
 					message.setDownloadable(new DownloadablePlaceholder(Downloadable.STATUS_DELETED));
@@ -1602,7 +1608,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 						databaseBackend.updateMessage(message);
 						sendMessagePacket(account, outPacket);
 					}
-				} else if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+				} else if (message.isDownloadable()) {
 					mJingleConnectionManager.createNewConnection(message);
 				}
 				updateConversationUi();

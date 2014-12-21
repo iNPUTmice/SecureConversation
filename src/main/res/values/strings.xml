@@ -100,6 +100,7 @@
     <string name="encrypted_message_received"><i>Encrypted message received. Touch to view and decrypt.</i></string>
     <string name="encrypted_image_received"><i>Encrypted image received. Touch to view and decrypt.</i></string>
     <string name="image_file"><i>Image received. Touch to view</i></string>
+    <string name="audio_file"><i>Audio received. Touch to view</i></string>
     <string name="pref_general">General</string>
     <string name="pref_xmpp_resource">XMPP resource</string>
     <string name="pref_xmpp_resource_summary">The name this client identifies itself with</string>
@@ -357,11 +358,14 @@
     <string name="pref_keep_foreground_service_summary">Prevents the operating system from killing your connection</string>
     <string name="choose_file">Choose file</string>
     <string name="receiving_file">Receiving %1$s file (%2$d%% completed)</string>
+    <string name="play_pause_description">Play/pause</string>
+    <string name="download">Download</string>
     <string name="download_file">Download %s file</string>
     <string name="open_file">Open %s file</string>
     <string name="sending_file">sending (%1$d%% completed)</string>
     <string name="preparing_file">Preparing file for transmission</string>
     <string name="file_offered_for_download">File offered for download</string>
+    <string name="audio_offered_for_download"><i>Audio offered for download</i></string>
     <string name="file">%s file</string>
     <string name="cancel_transmission">Cancel transmission</string>
     <string name="file_transmission_failed">file transmission failed</string>

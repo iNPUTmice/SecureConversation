@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="70dp"
+              android:background="@color/primarybackground"
+              android:paddingTop="10dp"
+              android:paddingBottom="10dp">
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/play_pause_button"
+        android:contentDescription="@string/play_pause_description"
+        android:background="@drawable/ic_action_play"
+        android:layout_gravity="start"/>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/seek"
+        android:layout_gravity="start"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"/>
+
+</LinearLayout>

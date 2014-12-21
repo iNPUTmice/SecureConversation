@@ -485,9 +485,9 @@ public class ConversationFragment extends Fragment {
 		}
 	}
 
-	private void resendMessage(Message message) {
-		if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
-			DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
+	private void resendMessage(final Message message) {
+		if (message.isDownloadable()) {
+			final DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
 			if (!file.exists()) {
 				Toast.makeText(activity,R.string.file_deleted,Toast.LENGTH_SHORT).show();
 				message.setDownloadable(new DownloadablePlaceholder(Downloadable.STATUS_DELETED));

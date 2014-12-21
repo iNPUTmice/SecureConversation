@@ -82,7 +82,7 @@ public class TimePreference extends DialogPreference implements Preference.OnPre
 
 	@Override
 	protected void onSetInitialValue(final boolean restorePersistedValue, final Object defaultValue) {
-		long time;
+		final long time;
 		if (defaultValue == null) {
 			time = restorePersistedValue ? getPersistedLong(DEFAULT_VALUE) : DEFAULT_VALUE;
 		} else if (defaultValue instanceof Long) {

@@ -78,7 +78,7 @@ public class PgpEngine {
                     }
 				}
 			});
-		} else if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+		} else if (message.isDownloadable()) {
 			try {
 				final DownloadableFile inputFile = this.mXmppConnectionService
 						.getFileBackend().getFile(message, false);
@@ -181,7 +181,7 @@ public class PgpEngine {
 					}
 				}
 			});
-		} else if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+		} else if (message.isDownloadable()) {
 			try {
 				DownloadableFile inputFile = this.mXmppConnectionService
 						.getFileBackend().getFile(message, true);

@@ -4,5 +4,9 @@
     <attr name="TextSizeInfo" format="dimension" />
     <attr name="TextSizeBody" format="dimension" />
     <attr name="TextSizeHeadline" format="dimension" />
+    <declare-styleable name="Audio">
+        <attr name="showProgress" format="boolean" />
+        <attr name="uri" format="string" />
+    </declare-styleable>
 
 </resources>
