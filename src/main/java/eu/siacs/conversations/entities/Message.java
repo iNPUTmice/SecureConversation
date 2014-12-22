@@ -37,17 +37,17 @@ public class Message extends AbstractEntity {
 	public static final int TYPE_PRIVATE = 4;
     public static final int TYPE_AUDIO = 5;
 
-	public static String CONVERSATION = "conversationUuid";
-	public static String COUNTERPART = "counterpart";
-	public static String TRUE_COUNTERPART = "trueCounterpart";
-	public static String BODY = "body";
-	public static String TIME_SENT = "timeSent";
-	public static String ENCRYPTION = "encryption";
-	public static String STATUS = "status";
-	public static String TYPE = "type";
-	public static String REMOTE_MSG_ID = "remoteMsgId";
-	public static String SERVER_MSG_ID = "serverMsgId";
-	public static String RELATIVE_FILE_PATH = "relativeFilePath";
+	public static final String CONVERSATION = "conversationUuid";
+	public static final String COUNTERPART = "counterpart";
+	public static final String TRUE_COUNTERPART = "trueCounterpart";
+	public static final String BODY = "body";
+	public static final String TIME_SENT = "timeSent";
+	public static final String ENCRYPTION = "encryption";
+	public static final String STATUS = "status";
+	public static final String TYPE = "type";
+	public static final String REMOTE_MSG_ID = "remoteMsgId";
+	public static final String SERVER_MSG_ID = "serverMsgId";
+	public static final String RELATIVE_FILE_PATH = "relativeFilePath";
 	public boolean markable = false;
 	protected String conversationUuid;
 	protected Jid counterpart;
@@ -146,8 +146,8 @@ public class Message extends AbstractEntity {
 				cursor.getString(cursor.getColumnIndex(SERVER_MSG_ID)));
 	}
 
-	public static Message createStatusMessage(Conversation conversation) {
-		Message message = new Message();
+	public static Message createStatusMessage(final Conversation conversation) {
+		final Message message = new Message();
 		message.setType(Message.TYPE_STATUS);
 		message.setConversation(conversation);
 		return message;
@@ -296,7 +296,7 @@ public class Message extends AbstractEntity {
         return type == TYPE_IMAGE || type == TYPE_AUDIO || type == TYPE_FILE;
     }
 
-	public void setType(int type) {
+	public void setType(final int type) {
 		this.type = type;
 	}
 
@@ -378,12 +378,12 @@ public class Message extends AbstractEntity {
 	}
 
 	public boolean wasMergedIntoPrevious() {
-		Message prev = this.prev();
+		final Message prev = this.prev();
 		return prev != null && prev.mergeable(this);
 	}
 
 	public boolean trusted() {
-		Contact contact = this.getContact();
+		final Contact contact = this.getContact();
 		return (status > STATUS_RECEIVED || (contact != null && contact.trusted()));
 	}
 
@@ -397,29 +397,28 @@ public class Message extends AbstractEntity {
 			if (url.getPath() == null) {
 				return false;
 			}
-			String[] pathParts = url.getPath().split("/");
-			String filename;
+			final String[] pathParts = url.getPath().split("/");
+			final String filename;
 			if (pathParts.length > 0) {
 				filename = pathParts[pathParts.length - 1];
 			} else {
 				return false;
 			}
-			String[] extensionParts = filename.split("\\.");
+			final String[] extensionParts = filename.split("\\.");
 			if (extensionParts.length == 2
 					&& Arrays.asList(Downloadable.VALID_IMAGE_EXTENSIONS).contains(
-						extensionParts[extensionParts.length - 1])) {
+						extensionParts[extensionParts.length - 1]) || Arrays.asList(Downloadable.VALID_AUDIO_EXTENSIONS).contains(
+                    extensionParts[extensionParts.length - 1])) {
 				return true;
-			} else if (extensionParts.length == 3
-					&& Arrays
-					.asList(Downloadable.VALID_CRYPTO_EXTENSIONS)
-					.contains(extensionParts[extensionParts.length - 1])
-					&& Arrays.asList(Downloadable.VALID_IMAGE_EXTENSIONS).contains(
-						extensionParts[extensionParts.length - 2])) {
-				return true;
-			} else {
-				return false;
-			}
-		} catch (MalformedURLException e) {
+			} else return extensionParts.length == 3
+                    && Arrays
+                    .asList(Downloadable.VALID_CRYPTO_EXTENSIONS)
+                    .contains(extensionParts[extensionParts.length - 1])
+                    && Arrays.asList(Downloadable.VALID_IMAGE_EXTENSIONS).contains(
+                    extensionParts[extensionParts.length - 2]) || Arrays.asList(Downloadable.VALID_AUDIO_EXTENSIONS).contains(
+                    extensionParts[extensionParts.length - 1]
+            );
+		} catch (final MalformedURLException e) {
 			return false;
 		}
 	}

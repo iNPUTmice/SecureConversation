@@ -292,7 +292,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.download_button.setOnClickListener(new OnClickListener() {
 
 			@Override
-			public void onClick(View v) {
+			public void onClick(final View v) {
 				openDownloadable(file);
 			}
 		});
@@ -539,7 +539,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             displayAudioMessage(viewHolder, message);
 		} else if (message.getType() == Message.TYPE_FILE && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
 			if (message.getImageParams().width > 0) {
-				displayImageMessage(viewHolder,message);
+				displayImageMessage(viewHolder, message);
 			} else {
 				displayOpenableMessage(viewHolder, message);
 			}

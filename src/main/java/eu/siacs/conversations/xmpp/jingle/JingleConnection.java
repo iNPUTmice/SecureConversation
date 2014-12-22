@@ -276,15 +276,15 @@ public class JingleConnection implements Downloadable {
 				.getChildren()));
 		this.fileOffer = packet.getJingleContent().getFileOffer();
 		if (fileOffer != null) {
-			Element fileSize = fileOffer.findChild("size");
-			Element fileNameElement = fileOffer.findChild("name");
+			final Element fileSize = fileOffer.findChild("size");
+			final Element fileNameElement = fileOffer.findChild("name");
 			if (fileNameElement != null) {
 				final String[] filename = fileNameElement.getContent()
 						.toLowerCase(Locale.US).split("\\.");
 				if (Arrays.asList(VALID_IMAGE_EXTENSIONS).contains(
 						filename[filename.length - 1])) {
                     message.setType(Message.TYPE_IMAGE);
-                } else if (Arrays.asList(VALID_AUDIO_EXTENSOINS).contains(
+                } else if (Arrays.asList(VALID_AUDIO_EXTENSIONS).contains(
                         filename[filename.length - 1]
                 )) {
                     message.setType(Message.TYPE_AUDIO);
@@ -294,7 +294,7 @@ public class JingleConnection implements Downloadable {
 						if (Arrays.asList(VALID_IMAGE_EXTENSIONS).contains(
 								filename[filename.length - 2])) {
                             message.setType(Message.TYPE_IMAGE);
-                        } else if (Arrays.asList(VALID_AUDIO_EXTENSOINS).contains(
+                        } else if (Arrays.asList(VALID_AUDIO_EXTENSIONS).contains(
                                 filename[filename.length - 2]))  {
                             message.setType(Message.TYPE_AUDIO);
 						} else {

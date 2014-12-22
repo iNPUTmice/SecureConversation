@@ -35,8 +35,8 @@ import org.openintents.openpgp.util.OpenPgpServiceConnection;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
@@ -304,7 +304,9 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		return this.mAvatarService;
 	}
 
-	public void attachFileToConversation(Conversation conversation, final Uri uri, final UiCallback<Message> callback) {
+	public void attachFileToConversation(final Conversation conversation,
+                                         final Uri uri,
+                                         final UiCallback<Message> callback) {
 		final Message message;
 		if (conversation.getNextEncryption(forceEncryption()) == Message.ENCRYPTION_PGP) {
 			message = new Message(conversation, "",
@@ -315,7 +317,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		}
 		message.setCounterpart(conversation.getNextCounterpart());
         final String[] parts = uri.toString().split("\\.");
-        if (Arrays.asList(Downloadable.VALID_AUDIO_EXTENSOINS).contains(parts[parts.length - 1])) {
+        if (Arrays.asList(Downloadable.VALID_AUDIO_EXTENSIONS).contains(parts[parts.length - 1])) {
             message.setType(Message.TYPE_AUDIO);
         } else {
             message.setType(Message.TYPE_FILE);

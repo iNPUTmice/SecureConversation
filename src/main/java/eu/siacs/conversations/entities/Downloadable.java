@@ -3,7 +3,7 @@ package eu.siacs.conversations.entities;
 public interface Downloadable {
 
 	public final String[] VALID_IMAGE_EXTENSIONS = {"webp", "jpeg", "jpg", "png", "jpe"};
-    public final String[] VALID_AUDIO_EXTENSOINS = {"3gp", "3gpp", "mp4", "m4a", "aac", "ts", "flac", "mp3", "midi", "mid", "xmf", "mxmf", "rtttl", "rtx", "ota", "imy", "ogg", "mkv", "wav"};
+    public final String[] VALID_AUDIO_EXTENSIONS = {"3gp", "3gpp", "mp4", "m4a", "aac", "ts", "flac", "mp3", "midi", "mid", "xmf", "mxmf", "rtttl", "rtx", "ota", "imy", "ogg", "mkv", "wav"};
 	public final String[] VALID_CRYPTO_EXTENSIONS = {"pgp", "gpg", "otr"};
 
 	public static final int STATUS_UNKNOWN = 0x200;
