@@ -107,7 +107,30 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 				}
 				if (changePassword) {
 					if (mAccount.isOnlineAndConnected()) {
-						xmppConnectionService.updateAccountPasswordOnServer(mAccount, mPassword.getText().toString());
+						xmppConnectionService.updateAccountPasswordOnServer(mAccount, mPassword.getText().toString(), new UiCallback<Object>() {
+
+                            @Override
+                            public void success(final Object object) {
+                            }
+
+                            @Override
+                            public void error(final int errorCode, final Object object) {
+                                v.post(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mPassword.setError(getResources().getString(R.string.error_updating_password));
+                                    }
+                                });
+                            }
+
+                            @Override
+                            public void userInputRequried(final PendingIntent pi, final Object object) {
+                            }
+                        });
+                        ((Button)v).setTextColor(getSecondaryTextColor());
+                        ((Button)v).setText(getResources().getString(R.string.updating));
+                        v.setEnabled(false);
+                        return;
 					} else {
 						mPassword.setError(getResources().getString(R.string.account_status_no_internet));
 					}
@@ -449,7 +472,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 			this.mSessionEst.setText(UIHelper.readableTimeDifference(
 						getApplicationContext(), this.mAccount.getXmppConnection()
 						.getLastSessionEstablished()));
-			Features features = this.mAccount.getXmppConnection().getFeatures();
+			final Features features = this.mAccount.getXmppConnection().getFeatures();
 			if (features.rosterVersioning()) {
 				this.mServerInfoRosterVersion.setText(R.string.server_info_available);
 			} else {

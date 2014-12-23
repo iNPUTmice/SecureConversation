@@ -59,6 +59,7 @@
     <string name="block">Block</string>
     <string name="unblock">Unblock</string>
     <string name="save">Save</string>
+    <string name="updating">Updating…</string>
     <string name="ok">OK</string>
     <string name="crash_report_title">Conversations has crashed</string>
     <string name="crash_report_message">By sending in stack traces you are helping the ongoing development of Conversations\n<b>Warning:</b> This will use your XMPP account to send the stack trace to the developer.</string>
@@ -140,6 +141,7 @@
     <string name="preemptively_grant">Preemptively grant subscription request</string>
     <string name="error_not_an_image_file">The file you selected is not an image</string>
     <string name="error_compressing_image">Error while converting the image file</string>
+    <string name="error_updating_password">Error updating password</string>
     <string name="error_file_not_found">File not found</string>
     <string name="error_io_exception">General I/O error. Maybe you ran out of storage space?</string>
     <string name="error_security_exception_during_image_copy">The app you used to select this image did not provide us with enough permissions to read the file.\n\n<small>Use a different file manager to choose an image</small></string>

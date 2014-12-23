@@ -1100,7 +1100,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		getNotificationService().updateErrorNotification();
 	}
 
-	public void updateAccountPasswordOnServer(final Account account, final String newPassword) {
+	public void updateAccountPasswordOnServer(final Account account, final String newPassword, final UiCallback<Object> callback) {
 		if (account.isOnlineAndConnected()) {
 			final IqPacket iq = getIqGenerator().generateSetPassword(account, newPassword);
 			sendIqPacket(account, iq, new OnIqPacketReceived() {
@@ -1108,8 +1108,11 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 				public void onIqPacketReceived(final Account account, final IqPacket packet) {
 					if (packet.getType() == IqPacket.TYPE_RESULT) {
 						account.setPassword(newPassword);
-						updateAccount(account);
+						callback.success(null);
+					} else {
+						callback.error(0, null);
 					}
+					updateAccountUi();
 				}
 			});
 		}
