@@ -72,9 +72,7 @@ public class NotificationService {
 
 		final HashMap data = new HashMap();
 		final Conversation conversation = message.getConversation();
-		data.put("title", conversation.getName() +
-				" <" + conversation.getContactJid()
-						.toString().split("/")[0] + ">");
+		data.put("title", conversation.getName());
 		data.put("body", message.getBody());
 		final JSONObject jsonData = new JSONObject(data);
 		final String notificationData = new JSONArray().put(jsonData).toString();
