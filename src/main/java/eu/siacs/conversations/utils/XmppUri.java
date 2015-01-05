@@ -5,7 +5,6 @@ import android.net.Uri;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 
-import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -54,7 +53,7 @@ public class XmppUri {
 			final String NEEDLE = "otr-fingerprint=";
 			int index = query.indexOf(NEEDLE);
 			if (index >= 0 && query.length() >= (NEEDLE.length() + index + 40)) {
-				return CryptoHelper.prettifyFingerprint(query.substring(index + NEEDLE.length(), index + NEEDLE.length() + 40));
+				return query.substring(index + NEEDLE.length(), index + NEEDLE.length() + 40);
 			} else {
 				return null;
 			}

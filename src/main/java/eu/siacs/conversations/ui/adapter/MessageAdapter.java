@@ -23,7 +23,6 @@ import android.widget.Toast;
 
 import java.util.List;
 
-import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
@@ -104,9 +103,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE || message.getDownloadable() != null) {
 			ImageParams params = message.getImageParams();
 			if (params.size > (1.5 * 1024 * 1024)) {
-				filesize = params.size / (1024 * 1024)+ " MB";
+				filesize = params.size / (1024 * 1024)+ " MiB";
 			} else if (params.size > 0) {
-				filesize = params.size / 1024 + " KB";
+				filesize = params.size / 1024 + " KiB";
 			}
 			if (message.getDownloadable() != null && message.getDownloadable().getStatus() == Downloadable.STATUS_FAILED) {
 				error = true;
@@ -225,10 +224,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
 		if (message.getBody() != null) {
 			if (message.getType() != Message.TYPE_PRIVATE) {
-				String body = Config.PARSE_EMOTICONS ? UIHelper
-						.transformAsciiEmoticons(message.getMergedBody())
-						: message.getMergedBody();
-				viewHolder.messageBody.setText(body);
+				viewHolder.messageBody.setText(message.getMergedBody());
 			} else {
 				String privateMarker;
 				if (message.getStatus() <= Message.STATUS_RECEIVED) {
@@ -272,7 +268,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 			@Override
 			public void onClick(View v) {
-				startDonwloadable(message);
+				startDownloadable(message);
 			}
 		});
 		viewHolder.download_button.setOnLongClickListener(openContextMenu);
@@ -288,7 +284,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
 			@Override
 			public void onClick(View v) {
-				openDonwloadable(file);
+				openDownloadable(file);
 			}
 		});
 		viewHolder.download_button.setOnLongClickListener(openContextMenu);
@@ -442,6 +438,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			}
 			view.setLayoutParams(view.getLayoutParams());
 			return view;
+		} else if (viewHolder.messageBody == null || viewHolder.image == null) {
+			return view; //avoiding weird platform bugs
 		} else if (type == RECEIVED) {
 			Contact contact = message.getContact();
 			if (contact != null) {
@@ -450,38 +448,36 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 				viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(getDisplayedMucCounterpart(message.getCounterpart()),
                         activity.getPixel(48)));
 			}
-		} else if (type == SENT && viewHolder.contact_picture != null) {
+		} else if (type == SENT) {
 			viewHolder.contact_picture.setImageBitmap(activity.avatarService().get(account, activity.getPixel(48)));
 		}
 
-		if (viewHolder != null && viewHolder.contact_picture != null) {
-			viewHolder.contact_picture
-					.setOnClickListener(new OnClickListener() {
+		viewHolder.contact_picture
+				.setOnClickListener(new OnClickListener() {
 
-						@Override
-						public void onClick(View v) {
-							if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
-								MessageAdapter.this.mOnContactPictureClickedListener
-										.onContactPictureClicked(message);
-							}
-
+					@Override
+					public void onClick(View v) {
+						if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
+							MessageAdapter.this.mOnContactPictureClickedListener
+									.onContactPictureClicked(message);
 						}
-					});
-			viewHolder.contact_picture
-					.setOnLongClickListener(new OnLongClickListener() {
 
-						@Override
-						public boolean onLongClick(View v) {
-							if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
-								MessageAdapter.this.mOnContactPictureLongClickedListener
-										.onContactPictureLongClicked(message);
-								return true;
-							} else {
-								return false;
-							}
+					}
+				});
+		viewHolder.contact_picture
+				.setOnLongClickListener(new OnLongClickListener() {
+
+					@Override
+					public boolean onLongClick(View v) {
+						if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+							MessageAdapter.this.mOnContactPictureLongClickedListener
+									.onContactPictureLongClicked(message);
+							return true;
+						} else {
+							return false;
 						}
-					});
-		}
+					}
+				});
 
 		if (message.getDownloadable() != null && message.getDownloadable().getStatus() != Downloadable.STATUS_UPLOADING) {
 			Downloadable d = message.getDownloadable();
@@ -550,7 +546,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		return view;
 	}
 
-	public void startDonwloadable(Message message) {
+	public void startDownloadable(Message message) {
 		Downloadable downloadable = message.getDownloadable();
 		if (downloadable != null) {
 			if (!downloadable.start()) {
@@ -560,7 +556,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		}
 	}
 
-	public void openDonwloadable(DownloadableFile file) {
+	public void openDownloadable(DownloadableFile file) {
 		if (!file.exists()) {
 			Toast.makeText(activity,R.string.file_deleted,Toast.LENGTH_SHORT).show();
 			return;

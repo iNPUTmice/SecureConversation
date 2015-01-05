@@ -75,7 +75,7 @@ public class JingleConnection implements Downloadable {
 
 		@Override
 		public void onIqPacketReceived(Account account, IqPacket packet) {
-			if (packet.getType() == IqPacket.TYPE_ERROR) {
+			if (packet.getType() == IqPacket.TYPE.ERROR) {
 				fail();
 			}
 		}
@@ -191,10 +191,10 @@ public class JingleConnection implements Downloadable {
 		}
 		IqPacket response;
 		if (returnResult) {
-			response = packet.generateRespone(IqPacket.TYPE_RESULT);
+			response = packet.generateResponse(IqPacket.TYPE.RESULT);
 
 		} else {
-			response = packet.generateRespone(IqPacket.TYPE_ERROR);
+			response = packet.generateResponse(IqPacket.TYPE.ERROR);
 		}
 		account.getXmppConnection().sendIqPacket(response, null);
 	}
@@ -280,7 +280,7 @@ public class JingleConnection implements Downloadable {
 			Element fileNameElement = fileOffer.findChild("name");
 			if (fileNameElement != null) {
 				String[] filename = fileNameElement.getContent()
-						.toLowerCase(Locale.US).split("\\.");
+						.toLowerCase(Locale.US).toLowerCase().split("\\.");
 				if (Arrays.asList(VALID_IMAGE_EXTENSIONS).contains(
 						filename[filename.length - 1])) {
 					message.setType(Message.TYPE_IMAGE);
@@ -552,7 +552,7 @@ public class JingleConnection implements Downloadable {
 					Log.d(Config.LOGTAG, "candidate "
 							+ connection.getCandidate().getCid()
 							+ " was our proxy. going to activate");
-					IqPacket activation = new IqPacket(IqPacket.TYPE_SET);
+					IqPacket activation = new IqPacket(IqPacket.TYPE.SET);
 					activation.setTo(connection.getCandidate().getJid());
 					activation.query("http://jabber.org/protocol/bytestreams")
 							.setAttribute("sid", this.getSessionId());
@@ -564,7 +564,7 @@ public class JingleConnection implements Downloadable {
 								@Override
 								public void onIqPacketReceived(Account account,
 										IqPacket packet) {
-									if (packet.getType() == IqPacket.TYPE_ERROR) {
+									if (packet.getType() == IqPacket.TYPE.ERROR) {
 										onProxyActivated.failed();
 									} else {
 										onProxyActivated.success();
