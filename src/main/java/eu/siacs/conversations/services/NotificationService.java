@@ -69,8 +69,7 @@ public class NotificationService {
 				 );
 	}
 
-	public void notifyPebble(Message message, boolean notify) {
-		if (!notify) { return; }
+	public void notifyPebble(Message message) {
 		final Intent i = new Intent("com.getpebble.action.SEND_NOTIFICATION");
 
 		final HashMap data = new HashMap();
@@ -137,7 +136,9 @@ public class NotificationService {
 					&& !account.inGracePeriod()
 					&& !this.inMiniGracePeriod(account);
 			updateNotification(doNotify);
-			notifyPebble(message, doNotify);
+			if (doNotify) {
+				notifyPebble(message);
+			}
 		}
 
 	}
