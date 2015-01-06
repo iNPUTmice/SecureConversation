@@ -25,6 +25,7 @@ import java.net.ConnectException;
 import java.net.IDN;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
@@ -74,6 +75,7 @@ import eu.siacs.conversations.xmpp.stanzas.streammgmt.AckPacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.EnablePacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.RequestPacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.ResumePacket;
+import info.guardianproject.onionkit.ui.OrbotHelper;
 
 public class XmppConnection implements Runnable {
 
@@ -113,6 +115,7 @@ public class XmppConnection implements Runnable {
 	private final ArrayList<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners = new ArrayList<>();
 	private OnMessageAcknowledged acknowledgedListener = null;
 	private XmppConnectionService mXmppConnectionService = null;
+	private final OrbotHelper orbotHelper;
 
 	private SaslMechanism saslMechanism;
 
@@ -123,6 +126,7 @@ public class XmppConnection implements Runnable {
 		tagWriter = new TagWriter();
 		mXmppConnectionService = service;
 		applicationContext = service.getApplicationContext();
+		orbotHelper = new OrbotHelper(applicationContext);
 	}
 
 	protected void changeStatus(final Account.State nextStatus) {
@@ -155,11 +159,11 @@ public class XmppConnection implements Runnable {
 			tagWriter = new TagWriter();
 			packetCallbacks.clear();
 			this.changeStatus(Account.State.CONNECTING);
-			final Bundle result = DNSHelper.getSRVRecord(account.getServer());
+			final Bundle result = DNSHelper.getSRVRecord(account.getServer(), isUsingTor());
 			final ArrayList<Parcelable> values = result.getParcelableArrayList("values");
 			if ("timeout".equals(result.getString("error"))) {
 				throw new IOException("timeout in dns");
-			} else if (values != null) {
+			} else if (values != null && !account.isOnion()) {
 				int i = 0;
 				boolean socketError = true;
 				while (socketError && values.size() > i) {
@@ -186,7 +190,11 @@ public class XmppConnection implements Runnable {
 									+ ": using values from dns "
 									+ srvRecordServer + ":" + srvRecordPort);
 						}
-						socket = new Socket();
+						if (isUsingTor()) {
+							socket = new Socket(getProxy());
+						} else {
+							socket = new Socket();
+						}
 						socket.connect(addr, 20000);
 						socketError = false;
 					} catch (final UnknownHostException e) {
@@ -200,9 +208,14 @@ public class XmppConnection implements Runnable {
 				if (socketError) {
 					throw new UnknownHostException();
 				}
-			} else if (result.containsKey("error")
-					&& "nosrv".equals(result.getString("error", null))) {
-				socket = new Socket(account.getServer().getDomainpart(), 5222);
+			} else if (account.isOnion() || (result.containsKey("error")
+						&& "nosrv".equals(result.getString("error", null)))) {
+				if (isUsingTor()) {
+					socket = new Socket(getProxy());
+				} else {
+					socket = new Socket();
+				}
+				socket.connect(new InetSocketAddress(account.getServer().getDomainpart(), 5222));
 			} else {
 				throw new IOException("timeout in dns");
 			}
@@ -483,6 +496,24 @@ public class XmppConnection implements Runnable {
 		return PreferenceManager.getDefaultSharedPreferences(applicationContext);
 	}
 
+	private boolean isUsingTor() {
+		final String usage = getPreferences().getString("proxy_usage", "onion");
+
+		if (usage.equals("auto")) {
+			return orbotHelper.isOrbotInstalled() && orbotHelper.isOrbotRunning();
+		} else {
+			return usage.equals("always") || (usage.equals("onion") && account.isOnion());
+		}
+	}
+
+	private Proxy getProxy() {
+		final String proxyAddress = "127.0.0.1";
+		final int port = 9050;
+		final InetSocketAddress address;
+		address = new InetSocketAddress(proxyAddress, port);
+		return new Proxy(Proxy.Type.SOCKS, address);
+	}
+
 	private boolean enableLegacySSL() {
 		return getPreferences().getBoolean("enable_legacy_ssl", false);
 	}
@@ -500,7 +531,7 @@ public class XmppConnection implements Runnable {
 				throw new IOException("could not setup ssl");
 			}
 
-			final SSLSocket sslSocket = (SSLSocket) factory.createSocket(socket,address.getHostAddress(), socket.getPort(),true);
+			final SSLSocket sslSocket = (SSLSocket) factory.createSocket(socket, address.getHostAddress(), socket.getPort(), true);
 
 			if (sslSocket == null) {
 				throw new IOException("could not initialize ssl socket");
