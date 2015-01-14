@@ -106,9 +106,7 @@
     <string name="pref_xmpp_resource_summary">The name this client identifies itself with</string>
     <string name="pref_proxy_usage_summary">Route traffic via the Tor network</string>
     <string name="pref_proxy_usage">Use Tor</string>
-    <string name="pref_proxy_usage_never">Never</string>
     <string name="pref_proxy_usage_onion">Only .onion</string>
-    <string name="pref_proxy_usage_auto">Automatic</string>
     <string name="pref_proxy_usage_always">Always</string>
     <string name="pref_accept_files">Accept files</string>
     <string name="pref_accept_files_summary">Automatically accept files smaller than…</string>
@@ -308,7 +306,6 @@
             \n\nhttps://github.com/jitsi/otr4j\n(LGPL-3.0)
             \n\nhttps://developer.android.com/tools/support-library\n(Apache License, Version 2.0)
             \n\nhttps://github.com/zxing/zxing\n(Apache License, Version 2.0)
-            \n\nhttps://guardianproject.info/code/netcipher\n(Apache License, Version 2.0)
     </string>
     <string name="title_pref_quiet_hours">Quiet Hours</string>
     <string name="title_pref_quiet_hours_start_time">Start time</string>

@@ -32,10 +32,11 @@ public final class DNSHelper {
 	public static Bundle getSRVRecord(final Jid jid, final boolean isUsingTor) throws IOException {
 		final String host = jid.getDomainpart();
 
-        if (isUsingTor || host.endsWith(".onion")) {
-            // we should _never_ disclose the usage of a .onion address
-            return queryDNS(host, InetAddress.getLocalHost(), 5400);
-        } else {
+		if (isUsingTor) {
+			client.setTimeout(Config.DNS_TIMEOUT_TOR_MILLIS);
+			return queryDNS(host, InetAddress.getLocalHost(), 5400);
+		} else {
+			client.setTimeout(Config.DNS_TIMEOUT_MILLIS);
 			final String[] dns = client.findDNS();
 
 			if (dns != null) {
@@ -47,23 +48,23 @@ public final class DNSHelper {
 					} else if (b.containsKey("error")
 							&& "nosrv".equals(b.getString("error", null))) {
 						return b;
-							}
+					}
 				}
 			}
 			return queryDNS(host, InetAddress.getByName("8.8.8.8"));
 		}
 	}
 
-    private static Bundle queryDNS(final String host, final InetAddress dnsServer) {
-        return queryDNS(host, dnsServer, 53);
-    }
+	private static Bundle queryDNS(final String host, final InetAddress dnsServer) {
+		return queryDNS(host, dnsServer, 53);
+	}
 
 	private static Bundle queryDNS(final String host, final InetAddress dnsServer, final int port) {
 		final Bundle bundle = new Bundle();
 		try {
 			final String qname = "_xmpp-client._tcp." + host;
 			Log.d(Config.LOGTAG,
-					"using dns server: " + dnsServer.getHostAddress()
+					"using dns server: " + dnsServer.getHostAddress() + (port != 53? ":" + port : "")
 					+ " to look up " + host);
 			final DNSMessage message = client.query(qname, TYPE.SRV, CLASS.IN,
 					dnsServer.getHostAddress(), port);

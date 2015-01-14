@@ -1,7 +1,9 @@
 package eu.siacs.conversations.xmpp;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.PowerManager;
@@ -12,7 +14,14 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
+import org.apache.http.HttpHost;
+import org.apache.http.conn.scheme.HostNameResolver;
+import org.apache.http.conn.scheme.PlainSocketFactory;
+import org.apache.http.conn.scheme.Scheme;
+import org.apache.http.conn.scheme.SchemeRegistry;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
+import org.apache.http.impl.conn.DefaultClientConnection;
+import org.apache.http.params.BasicHttpParams;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParserException;
@@ -25,7 +34,6 @@ import java.net.ConnectException;
 import java.net.IDN;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Proxy;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
@@ -56,6 +64,7 @@ import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.DNSHelper;
+import eu.siacs.conversations.utils.SocksProxyClientConnOperator;
 import eu.siacs.conversations.utils.Xmlns;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Tag;
@@ -75,7 +84,6 @@ import eu.siacs.conversations.xmpp.stanzas.streammgmt.AckPacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.EnablePacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.RequestPacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.ResumePacket;
-import info.guardianproject.onionkit.ui.OrbotHelper;
 
 public class XmppConnection implements Runnable {
 
@@ -115,7 +123,6 @@ public class XmppConnection implements Runnable {
 	private final ArrayList<OnAdvancedStreamFeaturesLoaded> advancedStreamFeaturesLoadedListeners = new ArrayList<>();
 	private OnMessageAcknowledged acknowledgedListener = null;
 	private XmppConnectionService mXmppConnectionService = null;
-	private final OrbotHelper orbotHelper;
 
 	private SaslMechanism saslMechanism;
 
@@ -126,7 +133,6 @@ public class XmppConnection implements Runnable {
 		tagWriter = new TagWriter();
 		mXmppConnectionService = service;
 		applicationContext = service.getApplicationContext();
-		orbotHelper = new OrbotHelper(applicationContext);
 	}
 
 	protected void changeStatus(final Account.State nextStatus) {
@@ -159,23 +165,25 @@ public class XmppConnection implements Runnable {
 			tagWriter = new TagWriter();
 			packetCallbacks.clear();
 			this.changeStatus(Account.State.CONNECTING);
-			final Bundle result = DNSHelper.getSRVRecord(account.getServer(), isUsingTor());
-			final ArrayList<Parcelable> values = result.getParcelableArrayList("values");
-			if ("timeout".equals(result.getString("error"))) {
-				throw new IOException("timeout in dns");
-			} else if (values != null && !account.isOnion()) {
+			final Bundle result;
+			final ArrayList<Parcelable> values;
+			if (!account.isOnion()) {
+				result = DNSHelper.getSRVRecord(account.getServer(), isUsingTor());
+				values = result.getParcelableArrayList("values");
+				if ("timeout".equals(result.getString("error"))) {
+					throw new IOException("timeout in dns");
+				}
+			} else {
+				result = null;
+				values = null;
+			}
+			if (!account.isOnion() && values != null) {
 				int i = 0;
 				boolean socketError = true;
 				while (socketError && values.size() > i) {
 					final Bundle namePort = (Bundle) values.get(i);
 					try {
-						String srvRecordServer;
-						try {
-							srvRecordServer=IDN.toASCII(namePort.getString("name"));
-						} catch (final IllegalArgumentException e) {
-							// TODO: Handle me?`
-							srvRecordServer = "";
-						}
+						final String srvRecordServer = IDN.toASCII(namePort.getString("name"));
 						final int srvRecordPort = namePort.getInt("port");
 						final String srvIpServer = namePort.getString("ip");
 						final InetSocketAddress addr;
@@ -191,11 +199,12 @@ public class XmppConnection implements Runnable {
 									+ srvRecordServer + ":" + srvRecordPort);
 						}
 						if (isUsingTor()) {
-							socket = new Socket(getProxy());
+							socket = getConnectedProxySocket(srvIpServer != null ? srvIpServer : srvRecordServer,
+									srvRecordPort);
 						} else {
 							socket = new Socket();
+							socket.connect(addr, 20000);
 						}
-						socket.connect(addr, 20000);
 						socketError = false;
 					} catch (final UnknownHostException e) {
 						Log.d(Config.LOGTAG, account.getJid().toBareJid().toString() + ": " + e.getMessage());
@@ -208,14 +217,14 @@ public class XmppConnection implements Runnable {
 				if (socketError) {
 					throw new UnknownHostException();
 				}
-			} else if (account.isOnion() || (result.containsKey("error")
-						&& "nosrv".equals(result.getString("error", null)))) {
+			} else if (account.isOnion() || (result.containsKey("error") &&
+						"nosrv".equals(result.getString("error", null)))) {
 				if (isUsingTor()) {
-					socket = new Socket(getProxy());
+					socket = getConnectedProxySocket(account.getServer().getDomainpart(), 5222);
 				} else {
 					socket = new Socket();
+					socket.connect(new InetSocketAddress(account.getServer().getDomainpart(), 5222));
 				}
-				socket.connect(new InetSocketAddress(account.getServer().getDomainpart(), 5222));
 			} else {
 				throw new IOException("timeout in dns");
 			}
@@ -499,19 +508,32 @@ public class XmppConnection implements Runnable {
 	private boolean isUsingTor() {
 		final String usage = getPreferences().getString("proxy_usage", "onion");
 
-		if (usage.equals("auto")) {
-			return orbotHelper.isOrbotInstalled() && orbotHelper.isOrbotRunning();
-		} else {
-			return usage.equals("always") || (usage.equals("onion") && account.isOnion());
-		}
+		return usage.equals("always") || (usage.equals("onion") && account.isOnion());
 	}
 
-	private Proxy getProxy() {
-		final String proxyAddress = "127.0.0.1";
-		final int port = 9050;
-		final InetSocketAddress address;
-		address = new InetSocketAddress(proxyAddress, port);
-		return new Proxy(Proxy.Type.SOCKS, address);
+	private Socket getConnectedProxySocket(final String remoteHost, final int remotePort) throws IOException {
+		final SchemeRegistry schemeRegistry = new SchemeRegistry();
+
+		// TODO: This is probably broken. No idea what it's for, but it's not causing errors at the moment?
+		schemeRegistry.register(new Scheme("http", new PlainSocketFactory(new HostNameResolver() {
+			@Override
+			public InetAddress resolve(final String s) throws IOException {
+				return null;
+			}
+		}), 80));
+		final SocksProxyClientConnOperator conn = new SocksProxyClientConnOperator(
+				schemeRegistry,
+				"127.0.0.1",
+				9050
+				);
+		conn.openConnection(
+				new DefaultClientConnection(),
+				new HttpHost(remoteHost, remotePort),
+				null,
+				null,
+				new BasicHttpParams()
+				);
+		return conn.getSocket();
 	}
 
 	private boolean enableLegacySSL() {

@@ -10,6 +10,8 @@ public final class Config {
 	public static final int PING_MIN_INTERVAL = 30;
 	public static final int PING_TIMEOUT = 10;
 	public static final int CONNECT_TIMEOUT = 90;
+	public static final int DNS_TIMEOUT_MILLIS = 5000;
+	public static final int DNS_TIMEOUT_TOR_MILLIS = 9000;
 	public static final int CARBON_GRACE_PERIOD = 60;
 	public static final int MINI_GRACE_PERIOD = 750;
 
