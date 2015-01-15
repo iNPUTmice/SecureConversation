@@ -1,9 +1,7 @@
 package eu.siacs.conversations.xmpp;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.os.PowerManager;
@@ -182,8 +180,13 @@ public class XmppConnection implements Runnable {
 				boolean socketError = true;
 				while (socketError && values.size() > i) {
 					final Bundle namePort = (Bundle) values.get(i);
+					String srvRecordServer;
 					try {
-						final String srvRecordServer = IDN.toASCII(namePort.getString("name"));
+						srvRecordServer = IDN.toASCII(namePort.getString("name"));
+					} catch (final IllegalArgumentException e) {
+						srvRecordServer = namePort.getString("name");
+					}
+					try {
 						final int srvRecordPort = namePort.getInt("port");
 						final String srvIpServer = namePort.getString("ip");
 						final InetSocketAddress addr;
@@ -234,11 +237,10 @@ public class XmppConnection implements Runnable {
 			tagReader.setInputStream(in);
 			tagWriter.beginDocument();
 			sendStartStream();
-			Tag nextTag;
-			while ((nextTag = tagReader.readTag()) != null) {
+			final Tag nextTag = tagReader.readTag();
+			if (nextTag != null) {
 				if (nextTag.isStart("stream")) {
 					processStream(nextTag);
-					break;
 				} else {
 					throw new IOException("unknown tag on connect");
 				}
@@ -491,7 +493,7 @@ public class XmppConnection implements Runnable {
 	}
 
 	private void processPresence(final Tag currentTag) throws XmlPullParserException, IOException {
-		PresencePacket packet = (PresencePacket) processPacket(currentTag, PACKET_PRESENCE);
+		final PresencePacket packet = (PresencePacket) processPacket(currentTag, PACKET_PRESENCE);
 		this.presenceListener.onPresencePacketReceived(account, packet);
 	}
 
@@ -1135,7 +1137,7 @@ public class XmppConnection implements Runnable {
 			return connection.streamFeatures != null && connection.streamFeatures.hasChild("ver");
 		}
 
-		public void setBlockListRequested(boolean value) {
+		public void setBlockListRequested(final boolean value) {
 			this.blockListRequested = value;
 		}
 	}
