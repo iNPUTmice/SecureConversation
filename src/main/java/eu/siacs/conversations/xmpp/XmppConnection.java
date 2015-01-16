@@ -166,7 +166,7 @@ public class XmppConnection implements Runnable {
 			final Bundle result;
 			final ArrayList<Parcelable> values;
 			if (!account.isOnion()) {
-				result = DNSHelper.getSRVRecord(account.getServer(), isUsingTor());
+				result = DNSHelper.getSRVRecord(account.getServer(), false);
 				values = result.getParcelableArrayList("values");
 				if ("timeout".equals(result.getString("error"))) {
 					throw new IOException("timeout in dns");
@@ -508,9 +508,7 @@ public class XmppConnection implements Runnable {
 	}
 
 	private boolean isUsingTor() {
-		final String usage = getPreferences().getString("proxy_usage", "onion");
-
-		return usage.equals("always") || (usage.equals("onion") && account.isOnion());
+		return account.isOnion();
 	}
 
 	private Socket getConnectedProxySocket(final String remoteHost, final int remotePort) throws IOException {
