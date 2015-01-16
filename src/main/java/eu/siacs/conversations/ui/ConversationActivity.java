@@ -66,6 +66,7 @@ public class ConversationActivity extends XmppActivity
 	public static final String NICK = "nick";
 	public static final String PRIVATE_MESSAGE = "pm";
 
+
 	public static final int REQUEST_SEND_MESSAGE = 0x0201;
 	public static final int REQUEST_DECRYPT_PGP = 0x0202;
 	public static final int REQUEST_ENCRYPT_MESSAGE = 0x0207;
@@ -434,6 +435,7 @@ public class ConversationActivity extends XmppActivity
 						intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
 						mPendingImageUris.clear();
 						mPendingImageUris.add(uri);
+						intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingImageUri);
 						break;
 					case ATTACHMENT_CHOICE_CHOOSE_FILE:
 						chooser = true;
@@ -863,8 +865,12 @@ public class ConversationActivity extends XmppActivity
 	@Override
 	protected void onNewIntent(final Intent intent) {
 		if (xmppConnectionServiceBound) {
-			if (intent != null && VIEW_CONVERSATION.equals(intent.getType())) {
-				handleViewConversationIntent(intent);
+			if (intent != null) {
+				switch (intent.getType()) {
+					case VIEW_CONVERSATION:
+						handleViewConversationIntent(intent);
+						break;
+				}
 			}
 		} else {
 			setIntent(intent);
@@ -993,6 +999,19 @@ public class ConversationActivity extends XmppActivity
 		setIntent(new Intent());
 	}
 
+	private boolean changeToConversationByUuid(final String uuid) {
+		if (selectConversationByUuid(uuid)) {
+			this.mConversationFragment.reInit(getSelectedConversation());
+			hideConversationsOverview();
+			openConversation();
+			if (mContentView instanceof SlidingPaneLayout) {
+				updateActionBarTitle(true);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	private void handleViewConversationIntent(final Intent intent) {
 		final String uuid = intent.getStringExtra(CONVERSATION);
 		final String downloadUuid = intent.getStringExtra(MESSAGE);
@@ -1015,11 +1034,6 @@ public class ConversationActivity extends XmppActivity
 				}
 			} else {
 				this.mConversationFragment.appendText(text);
-			}
-			hideConversationsOverview();
-			openConversation();
-			if (mContentView instanceof SlidingPaneLayout) {
-				updateActionBarTitle(true); //fixes bug where slp isn't properly closed yet
 			}
 			if (downloadUuid != null) {
 				final Message message = mSelectedConversation.findMessageWithFileAndUuid(downloadUuid);
