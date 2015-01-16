@@ -44,6 +44,7 @@
         android:orderInCategory="60"
         android:showAsAction="never"
         android:title="@string/action_end_conversation"/>
+
     <item
         android:id="@+id/action_mute"
         android:orderInCategory="70"
@@ -61,6 +62,7 @@
         android:orderInCategory="90"
         android:showAsAction="never"
         android:title="@string/action_accounts"/>
+
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"

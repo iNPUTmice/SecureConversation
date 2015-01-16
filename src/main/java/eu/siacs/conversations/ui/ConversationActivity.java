@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
@@ -449,7 +448,7 @@ public class ConversationActivity extends XmppActivity
 					clearHistoryDialog(getSelectedConversation());
 					break;
 				case R.id.action_mute:
-					muteConversationDialog(getSelectedConversation());
+					MuteConversationDialog.show(this, xmppConnectionService, getSelectedConversation());
 					break;
 				case R.id.action_unmute:
 					unmuteConversation(getSelectedConversation());
@@ -652,34 +651,6 @@ public class ConversationActivity extends XmppActivity
 			}
 			popup.show();
 		}
-	}
-
-	protected void muteConversationDialog(final Conversation conversation) {
-		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		builder.setTitle(R.string.disable_notifications);
-		final int[] durations = getResources().getIntArray(
-				R.array.mute_options_durations);
-		builder.setItems(R.array.mute_options_descriptions,
-				new OnClickListener() {
-
-					@Override
-					public void onClick(final DialogInterface dialog, final int which) {
-						final long till;
-						if (durations[which] == -1) {
-							till = Long.MAX_VALUE;
-						} else {
-							till = SystemClock.elapsedRealtime()
-								+ (durations[which] * 1000);
-						}
-						conversation.setMutedTill(till);
-						ConversationActivity.this.xmppConnectionService.databaseBackend
-							.updateConversation(conversation);
-						updateConversationList();
-						ConversationActivity.this.mConversationFragment.updateMessages();
-						invalidateOptionsMenu();
-					}
-				});
-		builder.create().show();
 	}
 
 	public void unmuteConversation(final Conversation conversation) {
@@ -1016,6 +987,7 @@ public class ConversationActivity extends XmppActivity
 			@Override
 			public void run() {
 				updateConversationList();
+				invalidateOptionsMenu();
 				if (conversationList.size() == 0) {
 					startActivity(new Intent(getApplicationContext(),
 								StartConversationActivity.class));

@@ -24,9 +24,6 @@ import android.widget.Toast;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
@@ -36,14 +33,14 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.MucOptions.User;
 import eu.siacs.conversations.services.XmppConnectionService;
-import eu.siacs.conversations.services.XmppConnectionService.OnMucRosterUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
+import eu.siacs.conversations.services.XmppConnectionService.OnMucRosterUpdate;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConferenceDetailsActivity extends XmppActivity implements OnConversationUpdate, OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoleChanged, XmppConnectionService.OnConferenceOptionsPushed {
 	public static final String ACTION_VIEW_MUC = "view_muc";
 	private Conversation mConversation;
-	private OnClickListener inviteListener = new OnClickListener() {
+	private final OnClickListener inviteListener = new OnClickListener() {
 
 		@Override
 		public void onClick(View v) {
@@ -52,8 +49,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 	};
 	private TextView mYourNick;
 	private ImageView mYourPhoto;
-	private ImageButton mEditNickButton;
-	private TextView mRoleAffiliaton;
 	private TextView mFullJid;
 	private TextView mAccountJid;
 	private LinearLayout membersView;
@@ -66,7 +61,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
 	private boolean mAdvancedMode = false;
 
-	private UiCallback<Conversation> renameCallback = new UiCallback<Conversation>() {
+	private final UiCallback<Conversation> renameCallback = new UiCallback<Conversation>() {
 		@Override
 		public void success(Conversation object) {
 			runOnUiThread(new Runnable() {
@@ -94,14 +89,14 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
 		}
 	};
-	private OnClickListener mChangeConferenceSettings = new OnClickListener() {
+	private final OnClickListener mChangeConferenceSettings = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
 			final MucOptions mucOptions = mConversation.getMucOptions();
-			AlertDialog.Builder builder = new AlertDialog.Builder(ConferenceDetailsActivity.this);
+			final AlertDialog.Builder builder = new AlertDialog.Builder(ConferenceDetailsActivity.this);
 			builder.setTitle(R.string.conference_options);
-			String[] options = {getString(R.string.members_only),
-					getString(R.string.non_anonymous)};
+			final String[] options = {getString(R.string.members_only),
+				getString(R.string.non_anonymous)};
 			final boolean[] values = new boolean[options.length];
 			values[0] = mucOptions.membersOnly();
 			values[1] = mucOptions.nonanonymous();
@@ -146,6 +141,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
 			@Override
 			public void run() {
+				invalidateOptionsMenu();
 				updateView();
 			}
 		});
@@ -163,12 +159,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 	}
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_muc_details);
 		mYourNick = (TextView) findViewById(R.id.muc_your_nick);
 		mYourPhoto = (ImageView) findViewById(R.id.your_photo);
-		mEditNickButton = (ImageButton) findViewById(R.id.edit_nick_button);
+		final ImageButton mEditNickButton = (ImageButton) findViewById(R.id.edit_nick_button);
 		mFullJid = (TextView) findViewById(R.id.muc_jabberid);
 		membersView = (LinearLayout) findViewById(R.id.muc_members);
 		mAccountJid = (TextView) findViewById(R.id.details_account);
@@ -193,7 +189,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 
 							@Override
 							public void onValueEdited(String value) {
-								xmppConnectionService.renameInMuc(mConversation,value,renameCallback);
+								xmppConnectionService.renameInMuc(mConversation, value, renameCallback);
 							}
 						});
 			}
@@ -223,8 +219,20 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 				invalidateOptionsMenu();
 				updateView();
 				break;
+			case R.id.action_mute:
+				MuteConversationDialog.show(this, xmppConnectionService, mConversation);
+				break;
+			case R.id.action_unmute:
+				unmuteConversation(mConversation);
+				break;
 		}
 		return super.onOptionsItemSelected(menuItem);
+	}
+
+	private void unmuteConversation(final Conversation conversation) {
+		conversation.setMutedTill(0);
+		this.xmppConnectionService.databaseBackend.updateConversation(conversation);
+		invalidateOptionsMenu();
 	}
 
 	@Override
@@ -256,6 +264,11 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.muc_details, menu);
+		if (mConversation.isMuted()) {
+			menu.findItem(R.id.action_mute).setVisible(false);
+		} else {
+			menu.findItem(R.id.action_unmute).setVisible(false);
+		}
 		return true;
 	}
 
@@ -301,7 +314,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 					} else {
 						removeAdminPrivileges.setVisible(true);
 					}
-				}
+						}
 			}
 
 		}
@@ -408,7 +421,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		setTitle(mConversation.getName());
 		mFullJid.setText(mConversation.getJid().toBareJid().toString());
 		mYourNick.setText(mucOptions.getActualNick());
-		mRoleAffiliaton = (TextView) findViewById(R.id.muc_role);
+		final TextView mRoleAffiliaton = (TextView) findViewById(R.id.muc_role);
 		if (mucOptions.online()) {
 			mMoreDetails.setVisibility(View.VISIBLE);
 			final String status = getStatus(self);
