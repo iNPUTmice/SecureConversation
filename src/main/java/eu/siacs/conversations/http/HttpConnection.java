@@ -10,8 +10,12 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.Proxy;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -32,8 +36,8 @@ import eu.siacs.conversations.utils.CryptoHelper;
 
 public class HttpConnection implements Downloadable {
 
-	private HttpConnectionManager mHttpConnectionManager;
-	private XmppConnectionService mXmppConnectionService;
+	private final HttpConnectionManager mHttpConnectionManager;
+	private final XmppConnectionService mXmppConnectionService;
 
 	private URL mUrl;
 	private Message message;
@@ -42,8 +46,9 @@ public class HttpConnection implements Downloadable {
 	private boolean acceptedAutomatically = false;
 	private int mProgress = 0;
 	private long mLastGuiRefresh = 0;
+	private Proxy proxy = null;
 
-	public HttpConnection(HttpConnectionManager manager) {
+	public HttpConnection(final HttpConnectionManager manager) {
 		this.mHttpConnectionManager = manager;
 		this.mXmppConnectionService = manager.getXmppConnectionService();
 	}
@@ -62,20 +67,26 @@ public class HttpConnection implements Downloadable {
 		}
 	}
 
-	public void init(Message message) {
+	public void init(final Message message) throws UnknownHostException {
 		this.message = message;
+		if (message.getConversation().getAccount().isOnion()) {
+			this.proxy = new Proxy(
+					Proxy.Type.SOCKS,
+					new InetSocketAddress(InetAddress.getLocalHost(), Config.ORPORT)
+					);
+		}
 		this.message.setDownloadable(this);
 		try {
 			mUrl = new URL(message.getBody());
-			String[] parts = mUrl.getPath().toLowerCase().split("\\.");
-			String lastPart = parts.length >= 1 ? parts[parts.length - 1] : null;
-			String secondToLast = parts.length >= 2 ? parts[parts.length -2] : null;
+			final String[] parts = mUrl.getPath().toLowerCase().split("\\.");
+			final String lastPart = parts.length >= 1 ? parts[parts.length - 1] : null;
+			final String secondToLast = parts.length >= 2 ? parts[parts.length -2] : null;
 			if ("pgp".equals(lastPart) || "gpg".equals(lastPart)) {
 				this.message.setEncryption(Message.ENCRYPTION_PGP);
 			} else if (message.getEncryption() != Message.ENCRYPTION_OTR) {
 				this.message.setEncryption(Message.ENCRYPTION_NONE);
 			}
-			String extension;
+			final String extension;
 			if (Arrays.asList(VALID_CRYPTO_EXTENSIONS).contains(lastPart)) {
 				extension = secondToLast;
 			} else {
@@ -83,7 +94,7 @@ public class HttpConnection implements Downloadable {
 			}
 			message.setRelativeFilePath(message.getUuid()+"."+extension);
 			this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
-			String reference = mUrl.getRef();
+			final String reference = mUrl.getRef();
 			if (reference != null && reference.length() == 96) {
 				this.file.setKey(CryptoHelper.hexToBytes(reference));
 			}
@@ -93,12 +104,12 @@ public class HttpConnection implements Downloadable {
 				this.message.setEncryption(Message.ENCRYPTION_NONE);
 					}
 			checkFileSize(false);
-		} catch (MalformedURLException e) {
+		} catch (final MalformedURLException e) {
 			this.cancel();
 		}
 	}
 
-	private void checkFileSize(boolean interactive) {
+	private void checkFileSize(final boolean interactive) {
 		new Thread(new FileSizeChecker(interactive)).start();
 	}
 
@@ -109,7 +120,7 @@ public class HttpConnection implements Downloadable {
 	}
 
 	private void finish() {
-		Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+		final Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
 		intent.setData(Uri.fromFile(file));
 		mXmppConnectionService.sendBroadcast(intent);
 		message.setDownloadable(null);
@@ -120,7 +131,7 @@ public class HttpConnection implements Downloadable {
 		}
 	}
 
-	private void changeStatus(int status) {
+	private void changeStatus(final int status) {
 		this.mStatus = status;
 		mXmppConnectionService.updateConversationUi();
 	}
@@ -165,21 +176,21 @@ public class HttpConnection implements Downloadable {
 
 		private boolean interactive = false;
 
-		public FileSizeChecker(boolean interactive) {
+		public FileSizeChecker(final boolean interactive) {
 			this.interactive = interactive;
 		}
 
 		@Override
 		public void run() {
-			long size;
+			final long size;
 			try {
 				size = retrieveFileSize();
-			} catch (SSLHandshakeException e) {
+			} catch (final SSLHandshakeException e) {
 				changeStatus(STATUS_OFFER_CHECK_FILESIZE);
 				HttpConnection.this.acceptedAutomatically = false;
 				HttpConnection.this.mXmppConnectionService.getNotificationService().push(message);
 				return;
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				cancel();
 				return;
 			}
@@ -194,25 +205,29 @@ public class HttpConnection implements Downloadable {
 			}
 		}
 
-		private long retrieveFileSize() throws IOException,
-						SSLHandshakeException {
-							changeStatus(STATUS_CHECKING);
-							HttpURLConnection connection = (HttpURLConnection) mUrl
-								.openConnection();
-							connection.setRequestMethod("HEAD");
-							if (connection instanceof HttpsURLConnection) {
-								setupTrustManager((HttpsURLConnection) connection, interactive);
-							}
-							connection.connect();
-							String contentLength = connection.getHeaderField("Content-Length");
-							if (contentLength == null) {
-								throw new IOException();
-							}
-							try {
-								return Long.parseLong(contentLength, 10);
-							} catch (NumberFormatException e) {
-								throw new IOException();
-							}
+		private long retrieveFileSize() throws IOException {
+			changeStatus(STATUS_CHECKING);
+
+			final HttpURLConnection connection;
+			if (proxy != null) {
+				connection = (HttpURLConnection) mUrl.openConnection(proxy);
+			} else {
+				connection = (HttpURLConnection) mUrl.openConnection();
+			}
+			connection.setRequestMethod("HEAD");
+			if (connection instanceof HttpsURLConnection) {
+				setupTrustManager((HttpsURLConnection) connection, interactive);
+			}
+			connection.connect();
+			final String contentLength = connection.getHeaderField("Content-Length");
+			if (contentLength == null) {
+				throw new IOException();
+			}
+			try {
+				return Long.parseLong(contentLength, 10);
+			} catch (final NumberFormatException e) {
+				throw new IOException();
+			}
 		}
 
 	}
@@ -221,7 +236,7 @@ public class HttpConnection implements Downloadable {
 
 		private boolean interactive = false;
 
-		public FileDownloader(boolean interactive) {
+		public FileDownloader(final boolean interactive) {
 			this.interactive = interactive;
 		}
 
@@ -232,32 +247,36 @@ public class HttpConnection implements Downloadable {
 				download();
 				updateImageBounds();
 				finish();
-			} catch (SSLHandshakeException e) {
+			} catch (final SSLHandshakeException e) {
 				changeStatus(STATUS_OFFER);
-			} catch (IOException e) {
+			} catch (final IOException e) {
 				cancel();
 			}
 		}
 
-		private void download() throws SSLHandshakeException, IOException {
-			HttpURLConnection connection = (HttpURLConnection) mUrl
-				.openConnection();
+		private void download() throws IOException {
+			final HttpURLConnection connection;
+			if (proxy == null) {
+				connection = (HttpURLConnection) mUrl.openConnection();
+			} else {
+				connection = (HttpURLConnection) mUrl.openConnection(proxy);
+			}
 			if (connection instanceof HttpsURLConnection) {
 				setupTrustManager((HttpsURLConnection) connection, interactive);
 			}
 			connection.connect();
-			BufferedInputStream is = new BufferedInputStream(
+			final BufferedInputStream is = new BufferedInputStream(
 					connection.getInputStream());
 			file.getParentFile().mkdirs();
 			file.createNewFile();
-			OutputStream os = file.createOutputStream();
+			final OutputStream os = file.createOutputStream();
 			if (os == null) {
 				throw new IOException();
 			}
 			long transmitted = 0;
-			long expected = file.getExpectedSize();
+			final long expected = file.getExpectedSize();
 			int count = -1;
-			byte[] buffer = new byte[1024];
+			final byte[] buffer = new byte[1024];
 			while ((count = is.read(buffer)) != -1) {
 				transmitted += count;
 				os.write(buffer, 0, count);
@@ -276,7 +295,7 @@ public class HttpConnection implements Downloadable {
 
 	}
 
-	public void updateProgress(int i) {
+	public void updateProgress(final int i) {
 		this.mProgress = i;
 		if (SystemClock.elapsedRealtime() - this.mLastGuiRefresh > Config.PROGRESS_UI_UPDATE_INTERVAL) {
 			this.mLastGuiRefresh = SystemClock.elapsedRealtime();

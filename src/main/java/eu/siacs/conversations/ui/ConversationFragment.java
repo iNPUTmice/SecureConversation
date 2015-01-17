@@ -35,6 +35,7 @@ import android.widget.Toast;
 import net.java.otr4j.session.SessionStatus;
 
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -522,9 +523,12 @@ public class ConversationFragment extends Fragment {
 					}
 	}
 
-	private void downloadImage(Message message) {
-		activity.xmppConnectionService.getHttpConnectionManager()
-			.createNewConnection(message);
+	private void downloadImage(final Message message) {
+		try {
+			activity.xmppConnectionService.getHttpConnectionManager()
+				.createNewConnection(message);
+		} catch (final UnknownHostException ignored) {
+		}
 	}
 
 	private void cancelTransmission(Message message) {
