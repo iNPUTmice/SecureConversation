@@ -17,6 +17,7 @@ import org.apache.http.conn.scheme.HostNameResolver;
 import org.apache.http.conn.scheme.PlainSocketFactory;
 import org.apache.http.conn.scheme.Scheme;
 import org.apache.http.conn.scheme.SchemeRegistry;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.impl.conn.DefaultClientConnection;
 import org.apache.http.params.BasicHttpParams;
@@ -546,7 +547,9 @@ public class XmppConnection implements Runnable {
 			final SSLContext sc = SSLContext.getInstance("TLS");
 			sc.init(null,new X509TrustManager[]{this.mXmppConnectionService.getMemorizingTrustManager()},mXmppConnectionService.getRNG());
 			final SSLSocketFactory factory = sc.getSocketFactory();
-			final HostnameVerifier verifier = this.mXmppConnectionService.getMemorizingTrustManager().wrapHostnameVerifier(new StrictHostnameVerifier());
+			final HostnameVerifier verifier = this.mXmppConnectionService.getMemorizingTrustManager().wrapHostnameVerifier(
+					account.isOnion() ? new AllowAllHostnameVerifier() : new StrictHostnameVerifier()
+			);
 			final InetAddress address = socket == null ? null : socket.getInetAddress();
 
 			if (factory == null || address == null || verifier == null) {
