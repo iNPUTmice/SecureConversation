@@ -56,6 +56,7 @@ public class ConversationActivity extends XmppActivity
 	public static final String TEXT = "text";
 	public static final String NICK = "nick";
 
+
 	public static final int REQUEST_SEND_MESSAGE = 0x0201;
 	public static final int REQUEST_DECRYPT_PGP = 0x0202;
 	public static final int REQUEST_ENCRYPT_MESSAGE = 0x0207;
@@ -332,7 +333,7 @@ public class ConversationActivity extends XmppActivity
 					case ATTACHMENT_CHOICE_TAKE_PHOTO:
 						mPendingImageUri = xmppConnectionService.getFileBackend().getTakePhotoUri();
 						intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
-						intent.putExtra(MediaStore.EXTRA_OUTPUT,mPendingImageUri);
+						intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingImageUri);
 						break;
 					case ATTACHMENT_CHOICE_CHOOSE_FILE:
 						chooser = true;
@@ -347,7 +348,7 @@ public class ConversationActivity extends XmppActivity
 				if (intent.resolveActivity(getPackageManager()) != null) {
 					if (chooser) {
 						startActivityForResult(
-								Intent.createChooser(intent,getString(R.string.perform_action_with)),
+								Intent.createChooser(intent, getString(R.string.perform_action_with)),
 								attachmentChoice);
 					} else {
 						startActivityForResult(intent, attachmentChoice);
@@ -702,8 +703,12 @@ public class ConversationActivity extends XmppActivity
 	@Override
 	protected void onNewIntent(final Intent intent) {
 		if (xmppConnectionServiceBound) {
-			if (intent != null && VIEW_CONVERSATION.equals(intent.getType())) {
-				handleViewConversationIntent(intent);
+			if (intent != null) {
+				switch (intent.getType()) {
+					case VIEW_CONVERSATION:
+						handleViewConversationIntent(intent);
+						break;
+				}
 			}
 		} else {
 			setIntent(intent);
@@ -804,22 +809,29 @@ public class ConversationActivity extends XmppActivity
 		setIntent(new Intent());
 	}
 
+	private boolean changeToConversationByUuid(final String uuid) {
+		if (selectConversationByUuid(uuid)) {
+			this.mConversationFragment.reInit(getSelectedConversation());
+			hideConversationsOverview();
+			openConversation();
+			if (mContentView instanceof SlidingPaneLayout) {
+				updateActionBarTitle(true);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	private void handleViewConversationIntent(final Intent intent) {
 		final String uuid = (String) intent.getExtras().get(CONVERSATION);
 		final String downloadUuid = (String) intent.getExtras().get(MESSAGE);
 		final String text = intent.getExtras().getString(TEXT, "");
 		final String nick = intent.getExtras().getString(NICK, null);
-		if (selectConversationByUuid(uuid)) {
-			this.mConversationFragment.reInit(getSelectedConversation());
+		if (changeToConversationByUuid(uuid)) {
 			if (nick != null) {
 				this.mConversationFragment.highlightInConference(nick);
 			} else {
 				this.mConversationFragment.appendText(text);
-			}
-			hideConversationsOverview();
-			openConversation();
-			if (mContentView instanceof SlidingPaneLayout) {
-				updateActionBarTitle(true); //fixes bug where slp isn't properly closed yet
 			}
 			if (downloadUuid != null) {
 				final Message message = mSelectedConversation.findMessageWithFileAndUuid(downloadUuid);
