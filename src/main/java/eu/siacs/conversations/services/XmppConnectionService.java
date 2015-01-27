@@ -976,7 +976,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 					if (query != null) {
 						query.setCallback(callback);
 					}
-					callback.informUser(R.string.fetching_history_from_server);
+					callback.informUser();
 				}
 			}
 		}).start();
@@ -2285,7 +2285,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	public interface OnMoreMessagesLoaded {
 		public void onMoreMessagesLoaded(int count, Conversation conversation);
 
-		public void informUser(int r);
+		public void informUser();
 	}
 
 	public interface OnAccountPasswordChanged {

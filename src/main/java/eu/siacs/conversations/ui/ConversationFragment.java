@@ -105,7 +105,6 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private boolean messagesLoaded = true;
-	private Toast messageLoaderToast;
 
 	@Override
 	public void onRefresh() {
@@ -116,8 +115,8 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 				activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
 					@Override
 					public void onMoreMessagesLoaded(final int count, final Conversation conversation) {
+						swipeRefreshLayout.setRefreshing(false);
 						if (ConversationFragment.this.conversation != conversation) {
-							swipeRefreshLayout.setRefreshing(false);
 							return;
 						}
 						activity.runOnUiThread(new Runnable() {
@@ -144,32 +143,14 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 									}
 									messagesView.setSelectionFromTop(newPosition - offset, pxOffset);
 									messagesLoaded = true;
-									if (messageLoaderToast != null) {
-										messageLoaderToast.cancel();
-									}
 								}
 							}
 						});
 					}
 
 					@Override
-					public void informUser(final int resId) {
+					public void informUser() {
 						swipeRefreshLayout.setRefreshing(false);
-
-						activity.runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								if (messageLoaderToast != null) {
-									messageLoaderToast.cancel();
-								}
-								if (ConversationFragment.this.conversation != conversation) {
-									return;
-								}
-								messageLoaderToast = Toast.makeText(activity,resId,Toast.LENGTH_LONG);
-								messageLoaderToast.show();
-							}
-						});
-
 					}
 				});
 			} else {
