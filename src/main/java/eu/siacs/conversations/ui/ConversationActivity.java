@@ -9,7 +9,6 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
-import android.media.MediaActionSound;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.SystemClock;
@@ -49,8 +48,11 @@ import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 public class ConversationActivity extends XmppActivity
 	implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist {
 
+	public static final String ACTION_DOWNLOAD = "eu.siacs.conversations.action.DOWNLOAD";
+
 	public static final String VIEW_CONVERSATION = "viewConversation";
 	public static final String CONVERSATION = "conversationUuid";
+	public static final String MESSAGE = "messageUuid";
 	public static final String TEXT = "text";
 	public static final String NICK = "nick";
 
@@ -82,11 +84,6 @@ public class ConversationActivity extends XmppActivity
 	private Toast prepareFileToast;
 
 	private boolean mActivityPaused = false;
-
-
-	public List<Conversation> getConversationList() {
-		return this.conversationList;
-	}
 
 	public Conversation getSelectedConversation() {
 		return this.mSelectedConversation;
@@ -139,7 +136,7 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		if (savedInstanceState != null) {mOpenConverstaion = savedInstanceState.getString(
 				STATE_OPEN_CONVERSATION, null);
@@ -176,6 +173,7 @@ public class ConversationActivity extends XmppActivity
 					ConversationActivity.this.mConversationFragment.reInit(getSelectedConversation());
 				}
 				hideConversationsOverview();
+				openConversation();
 			}
 		});
 		mContentView = findViewById(R.id.content_view_spl);
@@ -260,10 +258,11 @@ public class ConversationActivity extends XmppActivity
 			xmppConnectionService.getNotificationService().setOpenConversation(conversation);
 			sendReadMarkerIfNecessary(conversation);
 		}
+		listAdapter.notifyDataSetChanged();
 	}
 
 	public void sendReadMarkerIfNecessary(final Conversation conversation) {
-		if (!mActivityPaused && !conversation.isRead()) {
+		if (!mActivityPaused && conversation != null && !conversation.isRead()) {
 			xmppConnectionService.sendReadMarker(conversation);
 		}
 	}
@@ -281,11 +280,8 @@ public class ConversationActivity extends XmppActivity
 		final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
 		final MenuItem menuMute = menu.findItem(R.id.action_mute);
 		final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
-		final MenuItem menuBlock = menu.findItem(R.id.action_block);
-		final MenuItem menuUnblock = menu.findItem(R.id.action_unblock);
 
-		if (isConversationsOverviewVisable()
-				&& isConversationsOverviewHideable()) {
+		if (isConversationsOverviewVisable() && isConversationsOverviewHideable()) {
 			menuArchive.setVisible(false);
 			menuMucDetails.setVisible(false);
 			menuContactDetails.setVisible(false);
@@ -295,8 +291,6 @@ public class ConversationActivity extends XmppActivity
 			menuClearHistory.setVisible(false);
 			menuMute.setVisible(false);
 			menuUnmute.setVisible(false);
-			menuBlock.setVisible(false);
-			menuUnblock.setVisible(false);
 		} else {
 			menuAdd.setVisible(!isConversationsOverviewHideable());
 			if (this.getSelectedConversation() != null) {
@@ -307,21 +301,10 @@ public class ConversationActivity extends XmppActivity
 				if (this.getSelectedConversation().getMode() == Conversation.MODE_MULTI) {
 					menuContactDetails.setVisible(false);
 					menuAttach.setVisible(false);
-					menuBlock.setVisible(false);
-					menuUnblock.setVisible(false);
+					menuInviteContact.setVisible(getSelectedConversation().getMucOptions().canInvite());
 				} else {
 					menuMucDetails.setVisible(false);
-					menuInviteContact.setTitle(R.string.conference_with);
-					if (this.getSelectedConversation().isBlocked()) {
-						menuBlock.setVisible(false);
-					} else {
-						menuUnblock.setVisible(false);
-					}
 					final Account account = this.getSelectedConversation().getAccount();
-					if (!(account.isOnlineAndConnected() && account.getXmppConnection().getFeatures().blocking())) {
-						menuBlock.setVisible(false);
-						menuUnblock.setVisible(false);
-					}
 				}
 				if (this.getSelectedConversation().isMuted()) {
 					menuMute.setVisible(false);
@@ -447,12 +430,7 @@ public class ConversationActivity extends XmppActivity
 					this.endConversation(getSelectedConversation());
 					break;
 				case R.id.action_contact_details:
-					Contact contact = this.getSelectedConversation().getContact();
-					if (contact.showInRoster()) {
-						switchToContactDetails(contact);
-					} else {
-						showAddToRosterDialog(getSelectedConversation());
-					}
+					switchToContactDetails(getSelectedConversation().getContact());
 					break;
 				case R.id.action_muc_details:
 					Intent intent = new Intent(this,
@@ -492,7 +470,6 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public void endConversation(Conversation conversation) {
-		conversation.setStatus(Conversation.STATUS_ARCHIVED);
 		showConversationsOverview();
 		xmppConnectionService.archiveConversation(conversation);
 		if (conversationList.size() > 0) {
@@ -542,25 +519,25 @@ public class ConversationActivity extends XmppActivity
 		}
 		attachFilePopup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
 
-				@Override
-				public boolean onMenuItemClick(MenuItem item) {
-					switch (item.getItemId()) {
-						case R.id.attach_choose_picture:
-							attachFile(ATTACHMENT_CHOICE_CHOOSE_IMAGE);
-							break;
-						case R.id.attach_take_picture:
-							attachFile(ATTACHMENT_CHOICE_TAKE_PHOTO);
-							break;
-						case R.id.attach_choose_file:
-							attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE);
-							break;
-						case R.id.attach_record_voice:
-							attachFile(ATTACHMENT_CHOICE_RECORD_VOICE);
-							break;
-					}
-					return false;
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				switch (item.getItemId()) {
+					case R.id.attach_choose_picture:
+						attachFile(ATTACHMENT_CHOICE_CHOOSE_IMAGE);
+						break;
+					case R.id.attach_take_picture:
+						attachFile(ATTACHMENT_CHOICE_TAKE_PHOTO);
+						break;
+					case R.id.attach_choose_file:
+						attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE);
+						break;
+					case R.id.attach_record_voice:
+						attachFile(ATTACHMENT_CHOICE_RECORD_VOICE);
+						break;
 				}
-			});
+				return false;
+			}
+		});
 		attachFilePopup.show();
 	}
 
@@ -756,13 +733,17 @@ public class ConversationActivity extends XmppActivity
 	@Override
 	public void onResume() {
 		super.onResume();
-		int theme = findTheme();
-		if (this.mTheme != theme) {
+		final int theme = findTheme();
+		final boolean usingEnterKey = usingEnterKey();
+		if (this.mTheme != theme || usingEnterKey != mUsingEnterKey) {
 			recreate();
 		}
 		this.mActivityPaused = false;
 		if (this.xmppConnectionServiceBound) {
 			this.xmppConnectionService.getNotificationService().setIsInForeground(true);
+		}
+		if (!isConversationsOverviewVisable() || !isConversationsOverviewHideable()) {
+			sendReadMarkerIfNecessary(getSelectedConversation());
 		}
 	}
 
@@ -790,11 +771,9 @@ public class ConversationActivity extends XmppActivity
 		} else if (conversationList.size() <= 0) {
 			startActivity(new Intent(this, StartConversationActivity.class));
 			finish();
-		} else if (getIntent() != null
-				&& VIEW_CONVERSATION.equals(getIntent().getType())) {
+		} else if (getIntent() != null && VIEW_CONVERSATION.equals(getIntent().getType())) {
 			handleViewConversationIntent(getIntent());
-		} else if (mOpenConverstaion != null) {
-			selectConversationByUuid(mOpenConverstaion);
+		} else if (selectConversationByUuid(mOpenConverstaion)) {
 			if (mPanelOpen) {
 				showConversationsOverview();
 			} else {
@@ -825,30 +804,43 @@ public class ConversationActivity extends XmppActivity
 		setIntent(new Intent());
 	}
 
-	private void handleViewConversationIntent(Intent intent) {
-		String uuid = (String) intent.getExtras().get(CONVERSATION);
-		String text = intent.getExtras().getString(TEXT, "");
-		String nick = intent.getExtras().getString(NICK,null);
-		selectConversationByUuid(uuid);
-		this.mConversationFragment.reInit(getSelectedConversation());
-		if (nick!=null) {
-			this.mConversationFragment.highlightInConference(nick);
-		} else {
-			this.mConversationFragment.appendText(text);
-		}
-		hideConversationsOverview();
-		openConversation();
-		if (mContentView instanceof SlidingPaneLayout) {
-			updateActionBarTitle(true); //fixes bug where slp isn't properly closed yet
+	private void handleViewConversationIntent(final Intent intent) {
+		final String uuid = (String) intent.getExtras().get(CONVERSATION);
+		final String downloadUuid = (String) intent.getExtras().get(MESSAGE);
+		final String text = intent.getExtras().getString(TEXT, "");
+		final String nick = intent.getExtras().getString(NICK, null);
+		if (selectConversationByUuid(uuid)) {
+			this.mConversationFragment.reInit(getSelectedConversation());
+			if (nick != null) {
+				this.mConversationFragment.highlightInConference(nick);
+			} else {
+				this.mConversationFragment.appendText(text);
+			}
+			hideConversationsOverview();
+			openConversation();
+			if (mContentView instanceof SlidingPaneLayout) {
+				updateActionBarTitle(true); //fixes bug where slp isn't properly closed yet
+			}
+			if (downloadUuid != null) {
+				final Message message = mSelectedConversation.findMessageWithFileAndUuid(downloadUuid);
+				if (message != null) {
+					mConversationFragment.messageListAdapter.startDownloadable(message);
+				}
+			}
 		}
 	}
 
-	private void selectConversationByUuid(String uuid) {
+	private boolean selectConversationByUuid(String uuid) {
+		if (uuid == null) {
+			return false;
+		}
 		for (Conversation aConversationList : conversationList) {
 			if (aConversationList.getUuid().equals(uuid)) {
 				setSelectedConversation(aConversationList);
+				return true;
 			}
 		}
+		return false;
 	}
 
 	@Override
@@ -1050,10 +1042,10 @@ public class ConversationActivity extends XmppActivity
 
 	@Override
 	public void OnUpdateBlocklist(Status status) {
-		invalidateOptionsMenu();
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				invalidateOptionsMenu();
 				ConversationActivity.this.mConversationFragment.updateMessages();
 			}
 		});
@@ -1063,7 +1055,7 @@ public class ConversationActivity extends XmppActivity
 		xmppConnectionService.sendUnblockRequest(conversation);
 	}
 
-	public void blockConversation(final Blockable conversation) {
-		xmppConnectionService.sendBlockRequest(conversation);
+	public boolean enterIsSend() {
+		return getPreferences().getBoolean("enter_is_send",false);
 	}
 }

@@ -78,16 +78,7 @@ run your own XMPP server for you and your friends. These XEP's are:
 * [Diego Turtulici](http://efesto.eigenlab.org/~diesys) (Original)
 
 #### Translations
-
-* [Sergio Cárdenas](https://github.com/kruks23) (Spanish)
-* [Benoit Bouvarel](https://github.com/BenoitBouvarel) (French)
-* [Daniel Gultsch](https://github.com/iNPUTmice) (German)
-* [Aitor Beriain](https://github.com/beriain) (Basque)
-* [Ilia Rostovtsev](https://github.com/qooob) (Russian)
-* [Jelmer Vernooij](https://github.com/jelmer) (Dutch)
-* [Anders Sandblad](https://github.com/andersruneson) (Swedish)
-* [Aizaz AZ](http://www.linkedin.com/in/aizazhaider) (Chinese)
-* [Jaroslav Lichtblau] (https://github.com/svetlemodry) (Czech)
+Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/)
 
 ## FAQ
 
@@ -102,6 +93,8 @@ build your apk file.
 The more convenient way — which not only gives you automatic updates but also
 supports the further development of Conversations — is to buy the App in the
 Google [Play Store](https://play.google.com/store/apps/details?id=eu.siacs.conversations).
+
+Buying the App from the Play Store will also give you access to our [beta test](#beta).
 
 #### I don't have a Google Account but I would still like to make a contribution
 
@@ -277,6 +270,14 @@ this.)
 
 ### Development
 
+<a name="beta"></a>
+#### Beta testing
+If you bought the App on [Google Play](https://play.google.com/store/apps/details?id=eu.siacs.conversations)
+you can get access to the latest beta version by joining the
+[Conversations Beta Testers](https://plus.google.com/communities/107649347599361240873)
+community on Google+ and then using [this link](https://play.google.com/apps/testing/eu.siacs.conversations)
+to sign up for the beta test.
+
 #### How do I build Conversations
 
 Make sure to have ANDROID_HOME point to your Android SDK
@@ -284,6 +285,9 @@ Make sure to have ANDROID_HOME point to your Android SDK
     git clone https://github.com/siacs/Conversations.git
     cd Conversations
     ./gradlew build
+
+
+[![Build Status](https://travis-ci.org/siacs/Conversations.svg?branch=development)](https://travis-ci.org/siacs/Conversations)
 
 ### How do I update/add external libraries?
 

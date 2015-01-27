@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -33,6 +34,7 @@ import android.widget.Toast;
 
 import net.java.otr4j.session.SessionStatus;
 
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -296,6 +298,15 @@ public class ConversationFragment extends Fragment {
 				default:
 					break;
 			}
+			getActivity().invalidateOptionsMenu();
+		}
+	}
+
+	private void setupIme() {
+		if (((ConversationActivity)getActivity()).usingEnterKey()) {
+			mEditMessage.setInputType(mEditMessage.getInputType() & (~InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE));
+		} else {
+			mEditMessage.setInputType(mEditMessage.getInputType() | InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE);
 		}
 	}
 
@@ -305,6 +316,7 @@ public class ConversationFragment extends Fragment {
 		final View view = inflater.inflate(R.layout.fragment_conversation,
 				container, false);
 		mEditMessage = (EditMessage) view.findViewById(R.id.textinput);
+		setupIme();
 		mEditMessage.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -316,8 +328,13 @@ public class ConversationFragment extends Fragment {
 		mEditMessage.setOnEnterPressedListener(new OnEnterPressed() {
 
 			@Override
-			public void onEnterPressed() {
-				sendMessage();
+			public boolean onEnterPressed() {
+				if (activity.enterIsSend()) {
+					sendMessage();
+					return true;
+				} else {
+					return false;
+				}
 			}
 		});
 
@@ -346,14 +363,7 @@ public class ConversationFragment extends Fragment {
 							}
 						}
 					} else {
-						Contact contact = message.getConversation()
-							.getContact();
-						if (contact.showInRoster()) {
-							activity.switchToContactDetails(contact);
-						} else {
-							activity.showAddToRosterDialog(message
-									.getConversation());
-						}
+						activity.switchToContactDetails(message.getContact());
 					}
 				} else {
 					Account account = message.getConversation().getAccount();
@@ -403,7 +413,7 @@ public class ConversationFragment extends Fragment {
 			activity.getMenuInflater().inflate(R.menu.message_context, menu);
 			menu.setHeaderTitle(R.string.message_options);
 			MenuItem copyText = menu.findItem(R.id.copy_text);
-			MenuItem shareImage = menu.findItem(R.id.share_image);
+			MenuItem shareWith = menu.findItem(R.id.share_with);
 			MenuItem sendAgain = menu.findItem(R.id.send_again);
 			MenuItem copyUrl = menu.findItem(R.id.copy_url);
 			MenuItem downloadImage = menu.findItem(R.id.download_image);
@@ -411,33 +421,36 @@ public class ConversationFragment extends Fragment {
 			if (m.getType() != Message.TYPE_TEXT || m.getDownloadable() != null) {
 				copyText.setVisible(false);
 			}
-			if (m.getType() != Message.TYPE_IMAGE || m.getDownloadable() != null) {
-				shareImage.setVisible(false);
-			}
+			if (m.getType() == Message.TYPE_TEXT
+					|| m.getType() == Message.TYPE_PRIVATE
+					|| m.getDownloadable() != null) {
+				shareWith.setVisible(false);
+					}
 			if (m.getStatus() != Message.STATUS_SEND_FAILED) {
 				sendAgain.setVisible(false);
 			}
 			if ((m.getType() != Message.TYPE_IMAGE && m.getDownloadable() == null)
 					|| m.getImageParams().url == null) {
 				copyUrl.setVisible(false);
-			}
+					}
 			if (m.getType() != Message.TYPE_TEXT
 					|| m.getDownloadable() != null
 					|| !m.bodyContainsDownloadable()) {
 				downloadImage.setVisible(false);
-			}
+					}
 			if (!((m.getDownloadable() != null && !(m.getDownloadable() instanceof DownloadablePlaceholder))
-					|| (m.isFileOrImage() && m.getStatus() == Message.STATUS_WAITING))) {
+						|| (m.isFileOrImage() && (m.getStatus() == Message.STATUS_WAITING
+								|| m.getStatus() == Message.STATUS_OFFERED)))) {
 				cancelTransmission.setVisible(false);
-			}
+								}
 		}
 	}
 
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.share_image:
-				shareImage(selectedMessage);
+			case R.id.share_with:
+				shareWith(selectedMessage);
 				return true;
 			case R.id.copy_text:
 				copyText(selectedMessage);
@@ -459,16 +472,20 @@ public class ConversationFragment extends Fragment {
 		}
 	}
 
-	private void shareImage(Message message) {
+	private void shareWith(Message message) {
 		Intent shareIntent = new Intent();
 		shareIntent.setAction(Intent.ACTION_SEND);
 		shareIntent.putExtra(Intent.EXTRA_STREAM,
 				activity.xmppConnectionService.getFileBackend()
 				.getJingleFileUri(message));
 		shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-		shareIntent.setType("image/webp");
-		activity.startActivity(Intent.createChooser(shareIntent,
-					getText(R.string.share_with)));
+		String path = message.getRelativeFilePath();
+		String mime = path == null ? null :URLConnection.guessContentTypeFromName(path);
+		if (mime == null) {
+			mime = "image/webp";
+		}
+		shareIntent.setType(mime);
+		activity.startActivity(Intent.createChooser(shareIntent,getText(R.string.share_with)));
 	}
 
 	private void copyText(Message message) {
@@ -652,7 +669,7 @@ public class ConversationFragment extends Fragment {
 					}
 						}
 				conversation.populateWithMessages(ConversationFragment.this.messageList);
-				for (Message message : this.messageList) {
+				for (final Message message : this.messageList) {
 					if (message.getEncryption() == Message.ENCRYPTION_PGP
 							&& (message.getStatus() == Message.STATUS_RECEIVED || message
 								.getStatus() >= Message.STATUS_SEND)
@@ -951,7 +968,4 @@ public class ConversationFragment extends Fragment {
 		this.mEditMessage.append(text);
 	}
 
-	public void clearInputField() {
-		this.mEditMessage.setText("");
-	}
 }

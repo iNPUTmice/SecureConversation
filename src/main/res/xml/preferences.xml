@@ -116,12 +116,19 @@
                     android:key="dont_save_encrypted"
                     android:summary="@string/pref_dont_save_encrypted_summary"
                     android:title="@string/pref_dont_save_encrypted" />
-                <CheckBoxPreference
-                    android:defaultValue="false"
-                    android:key="enable_legacy_ssl"
-                    android:summary="@string/pref_enable_legacy_ssl_summary"
-                    android:title="@string/pref_enable_legacy_ssl" />
             </PreferenceCategory>
+	        <PreferenceCategory android:title="@string/pref_input_options">
+		        <CheckBoxPreference
+			        android:defaultValue="false"
+			        android:key="enter_is_send"
+			        android:title="@string/pref_enter_is_send"
+			        android:summary="@string/pref_enter_is_send_summary" />
+		        <CheckBoxPreference
+			        android:defaultValue="false"
+			        android:key="display_enter_key"
+			        android:title="@string/pref_display_enter_key"
+			        android:summary="@string/pref_display_enter_key_summary" />
+	        </PreferenceCategory>
             <PreferenceCategory android:title="@string/pref_expert_options_other" >
                 <CheckBoxPreference
                     android:defaultValue="false"
