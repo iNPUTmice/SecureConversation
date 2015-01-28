@@ -104,18 +104,21 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
-	private boolean messagesLoaded = true;
 
 	@Override
 	public void onRefresh() {
 		synchronized (ConversationFragment.this.messageList) {
-			if (messagesLoaded && messageList.size() > 0) {
+			if (!swipeRefreshLayout.isRefreshing() && messageList.size() > 0) {
 				long timestamp = ConversationFragment.this.messageList.get(0).getTimeSent();
-				messagesLoaded = false;
 				activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
 					@Override
 					public void onMoreMessagesLoaded(final int count, final Conversation conversation) {
-						swipeRefreshLayout.setRefreshing(false);
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								swipeRefreshLayout.setRefreshing(false);
+							}
+						});
 						if (ConversationFragment.this.conversation != conversation) {
 							return;
 						}
@@ -142,7 +145,6 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 									} catch (final IndexOutOfBoundsException ignored) {
 									}
 									messagesView.setSelectionFromTop(newPosition - offset, pxOffset);
-									messagesLoaded = true;
 								}
 							}
 						});
@@ -150,11 +152,21 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 
 					@Override
 					public void informUser() {
-						swipeRefreshLayout.setRefreshing(false);
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								swipeRefreshLayout.setRefreshing(false);
+							}
+						});
 					}
 				});
 			} else {
-				swipeRefreshLayout.setRefreshing(false);
+				activity.runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						swipeRefreshLayout.setRefreshing(false);
+					}
+				});
 			}
 		}
 	}
@@ -562,7 +574,6 @@ public class ConversationFragment extends Fragment implements SwipeRefreshLayout
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.messagesView.invalidateViews();
 		updateMessages();
-		this.messagesLoaded = true;
 		int size = this.messageList.size();
 		if (size > 0) {
 			messagesView.setSelection(size - 1);
