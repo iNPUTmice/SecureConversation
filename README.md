@@ -17,7 +17,7 @@ Conversations: the very last word in instant messaging
 ## Features
 
 * End-to-end encryption with either [OTR](https://otr.cypherpunks.ca/) or [OpenPGP](http://www.openpgp.org/about_openpgp/)
-* Sending and receiving images
+* Sending and receiving any types of files and voice messages
 * Indication when your contact has read your message
 * Intuitive UI that follows Android Design guidelines
 * Pictures / Avatars for your Contacts
