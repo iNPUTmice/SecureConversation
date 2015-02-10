@@ -303,7 +303,7 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
 			if (this.callback != null) {
 				this.callback.onMoreMessagesLoaded(messageCount,conversation);
 				if (messageCount == 0) {
-					this.callback.informUser(R.string.no_more_history_on_server);
+					this.callback.informUser();
 				}
 			}
 		}

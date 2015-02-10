@@ -14,6 +14,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
 import android.view.Menu;
@@ -34,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
@@ -77,7 +77,6 @@ public class ConversationActivity extends XmppActivity
 
 	private List<Conversation> conversationList = new ArrayList<>();
 	private Conversation mSelectedConversation = null;
-	private ListView listView;
 	private ConversationFragment mConversationFragment;
 
 	private ArrayAdapter<Conversation> listAdapter;
@@ -155,7 +154,7 @@ public class ConversationActivity extends XmppActivity
 		transaction.replace(R.id.selected_conversation, this.mConversationFragment, "conversation");
 		transaction.commit();
 
-		listView = (ListView) findViewById(R.id.list);
+		final ListView listView = (ListView) findViewById(R.id.list);
 		this.listAdapter = new ConversationAdapter(this, conversationList);
 		listView.setAdapter(this.listAdapter);
 
@@ -168,7 +167,7 @@ public class ConversationActivity extends XmppActivity
 
 			@Override
 			public void onItemClick(AdapterView<?> arg0, View clickedView,
-					int position, long arg3) {
+			                        int position, long arg3) {
 				if (getSelectedConversation() != conversationList.get(position)) {
 					setSelectedConversation(conversationList.get(position));
 					ConversationActivity.this.mConversationFragment.reInit(getSelectedConversation());
@@ -185,7 +184,7 @@ public class ConversationActivity extends XmppActivity
 			SlidingPaneLayout mSlidingPaneLayout = (SlidingPaneLayout) mContentView;
 			mSlidingPaneLayout.setParallaxDistance(150);
 			mSlidingPaneLayout
-				.setShadowResource(R.drawable.es_slidingpane_shadow);
+				.setShadowResourceLeft(R.drawable.es_slidingpane_shadow);
 			mSlidingPaneLayout.setSliderFadeColor(0);
 			mSlidingPaneLayout.setPanelSlideListener(new PanelSlideListener() {
 
@@ -208,8 +207,6 @@ public class ConversationActivity extends XmppActivity
 
 				@Override
 				public void onPanelSlide(View arg0, float arg1) {
-					// TODO Auto-generated method stub
-
 				}
 			});
 		}
@@ -313,7 +310,6 @@ public class ConversationActivity extends XmppActivity
 					menuInviteContact.setVisible(getSelectedConversation().getMucOptions().canInvite());
 				} else {
 					menuMucDetails.setVisible(false);
-					final Account account = this.getSelectedConversation().getAccount();
 				}
 				if (this.getSelectedConversation().isMuted()) {
 					menuMute.setVisible(false);
@@ -759,7 +755,7 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	@Override
-	public void onSaveInstanceState(final Bundle savedInstanceState) {
+	public void onSaveInstanceState(@NonNull final Bundle savedInstanceState) {
 		Conversation conversation = getSelectedConversation();
 		if (conversation != null) {
 			savedInstanceState.putString(STATE_OPEN_CONVERSATION,

@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.text.InputType;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -21,8 +22,6 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AbsListView;
-import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageButton;
@@ -60,7 +59,7 @@ import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureClicked;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureLongClicked;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
-public class ConversationFragment extends Fragment {
+public class ConversationFragment extends Fragment implements SwipeRefreshLayout.OnRefreshListener {
 
 	protected Conversation conversation;
 	private OnClickListener leaveMuc = new OnClickListener() {
@@ -97,6 +96,7 @@ public class ConversationFragment extends Fragment {
 		}
 	};
 	protected ListView messagesView;
+	protected SwipeRefreshLayout swipeRefreshLayout;
 	final protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
 	private EditMessage mEditMessage;
@@ -104,86 +104,73 @@ public class ConversationFragment extends Fragment {
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
-	private boolean messagesLoaded = true;
-	private Toast messageLoaderToast;
 
-	private OnScrollListener mOnScrollListener = new OnScrollListener() {
-
-		@Override
-		public void onScrollStateChanged(AbsListView view, int scrollState) {
-			// TODO Auto-generated method stub
-
-		}
-
-		@Override
-		public void onScroll(AbsListView view, int firstVisibleItem,
-				int visibleItemCount, int totalItemCount) {
-			synchronized (ConversationFragment.this.messageList) {
-				if (firstVisibleItem < 5 && messagesLoaded && messageList.size() > 0) {
-					long timestamp = ConversationFragment.this.messageList.get(0).getTimeSent();
-					messagesLoaded = false;
-					activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
-						@Override
-						public void onMoreMessagesLoaded(final int count, Conversation conversation) {
-							if (ConversationFragment.this.conversation != conversation) {
-								return;
+	@Override
+	public void onRefresh() {
+		synchronized (ConversationFragment.this.messageList) {
+			if (!swipeRefreshLayout.isRefreshing() && messageList.size() > 0) {
+				long timestamp = ConversationFragment.this.messageList.get(0).getTimeSent();
+				activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
+					@Override
+					public void onMoreMessagesLoaded(final int count, final Conversation conversation) {
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								swipeRefreshLayout.setRefreshing(false);
 							}
-							activity.runOnUiThread(new Runnable() {
-								@Override
-								public void run() {
-									final int oldPosition = messagesView.getFirstVisiblePosition();
-									View v = messagesView.getChildAt(0);
-									final int pxOffset = (v == null) ? 0 : v.getTop();
-									ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
-									updateStatusMessages();
-									messageListAdapter.notifyDataSetChanged();
-									if (count != 0) {
-										final int newPosition = oldPosition + count;
-										int offset = 0;
-										try {
-											Message tmpMessage = messageList.get(newPosition);
-
-											while(tmpMessage.wasMergedIntoPrevious()) {
-												offset++;
-												tmpMessage = tmpMessage.prev();
-											}
-										} catch (final IndexOutOfBoundsException ignored) {
-
-										}
-										messagesView.setSelectionFromTop(newPosition - offset, pxOffset);
-										messagesLoaded = true;
-										if (messageLoaderToast != null) {
-											messageLoaderToast.cancel();
-										}
-									}
-								}
-							});
+						});
+						if (ConversationFragment.this.conversation != conversation) {
+							return;
 						}
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								final int oldPosition = messagesView.getFirstVisiblePosition();
+								View v = messagesView.getChildAt(0);
+								final int pxOffset = (v == null) ? 0 : v.getTop();
+								ConversationFragment.this.conversation.populateWithMessages(
+										ConversationFragment.this.messageList);
+								updateStatusMessages();
+								messageListAdapter.notifyDataSetChanged();
+								if (count != 0) {
+									final int newPosition = oldPosition + count;
+									int offset = 0;
+									try {
+										Message tmpMessage = messageList.get(newPosition);
 
-						@Override
-						public void informUser(final int resId) {
-
-							activity.runOnUiThread(new Runnable() {
-								@Override
-								public void run() {
-									if (messageLoaderToast != null) {
-										messageLoaderToast.cancel();
+										while(tmpMessage.wasMergedIntoPrevious()) {
+											offset++;
+											tmpMessage = tmpMessage.prev();
+										}
+									} catch (final IndexOutOfBoundsException ignored) {
 									}
-									if (ConversationFragment.this.conversation != conversation) {
-										return;
-									}
-									messageLoaderToast = Toast.makeText(activity,resId,Toast.LENGTH_LONG);
-									messageLoaderToast.show();
+									messagesView.setSelectionFromTop(newPosition - offset, pxOffset);
 								}
-							});
+							}
+						});
+					}
 
-						}
-					});
-
-				}
+					@Override
+					public void informUser() {
+						activity.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								swipeRefreshLayout.setRefreshing(false);
+							}
+						});
+					}
+				});
+			} else {
+				activity.runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						swipeRefreshLayout.setRefreshing(false);
+					}
+				});
 			}
 		}
-	};
+	}
+
 	private IntentSender askForPassphraseIntent = null;
 	protected OnClickListener clickToDecryptListener = new OnClickListener() {
 
@@ -345,8 +332,16 @@ public class ConversationFragment extends Fragment {
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
 		snackbarAction = (TextView) view.findViewById(R.id.snackbar_action);
 
+		swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.messages_refresh_view);
+		swipeRefreshLayout.setOnRefreshListener(this);
+		swipeRefreshLayout.setColorSchemeResources(
+				android.R.color.holo_blue_bright,
+				android.R.color.holo_green_light,
+				android.R.color.holo_orange_light,
+				android.R.color.holo_red_light
+		);
+
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
-		messagesView.setOnScrollListener(mOnScrollListener);
 		messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
 		messageListAdapter = new MessageAdapter((ConversationActivity) getActivity(), this.messageList);
 		messageListAdapter.setOnContactPictureClicked(new OnContactPictureClicked() {
@@ -579,7 +574,6 @@ public class ConversationFragment extends Fragment {
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.messagesView.invalidateViews();
 		updateMessages();
-		this.messagesLoaded = true;
 		int size = this.messageList.size();
 		if (size > 0) {
 			messagesView.setSelection(size - 1);
@@ -699,7 +693,6 @@ public class ConversationFragment extends Fragment {
 				} else if (!contact.showInRoster()
 						&& contact
 						.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
-
 				} else if (conversation.getMode() == Conversation.MODE_SINGLE) {
 					makeFingerprintWarning();
 				} else if (!conversation.getMucOptions().online()
