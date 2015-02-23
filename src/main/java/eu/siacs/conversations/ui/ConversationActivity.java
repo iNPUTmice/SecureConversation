@@ -10,8 +10,8 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
@@ -84,6 +84,7 @@ public class ConversationActivity extends XmppActivity
 	private Toast prepareFileToast;
 
 	private boolean mActivityPaused = false;
+	private boolean mRedirected = true;
 
 	public Conversation getSelectedConversation() {
 		return this.mSelectedConversation;
@@ -262,8 +263,12 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public void sendReadMarkerIfNecessary(final Conversation conversation) {
-		if (!mActivityPaused && conversation != null && !conversation.isRead()) {
-			xmppConnectionService.sendReadMarker(conversation);
+		if (!mActivityPaused && conversation != null) {
+			if (!conversation.isRead()) {
+				xmppConnectionService.sendReadMarker(conversation);
+			} else {
+				xmppConnectionService.markRead(conversation);
+			}
 		}
 	}
 
@@ -296,8 +301,12 @@ public class ConversationActivity extends XmppActivity
 			if (this.getSelectedConversation() != null) {
 				if (this.getSelectedConversation().getLatestMessage()
 						.getEncryption() != Message.ENCRYPTION_NONE) {
-					menuSecure.setIcon(R.drawable.ic_action_secure);
-						}
+					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+						menuSecure.setIcon(R.drawable.ic_lock_outline_white_48dp);
+					} else {
+						menuSecure.setIcon(R.drawable.ic_action_secure);
+					}
+				}
 				if (this.getSelectedConversation().getMode() == Conversation.MODE_MULTI) {
 					menuContactDetails.setVisible(false);
 					menuAttach.setVisible(false);
@@ -668,8 +677,7 @@ public class ConversationActivity extends XmppActivity
 						if (durations[which] == -1) {
 							till = Long.MAX_VALUE;
 						} else {
-							till = SystemClock.elapsedRealtime()
-								+ (durations[which] * 1000);
+							till = System.currentTimeMillis() + (durations[which] * 1000);
 						}
 						conversation.setMutedTill(till);
 						ConversationActivity.this.xmppConnectionService.databaseBackend
@@ -713,6 +721,7 @@ public class ConversationActivity extends XmppActivity
 	@Override
 	public void onStart() {
 		super.onStart();
+		this.mRedirected = false;
 		if (this.xmppConnectionServiceBound) {
 			this.onBackendConnected();
 		}
@@ -742,9 +751,11 @@ public class ConversationActivity extends XmppActivity
 		if (this.xmppConnectionServiceBound) {
 			this.xmppConnectionService.getNotificationService().setIsInForeground(true);
 		}
+
 		if (!isConversationsOverviewVisable() || !isConversationsOverviewHideable()) {
 			sendReadMarkerIfNecessary(getSelectedConversation());
 		}
+
 	}
 
 	@Override
@@ -767,10 +778,19 @@ public class ConversationActivity extends XmppActivity
 		this.xmppConnectionService.getNotificationService().setIsInForeground(true);
 		updateConversationList();
 		if (xmppConnectionService.getAccounts().size() == 0) {
-			startActivity(new Intent(this, EditAccountActivity.class));
+			if (!mRedirected) {
+				this.mRedirected = true;
+				startActivity(new Intent(this, EditAccountActivity.class));
+				finish();
+			}
 		} else if (conversationList.size() <= 0) {
-			startActivity(new Intent(this, StartConversationActivity.class));
-			finish();
+			if (!mRedirected) {
+				this.mRedirected = true;
+				Intent intent = new Intent(this, StartConversationActivity.class);
+				intent.putExtra("init",true);
+				startActivity(intent);
+				finish();
+			}
 		} else if (getIntent() != null && VIEW_CONVERSATION.equals(getIntent().getType())) {
 			handleViewConversationIntent(getIntent());
 		} else if (selectConversationByUuid(mOpenConverstaion)) {
@@ -784,7 +804,7 @@ public class ConversationActivity extends XmppActivity
 			this.mConversationFragment.reInit(getSelectedConversation());
 			mOpenConverstaion = null;
 		} else if (getSelectedConversation() != null) {
-			this.mConversationFragment.updateMessages();
+			this.mConversationFragment.reInit(getSelectedConversation());
 		} else {
 			showConversationsOverview();
 			mPendingImageUri = null;
@@ -997,56 +1017,50 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	@Override
-	public void onAccountUpdate() {
-		runOnUiThread(new Runnable() {
-
-			@Override
-			public void run() {
-				updateConversationList();
-				ConversationActivity.this.mConversationFragment.updateMessages();
-				updateActionBarTitle();
+	protected void refreshUiReal() {
+		updateConversationList();
+		if (xmppConnectionService != null && xmppConnectionService.getAccounts().size() == 0) {
+			if (!mRedirected) {
+				this.mRedirected = true;
+				startActivity(new Intent(this, EditAccountActivity.class));
+				finish();
 			}
-		});
+		} else if (conversationList.size() == 0) {
+			if (!mRedirected) {
+				this.mRedirected = true;
+				Intent intent = new Intent(this, StartConversationActivity.class);
+				intent.putExtra("init",true);
+				startActivity(intent);
+				finish();
+			}
+		} else {
+			ConversationActivity.this.mConversationFragment.updateMessages();
+			updateActionBarTitle();
+		}
+	}
+
+	@Override
+	public void onAccountUpdate() {
+		this.refreshUi();
 	}
 
 	@Override
 	public void onConversationUpdate() {
-		runOnUiThread(new Runnable() {
-
-			@Override
-			public void run() {
-				updateConversationList();
-				if (conversationList.size() == 0) {
-					startActivity(new Intent(getApplicationContext(),
-								StartConversationActivity.class));
-					finish();
-				}
-				ConversationActivity.this.mConversationFragment.updateMessages();
-				updateActionBarTitle();
-			}
-		});
+		this.refreshUi();
 	}
 
 	@Override
 	public void onRosterUpdate() {
-		runOnUiThread(new Runnable() {
-
-			@Override
-			public void run() {
-				updateConversationList();
-				ConversationActivity.this.mConversationFragment.updateMessages();
-				updateActionBarTitle();
-			}
-		});
+		this.refreshUi();
 	}
 
 	@Override
 	public void OnUpdateBlocklist(Status status) {
+		this.refreshUi();
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
 				invalidateOptionsMenu();
-				ConversationActivity.this.mConversationFragment.updateMessages();
 			}
 		});
 	}

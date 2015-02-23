@@ -142,7 +142,7 @@ public class UIHelper {
 			}
 		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
 			return new Pair<>(context.getString(R.string.encrypted_message_received),true);
-		} else if (message.getType() == Message.TYPE_FILE) {
+		} else if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
 			if (message.getStatus() == Message.STATUS_RECEIVED) {
 				return new Pair<>(context.getString(R.string.received_x_file,
 							getFileDescriptionString(context, message)), true);
@@ -150,10 +150,11 @@ public class UIHelper {
 				return new Pair<>(getFileDescriptionString(context,message),true);
 			}
 		} else {
-			if (message.getBody().startsWith("/me ")) {
-				return new Pair<>(message.getBody().replaceAll("^/me ",UIHelper.getMessageDisplayName(message) + " "),false);
+			if (message.getBody().startsWith(Message.ME_COMMAND)) {
+				return new Pair<>(message.getBody().replaceAll("^" + Message.ME_COMMAND,
+						UIHelper.getMessageDisplayName(message) + " "), false);
 			} else {
-				return new Pair<>(message.getBody(), false);
+				return new Pair<>(message.getBody().trim(), false);
 			}
 		}
 	}

@@ -19,7 +19,6 @@
   <string name="title_activity_settings">Instellingen</string>
   <string name="title_activity_conference_details">Groepsgespreksgegevens</string>
   <string name="title_activity_contact_details">Contactgegevens</string>
-  <string name="title_activity_conversations">Gesprekken</string>
   <string name="title_activity_sharewith">Delen met gesprek</string>
   <string name="title_activity_start_conversation">Start gesprek</string>
   <string name="title_activity_choose_contact">Kies contact</string>
@@ -330,6 +329,7 @@
   <string name="choose_file">Kies bestand</string>
   <string name="receiving_x_file">Ontvangen van %1$s (%2$d%% voltooid)</string>
   <string name="download_x_file">Download %s</string>
+  <string name="file">bestand</string>
   <string name="open_x_file">Open %s</string>
   <string name="sending_file">versturen (%1$d%% voltooid)</string>
   <string name="preparing_file">Bestand klaarmaken voor versturen</string>
@@ -402,6 +402,20 @@
   <string name="pref_input_options">Input-opties</string>
   <string name="pref_enter_is_send">Enter is versturen</string>
   <string name="pref_enter_is_send_summary">Gebruik de enter-toets om berichten te versturen</string>
+  <string name="pref_display_enter_key">Toon enter-toets</string>
+  <string name="pref_display_enter_key_summary">Verander de emoticon-toets in een enter-toets</string>
+  <string name="audio">audio</string>
+  <string name="video">video</string>
+  <string name="image">afbeelding</string>
   <string name="pdf_document">PDF-document</string>
+  <string name="apk">Android-applicatie</string>
+  <string name="vcard">Contact</string>
   <string name="received_x_file">%s ontvangen</string>
+  <string name="disable_foreground_service">Voorgrond-service uitzetten</string>
+  <string name="touch_to_open_conversations">Raak aan om Conversations te openen</string>
+  <string name="avatar_has_been_published">Avatar is gepubliceerd!</string>
+  <string name="sending_x_file">Bezig met versturen van %s</string>
+  <string name="offering_x_file">Bezig met aanbieden van %s</string>
+  <string name="hide_offline">Offline verbergen</string>
+  <string name="disable_account">Account uitzetten</string>
 </resources>

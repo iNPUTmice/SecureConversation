@@ -21,7 +21,6 @@
     <string name="title_activity_settings">Settings</string>
     <string name="title_activity_conference_details">Conference Details</string>
     <string name="title_activity_contact_details">Contact Details</string>
-    <string name="title_activity_conversations">Conversations</string>
     <string name="title_activity_sharewith">Share with Conversation</string>
     <string name="title_activity_start_conversation">Start Conversation</string>
     <string name="title_activity_choose_contact">Choose contact</string>
@@ -296,6 +295,7 @@
             \n\nhttps://github.com/jitsi/otr4j\n(LGPL-3.0)
             \n\nhttps://developer.android.com/tools/support-library\n(Apache License, Version 2.0)
             \n\nhttps://github.com/zxing/zxing\n(Apache License, Version 2.0)
+            \n\nhttps://github.com/google/material-design-icons\n(CC BY 4.0)
     </string>
     <string name="title_pref_quiet_hours">Quiet Hours</string>
     <string name="title_pref_quiet_hours_start_time">Start time</string>
@@ -444,4 +444,9 @@
     <string name="sending_x_file">Sending %s</string>
     <string name="offering_x_file">Offering %s</string>
     <string name="hide_offline">Hide offline</string>
+    <string name="disable_account">Disable Account</string>
+    <string name="contact_is_typing">%s is typing...</string>
+    <string name="contact_has_stopped_typing">%s has stopped typing</string>
+    <string name="pref_chat_states">Typing notifications</string>
+    <string name="pref_chat_states_summary">Let your contact know when you are writing a new message</string>
 </resources>

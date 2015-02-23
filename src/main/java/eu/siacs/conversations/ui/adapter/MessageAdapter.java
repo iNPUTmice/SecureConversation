@@ -220,7 +220,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
 		if (message.getBody() != null) {
 			final String nick = UIHelper.getMessageDisplayName(message);
-			final String formattedBody = message.getMergedBody().replaceAll("^/me ", nick + " ");
+			final String formattedBody = message.getMergedBody().replaceAll("^" + Message.ME_COMMAND,
+					nick + " ");
 			if (message.getType() != Message.TYPE_PRIVATE) {
 				if (message.hasMeCommand()) {
 					final Spannable span = new SpannableString(formattedBody);
@@ -409,9 +410,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						.avatarService().get(conversation.getContact(),
 							activity.getPixel(32)));
 				viewHolder.contact_picture.setAlpha(0.5f);
-				viewHolder.status_message.setText(
-						activity.getString(R.string.contact_has_read_up_to_this_point, conversation.getName()));
-
+				viewHolder.status_message.setText(message.getBody());
 			}
 			return view;
 		} else if (type == NULL) {

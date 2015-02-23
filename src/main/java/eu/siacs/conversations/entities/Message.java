@@ -47,6 +47,7 @@ public class Message extends AbstractEntity {
 	public static final String REMOTE_MSG_ID = "remoteMsgId";
 	public static final String SERVER_MSG_ID = "serverMsgId";
 	public static final String RELATIVE_FILE_PATH = "relativeFilePath";
+	public static final String ME_COMMAND = "/me ";
 
 	public boolean markable = false;
 	protected String conversationUuid;
@@ -146,10 +147,11 @@ public class Message extends AbstractEntity {
 				cursor.getString(cursor.getColumnIndex(SERVER_MSG_ID)));
 	}
 
-	public static Message createStatusMessage(Conversation conversation) {
+	public static Message createStatusMessage(Conversation conversation, String body) {
 		Message message = new Message();
 		message.setType(Message.TYPE_STATUS);
 		message.setConversation(conversation);
+		message.setBody(body);
 		return message;
 	}
 
@@ -367,20 +369,21 @@ public class Message extends AbstractEntity {
 			 (message.getTimeSent() - this.getTimeSent()) <= (Config.MESSAGE_MERGE_WINDOW * 1000) &&
 			 !message.bodyContainsDownloadable() &&
 			 !this.bodyContainsDownloadable() &&
-			 !this.body.startsWith("/me ")
+			 !message.getBody().startsWith(ME_COMMAND) &&
+			 !this.getBody().startsWith(ME_COMMAND)
 			);
 	}
 
 	public String getMergedBody() {
 		final Message next = this.next();
 		if (this.mergeable(next)) {
-			return getBody() + '\n' + next.getMergedBody();
+			return getBody().trim() + '\n' + next.getMergedBody();
 		}
-		return getBody();
+		return getBody().trim();
 	}
 
 	public boolean hasMeCommand() {
-		return getMergedBody().startsWith("/me ");
+		return getMergedBody().startsWith(ME_COMMAND);
 	}
 
 	public int getMergedStatus() {

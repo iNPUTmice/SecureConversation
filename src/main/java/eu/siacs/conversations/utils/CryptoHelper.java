@@ -5,6 +5,7 @@ import java.text.Normalizer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 import eu.siacs.conversations.Config;
 
@@ -97,9 +98,11 @@ public final class CryptoHelper {
 		return builder.toString();
 	}
 
-	public static String[] getSupportedCipherSuites(final String[] platformSupportedCipherSuites) {
+	public static String[] getOrderedCipherSuites(final String[] platformSupportedCipherSuites) {
 		final Collection<String> cipherSuites = new LinkedHashSet<>(Arrays.asList(Config.ENABLED_CIPHERS));
-		cipherSuites.retainAll(Arrays.asList(platformSupportedCipherSuites));
+		final List<String> platformCiphers = Arrays.asList(platformSupportedCipherSuites);
+		cipherSuites.retainAll(platformCiphers);
+		cipherSuites.addAll(platformCiphers);
 		return cipherSuites.toArray(new String[cipherSuites.size()]);
 	}
 }
