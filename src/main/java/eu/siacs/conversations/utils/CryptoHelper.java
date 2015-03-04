@@ -1,5 +1,7 @@
 package eu.siacs.conversations.utils;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.Normalizer;
 import java.util.Arrays;
@@ -15,6 +17,22 @@ public final class CryptoHelper {
 	private final static char[] vowels = "aeiou".toCharArray();
 	private final static char[] consonants = "bcdfghjklmnpqrstvwxyz".toCharArray();
 	final public static byte[] ONE = new byte[] { 0, 0, 0, 1 };
+
+	public static String md5(final String s) {
+		final String MD5 = "MD5";
+		try {
+			// Create MD5 Hash
+			MessageDigest digest = java.security.MessageDigest.getInstance(MD5);
+			digest.update(s.getBytes());
+			byte messageDigest[] = digest.digest();
+
+			return bytesToHex(messageDigest);
+
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
+		return "";
+	}
 
 	public static String bytesToHex(byte[] bytes) {
 		char[] hexChars = new char[bytes.length * 2];
