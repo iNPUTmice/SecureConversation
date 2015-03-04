@@ -1,16 +1,35 @@
 package eu.siacs.conversations.xmpp.jid;
 
+import android.content.Context;
+import android.util.Base64;
+
+import com.jakewharton.disklrucache.DiskLruCache;
+
 import net.java.otr4j.session.SessionID;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.IDN;
 
+import eu.siacs.conversations.Config;
+import eu.siacs.conversations.ConversationsApplication;
+import eu.siacs.conversations.utils.CryptoHelper;
 import gnu.inet.encoding.Stringprep;
 import gnu.inet.encoding.StringprepException;
 
 /**
  * The `Jid' class provides an immutable representation of a JID.
  */
-public final class Jid {
+public final class Jid implements Serializable {
+
+	private static final long serialVersionUID = -8551822259231076467L;
+
+	private static DiskLruCache CACHE = null;
 
 	private final String localpart;
 	private final String domainpart;
@@ -32,6 +51,60 @@ public final class Jid {
 		return resourcepart;
 	}
 
+
+	private static void initCache() throws IOException {
+		File folder = ConversationsApplication.getContext().getDir(Config.JID_CACHE_DIR, Context.MODE_PRIVATE);
+		CACHE = DiskLruCache.open(folder, Config.JID_CACHE_VERSION, 2, Config.JID_CACHE_SIZE);
+
+	}
+
+	private static Jid getFromCache(final String key){
+		String hash = CryptoHelper.md5(key);
+		Jid jid = null;
+
+		try {
+			if(CACHE == null)
+				initCache();
+
+			DiskLruCache.Snapshot snapshot = CACHE.get(hash);
+			if(snapshot == null || !snapshot.getString(0).equals(key)) return null;
+			String diskEntry = snapshot.getString(1);
+
+			byte[] bytes = Base64.decode(diskEntry, Base64.DEFAULT);
+
+			try {
+				ObjectInputStream objectInputStream = new ObjectInputStream( new ByteArrayInputStream(bytes) );
+				jid = (Jid)objectInputStream.readObject();
+			} catch (IOException | ClassNotFoundException | ClassCastException ignored) {}
+
+		} catch (IOException ignored) {}
+
+		return jid;
+	}
+
+	private static void storeInCache(final String key, final Jid jid){
+		String hash = CryptoHelper.md5(key);
+		try {
+			if(CACHE == null)
+				initCache();
+
+			ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+			ObjectOutputStream objectOutputStream = new ObjectOutputStream(byteArrayOutputStream);
+			objectOutputStream.writeObject(jid);
+			objectOutputStream.close();
+			String encoded = new String(Base64.encode(byteArrayOutputStream.toByteArray(), Base64.DEFAULT));
+
+			DiskLruCache.Editor editor = CACHE.edit(hash);
+			editor.set(0, key);
+			editor.set(1, encoded);
+			editor.commit();
+		} catch (IOException e) {
+			e.printStackTrace();
+	}
+
+
+	}
+
 	public static Jid fromSessionID(final SessionID id) throws InvalidJidException{
 		if (id.getUserID().isEmpty()) {
 			return Jid.fromString(id.getAccountID());
@@ -41,7 +114,12 @@ public final class Jid {
 	}
 
 	public static Jid fromString(final String jid) throws InvalidJidException {
-		return new Jid(jid);
+		Jid j = getFromCache(jid);
+		if (j == null){
+			j = new Jid(jid);
+			storeInCache(jid, j);
+		}
+		return j;
 	}
 
 	public static Jid fromParts(final String localpart,
@@ -56,7 +134,7 @@ public final class Jid {
 		if (resourcepart != null && !resourcepart.isEmpty()) {
 			out = out + "/" + resourcepart;
 		}
-		return new Jid(out);
+		return Jid.fromString(out);
 	}
 
 	private Jid(final String jid) throws InvalidJidException {

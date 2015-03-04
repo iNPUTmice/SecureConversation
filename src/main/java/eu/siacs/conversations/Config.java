@@ -63,6 +63,10 @@ public final class Config {
 		"TLS_RSA_WITH_AES_256_CBC_SHA",
 	};
 
+	public static final String JID_CACHE_DIR = "conversation_jid_cache_dir";
+	public static final int JID_CACHE_SIZE = 1024 * 1024; //1MiB
+	public static final int JID_CACHE_VERSION = 1;
+
 	private Config() {
 
 	}
