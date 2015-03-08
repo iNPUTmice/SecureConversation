@@ -126,7 +126,7 @@ public abstract class XmppActivity extends Activity {
 
 	protected void refreshUiReal() {
 
-	};
+	}
 
 	protected interface OnValueEdited {
 		public void onValueEdited(String value);
@@ -540,7 +540,7 @@ public abstract class XmppActivity extends Activity {
 	private void quickEdit(final String previousValue,
 			final OnValueEdited callback, boolean password) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
-		View view = getLayoutInflater().inflate(R.layout.quickedit, null);
+		final View view = getLayoutInflater().inflate(R.layout.quickedit, null);
 		final EditText editor = (EditText) view.findViewById(R.id.editor);
 		OnClickListener mClickListener = new OnClickListener() {
 
@@ -550,6 +550,8 @@ public abstract class XmppActivity extends Activity {
 				if (!previousValue.equals(value) && value.trim().length() > 0) {
 					callback.onValueEdited(value);
 				}
+                InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
 			}
 		};
 		if (password) {
@@ -563,7 +565,14 @@ public abstract class XmppActivity extends Activity {
 		editor.requestFocus();
 		editor.setText(previousValue);
 		builder.setView(view);
-		builder.setNegativeButton(R.string.cancel, null);
+		builder.setNegativeButton(R.string.cancel, new OnClickListener() {
+
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                inputManager.hideSoftInputFromWindow(view.getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
+            }
+        });
 		builder.create().show();
 	}
 
@@ -659,7 +668,7 @@ public abstract class XmppActivity extends Activity {
 				if (conversation.getMode() == Conversation.MODE_MULTI) {
 					xmppConnectionService.invite(conversation, jid);
 				} else {
-					List<Jid> jids = new ArrayList<Jid>();
+					List<Jid> jids = new ArrayList<>();
 					jids.add(conversation.getJid().toBareJid());
 					jids.add(jid);
 					xmppConnectionService.createAdhocConference(conversation.getAccount(), jids, adhocCallback);
