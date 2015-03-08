@@ -48,6 +48,8 @@ public class Conversation extends AbstractEntity implements Blockable {
 	public static final String ATTRIBUTE_MUC_PASSWORD = "muc_password";
 	public static final String ATTRIBUTE_MUTED_TILL = "muted_till";
 	public static final String ATTRIBUTE_LAST_MESSAGE_TRANSMITTED = "last_message_transmitted";
+    public static final String ATTRIBUTE_MUC_NOTIFICATION_MODE = "muc_notification_mode";
+    public static final String ATTRIBUTE_MUC_NOTIFICATION_KEYWORDS = "muc_notification_keywords";
 
 	private String name;
 	private String contactUuid;

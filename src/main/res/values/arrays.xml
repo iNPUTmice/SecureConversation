@@ -40,4 +40,11 @@
 		<item>-1</item>
 	</integer-array>
 
+    <string-array name="muc_notification_options">
+        <item>@string/muc_notification_default</item>
+        <item>@string/muc_notification_all</item>
+        <item>@string/muc_notification_none</item>
+        <item>@string/muc_notification_username</item>
+        <item>@string/muc_notification_keywords</item>
+    </string-array>
 </resources>

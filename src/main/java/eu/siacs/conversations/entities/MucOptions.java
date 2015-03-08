@@ -3,6 +3,7 @@ package eu.siacs.conversations.entities;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.Pattern;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
@@ -12,6 +13,10 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
 import android.annotation.SuppressLint;
+import android.text.TextUtils;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 @SuppressLint("DefaultLocale")
 public class MucOptions {
@@ -74,6 +79,49 @@ public class MucOptions {
 			return this.string;
 		}
 	}
+
+    public enum NotificationMode {
+        DEFAULT(0),
+        ALL(1),
+        NONE(2),
+        USERNAME(3),
+        KEYWORDS(4);
+
+        private int intValue;
+
+        NotificationMode(int val) {
+            intValue = val;
+        }
+
+        public int getValue() {
+            return intValue;
+        }
+    }
+
+    private NotificationMode notificationMode;
+    public NotificationMode getNotificationMode() {
+        String mode = conversation.getAttribute(Conversation.ATTRIBUTE_MUC_NOTIFICATION_MODE);
+        if (mode != null)
+            setNotificationMode (Integer.valueOf(mode));
+        else
+            setNotificationMode(NotificationMode.DEFAULT.getValue());
+        return this.notificationMode;
+    }
+    public void setNotificationMode(NotificationMode mode) {
+        this.notificationMode = mode;
+        conversation.setAttribute(Conversation.ATTRIBUTE_MUC_NOTIFICATION_MODE, ""+mode.getValue());
+    }
+    public void setNotificationMode(int i) {
+        switch (i)
+        {
+            case 0: setNotificationMode(NotificationMode.DEFAULT); break;
+            case 1: setNotificationMode(NotificationMode.ALL); break;
+            case 2: setNotificationMode(NotificationMode.NONE); break;
+            case 3: setNotificationMode(NotificationMode.USERNAME); break;
+            case 4: setNotificationMode(NotificationMode.KEYWORDS); break;
+            default: setNotificationMode(NotificationMode.DEFAULT); break;
+        }
+    }
 
 	public static final int ERROR_NO_ERROR = 0;
 	public static final int ERROR_NICK_IN_USE = 1;
@@ -205,6 +253,7 @@ public class MucOptions {
 	private Account account;
 	private List<User> users = new CopyOnWriteArrayList<>();
 	private List<String> features = new ArrayList<>();
+    private JSONArray highlightKeywords;
 	private Conversation conversation;
 	private boolean isOnline = false;
 	private int error = ERROR_UNKNOWN;
@@ -214,6 +263,53 @@ public class MucOptions {
 	private String subject = null;
 	private String password = null;
 	private boolean mNickChangingInProgress = false;
+
+    private void loadKeywords () {
+        String mode_string = conversation.getAttribute(Conversation.ATTRIBUTE_MUC_NOTIFICATION_KEYWORDS);
+        if (mode_string == null)
+            this.highlightKeywords =  new JSONArray();
+        else {
+            try {
+                this.highlightKeywords = new JSONArray(mode_string);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    private void saveKeywords () {
+        conversation.setAttribute(Conversation.ATTRIBUTE_MUC_NOTIFICATION_KEYWORDS,this.highlightKeywords.toString());
+    }
+    public void addKeyword(String keyword) {
+        List<String> list = getKeywordsList();
+        if (!keyword.equals("") &&
+            !list.contains(keyword)) {
+            this.highlightKeywords.put(keyword);
+        }
+        saveKeywords();
+    }
+    public void removeKeyword(String keyword) {
+        List<String> list = getKeywordsList();
+        list.remove(keyword);
+        this.highlightKeywords = new JSONArray(list);
+        saveKeywords();
+    }
+    public List<String> getKeywordsList() {
+        loadKeywords();
+        List<String> list = new ArrayList<>();
+        for (int i=0; i<this.highlightKeywords.length(); i++) {
+            list.add(this.highlightKeywords.optString(i));
+        }
+        return list;
+    }
+    public Pattern generateKeywordPattern() {
+        String keywords = TextUtils.join("|",getKeywordsList());
+        // We expect a word boundary, i.e. space or start of string, followed by
+        // any of the words (matched in case-insensitive manner), followed by optional
+        // punctuation (for example "bob: i disagree" or "how are you alice?"),
+        // followed by another word boundary.
+        return Pattern.compile("\\b(" + keywords + ")\\p{Punct}?\\b",
+                Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
+    }
 
 	public MucOptions(Conversation conversation) {
 		this.account = conversation.getAccount();
@@ -434,7 +530,7 @@ public class MucOptions {
 
 	public String createNameFromParticipants() {
 		if (users.size() >= 2) {
-			List<String> names = new ArrayList<String>();
+			List<String> names = new ArrayList<>();
 			for (User user : users) {
 				Contact contact = user.getContact();
 				if (contact != null && !contact.getDisplayName().isEmpty()) {

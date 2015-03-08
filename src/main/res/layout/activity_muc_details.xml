@@ -117,7 +117,7 @@
 				android:textSize="?attr/TextSizeInfo"/>
 		</LinearLayout>
 
-		<LinearLayout
+        <LinearLayout
 			android:id="@+id/muc_more_details"
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
@@ -150,5 +150,88 @@
 				android:text="@string/invite_contact"/>
 		</LinearLayout>
 
-	</LinearLayout>
+        <LinearLayout
+            android:id="@+id/muc_notifications"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="@dimen/activity_horizontal_margin"
+            android:layout_marginRight="@dimen/activity_horizontal_margin"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:layout_marginBottom="@dimen/activity_vertical_margin"
+            android:background="@drawable/infocard_border"
+            android:orientation="vertical"
+            android:padding="@dimen/infocard_padding" >
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceMedium"
+                android:text="@string/conference_notifications"
+                android:id="@+id/notification_text" />
+
+            <Spinner
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/notification_mode"
+                android:layout_gravity="center_horizontal"
+                android:spinnerMode="dropdown"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp" />
+
+            <LinearLayout
+                android:id="@+id/muc_keywords"
+                android:orientation="vertical"
+                android:layout_width="fill_parent"
+                android:layout_height="fill_parent">
+
+                <LinearLayout
+                    android:id="@+id/muc_keyword_list"
+                    android:layout_width="fill_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:divider="?android:dividerHorizontal"
+                    android:orientation="vertical"
+                    android:showDividers="middle" >
+
+                </LinearLayout>
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_gravity="center_horizontal">
+
+                    <AutoCompleteTextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/input_keyword"
+                        android:layout_centerVertical="true"
+                        android:layout_alignParentLeft="true"
+                        android:layout_alignParentStart="true"
+                        android:layout_toLeftOf="@+id/add_keyword"
+                        android:layout_toStartOf="@+id/add_keyword"
+                        android:paddingTop="8dp"
+                        android:paddingBottom="8dp"
+                        android:inputType="text"
+                        android:hint="@string/conference_new_keyword" />
+
+                    <ImageButton
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/add_keyword"
+                        android:src="@drawable/ic_action_new"
+                        android:contentDescription="Add new keyword"
+                        android:padding="8dp"
+                        android:scaleType="fitCenter"
+                        android:cropToPadding="false"
+                        android:adjustViewBounds="true"
+                        android:layout_alignParentTop="true"
+                        android:layout_alignParentRight="true"
+                        android:layout_alignParentEnd="true" />
+                </RelativeLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
 </ScrollView>

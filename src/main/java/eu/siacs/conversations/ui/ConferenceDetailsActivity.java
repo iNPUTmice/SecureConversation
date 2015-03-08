@@ -10,15 +10,22 @@ import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextMenu;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.inputmethod.EditorInfo;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -27,7 +34,7 @@ import org.openintents.openpgp.util.OpenPgpUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.List;
+import java.util.TreeSet;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
@@ -45,13 +52,13 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 public class ConferenceDetailsActivity extends XmppActivity implements OnConversationUpdate, OnMucRosterUpdate, XmppConnectionService.OnAffiliationChanged, XmppConnectionService.OnRoleChanged, XmppConnectionService.OnConferenceOptionsPushed {
 	public static final String ACTION_VIEW_MUC = "view_muc";
 	private Conversation mConversation;
-	private OnClickListener inviteListener = new OnClickListener() {
+    private OnClickListener inviteListener = new OnClickListener() {
 
-		@Override
-		public void onClick(View v) {
-			inviteToConversation(mConversation);
-		}
-	};
+        @Override
+        public void onClick(View v) {
+            inviteToConversation(mConversation);
+        }
+    };
 	private TextView mYourNick;
 	private ImageView mYourPhoto;
 	private ImageButton mEditNickButton;
@@ -60,11 +67,17 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 	private TextView mAccountJid;
 	private LinearLayout membersView;
 	private LinearLayout mMoreDetails;
+    private LinearLayout mKeywords;
+    private LinearLayout mKeywordList;
 	private TextView mConferenceType;
 	private ImageButton mChangeConferenceSettingsButton;
-	private Button mInviteButton;
+    private Button mInviteButton;
+    private AutoCompleteTextView mKeywordTextInput;
+    private ArrayAdapter<String> keyword_autocomplete;
+    private ImageButton mKeywordButton;
 	private String uuid = null;
 	private User mSelectedUser = null;
+    private Spinner mNotificationMode;
 
 	private boolean mAdvancedMode = false;
 
@@ -169,16 +182,52 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		mAccountJid = (TextView) findViewById(R.id.details_account);
 		mMoreDetails = (LinearLayout) findViewById(R.id.muc_more_details);
 		mMoreDetails.setVisibility(View.GONE);
+        mKeywords = (LinearLayout) findViewById(R.id.muc_keywords);
+        mKeywords.setVisibility(View.GONE);
+        mKeywordList = (LinearLayout) findViewById(R.id.muc_keyword_list);
+        mNotificationMode = (Spinner) findViewById(R.id.notification_mode);
+        ArrayAdapter<CharSequence> modeAdapter = ArrayAdapter.createFromResource(this,
+                R.array.muc_notification_options, android.R.layout.simple_spinner_item);
+        modeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mNotificationMode.setAdapter(modeAdapter);
 		mChangeConferenceSettingsButton = (ImageButton) findViewById(R.id.change_conference_button);
 		mChangeConferenceSettingsButton.setOnClickListener(this.mChangeConferenceSettings);
 		mConferenceType = (TextView) findViewById(R.id.muc_conference_type);
-		mInviteButton = (Button) findViewById(R.id.invite);
-		mInviteButton.setOnClickListener(inviteListener);
+        mInviteButton = (Button) findViewById(R.id.invite);
+        mInviteButton.setOnClickListener(inviteListener);
+        keyword_autocomplete = new ArrayAdapter<>(this,
+                android.R.layout.simple_dropdown_item_1line, new ArrayList<String>());
+        mKeywordTextInput = (AutoCompleteTextView) findViewById(R.id.input_keyword);
+        mKeywordTextInput.setAdapter(keyword_autocomplete);
+        mKeywordTextInput.setThreshold(1);
+        mKeywordButton = (ImageButton) findViewById(R.id.add_keyword);
 		mConferenceType = (TextView) findViewById(R.id.muc_conference_type);
 		if (getActionBar() != null) {
 			getActionBar().setHomeButtonEnabled(true);
 			getActionBar().setDisplayHomeAsUpEnabled(true);
 		}
+        /*
+        since setThreshold(1) does not give the desired result of *always* showing completions,
+        we use the following hack to achieve a simulated setThreshold(0) this:
+        */
+        mKeywordTextInput.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                mKeywordTextInput.showDropDown();
+                return false;
+            }
+        });
+        mKeywordTextInput.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+
+            @Override
+            public boolean onEditorAction(TextView exampleView, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    mKeywordButton.performClick();
+                    return true;
+                }
+                return false;
+            }
+        });
 		mEditNickButton.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -193,6 +242,42 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 						});
 			}
 		});
+        mKeywordButton.setOnClickListener(new OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                String value = mKeywordTextInput.getText().toString();
+                mConversation.getMucOptions().addKeyword(value);
+                xmppConnectionService.updateConversation(mConversation);
+                mKeywordTextInput.setText("");
+                updateView();
+            }
+        });
+        mNotificationMode.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                MucOptions.NotificationMode prev = mConversation.getMucOptions().getNotificationMode();
+                if (prev.getValue() != position) {
+                    mConversation.getMucOptions().setNotificationMode(position);
+                    xmppConnectionService.updateConversation(mConversation);
+                    mKeywordTextInput.requestFocus();
+                }
+
+                if (position != MucOptions.NotificationMode.KEYWORDS.getValue()) {
+                    mKeywords.setVisibility(View.GONE);
+                }
+                else {
+                    mKeywords.setVisibility(View.VISIBLE);
+                    updateView();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                /* nothing to do */
+            }
+        });
 	}
 
 	@Override
@@ -424,6 +509,16 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 				mChangeConferenceSettingsButton.setVisibility(View.GONE);
 			}
 		}
+        if (mKeywords.getVisibility() != View.GONE) {
+            //we use TreeSet because it will automatically sort our set
+            TreeSet<String> keywords_from_all_conversations = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+            for (Conversation conversation : xmppConnectionService.getConversations()) {
+                keywords_from_all_conversations.addAll(conversation.getMucOptions().getKeywordsList());
+            }
+            keywords_from_all_conversations.removeAll(mConversation.getMucOptions().getKeywordsList());
+            keyword_autocomplete.clear();
+            keyword_autocomplete.addAll(keywords_from_all_conversations);
+        }
 		LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		membersView.removeAllViews();
 		final ArrayList<User> users = new ArrayList<>();
@@ -480,6 +575,62 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 				mInviteButton.setVisibility(View.GONE);
 			}
 		}
+        mNotificationMode.setSelection(mucOptions.getNotificationMode().getValue());
+        mKeywordList.removeAllViews();
+        final ArrayList<String> keywords = new ArrayList<>();
+        keywords.addAll(mucOptions.getKeywordsList());
+        Collections.sort(keywords,String.CASE_INSENSITIVE_ORDER);
+        for (final String keyword : keywords) {
+            View view = inflater.inflate(R.layout.keyword, mKeywords, false);
+            this.setListItemBackgroundOnView(view);
+            registerForContextMenu(view);
+            view.setTag(keyword);
+            final TextView tvKeyword = (TextView) view.findViewById(R.id.keyword_item);
+            final ImageButton ibEdit = (ImageButton) view.findViewById(R.id.keyword_edit);
+            final ImageButton ibDelete = (ImageButton) view.findViewById(R.id.keyword_delete);
+            tvKeyword.setText(keyword);
+            ibEdit.setVisibility(View.GONE);
+            ibDelete.setVisibility(View.GONE);
+
+            view.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    for (int i = 0; i < mKeywordList.getChildCount(); i++) {
+                        View keywordLine = mKeywordList.getChildAt(i);
+                        keywordLine.findViewById(R.id.keyword_edit).setVisibility(View.GONE);
+                        keywordLine.findViewById(R.id.keyword_delete).setVisibility(View.GONE);
+                    }
+                    ibEdit.setVisibility(View.VISIBLE);
+                    ibDelete.setVisibility(View.VISIBLE);
+                }
+            });
+            ibEdit.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    quickEdit(keyword,
+                            new OnValueEdited() {
+
+                                @Override
+                                public void onValueEdited(String value) {
+                                    mucOptions.removeKeyword(keyword);
+                                    mucOptions.addKeyword(value);
+                                    xmppConnectionService.updateConversation(mConversation);
+                                    updateView();
+                                }
+                            });
+                }
+            });
+            ibDelete.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mucOptions.removeKeyword(keyword);
+                    xmppConnectionService.updateConversation(mConversation);
+                    updateView();
+                }
+            });
+
+            mKeywordList.addView(view);
+        }
 	}
 
 	private String getStatus(User user) {

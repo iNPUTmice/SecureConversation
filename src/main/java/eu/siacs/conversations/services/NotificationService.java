@@ -18,7 +18,6 @@ import android.support.v4.app.NotificationCompat.Builder;
 import android.support.v4.app.TaskStackBuilder;
 import android.text.Html;
 import android.util.DisplayMetrics;
-import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -41,7 +40,6 @@ import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
 import eu.siacs.conversations.ui.TimePreference;
 import eu.siacs.conversations.utils.UIHelper;
-import eu.siacs.conversations.xmpp.XmppConnection;
 
 public class NotificationService {
 
@@ -66,7 +64,7 @@ public class NotificationService {
 			&& notificationsEnabled()
 			&& !message.getConversation().isMuted()
 			&& (message.getConversation().getMode() == Conversation.MODE_SINGLE
-					|| conferenceNotificationsEnabled()
+					|| conferenceNotificationsAllMessages(message)
 					|| wasHighlightedOrPrivate(message)
 				 );
 	}
@@ -108,8 +106,15 @@ public class NotificationService {
 		}
 	}
 
-	public boolean conferenceNotificationsEnabled() {
-		return mXmppConnectionService.getPreferences().getBoolean("always_notify_in_conference", false);
+	public boolean conferenceNotificationsAllMessages(Message message) {
+        switch (message.getConversation().getMucOptions().getNotificationMode()) {
+            case DEFAULT:
+                return mXmppConnectionService.getPreferences().getBoolean("always_notify_in_conference", false);
+            case ALL:
+                return true;
+            default:
+                return false;
+        }
 	}
 
 	@SuppressLint("NewApi")
@@ -414,19 +419,38 @@ public class NotificationService {
 	}
 
 	private boolean wasHighlightedOrPrivate(final Message message) {
-		final String nick = message.getConversation().getMucOptions().getActualNick();
-		final Pattern highlight = generateNickHighlightPattern(nick);
-		if (message.getBody() == null || nick == null) {
-			return false;
-		}
+        final Pattern highlight;
+        boolean priv = message.getType() == Message.TYPE_PRIVATE;
+
+        if (message.getBody() == null) {
+            return false;
+        }
+
+        switch (message.getConversation().getMucOptions().getNotificationMode()) {
+            case NONE:
+                return false;
+            case KEYWORDS:
+                highlight = message.getConversation().getMucOptions().generateKeywordPattern();
+                break;
+            case USERNAME:
+                //all other cases use the nickname matching
+                final String nick = message.getConversation().getMucOptions().getActualNick();
+                if (nick == null) {
+                    return false;
+                }
+                highlight = generateNickHighlightPattern(nick);
+                break;
+            default:
+                return priv;
+        }
+
 		final Matcher m = highlight.matcher(message.getBody());
-		return (m.find() || message.getType() == Message.TYPE_PRIVATE);
+		return (m.find() || priv);
 	}
 
 	private static Pattern generateNickHighlightPattern(final String nick) {
 		// We expect a word boundary, i.e. space or start of string, followed by
-		// the
-		// nick (matched in case-insensitive manner), followed by optional
+		// the nick (matched in case-insensitive manner), followed by optional
 		// punctuation (for example "bob: i disagree" or "how are you alice?"),
 		// followed by another word boundary.
 		return Pattern.compile("\\b" + nick + "\\p{Punct}?\\b",
