@@ -1,5 +1,12 @@
 package eu.siacs.conversations.persistance;
 
+import android.content.ContentValues;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteCantOpenDatabaseException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -9,20 +16,15 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Roster;
+import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
-
-import android.content.Context;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteCantOpenDatabaseException;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteOpenHelper;
 
 public class DatabaseBackend extends SQLiteOpenHelper {
 
 	private static DatabaseBackend instance = null;
 
 	private static final String DATABASE_NAME = "history";
-	private static final int DATABASE_VERSION = 13;
+	private static final int DATABASE_VERSION = 14;
 
 	private static String CREATE_CONTATCS_STATEMENT = "create table "
 			+ Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -130,6 +132,48 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			db.execSQL("delete from "+Contact.TABLENAME);
 			db.execSQL("update "+Account.TABLENAME+" set "+Account.ROSTERVERSION+" = NULL");
 		}
+		if (oldVersion < 14 && newVersion >= 14) {
+			processMessagesJids(db);
+		}
+	}
+
+	private void processMessagesJids(SQLiteDatabase db) {
+		Cursor cursor;
+		String[] columns = {Message.UUID, Message.COUNTERPART, Message.TRUE_COUNTERPART};
+		cursor = db.query(Message.TABLENAME, columns, null, null, null, null, null);
+
+		while(cursor.moveToNext()) {
+			String value = cursor.getString(cursor.getColumnIndex(Message.COUNTERPART));
+			Jid counterpart = null;
+			if (value != null)
+				try {
+					counterpart = Jid.fromString(value);
+				} catch (InvalidJidException e) {}
+
+			value = cursor.getString(cursor.getColumnIndex(Message.TRUE_COUNTERPART));
+			Jid trueCounterpart = null;
+			if (value != null)
+				try {
+					trueCounterpart = Jid.fromString(value);
+				} catch (InvalidJidException e) {}
+
+			ContentValues cv = new ContentValues();
+			if (counterpart == null)
+				cv.putNull(Message.COUNTERPART);
+			else
+				cv.put(Message.COUNTERPART, counterpart.toString());
+
+			if (trueCounterpart == null)
+				cv.putNull(Message.TRUE_COUNTERPART);
+			else
+				cv.put(Message.TRUE_COUNTERPART, trueCounterpart.toString());
+
+			db.update(Message.TABLENAME, cv, Message.UUID + "=?", new String[]{Message.UUID});
+
+		}
+		while (cursor.moveToNext());
+
+		cursor.close();
 	}
 
 	public static synchronized DatabaseBackend getInstance(Context context) {
