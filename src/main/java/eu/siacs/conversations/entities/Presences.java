@@ -16,6 +16,7 @@ public class Presences {
 	public static final int OFFLINE = 4;
 
 	private Hashtable<String, Integer> presences = new Hashtable<String, Integer>();
+	private Hashtable<String, String> caphashs = new Hashtable<String, String>();
 
 	public Hashtable<String, Integer> getPresences() {
 		return this.presences;
@@ -85,6 +86,19 @@ public class Presences {
 	public boolean has(String presence) {
 		synchronized (this.presences) {
 			return presences.containsKey(presence);
+		}
+	}
+
+	public void setCaphash(String presence, String hash) {
+		synchronized (this.caphashs) {
+			if (!caphashs.containsKey(presence))
+				caphashs.put(presence, hash);
+		}
+	}
+
+	public String getCaphash(String presence) {
+		synchronized (this.caphashs) {
+			return caphashs.get(presence);
 		}
 	}
 }

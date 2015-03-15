@@ -116,6 +116,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 			startService(intent);
 		}
 	};
+	private Hashtable<String, ArrayList<String>> mCapabilities = new Hashtable<String, ArrayList<String>>();
 	private final IBinder mBinder = new XmppConnectionBinder();
 	private final List<Conversation> conversations = new CopyOnWriteArrayList<>();
 	private final FileObserver fileObserver = new FileObserver(
@@ -2263,6 +2264,38 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 			}
 		}
 		return contacts;
+	}
+
+	public void addCaphash(final Account account, Jid from, final String hash)
+	{
+		if (!mCapabilities.containsKey (hash))
+		{
+			sendIqPacket(account, getIqGenerator().capRequest(from, hash), new OnIqPacketReceived() {
+				@Override
+				public void onIqPacketReceived(final Account account, final IqPacket packet) {
+					if (packet.getType() == IqPacket.TYPE.RESULT) {
+						ArrayList<String> caps = new ArrayList<String>();
+						final Collection<Element> items = packet.findChild("query", "http://jabber.org/protocol/disco#info").getChildren();
+						for (final Element item : items) {
+							if (item.getName().equals("feature")) {
+								final String cap = item.getAttribute("var");
+								if (cap != null)
+									caps.add(cap);
+							}
+						}
+						mCapabilities.put(hash, caps);
+					}
+				}
+			});
+		}
+	}
+
+	public boolean hasCapability(String hash, String cap)
+	{
+		if (mCapabilities.containsKey (hash))
+			return mCapabilities.get(hash).contains(cap);
+		else
+			return false;
 	}
 
 	public NotificationService getNotificationService() {

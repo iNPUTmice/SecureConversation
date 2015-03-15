@@ -80,6 +80,15 @@ public class PresenceParser extends AbstractParser implements
 			boolean online = sizeBefore < contact.getPresences().size();
 			updateLastseen(packet, account, false);
 			mXmppConnectionService.onContactStatusChanged.onContactStatusChanged(contact, online);
+
+			Element item = packet.findChild("c");
+			if (item != null)
+			{
+				String hash = item.getAttribute("node") + "#" + item.getAttribute("ver");
+				contact.getPresences().setCaphash(presence, hash);
+				mXmppConnectionService.addCaphash(account, packet.getFrom(),  hash);
+			}
+
 		} else if (type.equals("unavailable")) {
 			if (from.isBareJid()) {
 				contact.clearPresences();

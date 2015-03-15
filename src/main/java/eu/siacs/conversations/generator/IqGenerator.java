@@ -39,6 +39,15 @@ public class IqGenerator extends AbstractGenerator {
 		return packet;
 	}
 
+	public IqPacket capRequest(Jid jid, String hash) {
+		final IqPacket packet = new IqPacket(IqPacket.TYPE.GET);
+		packet.setTo(jid);
+		final Element query = packet.addChild("query",
+				"http://jabber.org/protocol/disco#info");
+		query.setAttribute("node", hash);
+		return packet;
+	}
+
 	public IqPacket versionResponse(final IqPacket request) {
 		final IqPacket packet = request.generateResponse(IqPacket.TYPE.RESULT);
 		Element query = packet.query("jabber:iq:version");
