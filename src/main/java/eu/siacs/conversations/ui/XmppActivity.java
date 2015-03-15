@@ -596,14 +596,6 @@ public abstract class XmppActivity extends Activity {
 					conversation.setNextCounterpart(null);
 					listener.onPresenceSelected();
 				}
-			} else if (presences.size() == 1) {
-				String presence = presences.asStringArray()[0];
-				try {
-					conversation.setNextCounterpart(Jid.fromParts(contact.getJid().getLocalpart(),contact.getJid().getDomainpart(),presence));
-				} catch (InvalidJidException e) {
-					conversation.setNextCounterpart(null);
-				}
-				listener.onPresenceSelected();
 			} else {
 				final StringBuilder presence = new StringBuilder();
 				AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -613,7 +605,10 @@ public abstract class XmppActivity extends Activity {
 				for (int i = 0; i < presencesArray.length; ++i) {
 					if (presencesArray[i].equals(contact.lastseen.presence)) {
 						preselectedPresence = i;
-						break;
+						//break;
+					}
+					if (!xmppConnectionService.hasCapability(presences.getCaphash(presencesArray[i]), "urn:xmpp:jingle:apps:file-transfer:3")) {
+						presencesArray[i] = presencesArray[i] + " (no support)";
 					}
 				}
 				presence.append(presencesArray[preselectedPresence]);
