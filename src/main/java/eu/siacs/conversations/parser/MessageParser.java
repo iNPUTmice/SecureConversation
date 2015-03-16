@@ -44,7 +44,7 @@ public class MessageParser extends AbstractParser implements
 	}
 
 	private Message parseChat(MessagePacket packet, Account account) {
-        final Jid jid = packet.getFrom();
+		final Jid jid = packet.getFrom();
 		if (jid == null) {
 			return null;
 		}
@@ -89,7 +89,7 @@ public class MessageParser extends AbstractParser implements
 				.findOrCreateConversation(account, from.toBareJid(), false);
 		String presence;
 		if (from.isBareJid()) {
-            presence = "";
+			presence = "";
 		} else {
 			presence = from.getResourcepart();
 		}
@@ -153,7 +153,7 @@ public class MessageParser extends AbstractParser implements
 
 	private Message parseGroupchat(MessagePacket packet, Account account) {
 		int status;
-        final Jid from = packet.getFrom();
+		final Jid from = packet.getFrom();
 		if (from == null) {
 			return null;
 		}
@@ -163,6 +163,10 @@ public class MessageParser extends AbstractParser implements
 		}
 		Conversation conversation = mXmppConnectionService
 				.findOrCreateConversation(account, from.toBareJid(), true);
+		final Jid trueCounterpart = conversation.getMucOptions().getTrueCounterpart(from.getResourcepart());
+		if (trueCounterpart != null) {
+				updateLastseen(packet, account, trueCounterpart.toBareJid(), true);
+		}
 		if (packet.hasChild("subject")) {
 			conversation.setHasMessagesLeftOnServer(true);
 			conversation.getMucOptions().setSubject(packet.findChild("subject").getContent());
