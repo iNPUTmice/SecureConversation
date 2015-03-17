@@ -69,6 +69,7 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -409,6 +410,18 @@ public abstract class XmppActivity extends Activity {
 	protected void inviteToConversation(Conversation conversation) {
 		Intent intent = new Intent(getApplicationContext(),
 				ChooseContactActivity.class);
+		List<String> contacts = new ArrayList<>();
+		if (conversation.getMode() == Conversation.MODE_MULTI) {
+			for (MucOptions.User user : conversation.getMucOptions().getUsers()) {
+				Jid jid = user.getJid();
+				if (jid != null) {
+					contacts.add(jid.toBareJid().toString());
+				}
+			}
+		} else {
+			contacts.add(conversation.getJid().toBareJid().toString());
+		}
+		intent.putExtra("filter_contacts", contacts.toArray(new String[contacts.size()]));
 		intent.putExtra("conversation", conversation.getUuid());
 		intent.putExtra("multiple", true);
 		startActivityForResult(intent, REQUEST_INVITE_TO_CONVERSATION);

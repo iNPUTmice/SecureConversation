@@ -27,10 +27,13 @@ import eu.siacs.conversations.entities.ListItem;
 public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 
 	private Set<Contact> selected;
+	private Set<String> filterContacts;
 
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		filterContacts = new HashSet<>();
+		Collections.addAll(filterContacts, getIntent().getStringArrayExtra("filter_contacts"));
 
 		if (getIntent().getBooleanExtra("multiple", false)) {
 			getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
@@ -119,7 +122,9 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 		for (final Account account : xmppConnectionService.getAccounts()) {
 			if (account.getStatus() != Account.State.DISABLED) {
 				for (final Contact contact : account.getRoster().getContacts()) {
-					if (contact.showInRoster() && contact.match(needle)) {
+					if (contact.showInRoster() &&
+							!filterContacts.contains(contact.getJid().toBareJid().toString())
+							&& contact.match(needle)) {
 						getListItems().add(contact);
 					}
 				}
