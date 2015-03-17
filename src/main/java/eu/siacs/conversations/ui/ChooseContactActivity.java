@@ -33,7 +33,10 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		filterContacts = new HashSet<>();
-		Collections.addAll(filterContacts, getIntent().getStringArrayExtra("filter_contacts"));
+		String[] contacts = getIntent().getStringArrayExtra("filter_contacts");
+		if (contacts != null) {
+			Collections.addAll(filterContacts, contacts);
+		}
 
 		if (getIntent().getBooleanExtra("multiple", false)) {
 			getListView().setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
