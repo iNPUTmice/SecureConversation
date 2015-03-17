@@ -410,6 +410,7 @@ public abstract class XmppActivity extends Activity {
 		Intent intent = new Intent(getApplicationContext(),
 				ChooseContactActivity.class);
 		intent.putExtra("conversation", conversation.getUuid());
+		intent.putExtra("multiple", true);
 		startActivityForResult(intent, REQUEST_INVITE_TO_CONVERSATION);
 	}
 
@@ -652,22 +653,31 @@ public abstract class XmppActivity extends Activity {
 		if (requestCode == REQUEST_INVITE_TO_CONVERSATION
 				&& resultCode == RESULT_OK) {
 			try {
-				Jid jid = Jid.fromString(data.getStringExtra("contact"));
 				String conversationUuid = data.getStringExtra("conversation");
 				Conversation conversation = xmppConnectionService
 					.findConversationByUuid(conversationUuid);
-				if (conversation.getMode() == Conversation.MODE_MULTI) {
-					xmppConnectionService.invite(conversation, jid);
+				List<Jid> jids = new ArrayList<Jid>();
+				if (data.getBooleanExtra("multiple", false)) {
+					String[] toAdd = data.getStringArrayExtra("contacts");
+					for (String item : toAdd) {
+						jids.add(Jid.fromString(item));
+					}
 				} else {
-					List<Jid> jids = new ArrayList<Jid>();
+					jids.add(Jid.fromString(data.getStringExtra("contact")));
+				}
+
+				if (conversation.getMode() == Conversation.MODE_MULTI) {
+					for (Jid jid : jids) {
+						xmppConnectionService.invite(conversation, jid);
+					}
+				} else {
 					jids.add(conversation.getJid().toBareJid());
-					jids.add(jid);
 					xmppConnectionService.createAdhocConference(conversation.getAccount(), jids, adhocCallback);
 				}
 			} catch (final InvalidJidException ignored) {
 
 			}
-				}
+		}
 	}
 
 	private UiCallback<Conversation> adhocCallback = new UiCallback<Conversation>() {
