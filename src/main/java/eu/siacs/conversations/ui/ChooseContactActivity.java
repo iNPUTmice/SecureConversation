@@ -88,7 +88,11 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 					} else {
 						selected.remove(item);
 					}
-					mode.setTitle(selected.size() + " selected");
+					int numSelected = selected.size();
+					MenuItem selectButton = mode.getMenu().findItem(R.id.selection_submit);
+					String buttonText = getResources().getQuantityString(R.plurals.select_contact,
+							numSelected, numSelected);
+					selectButton.setTitle(buttonText);
 				}
 			});
 		}
