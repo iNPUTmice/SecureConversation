@@ -135,7 +135,12 @@ public class ShareWithActivity extends XmppActivity {
 	public void onStart() {
 		final String type = getIntent().getType();
 		final Uri uri = getIntent().getParcelableExtra(Intent.EXTRA_STREAM);
-		if (type != null && uri != null && !type.equalsIgnoreCase("text/plain")) {
+		if (type != null && type.equalsIgnoreCase("vnd.android-dir/mms-sms")) {
+			final Bundle b = getIntent().getExtras();
+			if (b != null) {
+				this.share.text = "" + b.get("sms_body");
+			}
+		} else if (type != null && uri != null && !type.equalsIgnoreCase("text/plain")) {
 			this.share.uri = uri;
 			this.share.image = type.startsWith("image/") || isImage(uri);
 		} else {
