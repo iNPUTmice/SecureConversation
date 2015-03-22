@@ -52,6 +52,7 @@ import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Bookmark;
+import eu.siacs.conversations.entities.Capabilities;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Downloadable;
@@ -2270,23 +2271,33 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	{
 		if (!mCapabilities.containsKey (hash))
 		{
-			sendIqPacket(account, getIqGenerator().capRequest(from, hash), new OnIqPacketReceived() {
-				@Override
-				public void onIqPacketReceived(final Account account, final IqPacket packet) {
-					if (packet.getType() == IqPacket.TYPE.RESULT) {
-						ArrayList<String> caps = new ArrayList<String>();
-						final Collection<Element> items = packet.findChild("query", "http://jabber.org/protocol/disco#info").getChildren();
-						for (final Element item : items) {
-							if (item.getName().equals("feature")) {
-								final String cap = item.getAttribute("var");
-								if (cap != null)
-									caps.add(cap);
+			Capabilities caps = databaseBackend.getCapabilities(hash);
+
+			if (caps != null)
+			{
+				mCapabilities.put(hash, caps.getCapabilityList());
+			}
+			else
+			{
+				sendIqPacket(account, getIqGenerator().capRequest(from, hash), new OnIqPacketReceived() {
+					@Override
+					public void onIqPacketReceived(final Account account, final IqPacket packet) {
+						if (packet.getType() == IqPacket.TYPE.RESULT) {
+							ArrayList<String> caps = new ArrayList<String>();
+							final Collection<Element> items = packet.findChild("query", "http://jabber.org/protocol/disco#info").getChildren();
+							for (final Element item : items) {
+								if (item.getName().equals("feature")) {
+									final String cap = item.getAttribute("var");
+									if (cap != null)
+										caps.add(cap);
+								}
 							}
+							mCapabilities.put(hash, caps);
+							databaseBackend.createCapabilities(new Capabilities(hash, caps));
 						}
-						mCapabilities.put(hash, caps);
 					}
-				}
-			});
+				});
+			}
 		}
 	}
 

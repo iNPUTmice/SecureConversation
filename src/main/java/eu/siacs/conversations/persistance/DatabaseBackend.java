@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Capabilities;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
@@ -22,7 +23,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	private static DatabaseBackend instance = null;
 
 	private static final String DATABASE_NAME = "history";
-	private static final int DATABASE_VERSION = 13;
+	private static final int DATABASE_VERSION = 14;
 
 	private static String CREATE_CONTATCS_STATEMENT = "create table "
 			+ Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -35,6 +36,12 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			+ Account.TABLENAME + "(" + Account.UUID
 			+ ") ON DELETE CASCADE, UNIQUE(" + Contact.ACCOUNT + ", "
 			+ Contact.JID + ") ON CONFLICT REPLACE);";
+
+	private static String CREATE_CAPABILITIES_STATEMENT = "create table "
+			+ Capabilities.TABLENAME + "("
+			+ Capabilities.HASH + " TEXT, "
+			+ Capabilities.CAPS + " TEXT, "
+			+ "UNIQUE(" + Capabilities.HASH + ") ON CONFLICT REPLACE);";
 
 	private DatabaseBackend(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -72,6 +79,8 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				+ ") ON DELETE CASCADE);");
 
 		db.execSQL(CREATE_CONTATCS_STATEMENT);
+
+		db.execSQL(CREATE_CAPABILITIES_STATEMENT);
 	}
 
 	@Override
@@ -129,6 +138,9 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		if (oldVersion < 13 && newVersion >= 13) {
 			db.execSQL("delete from "+Contact.TABLENAME);
 			db.execSQL("update "+Account.TABLENAME+" set "+Account.ROSTERVERSION+" = NULL");
+		}
+		if (oldVersion < 14 && newVersion >= 14) {
+			db.execSQL(CREATE_CAPABILITIES_STATEMENT);
 		}
 	}
 
@@ -396,5 +408,26 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		}
 		cursor.close();
 		return list;
+	}
+
+	public Capabilities getCapabilities(String hash)
+	{
+		SQLiteDatabase db = this.getReadableDatabase();
+		String[] selectionArgs = {hash};
+		Cursor cursor = db.query(Capabilities.TABLENAME, null, Capabilities.HASH+"=?", selectionArgs, null, null, null);
+
+		Capabilities caps = null;
+
+		if (cursor.getCount() != 0) {
+			cursor.moveToFirst();
+			caps = Capabilities.fromCursor(cursor);
+		}
+		cursor.close();
+		return caps;
+	}
+
+	public void createCapabilities(Capabilities caps) {
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.insert(Capabilities.TABLENAME, null, caps.getContentValues());
 	}
 }
