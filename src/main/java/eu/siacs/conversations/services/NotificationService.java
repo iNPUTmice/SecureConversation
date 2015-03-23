@@ -215,7 +215,10 @@ public class NotificationService {
 			mBuilder.setDefaults(0);
 			mBuilder.setSmallIcon(R.drawable.ic_notification);
 			mBuilder.setDeleteIntent(createDeleteIntent());
-			mBuilder.setLights(0xff00FF00, 2000, 3000);
+			int ledColor= mXmppConnectionService.getPreferences().getInt("notification_led_color", 0xff00ff00 );
+			int ledOn = Integer.parseInt(mXmppConnectionService.getPreferences().getString("notification_led_on", "2000" ));
+			int ledOff = Integer.parseInt(mXmppConnectionService.getPreferences().getString("notification_led_off", "3000" ));
+			mBuilder.setLights(ledColor, ledOn, ledOff);
 			final Notification notification = mBuilder.build();
 			notificationManager.notify(NOTIFICATION_ID, notification);
 		}

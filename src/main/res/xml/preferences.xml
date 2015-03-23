@@ -79,6 +79,26 @@
             android:summary="@string/pref_sound_summary"
             android:title="@string/pref_sound" />
 
+        <net.margaritov.preference.colorpicker.ColorPickerPreference
+            android:dependency="show_notification"
+            android:key="notification_led_color"
+            android:title="@string/pref_led_color"
+            android:defaultValue="0xff00ff00" />
+
+    	<EditTextPreference
+            android:defaultValue="2000"
+            android:dependency="show_notification"
+            android:key="notification_led_on"
+            android:numeric="integer"
+            android:title="@string/pref_led_on" />
+
+	    <EditTextPreference
+            android:defaultValue="3000"
+            android:dependency="show_notification"
+            android:key="notification_led_off"
+            android:numeric="integer"
+            android:title="@string/pref_led_off" />
+
         <CheckBoxPreference
             android:defaultValue="true"
             android:dependency="show_notification"

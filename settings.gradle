@@ -1,4 +1,6 @@
 include ':libs:MemorizingTrustManager'
 include ':libs:openpgp-api-lib'
+include ':libs', ':ColorPickerPreference'
+project(':ColorPickerPreference').projectDir = new File('libs/ColorPickerPreference')
 
 rootProject.name = 'Conversations'

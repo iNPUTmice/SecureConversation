@@ -458,4 +458,7 @@
 		<item quantity="one">Select %d contact</item>
 		<item quantity="other">Select %d contacts</item>
 	</plurals>
+    <string name="pref_led_color">LED color</string>
+    <string name="pref_led_on">LED On (ms)</string>
+    <string name="pref_led_off">LED Off (ms)</string>
 </resources>
