@@ -83,6 +83,7 @@
             android:dependency="show_notification"
             android:key="notification_led_color"
             android:title="@string/pref_led_color"
+	    android:summary="@string/pref_led_color_summary"
             android:defaultValue="0xff00ff00" />
 
     	<EditTextPreference
@@ -90,6 +91,7 @@
             android:dependency="show_notification"
             android:key="notification_led_on"
             android:numeric="integer"
+	    android:summary="@string/pref_led_on_summary"
             android:title="@string/pref_led_on" />
 
 	    <EditTextPreference
@@ -97,6 +99,7 @@
             android:dependency="show_notification"
             android:key="notification_led_off"
             android:numeric="integer"
+	    android:summary="@string/pref_led_off_summary"
             android:title="@string/pref_led_off" />
 
         <CheckBoxPreference

@@ -459,6 +459,9 @@
 		<item quantity="other">Select %d contacts</item>
 	</plurals>
     <string name="pref_led_color">LED color</string>
-    <string name="pref_led_on">LED On (ms)</string>
-    <string name="pref_led_off">LED Off (ms)</string>
+    <string name="pref_led_on">LED Flashing On</string>
+    <string name="pref_led_off">LED Flashing Off</string>
+    <string name="pref_led_color_summary">The color of notification LED</string>
+    <string name="pref_led_on_summary">Time in ms for which notification LED is ON</string>
+    <string name="pref_led_off_summary">Time in ms for which notification LED is OFF</string>
 </resources>
