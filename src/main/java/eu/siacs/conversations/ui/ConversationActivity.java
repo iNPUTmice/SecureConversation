@@ -38,6 +38,7 @@ import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
@@ -314,6 +315,18 @@ public class ConversationActivity extends XmppActivity
 				} else {
 					menuMucDetails.setVisible(false);
 					final Account account = this.getSelectedConversation().getAccount();
+
+					Presences presences = this.getSelectedConversation().getContact().getPresences();
+					String[] presencesArray = presences.asStringArray();
+					boolean capable = false;
+					for (int i = 0; i < presencesArray.length; ++i) {
+						if (xmppConnectionService.hasCapability(presences.getCaphash(presencesArray[i]), "urn:xmpp:jingle:apps:file-transfer:3")) {
+							capable = true;
+							break;
+						}
+					}
+					if (!capable)
+						menuAttach.setVisible(false);
 				}
 				if (this.getSelectedConversation().isMuted()) {
 					menuMute.setVisible(false);
