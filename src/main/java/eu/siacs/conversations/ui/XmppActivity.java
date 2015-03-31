@@ -304,9 +304,12 @@ public abstract class XmppActivity extends Activity {
 	@Override
 	public boolean onOptionsItemSelected(final MenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.action_settings:
-				startActivity(new Intent(this, SettingsActivity.class));
-				break;
+            case R.id.action_settings:
+                startActivity(new Intent(this, SettingsActivity.class));
+                break;
+            case R.id.action_exit:
+                System.exit(0);
+                break;
 			case R.id.action_accounts:
 				startActivity(new Intent(this, ManageAccountActivity.class));
 				break;
