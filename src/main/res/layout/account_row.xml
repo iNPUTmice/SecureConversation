@@ -44,12 +44,14 @@
             android:textStyle="bold" />
     </LinearLayout>
 
-    <Switch
+    <com.kyleduo.switchbutton.SwitchButton
         android:id="@+id/tgl_account_status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
+	style="@style/SwitchButtonStyle"
+	onColor="@color/primary"
         android:focusable="false"/>
 
 </RelativeLayout>
