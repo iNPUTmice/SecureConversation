@@ -569,6 +569,12 @@ public abstract class XmppActivity extends Activity {
 
 	public void selectPresence(final Conversation conversation,
 			final OnPresenceSelected listener) {
+		selectPresence( conversation, listener, null);
+	}
+
+	public void selectPresence(final Conversation conversation,
+			final OnPresenceSelected listener,
+			final String capability) {
 		final Contact contact = conversation.getContact();
 		if (conversation.hasValidOtrSession()) {
 			SessionID id = conversation.getOtrSession().getSessionID();
@@ -584,7 +590,7 @@ public abstract class XmppActivity extends Activity {
 			showAddToRosterDialog(conversation);
 		} else {
 			Presences presences = contact.getPresences();
-			if (presences.size() == 0) {
+			if ((presences.size() == 0) && (capability == null)) {
 				if (!contact.getOption(Contact.Options.TO)
 						&& !contact.getOption(Contact.Options.ASKING)
 						&& contact.getAccount().getStatus() == Account.State.ONLINE) {
@@ -597,46 +603,75 @@ public abstract class XmppActivity extends Activity {
 					listener.onPresenceSelected();
 				}
 			} else {
-				final StringBuilder presence = new StringBuilder();
-				AlertDialog.Builder builder = new AlertDialog.Builder(this);
-				builder.setTitle(getString(R.string.choose_presence));
 				final String[] presencesArray = presences.asStringArray();
-				int preselectedPresence = 0;
+				final ArrayList<String> presencesList = new ArrayList<String>();
 				for (int i = 0; i < presencesArray.length; ++i) {
-					if (presencesArray[i].equals(contact.lastseen.presence)) {
-						preselectedPresence = i;
-						//break;
+					if (capability != null) {
+						if (xmppConnectionService.hasCapability(presences.getCaphash(presencesArray[i]), capability))
+							presencesList.add(presencesArray[i]);
 					}
-					if (!xmppConnectionService.hasCapability(presences.getCaphash(presencesArray[i]), "urn:xmpp:jingle:apps:file-transfer:3")) {
-						presencesArray[i] = presencesArray[i] + " (no support)";
-					}
+					else
+						presencesList.add(presencesArray[i]);
 				}
-				presence.append(presencesArray[preselectedPresence]);
-				builder.setSingleChoiceItems(presencesArray,
+				if (presencesList.isEmpty()) {
+					new AlertDialog.Builder(this)
+						.setTitle("Error")
+						.setMessage("No capable resource avaliable.")
+						.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+							public void onClick(DialogInterface dialog, int id) {
+								dialog.cancel();
+							}
+						}).show();
+					return;
+				}
+				int preselectedPresence = presencesList.indexOf(contact.lastseen.presence);
+				//The preferred and only presence is capable, don't annoy the user
+				if ((presencesList.size() == 1)&&(preselectedPresence != -1)) {
+					try {
+						conversation.setNextCounterpart(Jid.fromParts(contact.getJid().getLocalpart(),contact.getJid().getDomainpart(), presencesList.get(0)));	
+					} catch (InvalidJidException e) {
+						conversation.setNextCounterpart(null);
+					}
+					listener.onPresenceSelected();
+				}
+				else {
+					final StringBuilder presence = new StringBuilder();
+
+					if (preselectedPresence != -1)
+						presence.append(presencesList.get(preselectedPresence));
+
+					AlertDialog.Builder builder = new AlertDialog.Builder(this);
+					builder.setTitle(getString(R.string.choose_presence));
+
+					builder.setSingleChoiceItems(presencesList.toArray(new String[0]),
 						preselectedPresence,
 						new DialogInterface.OnClickListener() {
-
 							@Override
 							public void onClick(DialogInterface dialog,
 									int which) {
 								presence.delete(0, presence.length());
-								presence.append(presencesArray[which]);
+								presence.append(presencesList.get(which));
 							}
 						});
-				builder.setNegativeButton(R.string.cancel, null);
-				builder.setPositiveButton(R.string.ok, new OnClickListener() {
+					builder.setNegativeButton(R.string.cancel, null);
+					builder.setPositiveButton(R.string.ok, new OnClickListener() {
+						@Override
+						public void onClick(DialogInterface dialog, int which) {
+							if(!presence.toString().isEmpty()) {
+								try {
+									conversation.setNextCounterpart(Jid.fromParts(contact.getJid().getLocalpart(),contact.getJid().getDomainpart(),presence.toString()));
+								} catch (InvalidJidException e) {
+									conversation.setNextCounterpart(null);
+								}
+								listener.onPresenceSelected();
+							}
+							else
+								Toast.makeText(XmppActivity.this, "no presence selected",Toast.LENGTH_LONG).show();
 
-					@Override
-					public void onClick(DialogInterface dialog, int which) {
-						try {
-							conversation.setNextCounterpart(Jid.fromParts(contact.getJid().getLocalpart(),contact.getJid().getDomainpart(),presence.toString()));
-						} catch (InvalidJidException e) {
-							conversation.setNextCounterpart(null);
 						}
-						listener.onPresenceSelected();
-					}
-				});
-				builder.create().show();
+					});
+					builder.create().show();
+				}
 			}
 		}
 	}

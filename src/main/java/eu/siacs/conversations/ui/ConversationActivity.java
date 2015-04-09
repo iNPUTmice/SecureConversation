@@ -376,7 +376,7 @@ public class ConversationActivity extends XmppActivity
 					}
 				}
 			}
-		});
+		}, "urn:xmpp:jingle:apps:file-transfer:3");
 	}
 
 	private void attachFile(final int attachmentChoice) {
