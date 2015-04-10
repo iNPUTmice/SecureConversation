@@ -50,8 +50,6 @@
         android:layout_height="wrap_content"
         android:layout_alignParentRight="true"
         android:layout_centerVertical="true"
-	style="@style/SwitchButtonStyle"
-	onColor="@color/primary"
         android:focusable="false"/>
 
 </RelativeLayout>
