@@ -615,8 +615,7 @@ public abstract class XmppActivity extends Activity {
 				}
 				if (presencesList.isEmpty()) {
 					new AlertDialog.Builder(this)
-						.setTitle("Error")
-						.setMessage("No capable resource avaliable.")
+						.setMessage(getString(R.string.no_capable_presence))
 						.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
 							public void onClick(DialogInterface dialog, int id) {
 								dialog.cancel();
@@ -666,7 +665,7 @@ public abstract class XmppActivity extends Activity {
 								listener.onPresenceSelected();
 							}
 							else
-								Toast.makeText(XmppActivity.this, "no presence selected",Toast.LENGTH_LONG).show();
+								Toast.makeText(XmppActivity.this, getString(R.string.no_presence_selected) ,Toast.LENGTH_LONG).show();
 
 						}
 					});
