@@ -13,7 +13,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Switch;
+import com.kyleduo.switchbutton.SwitchButton;
 
 public class AccountAdapter extends ArrayAdapter<Account> {
 
@@ -50,7 +50,7 @@ public class AccountAdapter extends ArrayAdapter<Account> {
 				statusView.setTextColor(activity.getWarningTextColor());
 				break;
 		}
-		final Switch tglAccountState = (Switch) view.findViewById(R.id.tgl_account_status);
+		final SwitchButton tglAccountState = (SwitchButton) view.findViewById(R.id.tgl_account_status);
 		boolean isDisabled = (account.getStatus() == Account.State.DISABLED) ? true : false;
 		tglAccountState.setChecked(!isDisabled);
 		tglAccountState.setOnClickListener(new View.OnClickListener() {
