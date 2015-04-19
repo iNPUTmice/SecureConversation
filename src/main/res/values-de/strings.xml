@@ -435,5 +435,5 @@
     <item quantity="one">%d Kontakt ausgewählt</item>
     <item quantity="other">%d Kontakte ausgewählt</item>
   </plurals>
-  <string name="undo">Rückgängig</string>
+  <string name="elv_undo">Rückgängig</string>
 </resources>

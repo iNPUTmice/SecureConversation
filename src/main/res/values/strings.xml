@@ -463,4 +463,5 @@
 		<item quantity="one">Select %d contact</item>
 		<item quantity="other">Select %d contacts</item>
 	</plurals>
+	<string name="elv_undo">undo</string>
 </resources>
