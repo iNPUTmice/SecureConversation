@@ -8,6 +8,7 @@ import java.net.URL;
 import java.util.Arrays;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -48,6 +49,7 @@ public class Message extends AbstractEntity {
 	public static final String SERVER_MSG_ID = "serverMsgId";
 	public static final String RELATIVE_FILE_PATH = "relativeFilePath";
 	public static final String ME_COMMAND = "/me ";
+
 
 	public boolean markable = false;
 	protected String conversationUuid;
@@ -115,7 +117,7 @@ public class Message extends AbstractEntity {
 		try {
 			String value = cursor.getString(cursor.getColumnIndex(COUNTERPART));
 			if (value != null) {
-				jid = Jid.fromString(value);
+				jid = Jid.fromString(value, true);
 			} else {
 				jid = null;
 			}
@@ -126,7 +128,7 @@ public class Message extends AbstractEntity {
 		try {
 			String value = cursor.getString(cursor.getColumnIndex(TRUE_COUNTERPART));
 			if (value != null) {
-				trueCounterpart = Jid.fromString(value);
+				trueCounterpart = Jid.fromString(value, true);
 			} else {
 				trueCounterpart = null;
 			}
@@ -362,16 +364,30 @@ public class Message extends AbstractEntity {
 			 message.getDownloadable() == null &&
 			 message.getEncryption() != Message.ENCRYPTION_PGP &&
 			 this.getType() == message.getType() &&
-			 this.getStatus() == message.getStatus() &&
+			 //this.getStatus() == message.getStatus() &&
+			 isStatusMergeable(this.getStatus(),message.getStatus()) &&
 			 this.getEncryption() == message.getEncryption() &&
 			 this.getCounterpart() != null &&
 			 this.getCounterpart().equals(message.getCounterpart()) &&
 			 (message.getTimeSent() - this.getTimeSent()) <= (Config.MESSAGE_MERGE_WINDOW * 1000) &&
+			 !GeoHelper.isGeoUri(message.getBody()) &&
+			 !GeoHelper.isGeoUri(this.body) &&
 			 !message.bodyContainsDownloadable() &&
 			 !this.bodyContainsDownloadable() &&
 			 !message.getBody().startsWith(ME_COMMAND) &&
 			 !this.getBody().startsWith(ME_COMMAND)
 			);
+	}
+
+	private static boolean isStatusMergeable(int a, int b) {
+		return a == b || (
+				( a == Message.STATUS_SEND_RECEIVED && b == Message.STATUS_UNSEND)
+				|| (a == Message.STATUS_SEND_RECEIVED && b == Message.STATUS_SEND)
+				|| (a == Message.STATUS_UNSEND && b == Message.STATUS_SEND)
+				|| (a == Message.STATUS_UNSEND && b == Message.STATUS_SEND_RECEIVED)
+				|| (a == Message.STATUS_SEND && b == Message.STATUS_UNSEND)
+				|| (a == Message.STATUS_SEND && b == Message.STATUS_SEND_RECEIVED)
+		);
 	}
 
 	public String getMergedBody() {
@@ -387,6 +403,10 @@ public class Message extends AbstractEntity {
 	}
 
 	public int getMergedStatus() {
+		final Message next = this.next();
+		if (this.mergeable(next)) {
+			return next.getStatus();
+		}
 		return getStatus();
 	}
 

@@ -1,11 +1,8 @@
 package eu.siacs.conversations.parser;
 
-import android.util.Log;
-
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
 
-import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
@@ -44,12 +41,11 @@ public class MessageParser extends AbstractParser implements
 	}
 
 	private Message parseChat(MessagePacket packet, Account account) {
-        final Jid jid = packet.getFrom();
+		final Jid jid = packet.getFrom();
 		if (jid == null) {
 			return null;
 		}
 		Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, jid.toBareJid(), false);
-		updateLastseen(packet, account, true);
 		String pgpBody = getPgpBody(packet);
 		Message finishedMessage;
 		if (pgpBody != null) {
@@ -64,13 +60,18 @@ public class MessageParser extends AbstractParser implements
 		finishedMessage.markable = isMarkable(packet);
 		if (conversation.getMode() == Conversation.MODE_MULTI
 				&& !jid.isBareJid()) {
+			final Jid trueCounterpart = conversation.getMucOptions()
+					.getTrueCounterpart(jid.getResourcepart());
+			if (trueCounterpart != null) {
+				updateLastseen(packet, account, trueCounterpart, false);
+			}
 			finishedMessage.setType(Message.TYPE_PRIVATE);
-			finishedMessage.setTrueCounterpart(conversation.getMucOptions()
-					.getTrueCounterpart(jid.getResourcepart()));
+			finishedMessage.setTrueCounterpart(trueCounterpart);
 			if (conversation.hasDuplicateMessage(finishedMessage)) {
 				return null;
 			}
-
+		} else {
+			updateLastseen(packet, account, true);
 		}
 		finishedMessage.setCounterpart(jid);
 		finishedMessage.setTime(getTimestamp(packet));
@@ -89,10 +90,11 @@ public class MessageParser extends AbstractParser implements
 				.findOrCreateConversation(account, from.toBareJid(), false);
 		String presence;
 		if (from.isBareJid()) {
-            presence = "";
+			presence = "";
 		} else {
 			presence = from.getResourcepart();
 		}
+		extractChatState(conversation, packet);
 		updateLastseen(packet, account, true);
 		String body = packet.getBody();
 		if (body.matches("^\\?OTRv\\d{1,2}\\?.*")) {
@@ -117,6 +119,7 @@ public class MessageParser extends AbstractParser implements
 			}
 		}
 		try {
+			conversation.setLastReceivedOtrMessageId(packet.getId());
 			Session otrSession = conversation.getOtrSession();
 			SessionStatus before = otrSession.getSessionStatus();
 			body = otrSession.transformReceiving(body);
@@ -143,7 +146,7 @@ public class MessageParser extends AbstractParser implements
 			finishedMessage.setRemoteMsgId(packet.getId());
 			finishedMessage.markable = isMarkable(packet);
 			finishedMessage.setCounterpart(from);
-			extractChatState(conversation,packet);
+			conversation.setLastReceivedOtrMessageId(null);
 			return finishedMessage;
 		} catch (Exception e) {
 			conversation.resetOtrSession();
@@ -153,7 +156,7 @@ public class MessageParser extends AbstractParser implements
 
 	private Message parseGroupchat(MessagePacket packet, Account account) {
 		int status;
-        final Jid from = packet.getFrom();
+		final Jid from = packet.getFrom();
 		if (from == null) {
 			return null;
 		}
@@ -163,6 +166,10 @@ public class MessageParser extends AbstractParser implements
 		}
 		Conversation conversation = mXmppConnectionService
 				.findOrCreateConversation(account, from.toBareJid(), true);
+		final Jid trueCounterpart = conversation.getMucOptions().getTrueCounterpart(from.getResourcepart());
+		if (trueCounterpart != null) {
+			updateLastseen(packet, account, trueCounterpart, false);
+		}
 		if (packet.hasChild("subject")) {
 			conversation.setHasMessagesLeftOnServer(true);
 			conversation.getMucOptions().setSubject(packet.findChild("subject").getContent());
@@ -402,14 +409,19 @@ public class MessageParser extends AbstractParser implements
 			Element event = packet.findChild("event",
 					"http://jabber.org/protocol/pubsub#event");
 			parseEvent(event, from, account);
-		} else if (from != null
-				&& packet.hasChild("displayed", "urn:xmpp:chat-markers:0")) {
+		} else if (from != null && packet.hasChild("displayed", "urn:xmpp:chat-markers:0")) {
 			String id = packet
 					.findChild("displayed", "urn:xmpp:chat-markers:0")
 					.getAttribute("id");
 			updateLastseen(packet, account, true);
-			mXmppConnectionService.markMessage(account, from.toBareJid(),
-					id, Message.STATUS_SEND_DISPLAYED);
+			final Message displayedMessage = mXmppConnectionService.markMessage(account, from.toBareJid(), id, Message.STATUS_SEND_DISPLAYED);
+			Message message = displayedMessage == null ? null :displayedMessage.prev();
+			while (message != null
+					&& message.getStatus() == Message.STATUS_SEND_RECEIVED
+					&& message.getTimeSent() < displayedMessage.getTimeSent()) {
+				mXmppConnectionService.markMessage(message, Message.STATUS_SEND_DISPLAYED);
+				message = message.prev();
+			}
 		} else if (from != null
 				&& packet.hasChild("received", "urn:xmpp:chat-markers:0")) {
 			String id = packet.findChild("received", "urn:xmpp:chat-markers:0")

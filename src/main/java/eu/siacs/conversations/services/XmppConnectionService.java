@@ -308,6 +308,24 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		return this.mAvatarService;
 	}
 
+	public void attachLocationToConversation(final Conversation conversation,
+											 final Uri uri,
+											 final UiCallback<Message> callback) {
+		int encryption = conversation.getNextEncryption(forceEncryption());
+		if (encryption == Message.ENCRYPTION_PGP) {
+			encryption = Message.ENCRYPTION_DECRYPTED;
+		}
+		Message message = new Message(conversation,uri.toString(),encryption);
+		if (conversation.getNextCounterpart() != null) {
+			message.setCounterpart(conversation.getNextCounterpart());
+		}
+		if (encryption == Message.ENCRYPTION_DECRYPTED) {
+			getPgpEngine().encrypt(message,callback);
+		} else {
+			callback.success(message);
+		}
+	}
+
 	public void attachFileToConversation(final Conversation conversation,
 			final Uri uri,
 			final UiCallback<Message> callback) {
@@ -1138,7 +1156,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		account.initOtrEngine(this);
 		databaseBackend.createAccount(account);
 		this.accounts.add(account);
-		this.reconnectAccount(account, false);
+		this.reconnectAccountInBackground(account);
 		updateAccountUi();
 	}
 
@@ -1974,24 +1992,29 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	}
 
 	public void reconnectAccount(final Account account, final boolean force) {
-		new Thread(new Runnable() {
+		synchronized (account) {
+			if (account.getXmppConnection() != null) {
+				disconnect(account, force);
+			}
+			if (!account.isOptionSet(Account.OPTION_DISABLED)) {
+				if (account.getXmppConnection() == null) {
+					account.setXmppConnection(createConnection(account));
+				}
+				Thread thread = new Thread(account.getXmppConnection());
+				thread.start();
+				scheduleWakeUpCall(Config.CONNECT_TIMEOUT, account.getUuid().hashCode());
+			} else {
+				account.getRoster().clearPresences();
+				account.setXmppConnection(null);
+			}
+		}
+	}
 
+	public void reconnectAccountInBackground(final Account account) {
+		new Thread(new Runnable() {
 			@Override
 			public void run() {
-				if (account.getXmppConnection() != null) {
-					disconnect(account, force);
-				}
-				if (!account.isOptionSet(Account.OPTION_DISABLED)) {
-					if (account.getXmppConnection() == null) {
-						account.setXmppConnection(createConnection(account));
-					}
-					Thread thread = new Thread(account.getXmppConnection());
-					thread.start();
-					scheduleWakeUpCall(Config.CONNECT_TIMEOUT, account.getUuid().hashCode());
-				} else {
-					account.getRoster().clearPresences();
-					account.setXmppConnection(null);
-				}
+				reconnectAccount(account,false);
 			}
 		}).start();
 	}
@@ -2015,19 +2038,20 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		}
 	}
 
-	public boolean markMessage(final Account account, final Jid recipient, final String uuid,
-							   final int status) {
+	public Message markMessage(final Account account, final Jid recipient, final String uuid, final int status) {
 		if (uuid == null) {
-			return false;
-		} else {
-			for (Conversation conversation : getConversations()) {
-				if (conversation.getJid().equals(recipient)
-						&& conversation.getAccount().equals(account)) {
-					return markMessage(conversation, uuid, status);
-				}
-			}
-			return false;
+			return null;
 		}
+		for (Conversation conversation : getConversations()) {
+			if (conversation.getJid().toBareJid().equals(recipient) && conversation.getAccount() == account) {
+				final Message message = conversation.findSentMessageWithUuid(uuid);
+				if (message != null) {
+					markMessage(message, status);
+				}
+				return message;
+			}
+		}
+		return null;
 	}
 
 	public boolean markMessage(Conversation conversation, String uuid,
@@ -2079,6 +2103,14 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 
 	public boolean indicateReceived() {
 		return getPreferences().getBoolean("indicate_received", false);
+	}
+
+	public int unreadCount() {
+		int count = 0;
+		for(Conversation conversation : getConversations()) {
+			count += conversation.unreadCount();
+		}
+		return count;
 	}
 
 	public void updateConversationUi() {

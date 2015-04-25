@@ -35,6 +35,9 @@ public class MessageGenerator extends AbstractGenerator {
 		} else if (message.getType() == Message.TYPE_PRIVATE) {
 			packet.setTo(message.getCounterpart());
 			packet.setType(MessagePacket.TYPE_CHAT);
+			if (this.mXmppConnectionService.indicateReceived()) {
+				packet.addChild("request", "urn:xmpp:receipts");
+			}
 		} else {
 			packet.setTo(message.getCounterpart().toBareJid());
 			packet.setType(MessagePacket.TYPE_GROUPCHAT);
@@ -167,5 +170,18 @@ public class MessageGenerator extends AbstractGenerator {
 		Element received = receivedPacket.addChild("received", namespace);
 		received.setAttribute("id", originalMessage.getId());
 		return receivedPacket;
+	}
+
+	public MessagePacket generateOtrError(Jid to, String id) {
+		MessagePacket packet = new MessagePacket();
+		packet.setType(MessagePacket.TYPE_ERROR);
+		packet.setAttribute("id",id);
+		packet.setTo(to);
+		Element error = packet.addChild("error");
+		error.setAttribute("code","406");
+		error.setAttribute("type","modify");
+		error.addChild("not-acceptable","urn:ietf:params:xml:ns:xmpp-stanzas");
+		error.addChild("text").setContent("unreadable OTR message received");
+		return packet;
 	}
 }
