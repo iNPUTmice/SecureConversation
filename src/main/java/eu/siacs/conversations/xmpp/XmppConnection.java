@@ -1108,6 +1108,14 @@ public class XmppConnection implements Runnable {
 		this.lastConnect = 0;
 	}
 
+    public void setStreamId (String streamId){
+        this.streamId = streamId;
+    }
+
+    public String getStreamId(){
+        return this.streamId;
+    }
+
 	private class Info {
 		public final ArrayList<String> features = new ArrayList<>();
 		public final ArrayList<Pair<String,String>> identities = new ArrayList<>();
