@@ -1,12 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
 	<string-array name="resources">
 		<item>Mobile</item>
 		<item>Phone</item>
 		<item>Tablet</item>
 		<item>Conversations</item>
 		<item>Android</item>
+	</string-array>
+	<string-array name="image_types">
+		<item>WEBP (smallest)</item>
+		<item>JPG</item>
+	</string-array>
+	<string-array name="image_types_values">
+		<item>WEBP</item>
+		<item>JPG</item>
 	</string-array>
 	<string-array name="filesizes">
 		<item>@string/never</item>
