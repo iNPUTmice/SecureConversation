@@ -210,7 +210,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.messageBody.setTextIsSelectable(false);
 	}
 
-	private void displayHeartMessage(final ViewHolder viewHolder, final String body) {
+	private void displaySymbolMessage(final ViewHolder viewHolder, final String body) {
 		if (viewHolder.download_button != null) {
 			viewHolder.download_button.setVisibility(View.GONE);
 		}
@@ -522,8 +522,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			if (GeoHelper.isGeoUri(message.getBody())) {
 				displayLocationMessage(viewHolder,message);
 			} else {
-				if (message.bodyIsHeart()) {
-					displayHeartMessage(viewHolder, message.getBody().trim());
+				if (message.bodyIsSymbol()) {
+					displaySymbolMessage(viewHolder, message.getBody().trim());
 				} else {
 					displayTextMessage(viewHolder, message);
 				}

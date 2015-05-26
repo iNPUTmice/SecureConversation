@@ -379,8 +379,8 @@ public class Message extends AbstractEntity {
 						!this.bodyContainsDownloadable() &&
 						!message.getBody().startsWith(ME_COMMAND) &&
 						!this.getBody().startsWith(ME_COMMAND) &&
-						!this.bodyIsHeart() &&
-						!message.bodyIsHeart()
+						!this.bodyIsSymbol() &&
+						!message.bodyIsSymbol()
 				);
 	}
 
@@ -479,8 +479,8 @@ public class Message extends AbstractEntity {
 		}
 	}
 
-	public boolean bodyIsHeart() {
-		return body != null && UIHelper.HEARTS.contains(body.trim());
+	public boolean bodyIsSymbol() {
+		return body != null && UIHelper.SYMBOLS.contains(body.trim());
 	}
 
 	public ImageParams getImageParams() {

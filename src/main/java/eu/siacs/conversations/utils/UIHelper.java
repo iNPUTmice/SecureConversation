@@ -24,8 +24,14 @@ public class UIHelper {
 	private static String BLACK_HEART_SUIT = "\u2665";
 	private static String HEAVY_BLACK_HEART_SUIT = "\u2764";
 	private static String WHITE_HEART_SUIT = "\u2661";
+	private static String KISS_MARK = "\u1F48B";
 
-	public static final ArrayList<String> HEARTS = new ArrayList<>(Arrays.asList(BLACK_HEART_SUIT,HEAVY_BLACK_HEART_SUIT,WHITE_HEART_SUIT));
+	public static final ArrayList<String> SYMBOLS = new ArrayList<>(Arrays.asList(
+			BLACK_HEART_SUIT,
+			HEAVY_BLACK_HEART_SUIT,
+			WHITE_HEART_SUIT,
+			KISS_MARK
+		));
 
 	private static final ArrayList<String> LOCATION_QUESTIONS = new ArrayList<>(Arrays.asList(
 			"where are you", //en
