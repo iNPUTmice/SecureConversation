@@ -58,6 +58,7 @@ import eu.siacs.conversations.ui.XmppActivity.OnValueEdited;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureClicked;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureLongClicked;
+import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -266,7 +267,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			if (conversation.getNextCounterpart() != null) {
 				message.setCounterpart(conversation.getNextCounterpart());
 				message.setType(Message.TYPE_PRIVATE);
-				conversation.setNextCounterpart(null);
 			}
 		}
 		if (conversation.getNextEncryption(activity.forceEncryption()) == Message.ENCRYPTION_OTR) {
@@ -314,8 +314,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	@Override
 	public View onCreateView(final LayoutInflater inflater,
 			ViewGroup container, Bundle savedInstanceState) {
-		final View view = inflater.inflate(R.layout.fragment_conversation,
-				container, false);
+		final View view = inflater.inflate(R.layout.fragment_conversation,container, false);
+		view.setOnClickListener(null);
 		mEditMessage = (EditMessage) view.findViewById(R.id.textinput);
 		setupIme();
 		mEditMessage.setOnClickListener(new OnClickListener() {
@@ -410,19 +410,20 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			MenuItem downloadImage = menu.findItem(R.id.download_image);
 			MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
 			if ((m.getType() != Message.TYPE_TEXT && m.getType() != Message.TYPE_PRIVATE)
-					|| m.getDownloadable() != null) {
+					|| m.getDownloadable() != null || GeoHelper.isGeoUri(m.getBody())) {
 				copyText.setVisible(false);
 			}
-			if (m.getType() == Message.TYPE_TEXT
+			if ((m.getType() == Message.TYPE_TEXT
 					|| m.getType() == Message.TYPE_PRIVATE
-					|| m.getDownloadable() != null) {
+					|| m.getDownloadable() != null)
+				&& (!GeoHelper.isGeoUri(m.getBody()))) {
 				shareWith.setVisible(false);
-					}
+			}
 			if (m.getStatus() != Message.STATUS_SEND_FAILED) {
 				sendAgain.setVisible(false);
 			}
-			if ((m.getType() != Message.TYPE_IMAGE && m.getDownloadable() == null)
-					|| m.getImageParams().url == null) {
+			if (((m.getType() != Message.TYPE_IMAGE && m.getDownloadable() == null)
+					|| m.getImageParams().url == null) && !GeoHelper.isGeoUri(m.getBody())) {
 				copyUrl.setVisible(false);
 					}
 			if (m.getType() != Message.TYPE_TEXT
@@ -467,16 +468,21 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private void shareWith(Message message) {
 		Intent shareIntent = new Intent();
 		shareIntent.setAction(Intent.ACTION_SEND);
-		shareIntent.putExtra(Intent.EXTRA_STREAM,
-				activity.xmppConnectionService.getFileBackend()
-				.getJingleFileUri(message));
-		shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-		String path = message.getRelativeFilePath();
-		String mime = path == null ? null :URLConnection.guessContentTypeFromName(path);
-		if (mime == null) {
-			mime = "image/webp";
+		if (GeoHelper.isGeoUri(message.getBody())) {
+			shareIntent.putExtra(Intent.EXTRA_TEXT, message.getBody());
+			shareIntent.setType("text/plain");
+		} else {
+			shareIntent.putExtra(Intent.EXTRA_STREAM,
+					activity.xmppConnectionService.getFileBackend()
+							.getJingleFileUri(message));
+			shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+			String path = message.getRelativeFilePath();
+			String mime = path == null ? null : URLConnection.guessContentTypeFromName(path);
+			if (mime == null) {
+				mime = "image/webp";
+			}
+			shareIntent.setType(mime);
 		}
-		shareIntent.setType(mime);
 		activity.startActivity(Intent.createChooser(shareIntent,getText(R.string.share_with)));
 	}
 
@@ -501,8 +507,16 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	}
 
 	private void copyUrl(Message message) {
-		if (activity.copyTextToClipboard(
-					message.getImageParams().url.toString(), R.string.image_url)) {
+		final String url;
+		final int resId;
+		if (GeoHelper.isGeoUri(message.getBody())) {
+			resId = R.string.location;
+			url = message.getBody();
+		} else {
+			resId = R.string.image_url;
+			url = message.getImageParams().url.toString();
+		}
+		if (activity.copyTextToClipboard(url, resId)) {
 			Toast.makeText(activity, R.string.url_copied_to_clipboard,
 					Toast.LENGTH_SHORT).show();
 					}
@@ -704,21 +718,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			final ConversationActivity activity = (ConversationActivity) getActivity();
 			if (this.conversation != null) {
 				updateSnackBar(this.conversation);
-				final Contact contact = this.conversation.getContact();
-				if (this.conversation.isBlocked()) {
-
-				} else if (!contact.showInRoster()
-						&& contact
-						.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
-
-				} else if (conversation.getMode() == Conversation.MODE_SINGLE) {
-					makeFingerprintWarning();
-				} else if (!conversation.getMucOptions().online()
-						&& conversation.getAccount().getStatus() == Account.State.ONLINE) {
-
-				} else if (this.conversation.isMuted()) {
-
-				}
 				conversation.populateWithMessages(ConversationFragment.this.messageList);
 				for (final Message message : this.messageList) {
 					if (message.getEncryption() == Message.ENCRYPTION_PGP
@@ -765,6 +764,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					} catch (final NoSuchElementException ignored) {
 
 					}
+					askForPassphraseIntent = null;
 					activity.xmppConnectionService.updateMessage(message);
 				}
 
@@ -862,10 +862,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				}
 			}
 		}
-	}
-
-	protected void makeFingerprintWarning() {
-
 	}
 
 	protected void showSnackbar(final int message, final int action,
@@ -1004,6 +1000,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	}
 
 	public void appendText(String text) {
+		if (text == null) {
+			return;
+		}
 		String previous = this.mEditMessage.getText().toString();
 		if (previous.length() != 0 && !previous.endsWith(" ")) {
 			text = " " + text;

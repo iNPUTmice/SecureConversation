@@ -39,6 +39,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
 import eu.siacs.conversations.ui.TimePreference;
+import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 
 public class NotificationService {
@@ -219,7 +220,7 @@ public class NotificationService {
 			mBuilder.setDefaults(0);
 			mBuilder.setSmallIcon(R.drawable.ic_notification);
 			mBuilder.setDeleteIntent(createDeleteIntent());
-			mBuilder.setLights(0xff259b24, 2000, 3000);
+			mBuilder.setLights(0xff00FF00, 2000, 3000);
 			final Notification notification = mBuilder.build();
 			notificationManager.notify(NOTIFICATION_ID, notification);
 		}
@@ -284,6 +285,11 @@ public class NotificationService {
 						createDownloadIntent(message)
 						);
 			}
+			if ((message = getFirstLocationMessage(messages)) != null) {
+				mBuilder.addAction(R.drawable.ic_room_white_24dp,
+						mXmppConnectionService.getString(R.string.show_location),
+						createShowLocationIntent(message));
+			}
 			mBuilder.setContentIntent(createContentIntent(conversation));
 		}
 		return mBuilder;
@@ -347,6 +353,15 @@ public class NotificationService {
 		return null;
 	}
 
+	private Message getFirstLocationMessage(final Iterable<Message> messages) {
+		for(final Message message : messages) {
+			if (GeoHelper.isGeoUri(message.getBody())) {
+				return message;
+			}
+		}
+		return null;
+	}
+
 	private CharSequence getMergedBodies(final ArrayList<Message> messages) {
 		final StringBuilder text = new StringBuilder();
 		for (int i = 0; i < messages.size(); ++i) {
@@ -356,6 +371,16 @@ public class NotificationService {
 			}
 		}
 		return text.toString();
+	}
+
+	private PendingIntent createShowLocationIntent(final Message message) {
+		Iterable<Intent> intents = GeoHelper.createGeoIntentsFromMessage(message);
+		for(Intent intent : intents) {
+			if (intent.resolveActivity(mXmppConnectionService.getPackageManager()) != null) {
+				return PendingIntent.getActivity(mXmppConnectionService,18,intent,PendingIntent.FLAG_UPDATE_CURRENT);
+			}
+		}
+		return createOpenConversationsIntent();
 	}
 
 	private PendingIntent createContentIntent(final String conversationUuid, final String downloadMessageUuid) {
@@ -453,7 +478,7 @@ public class NotificationService {
 		// the nick (matched in case-insensitive manner), followed by optional
 		// punctuation (for example "bob: i disagree" or "how are you alice?"),
 		// followed by another word boundary.
-		return Pattern.compile("\\b" + nick + "\\p{Punct}?\\b",
+		return Pattern.compile("\\b" + Pattern.quote(nick) + "\\p{Punct}?\\b",
 				Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE);
 	}
 
@@ -492,7 +517,7 @@ public class NotificationService {
 		final int cancelIcon;
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			mBuilder.setCategory(Notification.CATEGORY_SERVICE);
-			mBuilder.setSmallIcon(R.drawable.ic_import_export_white_48dp);
+			mBuilder.setSmallIcon(R.drawable.ic_import_export_white_24dp);
 			cancelIcon = R.drawable.ic_cancel_white_24dp;
 		} else {
 			mBuilder.setSmallIcon(R.drawable.ic_stat_communication_import_export);
@@ -539,7 +564,7 @@ public class NotificationService {
 		mBuilder.setOngoing(true);
 		//mBuilder.setLights(0xffffffff, 2000, 4000);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			mBuilder.setSmallIcon(R.drawable.ic_warning_white_36dp);
+			mBuilder.setSmallIcon(R.drawable.ic_warning_white_24dp);
 		} else {
 			mBuilder.setSmallIcon(R.drawable.ic_stat_alert_warning);
 		}

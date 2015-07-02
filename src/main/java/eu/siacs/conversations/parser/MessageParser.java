@@ -1,11 +1,8 @@
 package eu.siacs.conversations.parser;
 
-import android.util.Log;
-
 import net.java.otr4j.session.Session;
 import net.java.otr4j.session.SessionStatus;
 
-import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
@@ -44,12 +41,11 @@ public class MessageParser extends AbstractParser implements
 	}
 
 	private Message parseChat(MessagePacket packet, Account account) {
-        final Jid jid = packet.getFrom();
+		final Jid jid = packet.getFrom();
 		if (jid == null) {
 			return null;
 		}
 		Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, jid.toBareJid(), false);
-		updateLastseen(packet, account, true);
 		String pgpBody = getPgpBody(packet);
 		Message finishedMessage;
 		if (pgpBody != null) {
@@ -64,13 +60,18 @@ public class MessageParser extends AbstractParser implements
 		finishedMessage.markable = isMarkable(packet);
 		if (conversation.getMode() == Conversation.MODE_MULTI
 				&& !jid.isBareJid()) {
+			final Jid trueCounterpart = conversation.getMucOptions()
+					.getTrueCounterpart(jid.getResourcepart());
+			if (trueCounterpart != null) {
+				updateLastseen(packet, account, trueCounterpart, false);
+			}
 			finishedMessage.setType(Message.TYPE_PRIVATE);
-			finishedMessage.setTrueCounterpart(conversation.getMucOptions()
-					.getTrueCounterpart(jid.getResourcepart()));
+			finishedMessage.setTrueCounterpart(trueCounterpart);
 			if (conversation.hasDuplicateMessage(finishedMessage)) {
 				return null;
 			}
-
+		} else {
+			updateLastseen(packet, account, true);
 		}
 		finishedMessage.setCounterpart(jid);
 		finishedMessage.setTime(getTimestamp(packet));
@@ -89,10 +90,11 @@ public class MessageParser extends AbstractParser implements
 				.findOrCreateConversation(account, from.toBareJid(), false);
 		String presence;
 		if (from.isBareJid()) {
-            presence = "";
+			presence = "";
 		} else {
 			presence = from.getResourcepart();
 		}
+		extractChatState(conversation, packet);
 		updateLastseen(packet, account, true);
 		String body = packet.getBody();
 		if (body.matches("^\\?OTRv\\d{1,2}\\?.*")) {
@@ -117,6 +119,7 @@ public class MessageParser extends AbstractParser implements
 			}
 		}
 		try {
+			conversation.setLastReceivedOtrMessageId(packet.getId());
 			Session otrSession = conversation.getOtrSession();
 			SessionStatus before = otrSession.getSessionStatus();
 			body = otrSession.transformReceiving(body);
@@ -143,7 +146,7 @@ public class MessageParser extends AbstractParser implements
 			finishedMessage.setRemoteMsgId(packet.getId());
 			finishedMessage.markable = isMarkable(packet);
 			finishedMessage.setCounterpart(from);
-			extractChatState(conversation, packet);
+			conversation.setLastReceivedOtrMessageId(null);
 			return finishedMessage;
 		} catch (Exception e) {
 			conversation.resetOtrSession();
@@ -153,7 +156,7 @@ public class MessageParser extends AbstractParser implements
 
 	private Message parseGroupchat(MessagePacket packet, Account account) {
 		int status;
-        final Jid from = packet.getFrom();
+		final Jid from = packet.getFrom();
 		if (from == null) {
 			return null;
 		}
@@ -163,6 +166,10 @@ public class MessageParser extends AbstractParser implements
 		}
 		Conversation conversation = mXmppConnectionService
 				.findOrCreateConversation(account, from.toBareJid(), true);
+		final Jid trueCounterpart = conversation.getMucOptions().getTrueCounterpart(from.getResourcepart());
+		if (trueCounterpart != null) {
+			updateLastseen(packet, account, trueCounterpart, false);
+		}
 		if (packet.hasChild("subject")) {
 			conversation.setHasMessagesLeftOnServer(true);
 			conversation.getMucOptions().setSubject(packet.findChild("subject").getContent());
@@ -384,15 +391,17 @@ public class MessageParser extends AbstractParser implements
 
 	private void parseNonMessage(Element packet, Account account) {
 		final Jid from = packet.getAttributeAsJid("from");
+		if (account.getJid().equals(from)) {
+			return;
+		}
 		if (extractChatState(from == null ? null : mXmppConnectionService.find(account,from), packet)) {
 			mXmppConnectionService.updateConversationUi();
 		}
-		Element invite = extractInvite(packet);
-		if (invite != null) {
-			Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, from, true);
+		Invite invite = extractInvite(packet);
+		if (invite != null && invite.jid != null) {
+			Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, invite.jid, true);
 			if (!conversation.getMucOptions().online()) {
-				Element password = invite.findChild("password");
-				conversation.getMucOptions().setPassword(password == null ? null : password.getContent());
+				conversation.getMucOptions().setPassword(invite.password);
 				mXmppConnectionService.databaseBackend.updateConversation(conversation);
 				mXmppConnectionService.joinMuc(conversation);
 				mXmppConnectionService.updateConversationUi();
@@ -432,16 +441,30 @@ public class MessageParser extends AbstractParser implements
 		}
 	}
 
-	private Element extractInvite(Element message) {
+	private class Invite {
+		Jid jid;
+		String password;
+		Invite(Jid jid, String password) {
+			this.jid = jid;
+			this.password = password;
+		}
+	}
+
+	private Invite extractInvite(Element message) {
 		Element x = message.findChild("x","http://jabber.org/protocol/muc#user");
-		if (x == null) {
-			x = message.findChild("x","jabber:x:conference");
-		}
-		if (x != null && x.hasChild("invite")) {
-			return x;
+		if (x != null) {
+			Element invite = x.findChild("invite");
+			if (invite != null) {
+				Element pw = x.findChild("password");
+				return new Invite(message.getAttributeAsJid("from"), pw != null ? pw.getContent(): null);
+			}
 		} else {
-			return null;
+			x = message.findChild("x","jabber:x:conference");
+			if (x != null) {
+				return new Invite(x.getAttributeAsJid("jid"),x.getAttribute("password"));
+			}
 		}
+		return null;
 	}
 
 	private void parseEvent(final Element event, final Jid from, final Account account) {

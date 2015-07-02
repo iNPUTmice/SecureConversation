@@ -28,6 +28,7 @@ public final class Config {
 
 	public static final boolean NO_PROXY_LOOKUP = false; //useful to debug ibb
 	public static final boolean DISABLE_STRING_PREP = false; // setting to true might increase startup performance
+	public static final boolean EXTENDED_SM_LOGGING = false; // log stanza counts
 
 	public static final long MILLISECONDS_IN_DAY = 24 * 60 * 60 * 1000;
 	public static final long MAM_MAX_CATCHUP =  MILLISECONDS_IN_DAY / 2;
@@ -62,6 +63,15 @@ public final class Config {
 		"TLS_RSA_WITH_AES_256_CBC_SHA384",
 		"TLS_RSA_WITH_AES_128_CBC_SHA",
 		"TLS_RSA_WITH_AES_256_CBC_SHA",
+	};
+
+	public static final String WEAK_CIPHER_PATTERNS[] = {
+		"_NULL_",
+		"_EXPORT_",
+		"_anon_",
+		"_RC4_",
+		"_DES_",
+		"_MD5",
 	};
 
 	private Config() {

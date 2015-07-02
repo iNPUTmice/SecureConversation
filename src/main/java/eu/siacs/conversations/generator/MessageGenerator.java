@@ -35,6 +35,9 @@ public class MessageGenerator extends AbstractGenerator {
 		} else if (message.getType() == Message.TYPE_PRIVATE) {
 			packet.setTo(message.getCounterpart());
 			packet.setType(MessagePacket.TYPE_CHAT);
+			if (this.mXmppConnectionService.indicateReceived()) {
+				packet.addChild("request", "urn:xmpp:receipts");
+			}
 		} else {
 			packet.setTo(message.getCounterpart().toBareJid());
 			packet.setType(MessagePacket.TYPE_GROUPCHAT);
@@ -68,6 +71,7 @@ public class MessageGenerator extends AbstractGenerator {
 		MessagePacket packet = preparePacket(message, addDelay);
 		packet.addChild("private", "urn:xmpp:carbons:2");
 		packet.addChild("no-copy", "urn:xmpp:hints");
+		packet.addChild("no-permanent-store", "urn:xmpp:hints");
 		try {
 			packet.setBody(otrSession.transformSending(message.getBody())[0]);
 			return packet;
@@ -167,5 +171,18 @@ public class MessageGenerator extends AbstractGenerator {
 		Element received = receivedPacket.addChild("received", namespace);
 		received.setAttribute("id", originalMessage.getId());
 		return receivedPacket;
+	}
+
+	public MessagePacket generateOtrError(Jid to, String id, String errorText) {
+		MessagePacket packet = new MessagePacket();
+		packet.setType(MessagePacket.TYPE_ERROR);
+		packet.setAttribute("id",id);
+		packet.setTo(to);
+		Element error = packet.addChild("error");
+		error.setAttribute("code","406");
+		error.setAttribute("type","modify");
+		error.addChild("not-acceptable","urn:ietf:params:xml:ns:xmpp-stanzas");
+		error.addChild("text").setContent("?OTR Error:" + errorText);
+		return packet;
 	}
 }
