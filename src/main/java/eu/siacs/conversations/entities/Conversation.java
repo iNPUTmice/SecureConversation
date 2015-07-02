@@ -16,6 +16,7 @@ import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 import eu.siacs.conversations.Config;
@@ -220,6 +221,11 @@ public class Conversation extends AbstractEntity implements Blockable {
 			messages.clear();
 			messages.addAll(this.messages);
 		}
+		for(Iterator<Message> iterator = messages.iterator(); iterator.hasNext();) {
+			if (iterator.next().wasMergedIntoPrevious()) {
+				iterator.remove();
+			}
+		}
 	}
 
 	@Override
@@ -243,6 +249,12 @@ public class Conversation extends AbstractEntity implements Blockable {
 
 	public void setLastReceivedOtrMessageId(String id) {
 		this.mLastReceivedOtrMessageId = id;
+	}
+
+	public int countMessages() {
+		synchronized (this.messages) {
+			return this.messages.size();
+		}
 	}
 
 
@@ -415,7 +427,7 @@ public class Conversation extends AbstractEntity implements Blockable {
 			final SessionID sessionId = new SessionID(this.getJid().toBareJid().toString(),
 					presence,
 					"xmpp");
-			this.otrSession = new SessionImpl(sessionId, getAccount().getOtrEngine());
+			this.otrSession = new SessionImpl(sessionId, getAccount().getOtrService());
 			try {
 				if (sendStart) {
 					this.otrSession.startSession();
@@ -487,7 +499,7 @@ public class Conversation extends AbstractEntity implements Blockable {
 					return null;
 				}
 				DSAPublicKey remotePubKey = (DSAPublicKey) getOtrSession().getRemotePublicKey();
-				this.otrFingerprint = getAccount().getOtrEngine().getFingerprint(remotePubKey);
+				this.otrFingerprint = getAccount().getOtrService().getFingerprint(remotePubKey);
 			} catch (final OtrCryptoException | UnsupportedOperationException ignored) {
 				return null;
 			}

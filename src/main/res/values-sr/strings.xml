@@ -97,8 +97,8 @@
   <string name="pref_general">Опште</string>
   <string name="pref_xmpp_resource">ИксМПП ресурс</string>
   <string name="pref_xmpp_resource_summary">Име са којим се овај клијент идентификује</string>
-  <string name="pref_accept_files">Прихваћај фајлове</string>
-  <string name="pref_accept_files_summary">Аутоматски прихваћај фајлове мање од…</string>
+  <string name="pref_accept_files">Прихватај фајлове</string>
+  <string name="pref_accept_files_summary">Аутоматски прихватај фајлове мање од…</string>
   <string name="pref_notification_settings">Поставке обавештења</string>
   <string name="pref_notifications">Обавештења</string>
   <string name="pref_notifications_summary">Обавести кад стигне нова порука</string>
@@ -448,4 +448,9 @@
     <item quantity="few">Изабери %d контакта</item>
     <item quantity="other">Изабери %d контаката</item>
   </plurals>
+  <string name="pref_quick_action_summary">Замени дугме за слање брзом радњом</string>
+  <string name="pref_quick_action">Брза радња</string>
+  <string name="none">Ниједна</string>
+  <string name="recently_used">Недавно коришћена</string>
+  <string name="choose_quick_action">Изаберите брзу радњу</string>
 </resources>
