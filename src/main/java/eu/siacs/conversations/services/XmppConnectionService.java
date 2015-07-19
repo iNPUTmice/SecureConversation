@@ -626,8 +626,10 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	private void logoutAndSave() {
 		for (final Account account : accounts) {
 			databaseBackend.writeRoster(account.getRoster());
+            databaseBackend.setStreamId(account, account.getXmppConnection().getStreamId());
 			if (account.getXmppConnection() != null) {
-				disconnect(account, false);
+				//disconnect(account, false);
+                Log.d(Config.LOGTAG, "logout avoided !");
 			}
 		}
 		Context context = getApplicationContext();
@@ -637,6 +639,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		alarmManager.cancel(PendingIntent.getBroadcast(context, 0, intent, 0));
 		Log.d(Config.LOGTAG, "good bye");
 		stopSelf();
+
 	}
 
 	protected void scheduleWakeUpCall(int seconds, int requestCode) {
@@ -656,6 +659,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		account.setResource(sharedPref.getString("resource", "mobile")
 				.toLowerCase(Locale.getDefault()));
 		final XmppConnection connection = new XmppConnection(account, this);
+        connection.setStreamId(databaseBackend.getStreamId(account));
 		connection.setOnMessagePacketReceivedListener(this.mMessageParser);
 		connection.setOnStatusChangedListener(this.statusListener);
 		connection.setOnPresencePacketReceivedListener(this.mPresenceParser);

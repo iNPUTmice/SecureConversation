@@ -13,6 +13,7 @@ import eu.siacs.conversations.entities.Roster;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteCantOpenDatabaseException;
@@ -25,7 +26,9 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	private static DatabaseBackend instance = null;
 
 	private static final String DATABASE_NAME = "history";
-	private static final int DATABASE_VERSION = 14;
+	private static final int DATABASE_VERSION = 15;
+    private static final String STREAM_ID_TABLE_NAME = "streamId";
+    private static final String STREAM_ID_COL = "streamId";
 
 	private static String CREATE_CONTATCS_STATEMENT = "create table "
 			+ Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -215,6 +218,25 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			}
 			cursor.close();
 		}
+        if (oldVersion < 15 && newVersion >= 15) {
+            db.execSQL("create table " + STREAM_ID_TABLE_NAME + "(" + Account.UUID
+                    + " TEXT PRIMARY KEY," + STREAM_ID_COL + " TEXT)");
+
+            List<Account> accounts = new ArrayList<>();
+            Cursor cursor = db.query(Account.TABLENAME, null, null, null, null,
+                    null, null);
+            while (cursor.moveToNext()) {
+                accounts.add(Account.fromCursor(cursor));
+            }
+            cursor.close();
+
+            for (Account a : accounts) {
+                ContentValues cv = new ContentValues();
+                cv.put(Account.UUID, a.getUuid());
+                cv.put(STREAM_ID_COL, "");
+                db.insert(STREAM_ID_TABLE_NAME, null, cv);
+            }
+        }
 	}
 
 	public static synchronized DatabaseBackend getInstance(Context context) {
@@ -231,12 +253,16 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
 	public void createMessage(Message message) {
 		SQLiteDatabase db = this.getWritableDatabase();
-		db.insert(Message.TABLENAME, null, message.getContentValues());
+        db.insert(Message.TABLENAME, null, message.getContentValues());
 	}
 
 	public void createAccount(Account account) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		db.insert(Account.TABLENAME, null, account.getContentValues());
+        ContentValues values = new ContentValues();
+        values.put(Account.UUID, account.getUuid());
+        values.put(STREAM_ID_COL, "");
+        db.insert(STREAM_ID_TABLE_NAME, null, values);
 	}
 
 	public void createContact(Contact contact) {
@@ -351,6 +377,30 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		String[] args = { account.getUuid() };
 		db.delete(Account.TABLENAME, Account.UUID + "=?", args);
 	}
+
+    public void setStreamId(Account account, String streamID){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String[] args = { account.getUuid() };
+        ContentValues cv = new ContentValues();
+        cv.put(Account.UUID, account.getUuid());
+        cv.put(STREAM_ID_COL, streamID);
+        db.update(STREAM_ID_TABLE_NAME, cv, Account.UUID
+                + "=?", args);
+        Log.d(Config.LOGTAG, "updated database streamId to value: " + streamID);
+    }
+
+    public String getStreamId(Account account){
+        SQLiteDatabase db = this.getWritableDatabase();
+        String[] args = { account.getUuid() };
+
+        Cursor cursor = db.query(STREAM_ID_TABLE_NAME, null, Account.UUID + "=?",
+                args, null, null, null);
+
+        cursor.moveToNext();
+        String streamID = cursor.getString(1);
+        Log.d(Config.LOGTAG, "got database streamId : " + streamID);
+        return streamID;
+    }
 
 	public boolean hasEnabledAccounts() {
 		SQLiteDatabase db = this.getReadableDatabase();
