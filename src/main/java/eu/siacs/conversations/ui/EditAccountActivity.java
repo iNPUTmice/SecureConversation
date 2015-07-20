@@ -24,7 +24,7 @@ import android.widget.RelativeLayout;
 import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
+import eu.siacs.conversations.Config;
 import org.whispersystems.libaxolotl.IdentityKey;
 
 import java.util.Set;
@@ -452,7 +452,7 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 		}
 		if (this.jidToEdit != null) {
 			this.mAvatar.setVisibility(View.VISIBLE);
-			this.mAvatar.setImageBitmap(avatarService().get(this.mAccount, getPixel(72)));
+			this.mAvatar.setImageBitmap(avatarService().get(this.mAccount, getPixel(Config.AVATAR_SIZE)));
 		}
 		if (this.mAccount.isOptionSet(Account.OPTION_REGISTER)) {
 			this.mRegisterNew.setVisibility(View.VISIBLE);
