@@ -23,6 +23,14 @@
             android:summary="@string/pref_accept_files_summary"
             android:title="@string/pref_accept_files" />
 
+        <ListPreference
+            android:defaultValue="WEBP"
+            android:entries="@array/image_types"
+            android:entryValues="@array/image_types_values"
+            android:key="image_type"
+            android:summary="@string/pref_image_type_summary"
+            android:title="@string/pref_image_type" />
+
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="confirm_messages"

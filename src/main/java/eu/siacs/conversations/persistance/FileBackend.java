@@ -65,7 +65,7 @@ public class FileBackend {
 			extension = "."+parts[parts.length - 1];
 		} else {
 			if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_TEXT) {
-				extension = ".webp";
+				extension = "."+mXmppConnectionService.getPreferences().getString("image_type", "WEBP").toLowerCase();
 			} else {
 				extension = "";
 			}
@@ -211,7 +211,18 @@ public class FileBackend {
 				scaledBitmap = rotate(scaledBitmap, rotation);
 			}
 
-			boolean success = scaledBitmap.compress(Bitmap.CompressFormat.WEBP, 75, os);
+			String imageType = mXmppConnectionService.getPreferences().getString("image_type", "WEBP");
+			Bitmap.CompressFormat compressFormat = Bitmap.CompressFormat.WEBP;
+			switch (imageType) {
+				case "WEBP":
+					compressFormat = Bitmap.CompressFormat.WEBP;
+					break;
+				case "JPG":
+					compressFormat = Bitmap.CompressFormat.JPEG;
+					break;
+			}
+
+			boolean success = scaledBitmap.compress(compressFormat, 75, os);
 			if (!success) {
 				throw new FileCopyException(R.string.error_compressing_image);
 			}
