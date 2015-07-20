@@ -172,6 +172,11 @@
                     android:key="keep_foreground_service"
                     android:title="@string/pref_keep_foreground_service"
                     android:summary="@string/pref_keep_foreground_service_summary" />
+                <eu.siacs.conversations.ui.ExportLogsPreference
+                    android:key="backup_logs"
+                    android:title="@string/pref_backup_logs"
+                    android:summary="@string/pref_backup_logs_summary"/>
+
             </PreferenceCategory>
         </PreferenceScreen>
 

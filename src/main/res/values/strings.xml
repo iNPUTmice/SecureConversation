@@ -448,6 +448,8 @@
 	<string name="pref_enter_is_send_summary">Use enter key to send message</string>
 	<string name="pref_display_enter_key">Show enter key</string>
 	<string name="pref_display_enter_key_summary">Change the emoticons key to an enter key</string>
+	<string name="pref_backup_logs">Backup Logs</string>
+	<string name="pref_backup_logs_summary">Write logs to SD card</string>
 	<string name="audio">audio</string>
 	<string name="video">video</string>
 	<string name="image">image</string>
