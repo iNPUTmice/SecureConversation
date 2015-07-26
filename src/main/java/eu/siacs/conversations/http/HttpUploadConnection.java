@@ -151,6 +151,8 @@ public class HttpUploadConnection implements Transferable {
 				expected = pair.second;
 				connection.setRequestMethod("PUT");
 				connection.setFixedLengthStreamingMode(expected);
+				connection.setRequestProperty("Content-Length", String.valueOf(file.getExpectedSize()));
+				connection.setRequestProperty("Content-Type", file.getMimeType());
 				connection.setDoOutput(true);
 				connection.connect();
 				os = connection.getOutputStream();
