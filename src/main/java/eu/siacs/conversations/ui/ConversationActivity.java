@@ -435,7 +435,6 @@ public class ConversationActivity extends XmppActivity
 						intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
 						mPendingImageUris.clear();
 						mPendingImageUris.add(uri);
-						intent.putExtra(MediaStore.EXTRA_OUTPUT, mPendingImageUri);
 						break;
 					case ATTACHMENT_CHOICE_CHOOSE_FILE:
 						chooser = true;
