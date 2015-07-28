@@ -19,7 +19,6 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 
 import java.io.*;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -106,26 +105,27 @@ public class ExportLogsPreference extends Preference {
                     contactJid.toBareJid().toString()));
             dir.mkdirs();
 
-            ArrayList<Message> messages = databaseBackend.getMessages(conversation, Integer.MAX_VALUE);
             BufferedWriter bw = null;
             try {
-                for (Message message : messages) {
-                    String date = simpleDateFormat.format(new Date(message.getTimeSent()));
-                    if (bw == null) {
-                        bw = new BufferedWriter(new FileWriter(new File(dir, date + ".txt")));
-                    }
-                    String jid = null;
-                    switch (message.getStatus()) {
-                        case Message.STATUS_RECEIVED:
-                            jid = getMessageCounterpart(message);
-                            break;
-                        case Message.STATUS_SEND:
-                            jid = accountJid.toString();
-                            break;
-                    }
-                    if (jid != null) {
-                        bw.write(String.format(MESSAGE_STRING_FORMAT, date, jid,
-                                message.getBody().replace("\\\n", "\\ \n").replace("\n", "\\ \n")));
+                for (Message message : databaseBackend.getMessagesIterable(conversation)) {
+                    if (message.getType() == Message.TYPE_TEXT || message.hasFileOnRemoteHost()) {
+                        String date = simpleDateFormat.format(new Date(message.getTimeSent()));
+                        if (bw == null) {
+                            bw = new BufferedWriter(new FileWriter(new File(dir, date + ".txt")));
+                        }
+                        String jid = null;
+                        switch (message.getStatus()) {
+                            case Message.STATUS_RECEIVED:
+                                jid = getMessageCounterpart(message);
+                                break;
+                            case Message.STATUS_SEND:
+                                jid = accountJid.toBareJid().toString();
+                                break;
+                        }
+                        if (jid != null) {
+                            bw.write(String.format(MESSAGE_STRING_FORMAT, date, jid,
+                                    message.getBody().replace("\\\n", "\\ \n").replace("\n", "\\ \n")));
+                        }
                     }
                 }
             } catch (IOException e) {
