@@ -119,6 +119,8 @@ public class ExportLogsPreference extends Preference {
                                 jid = getMessageCounterpart(message);
                                 break;
                             case Message.STATUS_SEND:
+                            case Message.STATUS_SEND_RECEIVED:
+                            case Message.STATUS_SEND_DISPLAYED:
                                 jid = accountJid.toBareJid().toString();
                                 break;
                         }
