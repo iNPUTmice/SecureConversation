@@ -191,7 +191,7 @@ public class HttpUploadConnection implements Transferable {
 							}
 
 							@Override
-							public void userInputRequried(PendingIntent pi, Message object) {
+							public void userInputRequired(PendingIntent pi, Message object) {
 								fail();
 							}
 						});

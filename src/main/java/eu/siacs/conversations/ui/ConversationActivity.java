@@ -507,8 +507,8 @@ public class ConversationActivity extends XmppActivity
 							new UiCallback<Contact>() {
 
 								@Override
-								public void userInputRequried(PendingIntent pi,
-										Contact contact) {
+								public void userInputRequired(PendingIntent pi,
+								                              Contact contact) {
 									ConversationActivity.this.runIntent(pi,attachmentChoice);
 								}
 
@@ -1130,7 +1130,7 @@ public class ConversationActivity extends XmppActivity
 			}
 
 			@Override
-			public void userInputRequried(PendingIntent pi, Message object) {
+			public void userInputRequired(PendingIntent pi, Message object) {
 
 			}
 		});
@@ -1155,7 +1155,7 @@ public class ConversationActivity extends XmppActivity
 			}
 
 			@Override
-			public void userInputRequried(PendingIntent pi, Message message) {
+			public void userInputRequired(PendingIntent pi, Message message) {
 
 			}
 		});
@@ -1171,8 +1171,8 @@ public class ConversationActivity extends XmppActivity
 				new UiCallback<Message>() {
 
 					@Override
-					public void userInputRequried(PendingIntent pi,
-							Message object) {
+					public void userInputRequired(PendingIntent pi,
+					                              Message object) {
 						hidePrepareFileToast();
 					}
 
@@ -1227,8 +1227,8 @@ public class ConversationActivity extends XmppActivity
 				new UiCallback<Message>() {
 
 					@Override
-					public void userInputRequried(PendingIntent pi,
-							Message message) {
+					public void userInputRequired(PendingIntent pi,
+					                              Message message) {
 						ConversationActivity.this.runIntent(pi,
 								ConversationActivity.REQUEST_SEND_MESSAGE);
 					}

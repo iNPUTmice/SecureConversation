@@ -84,7 +84,7 @@ public class PublishProfilePictureActivity extends XmppActivity {
 		}
 
 		@Override
-		public void userInputRequried(PendingIntent pi, Avatar object) {
+		public void userInputRequired(PendingIntent pi, Avatar object) {
 		}
 	};
 

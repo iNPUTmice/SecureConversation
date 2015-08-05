@@ -73,8 +73,8 @@ public class PgpEngine {
 
 						return;
 					case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-						callback.userInputRequried((PendingIntent) result
-								.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
+						callback.userInputRequired((PendingIntent) result
+										.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
 								message);
 						return;
 					case OpenPgpApi.RESULT_CODE_ERROR:
@@ -111,7 +111,7 @@ public class PgpEngine {
 							callback.success(message);
 							return;
 						case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-							callback.userInputRequried(
+							callback.userInputRequired(
 									(PendingIntent) result
 											.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
 									message);
@@ -179,8 +179,8 @@ public class PgpEngine {
 
 						break;
 					case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-						callback.userInputRequried((PendingIntent) result
-								.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
+						callback.userInputRequired((PendingIntent) result
+										.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
 								message);
 						break;
 					case OpenPgpApi.RESULT_CODE_ERROR:
@@ -209,7 +209,7 @@ public class PgpEngine {
 							callback.success(message);
 							break;
 						case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-							callback.userInputRequried(
+							callback.userInputRequired(
 									(PendingIntent) result
 											.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
 									message);
@@ -270,16 +270,17 @@ public class PgpEngine {
 		return 0;
 	}
 
-	public void generateSignature(final Account account, String status,
-			final UiCallback<Account> callback) {
-		Intent params = new Intent();
+	public void generateSignature(final Account account, final String status, final UiCallback<Account> callback) {
+		final Intent params = new Intent();
 		params.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, true);
 		params.setAction(OpenPgpApi.ACTION_SIGN);
 		params.putExtra(OpenPgpApi.EXTRA_ACCOUNT_NAME, account.getJid().toBareJid().toString());
-		InputStream is = new ByteArrayInputStream(status.getBytes());
+		if (account.hasKey(Account.PGP_SIGN_KEY_ID)) {
+			params.putExtra(OpenPgpApi.EXTRA_SIGN_KEY_ID, Long.valueOf(account.getKey(Account.PGP_SIGN_KEY_ID)));
+		}
+		final InputStream is = new ByteArrayInputStream(status.getBytes());
 		final OutputStream os = new ByteArrayOutputStream();
 		api.executeApiAsync(params, is, os, new IOpenPgpCallback() {
-
 			@Override
 			public void onReturn(Intent result) {
 				switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
@@ -311,8 +312,7 @@ public class PgpEngine {
 					callback.success(account);
 					return;
 				case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-					callback.userInputRequried((PendingIntent) result
-							.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
+					callback.userInputRequired((PendingIntent) result.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
 							account);
 					return;
 				case OpenPgpApi.RESULT_CODE_ERROR:
@@ -333,17 +333,18 @@ public class PgpEngine {
 			@Override
 			public void onReturn(Intent result) {
 				switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
-				case OpenPgpApi.RESULT_CODE_SUCCESS:
-					callback.success(contact);
-					return;
-				case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-					callback.userInputRequried((PendingIntent) result
-							.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
-							contact);
-					return;
-				case OpenPgpApi.RESULT_CODE_ERROR:
-					callback.error(R.string.openpgp_error, contact);
-                }
+					case OpenPgpApi.RESULT_CODE_SUCCESS:
+						callback.success(contact);
+						return;
+					case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+						callback.userInputRequired(
+								(PendingIntent) result.getParcelableExtra(OpenPgpApi.RESULT_INTENT),
+								contact
+						);
+						return;
+					case OpenPgpApi.RESULT_CODE_ERROR:
+						callback.error(R.string.openpgp_error, contact);
+				}
 			}
 		});
 	}

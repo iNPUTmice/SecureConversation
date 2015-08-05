@@ -810,7 +810,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			engine.decrypt(next, new UiCallback<Message>() {
 
 				@Override
-				public void userInputRequried(PendingIntent pi, Message message) {
+				public void userInputRequired(PendingIntent pi, Message message) {
 					mDecryptJobRunning = false;
 					askForPassphraseIntent = pi.getIntentSender();
 					updateSnackBar(conversation);
@@ -1052,8 +1052,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							new UiCallback<Contact>() {
 
 								@Override
-								public void userInputRequried(PendingIntent pi,
-															  Contact contact) {
+								public void userInputRequired(PendingIntent pi,
+								                              Contact contact) {
 									activity.runIntent(
 											pi,
 											ConversationActivity.REQUEST_ENCRYPT_MESSAGE);

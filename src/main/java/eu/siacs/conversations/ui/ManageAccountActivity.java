@@ -1,9 +1,11 @@
 package eu.siacs.conversations.ui;
 
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -14,6 +16,9 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
+
+import org.openintents.openpgp.OpenPgpSignatureResult;
+import org.openintents.openpgp.util.OpenPgpApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -244,7 +249,7 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 		xmppConnectionService.updateAccount(account);
 	}
 
-	private void publishOpenPGPPublicKey(Account account) {
+	private void publishOpenPGPPublicKey(final Account account) {
 		if (ManageAccountActivity.this.hasPgp()) {
 			announcePgp(account, null);
 		} else {
@@ -275,6 +280,12 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 		super.onActivityResult(requestCode, resultCode, data);
 		if (resultCode == RESULT_OK) {
 			if (requestCode == REQUEST_ANNOUNCE_PGP) {
+				if (OpenPgpApi.ACTION_SIGN.equals(data.getAction())) {
+					final long key_id = data.getLongExtra(OpenPgpApi.EXTRA_SIGN_KEY_ID, -1);
+					if (key_id != -1) {
+						selectedAccount.setKey(Account.PGP_SIGN_KEY_ID, String.valueOf(key_id));
+					}
+				}
 				announcePgp(selectedAccount, null);
 			}
 		}

@@ -44,7 +44,7 @@ public class ShareWithActivity extends XmppActivity {
 	private UiCallback<Message> attachFileCallback = new UiCallback<Message>() {
 
 		@Override
-		public void userInputRequried(PendingIntent pi, Message object) {
+		public void userInputRequired(PendingIntent pi, Message object) {
 			// TODO Auto-generated method stub
 
 		}

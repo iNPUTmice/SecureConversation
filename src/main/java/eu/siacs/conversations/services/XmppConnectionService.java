@@ -331,11 +331,10 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 							getApplicationContext(),
 							pgpServiceConnection.getService()), this);
 			}
-			return mPgpEngine;
+			return this.mPgpEngine;
 		} else {
 			return null;
 		}
-
 	}
 
 	public FileBackend getFileBackend() {

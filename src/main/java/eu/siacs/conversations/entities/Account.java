@@ -9,6 +9,7 @@ import net.java.otr4j.crypto.OtrCryptoException;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.openintents.openpgp.util.OpenPgpApi;
 
 import java.security.PublicKey;
 import java.security.interfaces.DSAPublicKey;
@@ -37,6 +38,8 @@ public class Account extends AbstractEntity {
 	public static final String ROSTERVERSION = "rosterversion";
 	public static final String KEYS = "keys";
 	public static final String AVATAR = "avatar";
+
+	public static final String PGP_SIGN_KEY_ID = "pgp_" + OpenPgpApi.EXTRA_SIGN_KEY_ID;
 
 	public static final String PINNED_MECHANISM_KEY = "pinned_mechanism";
 
@@ -258,6 +261,10 @@ public class Account extends AbstractEntity {
 
 	public String getKey(final String name) {
 		return this.keys.optString(name, null);
+	}
+
+	public boolean hasKey(final String name) {
+		return this.keys.has(name);
 	}
 
 	public boolean setKey(final String keyName, final String keyValue) {
