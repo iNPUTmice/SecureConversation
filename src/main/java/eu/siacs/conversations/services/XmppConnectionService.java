@@ -1508,6 +1508,9 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 					}
 
 					if (conversation.getMucOptions().mamSupport()) {
+						if (getPreferences().getBoolean("muc_use_mam_instead_of_local_history",false)) {
+							clearConversationHistory(conversation);
+						}
 						// Use MAM instead of the limited muc history to get history
 						x.addChild("history").setAttribute("maxchars", "0");
 						getMessageArchiveService().catchupMUC(conversation);

@@ -170,6 +170,11 @@
                     android:key="keep_foreground_service"
                     android:summary="@string/pref_keep_foreground_service_summary"
                     android:title="@string/pref_keep_foreground_service"/>
+                <CheckBoxPreference
+                    android:defaultValue="false"
+                    android:key="muc_use_mam_instead_of_local_history"
+                    android:summary="@string/pref_muc_use_mam_instead_of_local_history_summary"
+                    android:title="@string/pref_muc_use_mam_instead_of_local_history"/>
                 <eu.siacs.conversations.ui.ExportLogsPreference
                         android:key="export_logs"
                         android:title="@string/pref_export_logs"

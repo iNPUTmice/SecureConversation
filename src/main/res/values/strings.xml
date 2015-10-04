@@ -519,4 +519,6 @@
 	<string name="pref_use_white_background_summary">Show received messages as black text on a white background</string>
 	<string name="account_status_dns_timeout">Timeout in DNS</string>
 	<string name="server_info_broken">Broken</string>
+	<string name="pref_muc_use_mam_instead_of_local_history">Use only MAM for conference history</string>
+	<string name="pref_muc_use_mam_instead_of_local_history_summary">Don’t use local history if MAM is available in a conference</string>
 </resources>
