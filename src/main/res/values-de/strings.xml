@@ -419,7 +419,7 @@
   <string name="one_hour">1 Stunde</string>
   <string name="two_hours">2 Stunden</string>
   <string name="eight_hours">8 Stunden</string>
-  <string name="until_further_notice">Bis auf weiters</string>
+  <string name="until_further_notice">Bis auf Weiteres</string>
   <string name="pref_input_options">Eingabe-Optionen</string>
   <string name="pref_enter_is_send">Eingabe-Taste (Enter) sendet Nachricht</string>
   <string name="pref_enter_is_send_summary">Benutze die Eingabe-Taste (Enter) zum Senden einer Nachricht</string>
