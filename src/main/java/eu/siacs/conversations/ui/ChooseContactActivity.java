@@ -3,6 +3,7 @@ package eu.siacs.conversations.ui;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -28,10 +29,13 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 
 	private Set<Contact> selected;
 	private Set<String> filterContacts;
+	private static Toolbar mToolbar;
 
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		mToolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(mToolbar);
 		filterContacts = new HashSet<>();
 		String[] contacts = getIntent().getStringArrayExtra("filter_contacts");
 		if (contacts != null) {

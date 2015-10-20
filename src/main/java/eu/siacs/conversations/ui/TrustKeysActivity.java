@@ -2,6 +2,7 @@ package eu.siacs.conversations.ui;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -28,6 +29,8 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 public class TrustKeysActivity extends XmppActivity implements OnKeyStatusUpdated {
 	private Jid accountJid;
 	private Jid contactJid;
+
+	private static Toolbar mToolbar;
 
 	private Contact contact;
 	private Account mAccount;
@@ -80,6 +83,8 @@ public class TrustKeysActivity extends XmppActivity implements OnKeyStatusUpdate
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_trust_keys);
+		mToolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(mToolbar);
 		try {
 			this.accountJid = Jid.fromString(getIntent().getExtras().getString("account"));
 		} catch (final InvalidJidException ignored) {

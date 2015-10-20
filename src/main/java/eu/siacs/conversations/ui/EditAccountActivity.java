@@ -9,6 +9,7 @@ import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
@@ -50,6 +51,8 @@ import eu.siacs.conversations.xmpp.pep.Avatar;
 
 public class EditAccountActivity extends XmppActivity implements OnAccountUpdate,
 		OnKeyStatusUpdated, OnCaptchaRequested, KeyChainAliasCallback, XmppConnectionService.OnShowErrorToast {
+
+	private static Toolbar mToolbar;
 
 	private AutoCompleteTextView mAccountJid;
 	private EditText mPassword;
@@ -333,6 +336,8 @@ public class EditAccountActivity extends XmppActivity implements OnAccountUpdate
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_edit_account);
+		mToolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(mToolbar);
 		this.mAccountJid = (AutoCompleteTextView) findViewById(R.id.account_jid);
 		this.mAccountJid.addTextChangedListener(this.mTextWatcher);
 		this.mAccountJidLabel = (TextView) findViewById(R.id.account_jid_label);

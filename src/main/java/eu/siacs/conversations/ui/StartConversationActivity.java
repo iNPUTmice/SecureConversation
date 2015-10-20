@@ -2,9 +2,6 @@ package eu.siacs.conversations.ui;
 
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
-import android.app.ActionBar;
-import android.app.ActionBar.Tab;
-import android.app.ActionBar.TabListener;
 import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
@@ -20,8 +17,12 @@ import android.nfc.NfcAdapter;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
+import android.support.design.widget.TabLayout;
 import android.support.v13.app.FragmentPagerAdapter;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -51,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -72,10 +74,11 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class StartConversationActivity extends XmppActivity implements OnRosterUpdate, OnUpdateBlocklist {
 
+	private static Toolbar mToolbar;
 	public int conference_context_id;
 	public int contact_context_id;
-	private Tab mContactsTab;
-	private Tab mConferencesTab;
+	private TabLayout.Tab mContactsTab;
+	private TabLayout.Tab mConferencesTab;
 	private ViewPager mViewPager;
 	private MyListFragment mContactsListFragment = new MyListFragment();
 	private List<ListItem> contacts = new ArrayList<>();
@@ -89,7 +92,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 	private Invite mPendingInvite = null;
 	private Menu mOptionsMenu;
 	private EditText mSearchEditText;
-	private MenuItem.OnActionExpandListener mOnActionExpandListener = new MenuItem.OnActionExpandListener() {
+	private MenuItemCompat.OnActionExpandListener mOnActionExpandListener = new MenuItemCompat.OnActionExpandListener() {
 
 		@Override
 		public boolean onMenuItemActionExpand(MenuItem item) {
@@ -118,24 +121,25 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		}
 	};
 	private boolean mHideOfflineContacts = false;
-	private TabListener mTabListener = new TabListener() {
+	private ActionBar.TabListener mTabListener = new ActionBar.TabListener() {
 
 		@Override
-		public void onTabUnselected(Tab tab, FragmentTransaction ft) {
-			return;
-		}
-
-		@Override
-		public void onTabSelected(Tab tab, FragmentTransaction ft) {
+		public void onTabSelected(ActionBar.Tab tab, android.support.v4.app.FragmentTransaction ft) {
 			mViewPager.setCurrentItem(tab.getPosition());
 			onTabChanged();
 		}
 
 		@Override
-		public void onTabReselected(Tab tab, FragmentTransaction ft) {
-			return;
+		public void onTabUnselected(ActionBar.Tab tab, android.support.v4.app.FragmentTransaction ft) {
+
+		}
+
+		@Override
+		public void onTabReselected(ActionBar.Tab tab, android.support.v4.app.FragmentTransaction ft) {
+
 		}
 	};
+
 	private ViewPager.SimpleOnPageChangeListener mOnPageChangeListener = new ViewPager.SimpleOnPageChangeListener() {
 		@Override
 		public void onPageSelected(int position) {
@@ -162,12 +166,12 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 				int count) {
 		}
 	};
-	private MenuItem mMenuSearchView;
+	private MenuItemCompat mMenuSearchView;
 	private ListItemAdapter.OnTagClickedListener mOnTagClickedListener = new ListItemAdapter.OnTagClickedListener() {
 		@Override
 		public void onTagClicked(String tag) {
 			if (mMenuSearchView != null) {
-				mMenuSearchView.expandActionView();
+				mMenuSearchView.expandActionView(mOptionsMenu.findItem(R.id.action_search));
 				mSearchEditText.setText("");
 				mSearchEditText.append(tag);
 				filter(tag);
@@ -185,16 +189,22 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_start_conversation);
+		mToolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(mToolbar);
 		mViewPager = (ViewPager) findViewById(R.id.start_conversation_view_pager);
-		ActionBar actionBar = getActionBar();
-		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+		android.support.v7.app.ActionBar actionBar = getSupportActionBar();
 
-		mContactsTab = actionBar.newTab().setText(R.string.contacts)
-			.setTabListener(mTabListener);
-		mConferencesTab = actionBar.newTab().setText(R.string.conferences)
-			.setTabListener(mTabListener);
-		actionBar.addTab(mContactsTab);
-		actionBar.addTab(mConferencesTab);
+		TabLayout tabs = (TabLayout) findViewById(R.id.tabs);
+		//actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
+
+		mContactsTab = tabs.newTab().setText(R.string.contacts);
+			//.setTabListener(mTabListener);
+		mConferencesTab = tabs.newTab().setText(R.string.conferences);
+			//.setTabListener(mTabListener);
+		tabs.addTab(mContactsTab);
+		tabs.addTab(mConferencesTab);
+		//actionBar.addTab(mContactsTab);
+		//actionBar.addTab(mConferencesTab);
 
 		mViewPager.setOnPageChangeListener(mOnPageChangeListener);
 		mViewPager.setAdapter(new FragmentPagerAdapter(getFragmentManager()) {
@@ -212,7 +222,20 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 					return mConferenceListFragment;
 				}
 			}
+
+			@Override
+			public CharSequence getPageTitle(int position) {
+				switch (position) {
+					case 0:
+						return getString(R.string.contacts);
+					case 1:
+						return getString(R.string.conferences);
+				}
+				return null;
+			}
 		});
+		tabs.setupWithViewPager(mViewPager);
+		mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabs));
 
 		mConferenceAdapter = new ListItemAdapter(this, conferences);
 		mConferenceListFragment.setListAdapter(mConferenceAdapter);
@@ -510,20 +533,20 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		MenuItem menuCreateConference = menu.findItem(R.id.action_join_conference);
 		MenuItem menuHideOffline = menu.findItem(R.id.action_hide_offline);
 		menuHideOffline.setChecked(this.mHideOfflineContacts);
-		mMenuSearchView = menu.findItem(R.id.action_search);
-		mMenuSearchView.setOnActionExpandListener(mOnActionExpandListener);
-		View mSearchView = mMenuSearchView.getActionView();
-		mSearchEditText = (EditText) mSearchView
-			.findViewById(R.id.search_field);
-		mSearchEditText.addTextChangedListener(mSearchTextWatcher);
-		if (getActionBar().getSelectedNavigationIndex() == 0) {
-			menuCreateConference.setVisible(false);
-		} else {
-			menuCreateContact.setVisible(false);
-		}
+		//mMenuSearchView = (MenuItemCompat) menu.findItem(R.id.action_search);
+		//MenuItemCompat.setOnActionExpandListener(menu.findItem(R.id.action_search), mOnActionExpandListener);
+		//View mSearchView = MenuItemCompat.getActionView(menu.findItem(R.id.action_search));
+		//mSearchEditText = (EditText) mSearchView
+		//	.findViewById(R.id.search_field);
+		//mSearchEditText.addTextChangedListener(mSearchTextWatcher);
+		//if (getActionBar().getSelectedNavigationIndex() == 0) {
+		//	menuCreateConference.setVisible(false);
+		//} else {
+		//	menuCreateContact.setVisible(false);
+		//}
 		if (mInitialJid != null) {
-			mMenuSearchView.expandActionView();
-			mSearchEditText.append(mInitialJid);
+			//mMenuSearchView.expandActionView(menu.findItem(R.id.action_search));
+			//mSearchEditText.append(mInitialJid);
 			filter(mInitialJid);
 		}
 		return true;
@@ -593,7 +616,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 			}
 		}
 		final Intent intent = getIntent();
-		final ActionBar ab = getActionBar();
+		final ActionBar ab = getSupportActionBar();
 		if (intent != null && intent.getBooleanExtra("init",false) && ab != null) {
 			ab.setDisplayShowHomeEnabled(false);
 			ab.setDisplayHomeAsUpEnabled(false);
@@ -671,7 +694,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 			return true;
 		} else {
 			if (mMenuSearchView != null) {
-				mMenuSearchView.expandActionView();
+				mMenuSearchView.expandActionView(mOptionsMenu.findItem(R.id.action_search));
 				mSearchEditText.setText("");
 				mSearchEditText.append(invite.getJid().toString());
 				filter(invite.getJid().toString());

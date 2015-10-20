@@ -9,6 +9,8 @@
         android:layout_height="wrap_content"
         android:orientation="vertical" >
 
+        <include layout="@layout/default_toolbar" />
+
         <RelativeLayout
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
