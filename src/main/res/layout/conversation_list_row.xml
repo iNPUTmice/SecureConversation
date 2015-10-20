@@ -15,74 +15,75 @@
 		android:layout_height="fill_parent"
 		android:background="@color/grey50">
 
-	<RelativeLayout
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:background="?android:selectableItemBackground"
-		android:orientation="horizontal"
-		android:padding="8dp" >
-
-		<com.makeramen.roundedimageview.RoundedImageView
-			android:id="@+id/conversation_image"
-			android:layout_width="56dp"
-			android:layout_height="56dp"
-			android:layout_alignParentLeft="true"
-			android:scaleType="centerCrop"
-			app:riv_corner_radius="2dp" />
-
 		<RelativeLayout
 			android:layout_width="fill_parent"
 			android:layout_height="wrap_content"
-			android:layout_centerVertical="true"
-			android:layout_toRightOf="@+id/conversation_image"
-			android:paddingLeft="8dp" >
+			android:background="?android:selectableItemBackground"
+			android:orientation="horizontal"
+			android:padding="8dp" >
 
-			<TextView
-				android:id="@+id/conversation_name"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_alignLeft="@+id/conversation_lastwrapper"
-				android:layout_toLeftOf="@+id/conversation_lastupdate"
-				android:singleLine="true"
-				android:textColor="@color/black87"
-				android:textSize="?attr/TextSizeHeadline"
-				android:typeface="sans" />
+			<com.makeramen.roundedimageview.RoundedImageView
+				android:id="@+id/conversation_image"
+				android:layout_width="56dp"
+				android:layout_height="56dp"
+				android:layout_alignParentLeft="true"
+				android:scaleType="centerCrop"
+				android:layout_centerVertical="true"
+				app:riv_corner_radius="28dp" />
 
-			<LinearLayout
-				android:id="@+id/conversation_lastwrapper"
+			<RelativeLayout
 				android:layout_width="fill_parent"
 				android:layout_height="wrap_content"
-				android:layout_below="@id/conversation_name"
-				android:orientation="vertical"
-				android:paddingTop="3dp" >
+				android:layout_centerVertical="true"
+				android:layout_toRightOf="@+id/conversation_image"
+				android:paddingLeft="8dp" >
 
 				<TextView
-					android:id="@+id/conversation_lastmsg"
-					android:layout_width="fill_parent"
+					android:id="@+id/conversation_name"
+					android:layout_width="wrap_content"
 					android:layout_height="wrap_content"
-					android:scrollHorizontally="false"
+					android:layout_alignLeft="@+id/conversation_lastwrapper"
+					android:layout_toLeftOf="@+id/conversation_lastupdate"
 					android:singleLine="true"
 					android:textColor="@color/black87"
-					android:textSize="?attr/TextSizeBody" />
+					android:textSize="?attr/TextSizeHeadline"
+					android:typeface="sans" />
 
-				<ImageView
-					android:id="@+id/conversation_lastimage"
+				<LinearLayout
+					android:id="@+id/conversation_lastwrapper"
 					android:layout_width="fill_parent"
-					android:layout_height="36dp"
-					android:background="@color/black87"
-					android:scaleType="centerCrop" />
-			</LinearLayout>
+					android:layout_height="wrap_content"
+					android:layout_below="@id/conversation_name"
+					android:orientation="vertical"
+					android:paddingTop="3dp" >
 
-			<TextView
-				android:id="@+id/conversation_lastupdate"
-				android:layout_width="wrap_content"
-				android:layout_height="wrap_content"
-				android:layout_alignBaseline="@+id/conversation_name"
-				android:layout_alignParentRight="true"
-				android:gravity="right"
-				android:textColor="@color/black54"
-				android:textSize="?attr/TextSizeInfo" />
+					<TextView
+						android:id="@+id/conversation_lastmsg"
+						android:layout_width="fill_parent"
+						android:layout_height="wrap_content"
+						android:scrollHorizontally="false"
+						android:singleLine="true"
+						android:textColor="@color/black87"
+						android:textSize="?attr/TextSizeBody" />
+
+					<ImageView
+						android:id="@+id/conversation_lastimage"
+						android:layout_width="fill_parent"
+						android:layout_height="36dp"
+						android:background="@color/black87"
+						android:scaleType="centerCrop" />
+				</LinearLayout>
+
+				<TextView
+					android:id="@+id/conversation_lastupdate"
+					android:layout_width="wrap_content"
+					android:layout_height="wrap_content"
+					android:layout_alignBaseline="@+id/conversation_name"
+					android:layout_alignParentRight="true"
+					android:gravity="right"
+					android:textColor="@color/black54"
+					android:textSize="?attr/TextSizeInfo" />
+			</RelativeLayout>
 		</RelativeLayout>
-	</RelativeLayout>
 	</FrameLayout>
 </FrameLayout>

@@ -13,7 +13,9 @@
         android:layout_alignParentLeft="true"
         android:scaleType="centerCrop"
         android:src="@drawable/ic_profile"
-        app:riv_corner_radius="2dp" />
+        app:riv_corner_radius="24dp"
+        android:layout_centerVertical="true"
+        />
 
     <LinearLayout
         android:layout_width="wrap_content"

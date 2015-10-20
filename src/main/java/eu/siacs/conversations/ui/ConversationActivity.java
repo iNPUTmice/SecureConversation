@@ -14,8 +14,10 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -93,6 +95,7 @@ public class ConversationActivity extends XmppActivity
 
 	private boolean conversationWasSelectedByKeyboard = false;
 
+	private static Toolbar mToolbar;
 	private View mContentView;
 
 	private List<Conversation> conversationList = new ArrayList<>();
@@ -100,6 +103,7 @@ public class ConversationActivity extends XmppActivity
 	private Conversation mSelectedConversation = null;
 	private EnhancedListView listView;
 	private ConversationFragment mConversationFragment;
+	private FloatingActionButton mFab;
 
 	private ArrayAdapter<Conversation> listAdapter;
 
@@ -173,10 +177,21 @@ public class ConversationActivity extends XmppActivity
 
 		setContentView(R.layout.fragment_conversations_overview);
 
+		mToolbar = (Toolbar) findViewById(R.id.toolbar);
+		setSupportActionBar(mToolbar);
+
 		this.mConversationFragment = new ConversationFragment();
 		FragmentTransaction transaction = getFragmentManager().beginTransaction();
 		transaction.replace(R.id.selected_conversation, this.mConversationFragment, "conversation");
 		transaction.commit();
+
+		mFab = (FloatingActionButton) findViewById(R.id.fab);
+		mFab.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				startActivity(new Intent(ConversationActivity.this, StartConversationActivity.class));
+			}
+		});
 
 		listView = (EnhancedListView) findViewById(R.id.list);
 		this.listAdapter = new ConversationAdapter(this, conversationList);
@@ -376,7 +391,7 @@ public class ConversationActivity extends XmppActivity
 		final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
 		final MenuItem menuAttach = menu.findItem(R.id.action_attach_file);
 		final MenuItem menuClearHistory = menu.findItem(R.id.action_clear_history);
-		final MenuItem menuAdd = menu.findItem(R.id.action_add);
+		//final MenuItem menuAdd = menu.findItem(R.id.action_add);
 		final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
 		final MenuItem menuMute = menu.findItem(R.id.action_mute);
 		final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
@@ -392,7 +407,7 @@ public class ConversationActivity extends XmppActivity
 			menuMute.setVisible(false);
 			menuUnmute.setVisible(false);
 		} else {
-			menuAdd.setVisible(!isConversationsOverviewHideable());
+			//menuAdd.setVisible(!isConversationsOverviewHideable());
 			if (this.getSelectedConversation() != null) {
 				if (this.getSelectedConversation().getNextEncryption() != Message.ENCRYPTION_NONE) {
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
