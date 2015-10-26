@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
@@ -107,6 +108,7 @@ public final class CryptoHelper {
 	}
 
 	public static String prettifyFingerprint(String fingerprint) {
+		fingerprint = fingerprint.toLowerCase(Locale.ENGLISH);
 		if (fingerprint==null) {
 			return "";
 		} else if (fingerprint.length() < 40) {
