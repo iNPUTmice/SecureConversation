@@ -108,10 +108,13 @@ public final class CryptoHelper {
 	}
 
 	public static String prettifyFingerprint(String fingerprint) {
-		fingerprint = fingerprint.toLowerCase(Locale.ENGLISH);
 		if (fingerprint==null) {
 			return "";
-		} else if (fingerprint.length() < 40) {
+		}
+
+		fingerprint = fingerprint.toLowerCase(Locale.ENGLISH);
+
+		if (fingerprint.length() < 40) {
 			return fingerprint;
 		}
 		StringBuilder builder = new StringBuilder(fingerprint.replaceAll("\\s",""));
