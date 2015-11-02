@@ -334,7 +334,7 @@
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Garder le service au premier-plan</string>
   <string name="pref_keep_foreground_service_summary">Évite que le système ne ferme votre connexion</string>
-  <string name="choose_file">Choix le fichier</string>
+  <string name="choose_file">Choisir un fichier</string>
   <string name="receiving_x_file">Réception %1$s (%2$d%% complété)</string>
   <string name="download_x_file">Télécharger %s</string>
   <string name="file">fichier</string>
