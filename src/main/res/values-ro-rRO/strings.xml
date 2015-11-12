@@ -19,13 +19,13 @@
   <string name="title_activity_settings">Configuratie</string>
   <string name="title_activity_conference_details">Detalii conferinta</string>
   <string name="title_activity_contact_details">Detalii contact</string>
-  <string name="title_activity_sharewith">Distribuie catre Conversatie</string>
-  <string name="title_activity_start_conversation">Porneste Conversatie</string>
+  <string name="title_activity_sharewith">Distribuie catre Conversations</string>
+  <string name="title_activity_start_conversation">Porneste Conversations</string>
   <string name="title_activity_choose_contact">Alege contact</string>
   <string name="title_activity_block_list">Blocheaza lista</string>
   <string name="just_now">in acest moment</string>
-  <string name="minute_ago">acuma 1 minut</string>
-  <string name="minutes_ago">acuma %d minute</string>
+  <string name="minute_ago">acum 1 minut</string>
+  <string name="minutes_ago">acum %d minute</string>
   <string name="unread_conversations">Conversatii necitite</string>
   <string name="sending">trimitere...</string>
   <string name="encrypted_message">Decriptez mesaj. Te rog asteapta...</string>
@@ -44,8 +44,8 @@
   <string name="remove_bookmark_text">Ai dori sa stergi pe %s ca semn de carte? Conversatia asociata cu acest semn de carte nu va fi stearsa.</string>
   <string name="register_account">Inregistreaza un cont nou pe server</string>
   <string name="change_password_on_server">Schimba parola pe server</string>
-  <string name="start_conversation">Porneste Conversatie</string>
-  <string name="invite_contact">Invita Contact</string>
+  <string name="start_conversation">Porneste conversatie</string>
+  <string name="invite_contact">Invita contact</string>
   <string name="contacts">Contacte</string>
   <string name="cancel">Anuleaza</string>
   <string name="set">Seteaza</string>
@@ -56,9 +56,9 @@
   <string name="unblock">Deblocheaza</string>
   <string name="save">Salveaza</string>
   <string name="ok">DA</string>
-  <string name="crash_report_title">Conversatii s-a oprit neasteptat</string>
-  <string name="crash_report_message">Trimitand date ajuti la dezvoltarea aplicatiei Conversatii\n<b>Atentie:</b> Se va utiliza contul XMPP pentru a trimite informatii catre programatori.</string>
-  <string name="send_now">Trimie acum</string>
+  <string name="crash_report_title">Conversations s-a oprit neasteptat</string>
+  <string name="crash_report_message">Trimitand date ajuti la dezvoltarea aplicatiei Conversations\n<b>Atentie:</b> Se va utiliza contul XMPP pentru a trimite informatii catre programatori.</string>
+  <string name="send_now">Trimite acum</string>
   <string name="send_never">Nu mai intreba in viitor</string>
   <string name="problem_connecting_to_account">Nu ma pot conecta la cont</string>
   <string name="problem_connecting_to_accounts">Nu ma pot conecta la conturi multiple</string>
@@ -71,7 +71,7 @@
   <string name="preparing_image">Pregatesc imaginea pentru transmisie</string>
   <string name="action_clear_history">Sterge istoria</string>
   <string name="clear_conversation_history">Sterge istoria conversatiei</string>
-  <string name="clear_histor_msg">Doresti sa stergi toate mesajele din Conversatii?\n\n<b>Atentie:</b> Aceasta actiune nu va influenta mesajele aflate pe alte telefoane/tabelete/servere.</string>
+  <string name="clear_histor_msg">Doresti sa stergi toate mesajele din conversatii?\n\n<b>Atentie:</b> Aceasta actiune nu va influenta mesajele aflate pe alte telefoane/tabelete/servere.</string>
   <string name="delete_messages">Sterge mesajele</string>
   <string name="choose_presence">Alege prezenta pentru a contacta</string>
   <string name="send_otr_message">Trimite mesaj criptat cu OTR</string>
@@ -80,11 +80,11 @@
   <string name="send_unencrypted">Trimite necriptat</string>
   <string name="decryption_failed">Decriptia a esuat. Poate nu ai cheia privata corecta.</string>
   <string name="openkeychain_required">OpenKeychain</string>
-  <string name="openkeychain_required_long">Coonversatii utilizeaza o aplicatia externa <b>OpenKeychain</b> pentru a cripta si decripta mesaje si a administra cheile publice.\n\nOpenKeychain este licentiat sub GPLv3 si se gaseste pentru copiere pe F-Droid si Google Play.\n\n<small>(Te rog sa repornesti Conversatii dupa.)</small></string>
+  <string name="openkeychain_required_long">Conversations utilizeaza o aplicatia externa <b>OpenKeychain</b> pentru a cripta si decripta mesaje si a administra cheile publice.\n\nOpenKeychain este licentiat sub GPLv3 si se gaseste pentru copiere pe F-Droid si Google Play.\n\n<small>(Te rog sa repornesti Conversations dupa.)</small></string>
   <string name="restart">Reporneste</string>
   <string name="install">Instaleaza</string>
   <string name="offering">Transmit...</string>
   <string name="waiting">In asteptare...</string>
   <string name="no_pgp_key">Nu am gasit cheie OpenPGP</string>
-  <string name="contact_has_no_pgp_key">Conversatii nu a putut sa cirpteze mesajele tale din cauza contactului care nu isi anunta cheia publica.\n\n<small>Roaga contactul sa isi configureze OpenPGP.</small></string>
+  <string name="contact_has_no_pgp_key">Conversations nu a putut sa cripteze mesajele tale din cauza contactului care nu isi anunta cheia publica.\n\n<small>Roaga contactul sa isi configureze OpenPGP.</small></string>
 </resources>
