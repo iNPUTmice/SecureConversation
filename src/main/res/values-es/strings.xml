@@ -335,9 +335,9 @@
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Servicio en primer plano</string>
   <string name="pref_keep_foreground_service_summary">Mantener el servicio en primer plano previene que el sistema cierre la conexión</string>
-  <string name="pref_export_logs">Exportar logs</string>
-  <string name="pref_export_logs_summary">Escribir logs en la tarjeta SD</string>
-  <string name="notification_export_logs_title">Escribiendo logs en la tarjeta SD</string>
+  <string name="pref_export_logs">Exportar historiales</string>
+  <string name="pref_export_logs_summary">Exportar los historiales a la tarjeta SD</string>
+  <string name="notification_export_logs_title">Exportando los historiales a la tarjeta SD</string>
   <string name="choose_file">Seleccionar archivo</string>
   <string name="receiving_x_file">Recibiendo %1$s (%2$d%% completado)</string>
   <string name="download_x_file">Descargar %s</string>
