@@ -13,6 +13,7 @@ import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.BigPictureStyle;
 import android.support.v4.app.NotificationCompat.Builder;
+import android.support.v4.app.RemoteInput;
 import android.support.v4.app.TaskStackBuilder;
 import android.text.Html;
 import android.util.DisplayMetrics;
@@ -264,8 +265,22 @@ public class NotificationService {
 		final Builder mBuilder = new NotificationCompat.Builder(
 				mXmppConnectionService);
 		final ArrayList<Message> messages = notifications.values().iterator().next();
+
+		String replyLabel = mXmppConnectionService.getString(R.string.reply_label);
+		RemoteInput remoteInput = new RemoteInput.Builder(ConversationActivity.EXTRA_VOICE_REPLY)
+				.setLabel(replyLabel)
+				.build();
+
 		if (messages.size() >= 1) {
 			final Conversation conversation = messages.get(0).getConversation();
+
+			NotificationCompat.Action action =
+					new NotificationCompat.Action.Builder(R.drawable.ic_launcher,
+							mXmppConnectionService.getString(R.string.reply_label), createContentIntent(conversation))
+							.addRemoteInput(remoteInput)
+							.build();
+			mBuilder.extend(new NotificationCompat.WearableExtender().addAction(action));
+
 			mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
 					.get(conversation, getPixel(64)));
 			mBuilder.setContentTitle(conversation.getName());
