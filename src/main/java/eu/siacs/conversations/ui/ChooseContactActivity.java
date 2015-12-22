@@ -19,12 +19,16 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.ListItem;
+import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ChooseContactActivity extends AbstractSearchableListItemActivity {
+	private List<String> mActivatedAccounts = new ArrayList<String>();
+	private List<String> mKnownHosts;
 
 	private Set<Contact> selected;
 	private Set<String> filterContacts;
@@ -124,6 +128,17 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 
 	}
 
+	@Override
+	public boolean onCreateOptionsMenu(final Menu menu) {
+		super.onCreateOptionsMenu(menu);
+
+		MenuItem enter = menu.add(Menu.NONE, R.id.action_create_contact, Menu.FIRST, R.string.enter_contact);
+		enter.setIcon(R.drawable.ic_action_add_person);
+		enter.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+
+		return true;
+	}
+
 	protected void filterContacts(final String needle) {
 		getListItems().clear();
 		for (final Account account : xmppConnectionService.getAccounts()) {
@@ -152,5 +167,63 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 
 	public void refreshUiReal() {
 		//nothing to do. This Activity doesn't implement any listeners
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.action_create_contact:
+				showEnterJidDialog();
+				return true;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	protected void showEnterJidDialog() {
+		EnterJidDialog dialog = new EnterJidDialog(
+			this, mKnownHosts, mActivatedAccounts,
+			getString(R.string.enter_contact), getString(R.string.select),
+			null, true
+		);
+
+		dialog.setOnEnterJidDialogPositiveListener(new EnterJidDialog.OnEnterJidDialogPositiveListener() {
+			@Override
+			public boolean onEnterJidDialogPositive(Jid accountJid, Jid contactJid) throws EnterJidDialog.JidError {
+				final Intent request = getIntent();
+				final Intent data = new Intent();
+				data.putExtra("contact", contactJid.toString());
+				String account = request.getStringExtra("account");
+				if (account == null) {
+					account = accountJid.toString();
+				}
+				data.putExtra("account", account);
+				data.putExtra("conversation",
+						request.getStringExtra("conversation"));
+				data.putExtra("multiple", false);
+				setResult(RESULT_OK, data);
+				finish();
+
+				return true;
+			}
+		});
+
+		dialog.show();
+	}
+
+	@Override
+	void onBackendConnected() {
+		filterContacts();
+
+		this.mActivatedAccounts.clear();
+		for (Account account : xmppConnectionService.getAccounts()) {
+			if (account.getStatus() != Account.State.DISABLED) {
+				if (Config.DOMAIN_LOCK != null) {
+					this.mActivatedAccounts.add(account.getJid().getLocalpart());
+				} else {
+					this.mActivatedAccounts.add(account.getJid().toBareJid().toString());
+				}
+			}
+		}
+		this.mKnownHosts = xmppConnectionService.getKnownHosts();
 	}
 }
