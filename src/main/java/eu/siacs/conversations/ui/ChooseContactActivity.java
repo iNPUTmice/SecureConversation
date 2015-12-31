@@ -132,9 +132,11 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 	public boolean onCreateOptionsMenu(final Menu menu) {
 		super.onCreateOptionsMenu(menu);
 
-		MenuItem enter = menu.add(Menu.NONE, R.id.action_create_contact, Menu.FIRST, R.string.enter_contact);
-		enter.setIcon(R.drawable.ic_action_add_person);
-		enter.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		if (getIntent().getBooleanExtra("show_enter_jid", false)) {
+			MenuItem enter = menu.add(Menu.NONE, R.id.action_create_contact, Menu.FIRST, R.string.enter_contact);
+			enter.setIcon(R.drawable.ic_action_add_person);
+			enter.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+		}
 
 		return true;
 	}
