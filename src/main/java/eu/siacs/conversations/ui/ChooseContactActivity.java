@@ -185,7 +185,7 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 		EnterJidDialog dialog = new EnterJidDialog(
 			this, mKnownHosts, mActivatedAccounts,
 			getString(R.string.enter_contact), getString(R.string.select),
-			null, true
+			null, getIntent().getStringExtra("account"), true
 		);
 
 		dialog.setOnEnterJidDialogPositiveListener(new EnterJidDialog.OnEnterJidDialogPositiveListener() {
@@ -194,11 +194,7 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 				final Intent request = getIntent();
 				final Intent data = new Intent();
 				data.putExtra("contact", contactJid.toString());
-				String account = request.getStringExtra("account");
-				if (account == null) {
-					account = accountJid.toString();
-				}
-				data.putExtra("account", account);
+				data.putExtra("account", accountJid.toString());
 				data.putExtra("conversation",
 						request.getStringExtra("conversation"));
 				data.putExtra("multiple", false);

@@ -42,7 +42,7 @@ public class EnterJidDialog {
 	public EnterJidDialog(
 		final Context context, List<String> knownHosts, List<String> activatedAccounts,
 		final String title, final String positiveButton,
-		final String prefilledJid, boolean allowEditJid
+		final String prefilledJid, final String account, boolean allowEditJid
 	) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(title);
@@ -60,8 +60,15 @@ public class EnterJidDialog {
 			}
 		}
 
-		ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
+		ArrayAdapter<String> adapter;
+		if (account == null) {
+			adapter = new ArrayAdapter<>(context,
 				android.R.layout.simple_spinner_item, activatedAccounts);
+		} else {
+			adapter = new ArrayAdapter<>(context,
+				android.R.layout.simple_spinner_item, new String[] { account });
+			spinner.setEnabled(false);
+		}
 		adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		spinner.setAdapter(adapter);
 

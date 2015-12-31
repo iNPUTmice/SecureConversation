@@ -352,7 +352,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		EnterJidDialog dialog = new EnterJidDialog(
 			this, mKnownHosts, mActivatedAccounts,
 			getString(R.string.create_contact), getString(R.string.create),
-			prefilledJid, fingerprint == null
+			prefilledJid, null, fingerprint == null
 		);
 
 		dialog.setOnEnterJidDialogPositiveListener(new EnterJidDialog.OnEnterJidDialogPositiveListener() {
