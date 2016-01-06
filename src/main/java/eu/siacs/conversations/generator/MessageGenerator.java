@@ -65,7 +65,11 @@ public class MessageGenerator extends AbstractGenerator {
 			return null;
 		}
 		packet.setAxolotlMessage(axolotlMessage.toElement());
-		packet.addChild("store", "urn:xmpp:hints");
+		if (this.mXmppConnectionService.saveEncryptedMessages()) {
+			packet.addChild("store", "urn:xmpp:hints");
+		} else {
+			packet.addChild("no-permanent-store", "urn:xmpp:hints");
+		}
 		return packet;
 	}
 
