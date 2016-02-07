@@ -54,6 +54,16 @@ public class Roster {
 		}
 	}
 
+	public List<Contact> getWithIdentity(final String category, final String type) {
+		List<Contact> with = new ArrayList<>();
+		for(Contact c : this.contacts.values()) {
+			if(c.hasIdentity(category, type)) {
+				with.add(c);
+			}
+		}
+		return with;
+	}
+
 	public List<Contact> getWithSystemAccounts() {
 		List<Contact> with = getContacts();
 		for(Iterator<Contact> iterator = with.iterator(); iterator.hasNext();) {

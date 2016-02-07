@@ -88,6 +88,6 @@ public class Presence implements Comparable {
 	}
 
 	public ServiceDiscoveryResult getServiceDiscoveryResult() {
-		return disco;
+		return this.disco;
 	}
 }
