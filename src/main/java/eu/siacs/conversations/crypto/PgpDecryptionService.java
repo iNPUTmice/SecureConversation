@@ -1,6 +1,7 @@
 package eu.siacs.conversations.crypto;
 
 import android.app.PendingIntent;
+import android.util.Log;
 
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -109,7 +110,8 @@ public class PgpDecryptionService {
 				}
 			}
 			if (message != null && xmppConnectionService.getPgpEngine() != null) {
-				xmppConnectionService.getPgpEngine().decrypt(message, new UiCallback<Message>() {
+				// TODO: PHILIP Change to allow both engines
+				xmppConnectionService.getOxPgpEngine().decrypt(message, new UiCallback<Message>() {
 
 					@Override
 					public void userInputRequried(PendingIntent pi, Message message) {
@@ -125,6 +127,7 @@ public class PgpDecryptionService {
 
 					@Override
 					public void error(int error, Message message) {
+						Log.d("PHILIP", "pgpDecryptionService: failed" + message.getStatus());
 						message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
 						xmppConnectionService.updateConversationUi();
 						decryptMessage(uuid);
@@ -138,7 +141,7 @@ public class PgpDecryptionService {
 
 	private void decryptDirectly(final Message message) {
 		if (message.getEncryption() == Message.ENCRYPTION_PGP && xmppConnectionService.getPgpEngine() != null) {
-			xmppConnectionService.getPgpEngine().decrypt(message, new UiCallback<Message>() {
+			xmppConnectionService.getOxPgpEngine().decrypt(message, new UiCallback<Message>() {
 
 				@Override
 				public void userInputRequried(PendingIntent pi, Message message) {
@@ -153,6 +156,7 @@ public class PgpDecryptionService {
 
 				@Override
 				public void error(int error, Message message) {
+					Log.d("PHILIP", "pgpDecryptionService: failed" + message.getStatus());
 					message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
 					xmppConnectionService.updateConversationUi();
 				}

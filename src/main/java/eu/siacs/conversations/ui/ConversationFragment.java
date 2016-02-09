@@ -8,7 +8,6 @@ import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -342,7 +341,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				sendOtrMessage(message);
 				break;
 			case Message.ENCRYPTION_PGP:
-				sendPgpMessage(message);
+				sendOxPgpMessage(message);
+				//sendPgpMessage(message);
 				break;
 			case Message.ENCRYPTION_AXOLOTL:
 				if(!activity.trustKeysIfNeeded(ConversationActivity.REQUEST_TRUST_KEYS_TEXT)) {
@@ -1148,6 +1148,65 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							}
 						});
 			}
+		}
+	}
+
+	protected void sendOxPgpMessage(final Message message) {
+		final ConversationActivity activity = (ConversationActivity) getActivity();
+		final XmppConnectionService xmppService = activity.xmppConnectionService;
+		final Contact contact = message.getConversation().getContact();
+		if (!activity.hasPgp()) {
+			activity.showInstallPgpDialog();
+			return;
+		}
+		if (conversation.getAccount().getPgpSignature() == null) {
+			activity.announcePgp(conversation.getAccount(), conversation);
+			return;
+		}
+		if (conversation.getMode() == Conversation.MODE_SINGLE) {
+			if (contact.getPgpKeyId() != 0) {
+				xmppService.getPgpEngine().hasKey(contact,
+						new UiCallback<Contact>() {
+
+							@Override
+							public void userInputRequried(PendingIntent pi,
+														  Contact contact) {
+								activity.runIntent(
+										pi,
+										ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
+							}
+
+							@Override
+							public void success(Contact contact) {
+								messageSent();
+								activity.encryptTestMessageOxPgp(message);
+							}
+
+							@Override
+							public void error(int error, Contact contact) {
+								System.out.println();
+							}
+						});
+
+			} else {
+				showNoPGPKeyDialog(false,
+						new DialogInterface.OnClickListener() {
+
+							@Override
+							public void onClick(DialogInterface dialog,
+												int which) {
+								conversation
+										.setNextEncryption(Message.ENCRYPTION_NONE);
+								xmppService.databaseBackend
+										.updateConversation(conversation);
+								message.setEncryption(Message.ENCRYPTION_NONE);
+								xmppService.sendMessage(message);
+								messageSent();
+							}
+						});
+			}
+		} else {
+			throw new UnsupportedOperationException("MUC not supported in OX as of now");
 		}
 	}
 

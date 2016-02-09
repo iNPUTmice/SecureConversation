@@ -1,5 +1,7 @@
 package eu.siacs.conversations.generator;
 
+import android.util.Log;
+
 import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;
 
@@ -118,6 +120,20 @@ public class MessageGenerator extends AbstractGenerator {
 			packet.addChild("x", "jabber:x:encrypted").setContent(message.getEncryptedBody());
 		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
 			packet.addChild("x", "jabber:x:encrypted").setContent(message.getBody());
+		}
+		return packet;
+	}
+
+	public MessagePacket generateOxPgpChat(Message message) {
+		MessagePacket packet = preparePacket(message);
+		packet.setBody("This is an OpenPGP encrypted message.");
+		if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
+			Log.d("PHILIP", "encrypted body" + message.getEncryptedBody());
+			packet.addChild("openpgp", "urn:xmpp:openpgp:0").setContent(message.getEncryptedBody());
+		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+			// TODO: When does this happen?
+			Log.d("PHILIP", "just body" + message.getBody());
+			packet.addChild("openpgp", "urn:xmpp:openpgp:0").setContent(message.getBody());
 		}
 		return packet;
 	}

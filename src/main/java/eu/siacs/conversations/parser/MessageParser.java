@@ -13,6 +13,7 @@ import java.util.Set;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
+import eu.siacs.conversations.crypto.oxpgp.OxPgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
@@ -120,6 +121,17 @@ public class MessageParser extends AbstractParser implements
 	private Message parsePGPChat(final Conversation conversation, String pgpEncrypted, int status) {
 		final Message message = new Message(conversation, pgpEncrypted, Message.ENCRYPTION_PGP, status);
 		PgpDecryptionService pgpDecryptionService = conversation.getAccount().getPgpDecryptionService();
+		pgpDecryptionService.add(message);
+		return message;
+	}
+
+	private Message parseOxPGPChat(final Conversation conversation, String openPgpEleContents,
+								   int status) {
+		// TODO: PHILIP Change to ENCRYPTION_OXPGP
+		final Message message = new Message(conversation, openPgpEleContents,
+				Message.ENCRYPTION_PGP, status);
+		PgpDecryptionService pgpDecryptionService = conversation.getAccount()
+				.getPgpDecryptionService();
 		pgpDecryptionService.add(message);
 		return message;
 	}
@@ -247,6 +259,12 @@ public class MessageParser extends AbstractParser implements
 
 	@Override
 	public void onMessagePacketReceived(Account account, MessagePacket original) {
+		Log.d("PHILIP", "---Starting Message--- To: " + original.getTo() + 	" From: "
+				+ original.getFrom());
+		for(Element e: original.getChildren()) {
+			Log.d("PHILIP", "Message packet: <" + e.getName() + " xmlns=" + e.getNamespace() + "> "
+					+ e.getContent());
+		}
 		if (handleErrorMessage(account, original)) {
 			return;
 		}
@@ -297,6 +315,8 @@ public class MessageParser extends AbstractParser implements
 		final String body = packet.getBody();
 		final Element mucUserElement = packet.findChild("x", "http://jabber.org/protocol/muc#user");
 		final String pgpEncrypted = packet.findChildContent("x", "jabber:x:encrypted");
+		final String oxPgpEncrypted = packet.findChildContent(OxPgpEngine.ELEMENT_OPENPGP_NAME,
+				OxPgpEngine.ELEMENT_OPENPGP_NS);
 		final Element axolotlEncrypted = packet.findChild(XmppAxolotlMessage.CONTAINERTAG, AxolotlService.PEP_PREFIX);
 		int status;
 		final Jid counterpart;
@@ -329,6 +349,7 @@ public class MessageParser extends AbstractParser implements
 			mXmppConnectionService.updateConversationUi();
 		}
 
+		// if this is a chat message for the user
 		if ((body != null || pgpEncrypted != null || axolotlEncrypted != null) && !isMucStatusMessage) {
 			Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.toBareJid(), isTypeGroupChat, query);
 			if (isTypeGroupChat) {
@@ -359,6 +380,8 @@ public class MessageParser extends AbstractParser implements
 				}
 			} else if (pgpEncrypted != null) {
 				message = parsePGPChat(conversation, pgpEncrypted, status);
+			} else if (oxPgpEncrypted != null) {
+				message = parseOxPGPChat(conversation, oxPgpEncrypted, status);
 			} else if (axolotlEncrypted != null) {
 				message = parseAxolotlChat(axolotlEncrypted, from, remoteMsgId, conversation, status);
 				if (message == null) {

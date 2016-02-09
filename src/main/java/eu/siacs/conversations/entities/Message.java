@@ -27,7 +27,7 @@ public class Message extends AbstractEntity {
 	public static final int STATUS_SEND_FAILED = 3;
 	public static final int STATUS_WAITING = 5;
 	public static final int STATUS_OFFERED = 6;
-	public static final int STATUS_SEND_RECEIVED = 7;
+	public static final int STATUS_SEND_RECEIVED = 7; // TODO: Diff b/w this and status_received
 	public static final int STATUS_SEND_DISPLAYED = 8;
 
 	public static final int ENCRYPTION_NONE = 0;
@@ -36,6 +36,7 @@ public class Message extends AbstractEntity {
 	public static final int ENCRYPTION_DECRYPTED = 3;
 	public static final int ENCRYPTION_DECRYPTION_FAILED = 4;
 	public static final int ENCRYPTION_AXOLOTL = 5;
+	public static final int ENCRYPTION_PGP_OX = 6;
 
 	public static final int TYPE_TEXT = 0;
 	public static final int TYPE_IMAGE = 1;

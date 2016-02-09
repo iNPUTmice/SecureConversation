@@ -1514,6 +1514,30 @@ public class ConversationActivity extends XmppActivity
 				});
 	}
 
+	public void encryptTestMessageOxPgp(Message message) {
+		xmppConnectionService.getOxPgpEngine().encrypt(message,
+				new UiCallback<Message>() {
+
+					@Override
+					public void userInputRequried(PendingIntent pi,
+												  Message message) {
+						ConversationActivity.this.runIntent(pi,
+								ConversationActivity.REQUEST_SEND_MESSAGE);
+					}
+
+					@Override
+					public void success(Message message) {
+						message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+						xmppConnectionService.sendMessage(message);
+					}
+
+					@Override
+					public void error(int error, Message message) {
+
+					}
+				});
+	}
+
 	public boolean useSendButtonToIndicateStatus() {
 		return getPreferences().getBoolean("send_button_status", false);
 	}

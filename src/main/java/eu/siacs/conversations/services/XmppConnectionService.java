@@ -64,6 +64,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
+import eu.siacs.conversations.crypto.oxpgp.OxPgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Bookmark;
@@ -331,6 +332,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	};
 	private OpenPgpServiceConnection pgpServiceConnection;
 	private PgpEngine mPgpEngine = null;
+	private OxPgpEngine mOxPgpEngine = null;
 	private WakeLock wakeLock;
 	private PowerManager pm;
 	private LruCache<String, Bitmap> mBitmapCache;
@@ -355,6 +357,20 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 						pgpServiceConnection.getService()), this);
 			}
 			return mPgpEngine;
+		} else {
+			return null;
+		}
+
+	}
+
+	public OxPgpEngine getOxPgpEngine() {
+		if (pgpServiceConnection.isBound()) {
+			if (this.mOxPgpEngine == null) {
+				this.mOxPgpEngine = new OxPgpEngine(new OpenPgpApi(
+						getApplicationContext(),
+						pgpServiceConnection.getService()), this);
+			}
+			return mOxPgpEngine;
 		} else {
 			return null;
 		}
@@ -879,7 +895,8 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 							break;
 						}
 					} else {
-						packet = mMessageGenerator.generatePgpChat(message);
+						//packet = mMessageGenerator.generatePgpChat(message);
+						packet = mMessageGenerator.generateOxPgpChat(message);
 					}
 					break;
 				case Message.ENCRYPTION_OTR:

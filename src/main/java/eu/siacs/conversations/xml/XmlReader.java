@@ -20,6 +20,11 @@ public class XmlReader {
 	private InputStream is;
 
 	public XmlReader(WakeLock wakeLock) {
+		this();
+		this.wakeLock = wakeLock;
+	}
+
+	public XmlReader() {
 		this.parser = Xml.newPullParser();
 		try {
 			this.parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES,
@@ -27,7 +32,6 @@ public class XmlReader {
 		} catch (XmlPullParserException e) {
 			Log.d(Config.LOGTAG, "error setting namespace feature on parser");
 		}
-		this.wakeLock = wakeLock;
 	}
 
 	public void setInputStream(InputStream inputStream) throws IOException {
@@ -61,7 +65,7 @@ public class XmlReader {
 	}
 
 	public Tag readTag() throws XmlPullParserException, IOException {
-		if (wakeLock.isHeld()) {
+		if (wakeLock!=null && wakeLock.isHeld()) {
 			try {
 				wakeLock.release();
 			} catch (RuntimeException re) {
@@ -70,7 +74,9 @@ public class XmlReader {
 		try {
 			while (this.is != null
 					&& parser.next() != XmlPullParser.END_DOCUMENT) {
-				wakeLock.acquire();
+				if (wakeLock!=null) {
+					wakeLock.acquire();
+				}
 				if (parser.getEventType() == XmlPullParser.START_TAG) {
 					Tag tag = Tag.start(parser.getName());
 					for (int i = 0; i < parser.getAttributeCount(); ++i) {
@@ -90,7 +96,7 @@ public class XmlReader {
 					return tag;
 				}
 			}
-			if (wakeLock.isHeld()) {
+			if (wakeLock!=null && wakeLock.isHeld()) {
 				try {
 					wakeLock.release();
 				} catch (RuntimeException re) {
