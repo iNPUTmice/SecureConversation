@@ -127,6 +127,7 @@ public class MessageParser extends AbstractParser implements
 
 	private Message parseOxPGPChat(final Conversation conversation, String openPgpEleContents,
 								   int status) {
+		Log.d("PHILIP", "parseOXPGP body: " + openPgpEleContents);
 		// TODO: PHILIP Change to ENCRYPTION_OXPGP
 		final Message message = new Message(conversation, openPgpEleContents,
 				Message.ENCRYPTION_PGP, status);

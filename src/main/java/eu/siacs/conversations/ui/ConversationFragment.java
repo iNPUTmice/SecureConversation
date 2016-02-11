@@ -208,6 +208,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private final int KEYCHAIN_UNLOCK_REQUIRED = 1;
 	private final int KEYCHAIN_UNLOCK_PENDING = 2;
 	private int keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
+	// this is shown for PGP and OXPGP decryption
 	protected OnClickListener clickToDecryptListener = new OnClickListener() {
 
 		@Override
@@ -218,7 +219,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				updateSnackBar(conversation);
 				Message message = getLastPgpDecryptableMessage();
 				if (message != null) {
-					activity.xmppConnectionService.getPgpEngine().decrypt(message, new UiCallback<Message>() {
+					activity.xmppConnectionService.getOxPgpEngine().decrypt(message, new UiCallback<Message>() {
 						@Override
 						public void success(Message object) {
 							conversation.getAccount().getPgpDecryptionService().onKeychainUnlocked();

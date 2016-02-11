@@ -37,6 +37,7 @@ public class Message extends AbstractEntity {
 	public static final int ENCRYPTION_DECRYPTION_FAILED = 4;
 	public static final int ENCRYPTION_AXOLOTL = 5;
 	public static final int ENCRYPTION_PGP_OX = 6;
+	public static final int ENCRYPTION_OX_DECRYPTED = 7;
 
 	public static final int TYPE_TEXT = 0;
 	public static final int TYPE_IMAGE = 1;

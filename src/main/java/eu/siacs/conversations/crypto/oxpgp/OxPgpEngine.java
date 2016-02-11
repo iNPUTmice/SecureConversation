@@ -3,7 +3,7 @@ package eu.siacs.conversations.crypto.oxpgp;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
+import android.util.Base64;
 import android.util.Log;
 
 import org.openintents.openpgp.util.OpenPgpApi;
@@ -16,13 +16,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
-import java.util.TimeZone;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
@@ -38,9 +36,6 @@ import eu.siacs.conversations.xml.Tag;
 import eu.siacs.conversations.xml.XmlReader;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
-/**
- * Created by abrahamphilip on 6/2/16.
- */
 public class OxPgpEngine {
     private OpenPgpApi mApi;
     private XmppConnectionService mXmppConnectionService;
@@ -55,7 +50,7 @@ public class OxPgpEngine {
 
     private static final int RPAD_MAX_LENGTH = 50;
 
-    private final String TAG = "OxPgpEngine";
+    private static final int BASE64_ENCODING_FLAG = Base64.DEFAULT;
 
     public OxPgpEngine(OpenPgpApi api, XmppConnectionService service) {
         this.mApi = api;
@@ -79,29 +74,28 @@ public class OxPgpEngine {
         }
 
         if (!message.needsUploading()) {
-            params.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, true);
             final String toEncryptBody = getSingCryptPacket(message);
 
             InputStream is = new ByteArrayInputStream(toEncryptBody.getBytes());
-            final OutputStream os = new ByteArrayOutputStream();
+            final ByteArrayOutputStream os = new ByteArrayOutputStream();
             mApi.executeApiAsync(params, is, os, new OpenPgpApi.IOpenPgpCallback() {
 
                 @Override
                 public void onReturn(Intent result) {
-                    notifyPgpDecryptionService(message.getConversation().getAccount(), OpenPgpApi.ACTION_ENCRYPT, result);
+
+                    notifyPgpDecryptionService(message.getConversation().getAccount(),
+                            OpenPgpApi.ACTION_ENCRYPT, result);
+
                     switch (result.getIntExtra(OpenPgpApi.RESULT_CODE,
                             OpenPgpApi.RESULT_CODE_ERROR)) {
                         case OpenPgpApi.RESULT_CODE_SUCCESS:
                             try {
                                 os.flush();
-                                StringBuilder encryptedMessageBody = new StringBuilder();
-                                String[] lines = os.toString().split("\n");
-                                for (int i = 2; i < lines.length - 1; ++i) {
-                                    if (!lines[i].contains("Version")) {
-                                        encryptedMessageBody.append(lines[i].trim());
-                                    }
-                                }
-                                message.setEncryptedBody(encryptedMessageBody.toString());
+                                byte[] encData = os.toByteArray();
+                                String base64Enc = Base64.encodeToString(encData,
+                                        BASE64_ENCODING_FLAG);
+                                Log.d("PHILIP", "OXpgpengine encrypt b64: " + base64Enc);
+                                message.setEncryptedBody(base64Enc);
                                 callback.success(message);
                             } catch (IOException e) {
                                 callback.error(R.string.openpgp_error, message);
@@ -120,6 +114,9 @@ public class OxPgpEngine {
                 }
             });
         } else {
+            throw new UnsupportedOperationException(
+                    "OX does not handle image or file sending yet!");
+            /*
             try {
                 DownloadableFile inputFile = this.mXmppConnectionService
                         .getFileBackend().getFile(message, true);
@@ -133,7 +130,8 @@ public class OxPgpEngine {
 
                     @Override
                     public void onReturn(Intent result) {
-                        notifyPgpDecryptionService(message.getConversation().getAccount(), OpenPgpApi.ACTION_ENCRYPT, result);
+                        notifyPgpDecryptionService(message.getConversation().getAccount(),
+                                OpenPgpApi.ACTION_ENCRYPT, result);
                         switch (result.getIntExtra(OpenPgpApi.RESULT_CODE,
                                 OpenPgpApi.RESULT_CODE_ERROR)) {
                             case OpenPgpApi.RESULT_CODE_SUCCESS:
@@ -160,6 +158,7 @@ public class OxPgpEngine {
             } catch (final IOException e) {
                 callback.error(R.string.openpgp_error, message);
             }
+            */
         }
     }
 
@@ -236,23 +235,36 @@ public class OxPgpEngine {
     }
 
     /**
-     * Expects message body to be set to the contents of the <openpgp> tag
+     * Expects message body to be set to the inner XML of the <openpgp> tag
      *
-     * @param message
-     * @param callback
+     * @param message message whose body contains the inner XML of the <openpgp> tag
+     * @param callback callback to the UI in case input is required/success/error
      */
     public void decrypt(final Message message,
                         final UiCallback<Message> callback) {
         Intent params = new Intent();
         params.setAction(OpenPgpApi.ACTION_DECRYPT_VERIFY);
         if (message.getType() == Message.TYPE_TEXT) {
-            InputStream is = new ByteArrayInputStream(message.getBody().getBytes());
+            Log.d("PHILIP", "oxpgpengine decrypt body: " + message.getBody());
+            byte[] encrypted;
+            try {
+                encrypted = Base64.decode(message.getBody(), BASE64_ENCODING_FLAG);
+            } catch (IllegalArgumentException e) {
+                Log.e("PHILIP", "Error base64 decryption", e);
+                callback.error(R.string.oxpgp_invalid_base64, message);
+                return;
+            }
+
+            InputStream is = new ByteArrayInputStream(encrypted);
             final OutputStream os = new ByteArrayOutputStream();
 
             mApi.executeApiAsync(params, is, os, new OpenPgpApi.IOpenPgpCallback() {
 
                 @Override
                 public void onReturn(Intent result) {
+                    Log.d("PHILIP", "OnPGPEngine decrypt returned: " + result.getIntExtra(
+                            OpenPgpApi.RESULT_CODE,
+                            -1));
                     notifyPgpDecryptionService(message.getConversation().getAccount(),
                             OpenPgpApi.ACTION_DECRYPT_VERIFY, result);
                     switch (result.getIntExtra(OpenPgpApi.RESULT_CODE,
@@ -260,6 +272,7 @@ public class OxPgpEngine {
                         case OpenPgpApi.RESULT_CODE_SUCCESS:
                             try {
                                 os.flush();
+                                Log.d("PHILIP", "decrypted: " + os.toString());
                                 if (message.getEncryption() == Message.ENCRYPTION_PGP) {
                                     message.setBody(extractBody(os.toString()));
                                     message.setEncryption(Message.ENCRYPTION_DECRYPTED);
