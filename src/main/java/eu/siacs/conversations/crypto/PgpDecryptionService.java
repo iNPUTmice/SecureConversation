@@ -115,7 +115,9 @@ public class PgpDecryptionService {
 
 					@Override
 					public void userInputRequried(PendingIntent pi, Message message) {
-						messages.get(uuid).add(0, message);
+						// add message to the end of the list, to prevent an erroneous message
+						// from preventing the decryption of any futher messages
+						messages.get(uuid).add(message);
 						decryptingMessages.put(uuid, false);
 					}
 
