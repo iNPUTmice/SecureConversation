@@ -14,6 +14,9 @@
         <item
             android:id="@+id/encryption_choice_pgp"
             android:title="@string/encryption_choice_pgp"/>
+        <item
+            android:id="@+id/encryption_choice_ox_pgp"
+            android:title="@string/encryption_choice_ox_pgp"/>
     </group>
 
 </menu>

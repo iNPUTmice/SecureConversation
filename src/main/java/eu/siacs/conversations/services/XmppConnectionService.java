@@ -26,6 +26,7 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.security.KeyChain;
+import android.support.annotation.Nullable;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
@@ -61,7 +62,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import de.duenndns.ssl.MemorizingTrustManager;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.crypto.PgpEngine;
+import eu.siacs.conversations.crypto.BasePgpEngine;
+import eu.siacs.conversations.crypto.Xep27PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
 import eu.siacs.conversations.crypto.oxpgp.OxPgpEngine;
@@ -331,7 +333,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		}
 	};
 	private OpenPgpServiceConnection pgpServiceConnection;
-	private PgpEngine mPgpEngine = null;
+	private Xep27PgpEngine mXep27PgpEngine = null;
 	private OxPgpEngine mOxPgpEngine = null;
 	private WakeLock wakeLock;
 	private PowerManager pm;
@@ -349,14 +351,14 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		return this.mRestoredFromDatabase;
 	}
 
-	public PgpEngine getPgpEngine() {
+	public Xep27PgpEngine getXep27PgpEngine() {
 		if (pgpServiceConnection != null && pgpServiceConnection.isBound()) {
-			if (this.mPgpEngine == null) {
-				this.mPgpEngine = new PgpEngine(new OpenPgpApi(
+			if (this.mXep27PgpEngine == null) {
+				this.mXep27PgpEngine = new Xep27PgpEngine(new OpenPgpApi(
 						getApplicationContext(),
 						pgpServiceConnection.getService()), this);
 			}
-			return mPgpEngine;
+			return mXep27PgpEngine;
 		} else {
 			return null;
 		}
@@ -364,7 +366,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	}
 
 	public OxPgpEngine getOxPgpEngine() {
-		if (pgpServiceConnection.isBound()) {
+		if (pgpServiceConnection != null && pgpServiceConnection.isBound()) {
 			if (this.mOxPgpEngine == null) {
 				this.mOxPgpEngine = new OxPgpEngine(new OpenPgpApi(
 						getApplicationContext(),
@@ -374,7 +376,16 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		} else {
 			return null;
 		}
+	}
 
+	public @Nullable BasePgpEngine getPgpEngineFor(Message message) {
+		switch (message.getPgpType()) {
+			case XEP27:
+				return getXep27PgpEngine();
+			case OX:
+				return getOxPgpEngine();
+		}
+		return null;
 	}
 
 	public FileBackend getFileBackend() {
@@ -397,7 +408,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 			message.setCounterpart(conversation.getNextCounterpart());
 		}
 		if (encryption == Message.ENCRYPTION_DECRYPTED) {
-			getPgpEngine().encrypt(message, callback);
+			getXep27PgpEngine().encrypt(message, callback);
 		} else {
 			callback.success(message);
 		}
@@ -419,7 +430,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 			message.setRelativeFilePath(path);
 			getFileBackend().updateFileParams(message);
 			if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
-				getPgpEngine().encrypt(message, callback);
+				getXep27PgpEngine().encrypt(message, callback);
 			} else {
 				callback.success(message);
 			}
@@ -431,7 +442,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 						getFileBackend().copyFileToPrivateStorage(message, uri);
 						getFileBackend().updateFileParams(message);
 						if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
-							getPgpEngine().encrypt(message, callback);
+							getXep27PgpEngine().encrypt(message, callback);
 						} else {
 							callback.success(message);
 						}
@@ -466,7 +477,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 				try {
 					getFileBackend().copyImageToPrivateStorage(message, uri);
 					if (conversation.getNextEncryption() == Message.ENCRYPTION_PGP) {
-						getPgpEngine().encrypt(message, callback);
+						getXep27PgpEngine().encrypt(message, callback);
 					} else {
 						callback.success(message);
 					}
@@ -895,7 +906,19 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 							break;
 						}
 					} else {
-						//packet = mMessageGenerator.generatePgpChat(message);
+						packet = mMessageGenerator.generatePgpChat(message);
+					}
+					break;
+				case Message.ENCRYPTION_PGP_OX:
+				case Message.ENCRYPTION_DECRYPTED_OX:
+					Log.d("PHILIP", "Sending OX PGP message!");
+					if (message.needsUploading()) {
+						if (account.httpUploadAvailable() || message.fixCounterpart()) {
+							this.sendFileMessage(message, delay);
+						} else {
+							break;
+						}
+					} else {
 						packet = mMessageGenerator.generateOxPgpChat(message);
 					}
 					break;
@@ -958,6 +981,18 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 						saveInDb = false;
 						message.setBody(decryptedBody);
 						message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+					}
+					break;
+				case Message.ENCRYPTION_DECRYPTED_OX:
+					if (!message.needsUploading()) {
+						String pgpBody = message.getEncryptedBody();
+						String decryptedBody = message.getBody();
+						message.setBody(pgpBody);
+						message.setEncryption(Message.ENCRYPTION_PGP_OX);
+						databaseBackend.createMessage(message);
+						saveInDb = false;
+						message.setBody(decryptedBody);
+						message.setEncryption(Message.ENCRYPTION_DECRYPTED_OX);
 					}
 					break;
 				case Message.ENCRYPTION_OTR:

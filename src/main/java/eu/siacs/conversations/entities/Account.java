@@ -462,6 +462,19 @@ public class Account extends AbstractEntity {
 		return true;
 	}
 
+	public long getOxPgpId() {
+		// TODO: PHILIP make it return actual key
+		if (keys.has(KEY_PGP_ID)) {
+			try {
+				return keys.getLong(KEY_PGP_ID);
+			} catch (JSONException e) {
+				return -1;
+			}
+		} else {
+			return -1;
+		}
+	}
+
 	public Roster getRoster() {
 		return this.roster;
 	}

@@ -128,9 +128,8 @@ public class MessageParser extends AbstractParser implements
 	private Message parseOxPGPChat(final Conversation conversation, String openPgpEleContents,
 								   int status) {
 		Log.d("PHILIP", "parseOXPGP body: " + openPgpEleContents);
-		// TODO: PHILIP Change to ENCRYPTION_OXPGP
 		final Message message = new Message(conversation, openPgpEleContents,
-				Message.ENCRYPTION_PGP, status);
+				Message.ENCRYPTION_PGP_OX, status);
 		PgpDecryptionService pgpDecryptionService = conversation.getAccount()
 				.getPgpDecryptionService();
 		pgpDecryptionService.add(message);
@@ -264,7 +263,7 @@ public class MessageParser extends AbstractParser implements
 				+ original.getFrom());
 		for(Element e: original.getChildren()) {
 			Log.d("PHILIP", "Message packet: <" + e.getName() + " xmlns=" + e.getNamespace() + "> "
-					+ e.getContent());
+					+ e.getContent() + "\n</" + e.getName() + ">");
 		}
 		if (handleErrorMessage(account, original)) {
 			return;

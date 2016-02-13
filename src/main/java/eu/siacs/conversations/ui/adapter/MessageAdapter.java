@@ -585,12 +585,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			} else {
 				displayOpenableMessage(viewHolder, message);
 			}
-		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+		} else if (message.isAnyPgp()) {
 			if (activity.hasPgp()) {
 				if (account.getPgpDecryptionService().isRunning()) {
 					displayInfoMessage(viewHolder, activity.getString(R.string.message_decrypting), darkBackground);
-				} else {
+				} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
 					displayInfoMessage(viewHolder, activity.getString(R.string.pgp_message), darkBackground);
+				} else if (message.getEncryption() == Message.ENCRYPTION_PGP_OX) {
+					displayInfoMessage(viewHolder, activity.getString(R.string.ox_pgp_message), darkBackground);
 				}
 			} else {
 				displayInfoMessage(viewHolder,activity.getString(R.string.install_openkeychain),darkBackground);

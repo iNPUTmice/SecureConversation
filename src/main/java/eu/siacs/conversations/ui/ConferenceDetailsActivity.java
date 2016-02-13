@@ -6,7 +6,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.IntentSender.SendIntentException;
-import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -32,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.crypto.PgpEngine;
+import eu.siacs.conversations.crypto.Xep27PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
@@ -635,7 +634,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 	}
 
 	private void viewPgpKey(User user) {
-		PgpEngine pgp = xmppConnectionService.getPgpEngine();
+		Xep27PgpEngine pgp = xmppConnectionService.getXep27PgpEngine();
 		if (pgp != null) {
 			PendingIntent intent = pgp.getIntentForKey(
 					mConversation.getAccount(), user.getPgpKeyId());

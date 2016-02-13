@@ -100,7 +100,7 @@ public class PgpDecryptionService {
 		Message message = null;
 		synchronized (messages.get(uuid)) {
 			while (!messages.get(uuid).isEmpty()) {
-				if (messages.get(uuid).get(0).getEncryption() == Message.ENCRYPTION_PGP) {
+				if (messages.get(uuid).get(0).isAnyPgp()) {
 					if (isRunning()) {
 						message = messages.get(uuid).remove(0);
 					}
@@ -109,14 +109,12 @@ public class PgpDecryptionService {
 					messages.get(uuid).remove(0);
 				}
 			}
-			if (message != null && xmppConnectionService.getPgpEngine() != null) {
-				// TODO: PHILIP Change to allow both engines
-				xmppConnectionService.getOxPgpEngine().decrypt(message, new UiCallback<Message>() {
+			boolean decryptStarted = decryptAppropriately(message, new UiCallback<Message>() {
 
 					@Override
 					public void userInputRequried(PendingIntent pi, Message message) {
 						// add message to the end of the list, to prevent an erroneous message
-						// from preventing the decryption of any futher messages
+						// from preventing the decryption of any further messages
 						messages.get(uuid).add(message);
 						decryptingMessages.put(uuid, false);
 					}
@@ -129,40 +127,74 @@ public class PgpDecryptionService {
 
 					@Override
 					public void error(int error, Message message) {
-						Log.d("PHILIP", "pgpDecryptionService: failed" + message.getStatus());
-						message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
+						Log.d("PHILIP", "pgpDecryptionService: failed - status" + message.getStatus());
+						message.setAppropriateEncryptionFailed();
 						xmppConnectionService.updateConversationUi();
 						decryptMessage(uuid);
 					}
 				});
-			} else {
-				decryptingMessages.put(uuid, false);
+            if (!decryptStarted) {
+                decryptingMessages.put(uuid, false);
+            }
+        }
+    }
+
+	private void decryptDirectly(Message message) {
+		Log.d("PHILIP", "decrypting message directly!");
+		decryptAppropriately(message, new UiCallback<Message>() {
+
+			@Override
+			public void userInputRequried(PendingIntent pi, Message message) {
+				Log.d("PHILIP", "PgpDecryptionService: " + "userInputRequried");
+
+				store(message);
 			}
-		}
+
+			@Override
+			public void success(Message message) {
+				xmppConnectionService.updateConversationUi();
+				xmppConnectionService.getNotificationService().updateNotification(false);
+			}
+
+			@Override
+			public void error(int error, Message message) {
+				Log.d("PHILIP", "pgpDecryptionService: failed" + message.getStatus());
+				message.setAppropriateEncryptionFailed();
+				xmppConnectionService.updateConversationUi();
+			}
+		});
 	}
 
-	private void decryptDirectly(final Message message) {
-		if (message.getEncryption() == Message.ENCRYPTION_PGP && xmppConnectionService.getPgpEngine() != null) {
-			xmppConnectionService.getOxPgpEngine().decrypt(message, new UiCallback<Message>() {
-
-				@Override
-				public void userInputRequried(PendingIntent pi, Message message) {
-					store(message);
-				}
-
-				@Override
-				public void success(Message message) {
-					xmppConnectionService.updateConversationUi();
-					xmppConnectionService.getNotificationService().updateNotification(false);
-				}
-
-				@Override
-				public void error(int error, Message message) {
-					Log.d("PHILIP", "pgpDecryptionService: failed" + message.getStatus());
-					message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
-					xmppConnectionService.updateConversationUi();
-				}
-			});
-		}
-	}
+	/**
+	 * Decrypts XEP27 PGP and OX PGP messages
+	 * @param message message type be either ENCRYPTION_PGP or ENCRYPTION_PGP_OX, throws Exception
+	 *                otherwise
+	 * @return false if the required engine was null in xmppConnectionService, true otherwise
+	 */
+	private boolean decryptAppropriately(Message message, UiCallback<Message> callback) {
+        if (message == null || xmppConnectionService == null) {
+            return false;
+        }
+		BasePgpEngine pgpEngine;
+		switch (message.getEncryption()) {
+			case Message.ENCRYPTION_PGP:
+				Log.d("PHILIP", "decrypting: XEP27");
+				pgpEngine = xmppConnectionService.getXep27PgpEngine();
+				break;
+			case Message.ENCRYPTION_PGP_OX:
+				Log.d("PHILIP", "decrypting: OX");
+				pgpEngine = xmppConnectionService.getOxPgpEngine();
+				break;
+			default:
+				throw new UnsupportedOperationException(
+						"Non PGP message received in PgpDecryptionService - Type: "
+								+ message.getType());
+        }
+        if (pgpEngine == null) {
+			Log.d("PHILIP", "pgpEngine null in PgpDecryptionService");
+            return false;
+        }
+        pgpEngine.decrypt(message, callback);
+        return true;
+    }
 }

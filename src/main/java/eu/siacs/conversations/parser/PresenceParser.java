@@ -7,22 +7,19 @@ import java.util.List;
 
 
 import eu.siacs.conversations.Config;
-import eu.siacs.conversations.crypto.PgpEngine;
+import eu.siacs.conversations.crypto.Xep27PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
-import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
-import eu.siacs.conversations.xmpp.OnIqPacketReceived;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
-import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
 public class PresenceParser extends AbstractParser implements
@@ -80,12 +77,12 @@ public class PresenceParser extends AbstractParser implements
 						} else {
 							mucOptions.addUser(user);
 						}
-						if (mXmppConnectionService.getPgpEngine() != null) {
+						if (mXmppConnectionService.getXep27PgpEngine() != null) {
 							Element signed = packet.findChild("x", "jabber:x:signed");
 							if (signed != null) {
 								Element status = packet.findChild("status");
 								String msg = status == null ? "" : status.getContent();
-								long keyId = mXmppConnectionService.getPgpEngine().fetchKeyId(mucOptions.getAccount(), msg, signed.getContent());
+								long keyId = mXmppConnectionService.getXep27PgpEngine().fetchKeyId(mucOptions.getAccount(), msg, signed.getContent());
 								if (keyId != 0) {
 									user.setPgpKeyId(keyId);
 								}
@@ -194,7 +191,7 @@ public class PresenceParser extends AbstractParser implements
 				mXmppConnectionService.fetchCaps(account, from, presence);
 			}
 
-			PgpEngine pgp = mXmppConnectionService.getPgpEngine();
+			Xep27PgpEngine pgp = mXmppConnectionService.getXep27PgpEngine();
 			Element x = packet.findChild("x", "jabber:x:signed");
 			if (pgp != null && x != null) {
 				Element status = packet.findChild("status");

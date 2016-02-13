@@ -77,7 +77,8 @@ public class ConversationActivity extends XmppActivity
 	public static final String PRIVATE_MESSAGE = "pm";
 
 	public static final int REQUEST_SEND_MESSAGE = 0x0201;
-	public static final int REQUEST_DECRYPT_PGP = 0x0202;
+	public static final int REQUEST_DECRYPT_PGP_XEP27 = 0x0202;
+	public static final int REQUEST_DECRYPT_PGP_OX = 0x0203;
 	public static final int REQUEST_ENCRYPT_MESSAGE = 0x0207;
 	public static final int REQUEST_TRUST_KEYS_TEXT = 0x0208;
 	public static final int REQUEST_TRUST_KEYS_MENU = 0x0209;
@@ -525,7 +526,7 @@ public class ConversationActivity extends XmppActivity
 		if (encryption == Message.ENCRYPTION_PGP) {
 			if (hasPgp()) {
 				if (mode == Conversation.MODE_SINGLE && conversation.getContact().getPgpKeyId() != 0) {
-					xmppConnectionService.getPgpEngine().hasKey(
+					xmppConnectionService.getXep27PgpEngine().hasKey(
 							conversation.getContact(),
 							new UiCallback<Contact>() {
 
@@ -828,6 +829,20 @@ public class ConversationActivity extends XmppActivity
 									announcePgp(conversation.getAccount(), conversation);
 								}
 							} else {
+								// OpenKeychain is not installed
+								showInstallPgpDialog();
+							}
+							break;
+						case R.id.encryption_choice_ox_pgp:
+							if (hasPgp()) {
+								if (conversation.getAccount().getOxPgpId() != -1) {
+									conversation.setNextEncryption(Message.ENCRYPTION_PGP_OX);
+									item.setChecked(true);
+								} else {
+									announceOxPgp(conversation.getAccount(), conversation);
+								}
+							} else {
+								// OpenKeychain is not installed
 								showInstallPgpDialog();
 							}
 							break;
@@ -852,8 +867,10 @@ public class ConversationActivity extends XmppActivity
 			MenuItem otr = popup.getMenu().findItem(R.id.encryption_choice_otr);
 			MenuItem none = popup.getMenu().findItem(R.id.encryption_choice_none);
 			MenuItem pgp = popup.getMenu().findItem(R.id.encryption_choice_pgp);
+			MenuItem oxPgp = popup.getMenu().findItem(R.id.encryption_choice_ox_pgp);
 			MenuItem axolotl = popup.getMenu().findItem(R.id.encryption_choice_axolotl);
 			pgp.setVisible(!Config.HIDE_PGP_IN_UI && !Config.X509_VERIFICATION);
+			oxPgp.setVisible(!Config.HIDE_PGP_IN_UI && !Config.X509_VERIFICATION);
 			none.setVisible(!Config.FORCE_E2E_ENCRYPTION || conversation.getMode() == Conversation.MODE_MULTI);
 			otr.setVisible(!Config.X509_VERIFICATION);
 			if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -871,6 +888,9 @@ public class ConversationActivity extends XmppActivity
 					break;
 				case Message.ENCRYPTION_PGP:
 					pgp.setChecked(true);
+					break;
+				case Message.ENCRYPTION_PGP_OX:
+					oxPgp.setChecked(true);
 					break;
 				case Message.ENCRYPTION_AXOLOTL:
 					axolotl.setChecked(true);
@@ -1267,7 +1287,7 @@ public class ConversationActivity extends XmppActivity
 	protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
 		if (resultCode == RESULT_OK) {
-			if (requestCode == REQUEST_DECRYPT_PGP) {
+			if (requestCode == REQUEST_DECRYPT_PGP_XEP27 || requestCode == REQUEST_DECRYPT_PGP_OX) {
 				mConversationFragment.onActivityResult(requestCode, resultCode, data);
 			} else if (requestCode == REQUEST_CHOOSE_PGP_ID) {
 				// the user chose OpenPGP for encryption and selected his key in the PGP provider
@@ -1341,7 +1361,7 @@ public class ConversationActivity extends XmppActivity
 		} else {
 			mPendingImageUris.clear();
 			mPendingFileUris.clear();
-			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP) {
+			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP_XEP27) {
 				mConversationFragment.onActivityResult(requestCode, resultCode, data);
 			}
 			if (requestCode == REQUEST_BATTERY_OP) {
@@ -1490,8 +1510,8 @@ public class ConversationActivity extends XmppActivity
 		}
 	}
 
-	public void encryptTextMessage(Message message) {
-		xmppConnectionService.getPgpEngine().encrypt(message,
+	public void encryptTextMessage27Pgp(Message message) {
+		xmppConnectionService.getXep27PgpEngine().encrypt(message,
 				new UiCallback<Message>() {
 
 					@Override
@@ -1514,7 +1534,7 @@ public class ConversationActivity extends XmppActivity
 				});
 	}
 
-	public void encryptTestMessageOxPgp(Message message) {
+	public void encryptTextMessageOxPgp(Message message) {
 		xmppConnectionService.getOxPgpEngine().encrypt(message,
 				new UiCallback<Message>() {
 
@@ -1527,7 +1547,7 @@ public class ConversationActivity extends XmppActivity
 
 					@Override
 					public void success(Message message) {
-						message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+						message.setEncryption(Message.ENCRYPTION_DECRYPTED_OX);
 						xmppConnectionService.sendMessage(message);
 					}
 

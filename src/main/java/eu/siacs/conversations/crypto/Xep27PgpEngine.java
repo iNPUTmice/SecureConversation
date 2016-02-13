@@ -28,15 +28,16 @@ import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.UiCallback;
 
-public class PgpEngine {
+public class Xep27PgpEngine implements BasePgpEngine {
 	private OpenPgpApi api;
 	private XmppConnectionService mXmppConnectionService;
 
-	public PgpEngine(OpenPgpApi api, XmppConnectionService service) {
+	public Xep27PgpEngine(OpenPgpApi api, XmppConnectionService service) {
 		this.api = api;
 		this.mXmppConnectionService = service;
 	}
 
+	@Override
 	public void decrypt(final Message message,
 			final UiCallback<Message> callback) {
 		Intent params = new Intent();
@@ -104,7 +105,7 @@ public class PgpEngine {
 							URL url = message.getFileParams().url;
 							mXmppConnectionService.getFileBackend().updateFileParams(message,url);
 							message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-							PgpEngine.this.mXmppConnectionService
+							Xep27PgpEngine.this.mXmppConnectionService
 									.updateMessage(message);
 							inputFile.delete();
 							Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
@@ -130,6 +131,7 @@ public class PgpEngine {
 		}
 	}
 
+	@Override
 	public void encrypt(final Message message, final UiCallback<Message> callback) {
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_ENCRYPT);
@@ -234,6 +236,7 @@ public class PgpEngine {
 		}
 	}
 
+	@Override
 	public long fetchKeyId(Account account, String status, String signature) {
 		if ((signature == null) || (api == null)) {
 			return 0;
@@ -278,6 +281,7 @@ public class PgpEngine {
 		return 0;
 	}
 
+	@Override
 	public void chooseKey(final Account account, final UiCallback<Account> callback) {
 		Intent p = new Intent();
 		p.setAction(OpenPgpApi.ACTION_GET_SIGN_KEY_ID);
@@ -357,6 +361,7 @@ public class PgpEngine {
 		});
 	}
 
+	@Override
 	public void hasKey(final Contact contact, final UiCallback<Contact> callback) {
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_GET_KEY);
@@ -381,6 +386,7 @@ public class PgpEngine {
 		});
 	}
 
+	@Override
 	public PendingIntent getIntentForKey(Contact contact) {
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_GET_KEY);
@@ -390,6 +396,7 @@ public class PgpEngine {
 				.getParcelableExtra(OpenPgpApi.RESULT_INTENT);
 	}
 
+	@Override
 	public PendingIntent getIntentForKey(Account account, long pgpKeyId) {
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_GET_KEY);

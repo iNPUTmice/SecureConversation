@@ -31,7 +31,8 @@
 	<string name="unread_conversations">unread Conversations</string>
 	<string name="sending">sending…</string>
 	<string name="message_decrypting">Decrypting message. Please wait…</string>
-	<string name="pgp_message">OpenPGP encrypted message</string>
+	<string name="pgp_message">XEP-0027 OpenPGP encrypted message</string>
+	<string name="ox_pgp_message">OpenPGP (OX) encrypted message</string>
 	<string name="nick_in_use">Nickname is already in use</string>
 	<string name="admin">Admin</string>
 	<string name="owner">Owner</string>
@@ -84,6 +85,7 @@
 	<string name="send_omemo_message">Send OMEMO encrypted message</string>
 	<string name="send_omemo_x509_message">Send v\\OMEMO encrypted message</string>
 	<string name="send_pgp_message">Send OpenPGP encrypted message</string>
+	<string name="send_ox_pgp_message">Send OpenPGP (OX) encrypted message</string>
 	<string name="your_nick_has_been_changed">Your nickname has been changed</string>
 	<string name="send_unencrypted">Send unencrypted</string>
 	<string name="decryption_failed">Decryption failed. Maybe you don’t have the proper private key.</string>
@@ -157,6 +159,7 @@
 	<string name="encryption_choice_unencrypted">Unencrypted</string>
 	<string name="encryption_choice_otr">OTR</string>
 	<string name="encryption_choice_pgp">OpenPGP</string>
+	<string name="encryption_choice_ox_pgp">OX (OpenPGP)</string>
 	<string name="encryption_choice_omemo">OMEMO</string>
 	<string name="mgmt_account_edit">Edit account</string>
 	<string name="mgmt_account_delete">Delete account</string>

@@ -227,8 +227,13 @@ public abstract class XmppActivity extends Activity {
 		}
 	}
 
+	/**
+	 * meant to check if the user has OpenKeychain installed.
+	 * TODO: PHILIP returns null sometimes even if OK is installed. Investigate.
+	 * @return
+	 */
 	public boolean hasPgp() {
-		return xmppConnectionService.getPgpEngine() != null;
+		return xmppConnectionService.getXep27PgpEngine() != null;
 	}
 
 	public void showInstallPgpDialog() {
@@ -492,7 +497,7 @@ public abstract class XmppActivity extends Activity {
 		if (account.getPgpId() == -1) {
 			choosePgpSignId(account);
 		} else {
-			xmppConnectionService.getPgpEngine().generateSignature(account, "", new UiCallback<Account>() {
+			xmppConnectionService.getXep27PgpEngine().generateSignature(account, "", new UiCallback<Account>() {
 
 				@Override
 				public void userInputRequried(PendingIntent pi,
@@ -522,8 +527,12 @@ public abstract class XmppActivity extends Activity {
 		}
 	}
 
+	protected void announceOxPgp(Account account, final Conversation conversation) {
+		// TODO: PHILIP
+	}
+
 	protected void choosePgpSignId(Account account) {
-		xmppConnectionService.getPgpEngine().chooseKey(account, new UiCallback<Account>() {
+		xmppConnectionService.getXep27PgpEngine().chooseKey(account, new UiCallback<Account>() {
 			@Override
 			public void success(Account account1) {
 			}

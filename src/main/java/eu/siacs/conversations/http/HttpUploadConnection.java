@@ -12,10 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
-import java.net.Proxy;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -202,7 +199,7 @@ public class HttpUploadConnection implements Transferable {
 					message.setTransferable(null);
 					message.setCounterpart(message.getConversation().getJid().toBareJid());
 					if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
-						mXmppConnectionService.getPgpEngine().encrypt(message, new UiCallback<Message>() {
+						mXmppConnectionService.getXep27PgpEngine().encrypt(message, new UiCallback<Message>() {
 							@Override
 							public void success(Message message) {
 								mXmppConnectionService.resendMessage(message,delayed);

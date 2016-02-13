@@ -14,7 +14,6 @@ import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -37,7 +36,7 @@ import java.util.List;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.crypto.PgpEngine;
+import eu.siacs.conversations.crypto.Xep27PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.entities.Account;
@@ -416,8 +415,8 @@ public class ContactDetailsActivity extends XmppActivity implements OnAccountUpd
 
 				@Override
 				public void onClick(View v) {
-					PgpEngine pgp = ContactDetailsActivity.this.xmppConnectionService
-						.getPgpEngine();
+					Xep27PgpEngine pgp = ContactDetailsActivity.this.xmppConnectionService
+						.getXep27PgpEngine();
 					if (pgp != null) {
 						PendingIntent intent = pgp.getIntentForKey(contact);
 						if (intent != null) {

@@ -12,6 +12,7 @@ import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.text.InputType;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -50,7 +51,6 @@ import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
-import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.entities.TransferablePlaceholder;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -219,29 +219,44 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				updateSnackBar(conversation);
 				Message message = getLastPgpDecryptableMessage();
 				if (message != null) {
-					activity.xmppConnectionService.getOxPgpEngine().decrypt(message, new UiCallback<Message>() {
-						@Override
-						public void success(Message object) {
-							conversation.getAccount().getPgpDecryptionService().onKeychainUnlocked();
-							keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
-						}
+					final int REQUEST_CODE;
+					switch(message.getPgpType()) {
+						case XEP27:
+							REQUEST_CODE = ConversationActivity.REQUEST_DECRYPT_PGP_XEP27;
+							break;
+						case OX:
+							REQUEST_CODE = ConversationActivity.REQUEST_DECRYPT_PGP_OX;
+							break;
+						default:
+							Log.e(Config.LOGTAG,
+									"Shouldn't have got a non PGP message here! Message Type: "
+											+ message.getType());
+							return;
+					}
+					activity.xmppConnectionService.getPgpEngineFor(message)
+							.decrypt(message, new UiCallback<Message>() {
+								@Override
+								public void success(Message object) {
+									conversation.getAccount().getPgpDecryptionService().onKeychainUnlocked();
+									keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
+								}
 
-						@Override
-						public void error(int errorCode, Message object) {
-							keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
-						}
+								@Override
+								public void error(int errorCode, Message object) {
+									keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
+								}
 
-						@Override
-						public void userInputRequried(PendingIntent pi, Message object) {
-							try {
-								activity.startIntentSenderForResult(pi.getIntentSender(),
-										ConversationActivity.REQUEST_DECRYPT_PGP, null, 0, 0, 0);
-							} catch (SendIntentException e) {
-								keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
-								updatePgpMessages();
-							}
-						}
-					});
+								@Override
+								public void userInputRequried(PendingIntent pi, Message object) {
+									try {
+										activity.startIntentSenderForResult(pi.getIntentSender(),
+												REQUEST_CODE, null, 0, 0, 0);
+									} catch (SendIntentException e) {
+										keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
+										updatePgpMessages();
+									}
+								}
+							});
 				}
 			} else {
 				keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
@@ -342,8 +357,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				sendOtrMessage(message);
 				break;
 			case Message.ENCRYPTION_PGP:
+				sendXep27PgpMessage(message);
+				break;
+			case Message.ENCRYPTION_PGP_OX:
 				sendOxPgpMessage(message);
-				//sendPgpMessage(message);
 				break;
 			case Message.ENCRYPTION_AXOLOTL:
 				if(!activity.trustKeysIfNeeded(ConversationActivity.REQUEST_TRUST_KEYS_TEXT)) {
@@ -383,6 +400,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				case Message.ENCRYPTION_PGP:
 					mEditMessage.setHint(getString(R.string.send_pgp_message));
 					break;
+				case Message.ENCRYPTION_PGP_OX:
+					mEditMessage.setHint(getString(R.string.send_ox_pgp_message));
 				default:
 					break;
 			}
@@ -849,7 +868,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	@Nullable
 	private Message getLastPgpDecryptableMessage() {
 		for (final Message message : this.messageList) {
-			if (message.getEncryption() == Message.ENCRYPTION_PGP
+			if (message.isAnyPgp()
 					&& (message.getStatus() == Message.STATUS_RECEIVED || message.getStatus() >= Message.STATUS_SEND)
 					&& message.getTransferable() == null) {
 				return message;
@@ -1066,7 +1085,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		messageSent();
 	}
 
-	protected void sendPgpMessage(final Message message) {
+	protected void sendXep27PgpMessage(final Message message) {
 		final ConversationActivity activity = (ConversationActivity) getActivity();
 		final XmppConnectionService xmppService = activity.xmppConnectionService;
 		final Contact contact = message.getConversation().getContact();
@@ -1080,7 +1099,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 		if (conversation.getMode() == Conversation.MODE_SINGLE) {
 			if (contact.getPgpKeyId() != 0) {
-				xmppService.getPgpEngine().hasKey(contact,
+				xmppService.getXep27PgpEngine().hasKey(contact,
 						new UiCallback<Contact>() {
 
 							@Override
@@ -1094,7 +1113,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							@Override
 							public void success(Contact contact) {
 								messageSent();
-								activity.encryptTextMessage(message);
+								activity.encryptTextMessage27Pgp(message);
 							}
 
 							@Override
@@ -1130,7 +1149,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					warning.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
 					warning.show();
 				}
-				activity.encryptTextMessage(message);
+				activity.encryptTextMessage27Pgp(message);
 				messageSent();
 			} else {
 				showNoPGPKeyDialog(true,
@@ -1166,7 +1185,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 		if (conversation.getMode() == Conversation.MODE_SINGLE) {
 			if (contact.getPgpKeyId() != 0) {
-				xmppService.getPgpEngine().hasKey(contact,
+				xmppService.getOxPgpEngine().hasKey(contact,
 						new UiCallback<Contact>() {
 
 							@Override
@@ -1180,7 +1199,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							@Override
 							public void success(Contact contact) {
 								messageSent();
-								activity.encryptTestMessageOxPgp(message);
+								activity.encryptTextMessageOxPgp(message);
 							}
 
 							@Override
@@ -1196,8 +1215,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							@Override
 							public void onClick(DialogInterface dialog,
 												int which) {
-								conversation
-										.setNextEncryption(Message.ENCRYPTION_NONE);
+								conversation.setNextEncryption(Message.ENCRYPTION_NONE);
 								xmppService.databaseBackend
 										.updateConversation(conversation);
 								message.setEncryption(Message.ENCRYPTION_NONE);
@@ -1344,7 +1362,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	public void onActivityResult(int requestCode, int resultCode,
 	                                final Intent data) {
 		if (resultCode == Activity.RESULT_OK) {
-			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP) {
+			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP_XEP27
+					|| requestCode == ConversationActivity.REQUEST_DECRYPT_PGP_OX) {
 				activity.getSelectedConversation().getAccount().getPgpDecryptionService().onKeychainUnlocked();
 				keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
 				updatePgpMessages();
@@ -1357,7 +1376,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				activity.selectPresenceToAttachFile(choice, conversation.getNextEncryption());
 			}
 		} else {
-			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP) {
+			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP_XEP27
+					|| requestCode == ConversationActivity.REQUEST_DECRYPT_PGP_OX) {
 				keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
 				updatePgpMessages();
 			}

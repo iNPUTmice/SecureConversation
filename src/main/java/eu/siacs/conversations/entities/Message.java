@@ -2,6 +2,7 @@ package eu.siacs.conversations.entities;
 
 import android.content.ContentValues;
 import android.database.Cursor;
+import android.support.annotation.Nullable;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -37,7 +38,12 @@ public class Message extends AbstractEntity {
 	public static final int ENCRYPTION_DECRYPTION_FAILED = 4;
 	public static final int ENCRYPTION_AXOLOTL = 5;
 	public static final int ENCRYPTION_PGP_OX = 6;
-	public static final int ENCRYPTION_OX_DECRYPTED = 7;
+	public static final int ENCRYPTION_DECRYPTED_OX = 7;
+	public static final int ENCRYPTION_DECRYPTION_FAILED_OX = 8;
+
+	public enum PgpType {
+		XEP27, OX
+	}
 
 	public static final int TYPE_TEXT = 0;
 	public static final int TYPE_IMAGE = 1;
@@ -266,8 +272,38 @@ public class Message extends AbstractEntity {
 		return encryption;
 	}
 
+	public int getEncryptionBeforeDecryption() {
+		switch(encryption) {
+			case ENCRYPTION_DECRYPTED_OX:
+			case ENCRYPTION_DECRYPTION_FAILED_OX:
+				return ENCRYPTION_PGP_OX;
+			case ENCRYPTION_DECRYPTED:
+			case ENCRYPTION_DECRYPTION_FAILED:
+				return ENCRYPTION_PGP;
+			default:
+				return encryption;
+		}
+	}
+
 	public void setEncryption(int encryption) {
 		this.encryption = encryption;
+	}
+
+	public boolean isAnyPgp() {
+		return encryption == ENCRYPTION_PGP || encryption == ENCRYPTION_PGP_OX;
+	}
+
+	/**
+	 * ONLY FOR XEP27PGP or OXPGP messages! Sets the appropriate type to indicate failure
+	 */
+	public void setAppropriateEncryptionFailed() {
+		switch (encryption) {
+			case ENCRYPTION_DECRYPTED:
+				encryption = ENCRYPTION_DECRYPTION_FAILED;
+			case ENCRYPTION_PGP_OX:
+				encryption = ENCRYPTION_DECRYPTION_FAILED_OX;
+				break;
+		}
 	}
 
 	public int getStatus() {
@@ -318,6 +354,12 @@ public class Message extends AbstractEntity {
 		this.timeSent = time;
 	}
 
+	/**
+	 * if a message has a type which implies it was decrypted, the original encrypted contents
+	 * are stored in {@link #encryptedBody}
+	 * @return string representation of encrypted contents of message if its type implies it was
+	 * decrypted
+	 */
 	public String getEncryptedBody() {
 		return this.encryptedBody;
 	}
@@ -328,6 +370,23 @@ public class Message extends AbstractEntity {
 
 	public int getType() {
 		return this.type;
+	}
+
+	/**
+	 * @return corresponding {@link Message.PgpType} or null if not PGP
+	 */
+	public @Nullable PgpType getPgpType() {
+		switch(encryption) {
+			case ENCRYPTION_PGP:
+			case ENCRYPTION_DECRYPTED:
+			case ENCRYPTION_DECRYPTION_FAILED:
+				return PgpType.XEP27;
+			case ENCRYPTION_PGP_OX:
+			case ENCRYPTION_DECRYPTED_OX:
+			case ENCRYPTION_DECRYPTION_FAILED_OX:
+				return PgpType.OX;
+		}
+		return null;
 	}
 
 	public void setType(int type) {

@@ -170,7 +170,7 @@ public class UIHelper {
 				default:
 					return new Pair<>("",false);
 			}
-		} else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+		} else if (message.isAnyPgp()) {
 			return new Pair<>(context.getString(R.string.encrypted_message_received),true);
 		} else if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
 			if (message.getStatus() == Message.STATUS_RECEIVED) {

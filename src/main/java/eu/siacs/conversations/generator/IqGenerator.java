@@ -17,6 +17,8 @@ import java.util.Set;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
+import eu.siacs.conversations.crypto.oxpgp.Constants;
+import eu.siacs.conversations.crypto.oxpgp.OxPgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.DownloadableFile;
@@ -49,6 +51,7 @@ public class IqGenerator extends AbstractGenerator {
 		identity.setAttribute("name", getIdentityName());
 		for (final String feature : getFeatures()) {
 			query.addChild("feature").setAttribute("var", feature);
+			Log.d("PHILIP", "feature discovery:" + feature);
 		}
 		return packet;
 	}
@@ -333,5 +336,23 @@ public class IqGenerator extends AbstractGenerator {
 		data.put("secret",secret);
 		enable.addChild(data);
 		return packet;
+	}
+
+	public IqPacket getPublishOxPgpFeature(Account account) {
+		// TODO: PHILIP
+		IqPacket packet = new IqPacket(IqPacket.TYPE.SET);
+
+		packet.setTo(account.getServer());
+		packet.query("http://jabber.org/protocol/disco#info")
+				.addChild("feature").setAttribute("var", "urn:xmpp:openpgp:0");
+
+		return packet;
+	}
+
+	public IqPacket getPublishOxPgpPublicKey(Account account, String base64PubKey) {
+		Element pubKeys = new Element("pubkeys", Constants.PGP_NS)
+				.addChild(new Element("pubkey").setContent(base64PubKey));
+
+		return publish("urn:xmpp:openpgp:0", pubKeys);
 	}
 }

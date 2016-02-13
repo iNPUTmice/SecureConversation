@@ -11,8 +11,6 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,12 +21,13 @@ import java.util.Locale;
 import java.util.Random;
 
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.crypto.BasePgpEngine;
+import eu.siacs.conversations.crypto.Xep27PgpEngine;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
-import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.HttpConnectionManager;
-import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.xml.Element;
@@ -36,14 +35,14 @@ import eu.siacs.conversations.xml.Tag;
 import eu.siacs.conversations.xml.XmlReader;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
-public class OxPgpEngine {
+public class OxPgpEngine implements BasePgpEngine {
     private OpenPgpApi mApi;
     private XmppConnectionService mXmppConnectionService;
 
     public static final String ELEMENT_SIGNCRYPT_NAME = "signcrypt";
-    public static final String ELEMENT_SIGNCRYPT_NS = "urn:xmpp:openpgp:0";
+    public static final String ELEMENT_SIGNCRYPT_NS = Constants.PGP_NS;
     public static final String ELEMENT_OPENPGP_NAME = "openpgp";
-    public static final String ELEMENT_OPENPGP_NS = "urn:xmpp:openpgp:0";
+    public static final String ELEMENT_OPENPGP_NS = Constants.PGP_NS;
     public static final String ELEMENT_PAYLOAD_NAME = "payload";
     public static final String ELEMENT_PAYLOAD_BODY_NAME = "body";
     public static final String ELEMENT_PAYLOAD_BODY_NS = "jabber:client";
@@ -57,10 +56,48 @@ public class OxPgpEngine {
         this.mXmppConnectionService = service;
     }
 
+    @Override
+    public void hasKey(final Contact contact, final UiCallback<Contact> callback) {
+        Intent params = new Intent();
+        params.setAction(OpenPgpApi.ACTION_GET_KEY);
+        params.putExtra(OpenPgpApi.EXTRA_KEY_ID, contact.getOxPgpKeyId());
+        mApi.executeApiAsync(params, null, null, new OpenPgpApi.IOpenPgpCallback() {
 
+            @Override
+            public void onReturn(Intent result) {
+                switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
+                    case OpenPgpApi.RESULT_CODE_SUCCESS:
+                        callback.success(contact);
+                        return;
+                    case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+                        callback.userInputRequried((PendingIntent) result
+                                        .getParcelableExtra(OpenPgpApi.RESULT_INTENT),
+                                contact);
+                        return;
+                    case OpenPgpApi.RESULT_CODE_ERROR:
+                        callback.error(R.string.openpgp_error, contact);
+                }
+            }
+        });
+    }
+
+    @Override
+    public PendingIntent getIntentForKey(Contact contact) {
+        // TODO: PHILIP
+        throw new UnsupportedOperationException("Work in progress");
+    }
+
+    @Override
+    public PendingIntent getIntentForKey(Account account, long pgpKeyId) {
+        // TODO: PHILIP
+        throw new UnsupportedOperationException("Work in progress");
+    }
+
+    @Override
     public void encrypt(final Message message, final UiCallback<Message> callback) {
         Intent params = new Intent();
         params.setAction(OpenPgpApi.ACTION_ENCRYPT);
+        params.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, false);
         final Conversation conversation = message.getConversation();
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
             long[] keys = {
@@ -92,6 +129,7 @@ public class OxPgpEngine {
                             try {
                                 os.flush();
                                 byte[] encData = os.toByteArray();
+                                Log.d("PHILIP", "enc armor check: " + os);
                                 String base64Enc = Base64.encodeToString(encData,
                                         BASE64_ENCODING_FLAG);
                                 Log.d("PHILIP", "OXpgpengine encrypt b64: " + base64Enc);
@@ -162,6 +200,19 @@ public class OxPgpEngine {
         }
     }
 
+    @Override
+    public long fetchKeyId(Account account, String status, String signature) {
+        // TODO: PHILIP
+        return new Xep27PgpEngine(mApi, mXmppConnectionService).fetchKeyId(account,
+                status, signature);
+    }
+
+    @Override
+    public void chooseKey(Account account, UiCallback<Account> callback) {
+        // TODO: PHILIP
+        new Xep27PgpEngine(mApi, mXmppConnectionService).chooseKey(account, callback);
+    }
+
     private String getSingCryptPacket(Message message) {
         String body;
         if (message.hasFileOnRemoteHost()) {
@@ -186,7 +237,6 @@ public class OxPgpEngine {
         // rpad is a SHOULD, to prevent determination of message length
         Element rpadEle = new Element("rpad");
         rpadEle.setContent(getRandomPadding());
-        Log.d("PHILIP", "rpad:" + rpadEle.getContent());
 
         // payload contains stanza extension elements which would normally be considered children
         // of an unencrypted message
@@ -200,10 +250,13 @@ public class OxPgpEngine {
         signCryptElement.addChild(rpadEle);
         signCryptElement.addChild(payLoadEle);
 
+        Log.d("PHILIP", "signcrypt: " + signCryptElement);
+
         return signCryptElement.toString();
     }
 
     private void notifyPgpDecryptionService(Account account, String action, final Intent result) {
+        // TODO: PHILIP
         switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
             case OpenPgpApi.RESULT_CODE_SUCCESS:
                 if (OpenPgpApi.ACTION_SIGN.equals(action)) {
@@ -240,12 +293,12 @@ public class OxPgpEngine {
      * @param message message whose body contains the inner XML of the <openpgp> tag
      * @param callback callback to the UI in case input is required/success/error
      */
-    public void decrypt(final Message message,
-                        final UiCallback<Message> callback) {
+    @Override
+    public void decrypt(final Message message, final UiCallback<Message> callback) {
         Intent params = new Intent();
         params.setAction(OpenPgpApi.ACTION_DECRYPT_VERIFY);
         if (message.getType() == Message.TYPE_TEXT) {
-            Log.d("PHILIP", "oxpgpengine decrypt body: " + message.getBody());
+            Log.d("PHILIP", "oxpgpengine to decrypt body: " + message.getBody());
             byte[] encrypted;
             try {
                 encrypted = Base64.decode(message.getBody(), BASE64_ENCODING_FLAG);
@@ -273,10 +326,11 @@ public class OxPgpEngine {
                             try {
                                 os.flush();
                                 Log.d("PHILIP", "decrypted: " + os.toString());
-                                if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+                                if (message.getEncryption() == Message.ENCRYPTION_PGP_OX) {
                                     message.setBody(extractBody(os.toString()));
-                                    message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-                                    final HttpConnectionManager manager = mXmppConnectionService.getHttpConnectionManager();
+                                    message.setEncryption(Message.ENCRYPTION_DECRYPTED_OX);
+                                    final HttpConnectionManager manager
+                                            = mXmppConnectionService.getHttpConnectionManager();
                                     if (message.trusted()
                                             && message.treatAsDownloadable() != Message.Decision.NEVER
                                             && manager.getAutoAcceptFileSize() > 0) {
