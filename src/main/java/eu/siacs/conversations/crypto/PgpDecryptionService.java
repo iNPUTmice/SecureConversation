@@ -100,7 +100,7 @@ public class PgpDecryptionService {
 		Message message = null;
 		synchronized (messages.get(uuid)) {
 			while (!messages.get(uuid).isEmpty()) {
-				if (messages.get(uuid).get(0).isAnyPgp()) {
+				if (messages.get(uuid).get(0).isStillEncryptedPgp()) {
 					if (isRunning()) {
 						message = messages.get(uuid).remove(0);
 					}
@@ -113,6 +113,7 @@ public class PgpDecryptionService {
 
 					@Override
 					public void userInputRequried(PendingIntent pi, Message message) {
+						// TODO: PHILIP is this necessary
 						// add message to the end of the list, to prevent an erroneous message
 						// from preventing the decryption of any further messages
 						messages.get(uuid).add(message);
@@ -121,6 +122,7 @@ public class PgpDecryptionService {
 
 					@Override
 					public void success(Message message) {
+						Log.d("PHILIP", "PgpDecryptionService decryptMessage success!");
 						xmppConnectionService.updateConversationUi();
 						decryptMessage(uuid);
 					}
@@ -129,6 +131,7 @@ public class PgpDecryptionService {
 					public void error(int error, Message message) {
 						Log.d("PHILIP", "pgpDecryptionService: failed - status" + message.getStatus());
 						message.setAppropriateEncryptionFailed();
+						message.setDecryptionFailureReason(error);
 						xmppConnectionService.updateConversationUi();
 						decryptMessage(uuid);
 					}
@@ -158,7 +161,7 @@ public class PgpDecryptionService {
 
 			@Override
 			public void error(int error, Message message) {
-				Log.d("PHILIP", "pgpDecryptionService: failed" + message.getStatus());
+				Log.d("PHILIP", "pgpDecryptionService: failed " + message.getStatus());
 				message.setAppropriateEncryptionFailed();
 				xmppConnectionService.updateConversationUi();
 			}

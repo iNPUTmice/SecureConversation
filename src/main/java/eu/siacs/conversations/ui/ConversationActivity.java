@@ -40,7 +40,9 @@ import org.openintents.openpgp.util.OpenPgpApi;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.timroes.android.listview.EnhancedListView;
@@ -76,10 +78,13 @@ public class ConversationActivity extends XmppActivity
 	public static final String NICK = "nick";
 	public static final String PRIVATE_MESSAGE = "pm";
 
-	public static final int REQUEST_SEND_MESSAGE = 0x0201;
+	// private constants are ones that need to be used only in the activity
+	private static final int REQUEST_SEND_PGP_XEP27_MESSAGE = 0x0201;
 	public static final int REQUEST_DECRYPT_PGP_XEP27 = 0x0202;
 	public static final int REQUEST_DECRYPT_PGP_OX = 0x0203;
-	public static final int REQUEST_ENCRYPT_MESSAGE = 0x0207;
+	private static final int REQUEST_SEND_PGP_OX_MESSAGE = 0x0204;
+	public static final int REQUEST_CONTACT_KEY_PGP_OX = 0x0206;
+	public static final int REQUEST_CONTACT_KEY_PGP_XEP27 = 0x0207;
 	public static final int REQUEST_TRUST_KEYS_TEXT = 0x0208;
 	public static final int REQUEST_TRUST_KEYS_MENU = 0x0209;
 	public static final int REQUEST_START_DOWNLOAD = 0x0210;
@@ -100,6 +105,9 @@ public class ConversationActivity extends XmppActivity
 	private Uri mPendingGeoUri = null;
 	private boolean forbidProcessingPendings = false;
 	private Message mPendingDownloadableMessage = null;
+
+	// queue for messages which are to be encrypted pending user input
+	private Queue<Message> oxPgpPendingQueue = new LinkedList<>();
 
 	private boolean conversationWasSelectedByKeyboard = false;
 
@@ -1311,6 +1319,10 @@ public class ConversationActivity extends XmppActivity
 				} else {
 					this.mPostponedActivityResult = new Pair<>(requestCode, data);
 				}
+			} else if (requestCode == REQUEST_SEND_PGP_OX_MESSAGE) {
+				while (xmppConnectionServiceBound && !oxPgpPendingQueue.isEmpty()) {
+					encryptTextMessageOxPgp(oxPgpPendingQueue.remove());
+				}
 			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
 				mPendingImageUris.clear();
 				mPendingImageUris.addAll(extractUriFromIntent(data));
@@ -1518,7 +1530,7 @@ public class ConversationActivity extends XmppActivity
 					public void userInputRequried(PendingIntent pi,
 												  Message message) {
 						ConversationActivity.this.runIntent(pi,
-								ConversationActivity.REQUEST_SEND_MESSAGE);
+								ConversationActivity.REQUEST_SEND_PGP_XEP27_MESSAGE);
 					}
 
 					@Override
@@ -1535,14 +1547,16 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public void encryptTextMessageOxPgp(Message message) {
-		xmppConnectionService.getOxPgpEngine().encrypt(message,
+		xmppConnectionService.getOxPgpEngine().signAndEncrypt(
+				message,
 				new UiCallback<Message>() {
 
 					@Override
 					public void userInputRequried(PendingIntent pi,
 												  Message message) {
+						oxPgpPendingQueue.add(message);
 						ConversationActivity.this.runIntent(pi,
-								ConversationActivity.REQUEST_SEND_MESSAGE);
+								ConversationActivity.REQUEST_SEND_PGP_OX_MESSAGE);
 					}
 
 					@Override
@@ -1555,7 +1569,8 @@ public class ConversationActivity extends XmppActivity
 					public void error(int error, Message message) {
 
 					}
-				});
+				}
+		);
 	}
 
 	public boolean useSendButtonToIndicateStatus() {

@@ -379,7 +379,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	}
 
 	public @Nullable BasePgpEngine getPgpEngineFor(Message message) {
-		switch (message.getPgpType()) {
+		switch (message.getPgpEncryption()) {
 			case XEP27:
 				return getXep27PgpEngine();
 			case OX:

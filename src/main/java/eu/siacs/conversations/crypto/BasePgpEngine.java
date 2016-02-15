@@ -10,8 +10,6 @@ import eu.siacs.conversations.ui.UiCallback;
 public interface BasePgpEngine {
     void decrypt(final Message message, final UiCallback<Message> callback);
 
-    void encrypt(final Message message, final UiCallback<Message> callback);
-
     long fetchKeyId(Account account, String status, String signature);
 
     void chooseKey(final Account account, final UiCallback<Account> callback);

@@ -6,6 +6,7 @@ import android.support.annotation.NonNull;
 import android.util.Base64;
 import android.util.Log;
 
+import org.openintents.openpgp.OpenPgpSignatureResult;
 import org.openintents.openpgp.util.OpenPgpApi;
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -33,7 +34,6 @@ import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Tag;
 import eu.siacs.conversations.xml.XmlReader;
-import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class OxPgpEngine implements BasePgpEngine {
     private OpenPgpApi mApi;
@@ -93,11 +93,12 @@ public class OxPgpEngine implements BasePgpEngine {
         throw new UnsupportedOperationException("Work in progress");
     }
 
-    @Override
-    public void encrypt(final Message message, final UiCallback<Message> callback) {
+    public void signAndEncrypt(final Message message, final UiCallback<Message> callback) {
         Intent params = new Intent();
-        params.setAction(OpenPgpApi.ACTION_ENCRYPT);
+        params.setAction(OpenPgpApi.ACTION_SIGN_AND_ENCRYPT);
         params.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, false);
+        params.putExtra(OpenPgpApi.EXTRA_SIGN_KEY_ID,
+                message.getConversation().getAccount().getOxPgpId());
         final Conversation conversation = message.getConversation();
         if (conversation.getMode() == Conversation.MODE_SINGLE) {
             long[] keys = {
@@ -132,13 +133,12 @@ public class OxPgpEngine implements BasePgpEngine {
                                 Log.d("PHILIP", "enc armor check: " + os);
                                 String base64Enc = Base64.encodeToString(encData,
                                         BASE64_ENCODING_FLAG);
-                                Log.d("PHILIP", "OXpgpengine encrypt b64: " + base64Enc);
+                                Log.d("PHILIP", "OXpgpengine signAndEncrypt b64: " + base64Enc);
                                 message.setEncryptedBody(base64Enc);
                                 callback.success(message);
                             } catch (IOException e) {
                                 callback.error(R.string.openpgp_error, message);
                             }
-
                             break;
                         case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
                             callback.userInputRequried((PendingIntent) result
@@ -223,9 +223,8 @@ public class OxPgpEngine implements BasePgpEngine {
         Element signCryptElement = new Element(ELEMENT_SIGNCRYPT_NAME, ELEMENT_SIGNCRYPT_NS);
 
         // to element MUST have a jid attribute which SHOULD be a bare JID
-        Jid toJid = message.getConversation().getJid().toBareJid();
-        Element toElement = new Element("to");
-        toElement.setAttribute("jid", toJid.getLocalpart() + "@" + toJid.getDomainpart());
+        Element toElement = new Element("to")
+                .setAttribute("jid", message.getConversation().getJid().toBareJidString());
 
         // timestamp is a MUST
         Date currDate = Calendar.getInstance().getTime();
@@ -290,11 +289,12 @@ public class OxPgpEngine implements BasePgpEngine {
     /**
      * Expects message body to be set to the inner XML of the <openpgp> tag
      *
-     * @param message message whose body contains the inner XML of the <openpgp> tag
+     * @param message  message whose body contains the inner XML of the <openpgp> tag
      * @param callback callback to the UI in case input is required/success/error
      */
     @Override
     public void decrypt(final Message message, final UiCallback<Message> callback) {
+
         Intent params = new Intent();
         params.setAction(OpenPgpApi.ACTION_DECRYPT_VERIFY);
         if (message.getType() == Message.TYPE_TEXT) {
@@ -304,7 +304,7 @@ public class OxPgpEngine implements BasePgpEngine {
                 encrypted = Base64.decode(message.getBody(), BASE64_ENCODING_FLAG);
             } catch (IllegalArgumentException e) {
                 Log.e("PHILIP", "Error base64 decryption", e);
-                callback.error(R.string.oxpgp_invalid_base64, message);
+                callback.error(R.string.ox_pgp_invalid_base64, message);
                 return;
             }
 
@@ -324,6 +324,22 @@ public class OxPgpEngine implements BasePgpEngine {
                             OpenPgpApi.RESULT_CODE_ERROR)) {
                         case OpenPgpApi.RESULT_CODE_SUCCESS:
                             try {
+                                // check if signature is valid according to XEP
+                                OpenPgpSignatureResult signatureResult
+                                        = result.getParcelableExtra(OpenPgpApi.RESULT_SIGNATURE);
+                                if (!isSignatureCorrect(signatureResult, message.getContact())) {
+                                    Log.d("PHILIP", "invalid signature!");
+                                    message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED_OX);
+                                    message.setDecryptionFailureReason(
+                                            R.string.ox_pgp_invalid_signature);
+                                    // TODO PHILIP: Figure out a way to show errors properly;
+                                    mXmppConnectionService.updateMessage(message);
+                                    // not really a success
+                                    callback.success(message);
+                                    return;
+                                }
+
+                                // signature is valid, go ahead
                                 os.flush();
                                 Log.d("PHILIP", "decrypted: " + os.toString());
                                 if (message.getEncryption() == Message.ENCRYPTION_PGP_OX) {
@@ -406,7 +422,40 @@ public class OxPgpEngine implements BasePgpEngine {
         }
     }
 
-    protected @NonNull String extractBody(String openpgpElement) throws IOException,
+    /**
+     * checks if a signature obtained is valid according to the XEP. This involves 2 checks:
+     * 1. If contact public key id matches signer key id
+     * 2. If one of the userIds of the signing key is xmpp:username@domain.com
+     *
+     * @param signatureResult the result containing signature data obtained from OpenkeyChain
+     * @param contact         the user from whom the message was sent
+     * @return true if signature is valid according to XEP, false otherwise
+     */
+    private boolean isSignatureCorrect(OpenPgpSignatureResult signatureResult, Contact contact) {
+        // 1. Contact public key id matches signatureResult public key id
+        if (contact.getOxPgpKeyId() != signatureResult.getKeyId()) {
+            Log.d("PHILIP", "expected signing key id: " + contact.getOxPgpKeyId()
+                    + ", found: " + signatureResult.getKeyId());
+            return false;
+        }
+
+        final String expectedUserId = "xmpp:" + contact.getJid().toBareJidString();
+
+            // TODO: PHILIP remove below loop
+            for(String userId: signatureResult.getUserIds()) {
+                Log.d("PHILIP", "oxPGPEngine: found userid: " + userId);
+                if (userId.contains(expectedUserId)) {
+                    return true;
+                }
+            }
+            Log.d("PHILIP", "expected signing key to have userid: "
+                    + expectedUserId + " not present");
+            return false;
+    }
+
+    protected
+    @NonNull
+    String extractBody(String openpgpElement) throws IOException,
             XmlPullParserException {
         XmlReader tagReader = new XmlReader();
         Log.d("PHILIP", "body extraction:" + openpgpElement);

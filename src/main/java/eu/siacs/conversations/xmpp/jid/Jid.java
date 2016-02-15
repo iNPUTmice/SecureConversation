@@ -180,6 +180,15 @@ public final class Jid {
 		}
 	}
 
+	/**
+	 * returns the bare Jid as a string by simply appending the localpart to the domainpart with a
+	 * "@"
+	 * @return
+	 */
+	public String toBareJidString() {
+		return localpart + "@" + domainpart;
+	}
+
 	public Jid toDomainJid() {
 		try {
 			return resourcepart.isEmpty() && localpart.isEmpty() ? this : fromString(getDomainpart());

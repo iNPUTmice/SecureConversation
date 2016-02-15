@@ -217,10 +217,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					&& activity.hasPgp() && !conversation.getAccount().getPgpDecryptionService().isRunning()) {
 				keychainUnlock = KEYCHAIN_UNLOCK_PENDING;
 				updateSnackBar(conversation);
-				Message message = getLastPgpDecryptableMessage();
+				final Message message = getLastPgpDecryptableMessage();
 				if (message != null) {
 					final int REQUEST_CODE;
-					switch(message.getPgpType()) {
+					switch(message.getPgpEncryption()) {
 						case XEP27:
 							REQUEST_CODE = ConversationActivity.REQUEST_DECRYPT_PGP_XEP27;
 							break;
@@ -229,7 +229,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							break;
 						default:
 							Log.e(Config.LOGTAG,
-									"Shouldn't have got a non PGP message here! Message Type: "
+									"clickToDecryptListener: Shouldn't have got a non PGP" +
+											" message here! Message Type: "
 											+ message.getType());
 							return;
 					}
@@ -243,6 +244,13 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 								@Override
 								public void error(int errorCode, Message object) {
+									// TODO: PHILIP get this working
+									showSnackbar(errorCode, R.string.ok, new OnClickListener() {
+										@Override
+										public void onClick(View v) {
+											// do nothing, just dismiss snackbar
+										}
+									});
 									keychainUnlock = KEYCHAIN_UNLOCK_NOT_REQUIRED;
 								}
 
@@ -868,7 +876,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	@Nullable
 	private Message getLastPgpDecryptableMessage() {
 		for (final Message message : this.messageList) {
-			if (message.isAnyPgp()
+			if (message.isStillEncryptedPgp()
 					&& (message.getStatus() == Message.STATUS_RECEIVED || message.getStatus() >= Message.STATUS_SEND)
 					&& message.getTransferable() == null) {
 				return message;
@@ -1107,7 +1115,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 														  Contact contact) {
 								activity.runIntent(
 										pi,
-										ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
+										ConversationActivity.REQUEST_CONTACT_KEY_PGP_XEP27);
 							}
 
 							@Override
@@ -1193,7 +1201,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 														  Contact contact) {
 								activity.runIntent(
 										pi,
-										ConversationActivity.REQUEST_ENCRYPT_MESSAGE);
+										ConversationActivity.REQUEST_CONTACT_KEY_PGP_OX);
 							}
 
 							@Override

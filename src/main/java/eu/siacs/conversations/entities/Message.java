@@ -9,6 +9,7 @@ import java.net.URL;
 import java.util.Arrays;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.MimeUtils;
@@ -41,7 +42,7 @@ public class Message extends AbstractEntity {
 	public static final int ENCRYPTION_DECRYPTED_OX = 7;
 	public static final int ENCRYPTION_DECRYPTION_FAILED_OX = 8;
 
-	public enum PgpType {
+	public enum PgpEncryption {
 		XEP27, OX
 	}
 
@@ -66,6 +67,7 @@ public class Message extends AbstractEntity {
 	public static final String FINGERPRINT = "axolotl_fingerprint";
 	public static final String READ = "read";
 	public static final String ME_COMMAND = "/me ";
+	public static final String REASON_DECRYPTION_FAILED = "reason_decryption_failed";
 
 
 	public boolean markable = false;
@@ -88,6 +90,9 @@ public class Message extends AbstractEntity {
 	private Message mNextMessage = null;
 	private Message mPreviousMessage = null;
 	private String axolotlFingerprint = null;
+
+	// to set reason for PGP decryption failure
+	private int mFailureReasonStringId = -1;
 
 	private Message() {
 
@@ -112,7 +117,8 @@ public class Message extends AbstractEntity {
 				null,
 				null,
 				null,
-				true);
+				true,
+				-1);
 		this.conversation = conversation;
 	}
 
@@ -120,7 +126,8 @@ public class Message extends AbstractEntity {
 					final Jid trueCounterpart, final String body, final long timeSent,
 					final int encryption, final int status, final int type, final boolean carbon,
 					final String remoteMsgId, final String relativeFilePath,
-					final String serverMsgId, final String fingerprint, final boolean read) {
+					final String serverMsgId, final String fingerprint, final boolean read,
+					final int decryptionFailureStringId) {
 		this.uuid = uuid;
 		this.conversationUuid = conversationUUid;
 		this.counterpart = counterpart;
@@ -136,6 +143,7 @@ public class Message extends AbstractEntity {
 		this.serverMsgId = serverMsgId;
 		this.axolotlFingerprint = fingerprint;
 		this.read = read;
+		setDecryptionFailureReason(decryptionFailureStringId);
 	}
 
 	public static Message fromCursor(Cursor cursor) {
@@ -175,7 +183,8 @@ public class Message extends AbstractEntity {
 				cursor.getString(cursor.getColumnIndex(RELATIVE_FILE_PATH)),
 				cursor.getString(cursor.getColumnIndex(SERVER_MSG_ID)),
 				cursor.getString(cursor.getColumnIndex(FINGERPRINT)),
-				cursor.getInt(cursor.getColumnIndex(READ)) > 0);
+				cursor.getInt(cursor.getColumnIndex(READ)) > 0,
+				cursor.getInt(cursor.getColumnIndex(REASON_DECRYPTION_FAILED)));
 	}
 
 	public static Message createStatusMessage(Conversation conversation, String body) {
@@ -220,6 +229,7 @@ public class Message extends AbstractEntity {
 		values.put(SERVER_MSG_ID, serverMsgId);
 		values.put(FINGERPRINT, axolotlFingerprint);
 		values.put(READ,read);
+		values.put(REASON_DECRYPTION_FAILED, getDecryptionFailureReason());
 		return values;
 	}
 
@@ -256,6 +266,10 @@ public class Message extends AbstractEntity {
 		}
 	}
 
+	/**
+	 * for PGP, if the message type implies that it has not been decrypted yet, this should contain
+	 * the encrypted content.
+	 */
 	public String getBody() {
 		return body;
 	}
@@ -272,6 +286,10 @@ public class Message extends AbstractEntity {
 		return encryption;
 	}
 
+	/**
+	 * @return returns the encryption type of the message, before decryption took place for
+	 * PGP OX and XEP-0027. Returns encryption value otherwise
+	 */
 	public int getEncryptionBeforeDecryption() {
 		switch(encryption) {
 			case ENCRYPTION_DECRYPTED_OX:
@@ -289,7 +307,7 @@ public class Message extends AbstractEntity {
 		this.encryption = encryption;
 	}
 
-	public boolean isAnyPgp() {
+	public boolean isStillEncryptedPgp() {
 		return encryption == ENCRYPTION_PGP || encryption == ENCRYPTION_PGP_OX;
 	}
 
@@ -304,6 +322,19 @@ public class Message extends AbstractEntity {
 				encryption = ENCRYPTION_DECRYPTION_FAILED_OX;
 				break;
 		}
+	}
+
+	public boolean isDecryptionFail() {
+		return encryption == ENCRYPTION_DECRYPTION_FAILED
+				|| encryption == ENCRYPTION_DECRYPTION_FAILED_OX;
+	}
+
+	public void setDecryptionFailureReason(int stringId) {
+		mFailureReasonStringId = stringId;
+	}
+
+	public int getDecryptionFailureReason() {
+		return mFailureReasonStringId == -1 ? R.string.decryption_failed : mFailureReasonStringId;
 	}
 
 	public int getStatus() {
@@ -373,18 +404,24 @@ public class Message extends AbstractEntity {
 	}
 
 	/**
-	 * @return corresponding {@link Message.PgpType} or null if not PGP
+	 * @return corresponding {@link PgpEncryption} or null if not PGP
 	 */
-	public @Nullable PgpType getPgpType() {
+	public @Nullable
+	PgpEncryption getPgpEncryption() {
+		return getPgpEncryption(encryption);
+	}
+
+	private static @Nullable
+	PgpEncryption getPgpEncryption(int encryption) {
 		switch(encryption) {
 			case ENCRYPTION_PGP:
 			case ENCRYPTION_DECRYPTED:
 			case ENCRYPTION_DECRYPTION_FAILED:
-				return PgpType.XEP27;
+				return PgpEncryption.XEP27;
 			case ENCRYPTION_PGP_OX:
 			case ENCRYPTION_DECRYPTED_OX:
 			case ENCRYPTION_DECRYPTION_FAILED_OX:
-				return PgpType.OX;
+				return PgpEncryption.OX;
 		}
 		return null;
 	}
@@ -823,9 +860,14 @@ public class Message extends AbstractEntity {
 	}
 
 	private static int getCleanedEncryption(int encryption) {
-		if (encryption == ENCRYPTION_DECRYPTED || encryption == ENCRYPTION_DECRYPTION_FAILED) {
+		PgpEncryption type = getPgpEncryption(encryption);
+
+		if (type == PgpEncryption.XEP27) {
 			return ENCRYPTION_PGP;
+		} else if (type == PgpEncryption.OX){
+			return ENCRYPTION_PGP_OX;
+		} else {
+			return encryption;
 		}
-		return encryption;
 	}
 }

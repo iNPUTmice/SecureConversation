@@ -131,7 +131,6 @@ public class Xep27PgpEngine implements BasePgpEngine {
 		}
 	}
 
-	@Override
 	public void encrypt(final Message message, final UiCallback<Message> callback) {
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_ENCRYPT);

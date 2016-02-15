@@ -248,14 +248,14 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 		viewHolder.messageBody.setTextIsSelectable(false);
 	}
 
-	private void displayDecryptionFailed(ViewHolder viewHolder, boolean darkBackground) {
+	private void displayDecryptionFailed(ViewHolder viewHolder, boolean darkBackground,
+										 int reasonStringId) {
 		if (viewHolder.download_button != null) {
 			viewHolder.download_button.setVisibility(View.GONE);
 		}
 		viewHolder.image.setVisibility(View.GONE);
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
-		viewHolder.messageBody.setText(getContext().getString(
-				R.string.decryption_failed));
+		viewHolder.messageBody.setText(getContext().getString(reasonStringId));
 		viewHolder.messageBody.setTextColor(getMessageTextColor(darkBackground, false));
 		viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 		viewHolder.messageBody.setTextIsSelectable(false);
@@ -585,7 +585,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 			} else {
 				displayOpenableMessage(viewHolder, message);
 			}
-		} else if (message.isAnyPgp()) {
+		} else if (message.isStillEncryptedPgp()) {
 			if (activity.hasPgp()) {
 				if (account.getPgpDecryptionService().isRunning()) {
 					displayInfoMessage(viewHolder, activity.getString(R.string.message_decrypting), darkBackground);
@@ -607,8 +607,9 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 						});
 				}
 			}
-		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
-			displayDecryptionFailed(viewHolder,darkBackground);
+		} else if (message.isDecryptionFail()) {
+			displayDecryptionFailed(viewHolder, darkBackground,
+					message.getDecryptionFailureReason());
 		} else {
 			if (GeoHelper.isGeoUri(message.getBody())) {
 				displayLocationMessage(viewHolder,message);
