@@ -82,6 +82,7 @@ public class Conversation extends AbstractEntity implements Blockable {
 	private ChatState mIncomingChatState = Config.DEFAULT_CHATSTATE;
 	private String mLastReceivedOtrMessageId = null;
 	private String mFirstMamReference = null;
+	private Message correctingMessage;
 
 	public boolean hasMessagesLeftOnServer() {
 		return messagesLeftOnServer;
@@ -226,6 +227,17 @@ public class Conversation extends AbstractEntity implements Blockable {
 		return null;
 	}
 
+	public Message findMessageWithRemoteIdAndCounterpart(String id, Jid counterpart) {
+		synchronized (this.messages) {
+			for(Message message : this.messages) {
+				if(id.equals(message.getRemoteMsgId()) && counterpart.equals(message.getCounterpart())) {
+					return message;
+				}
+			}
+		}
+		return null;
+	}
+
 	public Message findSentMessageWithUuid(String id) {
 		synchronized (this.messages) {
 			for (Message message : this.messages) {
@@ -292,6 +304,14 @@ public class Conversation extends AbstractEntity implements Blockable {
 
 	public long getLastClearHistory() {
 		return getLongAttribute("last_clear_history", 0);
+	}
+
+	public void setCorrectingMessage(Message correctingMessage) {
+		this.correctingMessage = correctingMessage;
+	}
+
+	public Message getCorrectingMessage() {
+		return this.correctingMessage;
 	}
 
 	public interface OnMessageFound {
@@ -497,15 +517,18 @@ public class Conversation extends AbstractEntity implements Blockable {
 		return mSmp;
 	}
 
-	public void startOtrIfNeeded() {
-		if (this.otrSession != null
-				&& this.otrSession.getSessionStatus() != SessionStatus.ENCRYPTED) {
+	public boolean startOtrIfNeeded() {
+		if (this.otrSession != null && this.otrSession.getSessionStatus() != SessionStatus.ENCRYPTED) {
 			try {
 				this.otrSession.startSession();
+				return true;
 			} catch (OtrException e) {
 				this.resetOtrSession();
+				return false;
 			}
-				}
+		} else {
+			return true;
+		}
 	}
 
 	public boolean endOtrIfNeeded() {
