@@ -64,7 +64,6 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Presence;
-import eu.siacs.conversations.entities.Presences;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.ListItemAdapter;
@@ -728,9 +727,9 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 				for (Contact contact : account.getRoster().getContacts()) {
 					Presence p = contact.getPresences().getMostAvailablePresence();
 					Presence.Status s = p == null ? Presence.Status.OFFLINE : p.getStatus();
-					if (contact.showInRoster() && contact.match(needle)
+					if ((contact.showInRoster() && contact.match(needle)
 							&& (!this.mHideOfflineContacts
-							|| s.compareTo(Presence.Status.OFFLINE) < 0)) {
+							|| s.compareTo(Presence.Status.OFFLINE) < 0)) || (needle != null && !needle.isEmpty() && contact.match(needle))) {
 						this.contacts.add(contact);
 					}
 				}
