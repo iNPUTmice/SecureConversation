@@ -1019,6 +1019,15 @@ public abstract class XmppActivity extends Activity {
 		super.onPause();
 		this.unregisterNdefPushMessageCallback();
 	}
+	protected View.OnLongClickListener vLong = new View.OnLongClickListener() {
+		public boolean onLongClick(View view) {
+			AlertDialog.Builder builder = new AlertDialog.Builder(XmppActivity.this);
+			builder.setTitle("Uri");
+			builder.setMessage(getShareableUri());
+			builder.create().show();
+			return true;
+		}
+	};
 
 	protected void showQrCode() {
 		String uri = getShareableUri();
@@ -1028,6 +1037,7 @@ public abstract class XmppActivity extends Activity {
 			final int width = (size.x < size.y ? size.x : size.y);
 			Bitmap bitmap = createQrCodeBitmap(uri, width);
 			ImageView view = new ImageView(this);
+			view.setOnLongClickListener(vLong);
 			view.setImageBitmap(bitmap);
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setMessage(uri);
