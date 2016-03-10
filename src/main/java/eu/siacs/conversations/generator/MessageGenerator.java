@@ -47,6 +47,9 @@ public class MessageGenerator extends AbstractGenerator {
 		}
 		packet.setFrom(account.getJid());
 		packet.setId(message.getUuid());
+		if (message.edited()) {
+			packet.addChild("replace","urn:xmpp:message-correct:0").setAttribute("id",message.getEditedId());
+		}
 		return packet;
 	}
 
@@ -65,17 +68,8 @@ public class MessageGenerator extends AbstractGenerator {
 			return null;
 		}
 		packet.setAxolotlMessage(axolotlMessage.toElement());
-		packet.addChild("pretty-please-store", "urn:xmpp:hints");
+		packet.addChild("store", "urn:xmpp:hints");
 		return packet;
-	}
-
-	public static void addXhtmlImImage(MessagePacket packet, Message.FileParams params) {
-		Element html = packet.addChild("html","http://jabber.org/protocol/xhtml-im");
-		Element body = html.addChild("body","http://www.w3.org/1999/xhtml");
-		Element img = body.addChild("img");
-		img.setAttribute("src", params.url.toString());
-		img.setAttribute("height", params.height);
-		img.setAttribute("width", params.width);
 	}
 
 	public static void addMessageHints(MessagePacket packet) {
@@ -112,9 +106,7 @@ public class MessageGenerator extends AbstractGenerator {
 		if (message.hasFileOnRemoteHost()) {
 			Message.FileParams fileParams = message.getFileParams();
 			content = fileParams.url.toString();
-			if (fileParams.width > 0 && fileParams.height > 0) {
-				addXhtmlImImage(packet,fileParams);
-			}
+			packet.addChild("x","jabber:x:oob").addChild("url").setContent(content);
 		} else {
 			content = message.getBody();
 		}
@@ -152,6 +144,7 @@ public class MessageGenerator extends AbstractGenerator {
 		packet.setFrom(account.getJid());
 		Element received = packet.addChild("displayed","urn:xmpp:chat-markers:0");
 		received.setAttribute("id", id);
+		packet.addChild("store", "urn:xmpp:hints");
 		return packet;
 	}
 

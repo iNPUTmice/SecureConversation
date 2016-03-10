@@ -63,9 +63,7 @@ public class NotificationService {
 		return (message.getStatus() == Message.STATUS_RECEIVED)
 				&& notificationsEnabled()
 				&& !message.getConversation().isMuted()
-				&& (message.getConversation().isPnNA()
-				|| conferenceNotificationsEnabled()
-				|| wasHighlightedOrPrivate(message)
+				&& (message.getConversation().alwaysNotify() || wasHighlightedOrPrivate(message)
 		);
 	}
 
@@ -110,20 +108,18 @@ public class NotificationService {
 		}
 	}
 
-	public boolean conferenceNotificationsEnabled() {
-		return mXmppConnectionService.getPreferences().getBoolean("always_notify_in_conference", false);
-	}
-
 	public void pushFromBacklog(final Message message) {
 		if (notify(message)) {
-			pushToStack(message);
+			synchronized (notifications) {
+				pushToStack(message);
+			}
 		}
 	}
 
-	public void finishBacklog() {
+	public void finishBacklog(boolean notify) {
 		synchronized (notifications) {
 			mXmppConnectionService.updateUnreadCountBadge();
-			updateNotification(false);
+			updateNotification(notify);
 		}
 	}
 
@@ -235,11 +231,11 @@ public class NotificationService {
 			if (messages.size() > 0) {
 				conversation = messages.get(0).getConversation();
 				final String name = conversation.getName();
-				if (Config.PARANOID_MODE) {
+				if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
 					int count = messages.size();
-					style.addLine(Html.fromHtml("<b>"+name+"</b> "+mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count)));
+					style.addLine(Html.fromHtml("<b>"+name+"</b>: "+mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count)));
 				} else {
-					style.addLine(Html.fromHtml("<b>" + name + "</b> "
+					style.addLine(Html.fromHtml("<b>" + name + "</b>: "
 							+ UIHelper.getMessagePreview(mXmppConnectionService, messages.get(0)).first));
 				}
 				names.append(name);
@@ -284,13 +280,15 @@ public class NotificationService {
 			mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
 					.get(conversation, getPixel(64)));
 			mBuilder.setContentTitle(conversation.getName());
-			if (Config.PARANOID_MODE) {
+			if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
 				int count = messages.size();
 				mBuilder.setContentText(mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count));
 			} else {
 				Message message;
 				if ((message = getImage(messages)) != null) {
 					modifyForImage(mBuilder, message, messages, notify);
+				} else if (conversation.getMode() == Conversation.MODE_MULTI) {
+					modifyForConference(mBuilder, conversation, messages, notify);
 				} else {
 					modifyForTextOnly(mBuilder, messages, notify);
 				}
@@ -348,6 +346,26 @@ public class NotificationService {
 		builder.setContentText(UIHelper.getMessagePreview(mXmppConnectionService, messages.get(0)).first);
 		if (notify) {
 			builder.setTicker(UIHelper.getMessagePreview(mXmppConnectionService, messages.get(messages.size() - 1)).first);
+		}
+	}
+
+	private void modifyForConference(Builder builder, Conversation conversation, List<Message> messages, boolean notify) {
+		final Message first = messages.get(0);
+		final Message last = messages.get(messages.size() - 1);
+		final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
+		style.setBigContentTitle(conversation.getName());
+
+		for(Message message : messages) {
+			if (message.hasMeCommand()) {
+				style.addLine(UIHelper.getMessagePreview(mXmppConnectionService,message).first);
+			} else {
+				style.addLine(Html.fromHtml("<b>" + UIHelper.getMessageDisplayName(message) + "</b>: " + UIHelper.getMessagePreview(mXmppConnectionService, message).first));
+			}
+		}
+		builder.setContentText((first.hasMeCommand() ? "" :UIHelper.getMessageDisplayName(first)+ ": ") +UIHelper.getMessagePreview(mXmppConnectionService, first).first);
+		builder.setStyle(style);
+		if (notify) {
+			builder.setTicker((last.hasMeCommand() ? "" : UIHelper.getMessageDisplayName(last) + ": ") + UIHelper.getMessagePreview(mXmppConnectionService,last).first);
 		}
 	}
 

@@ -3,7 +3,12 @@ package eu.siacs.conversations.entities;
 import android.annotation.SuppressLint;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.xmpp.forms.Data;
@@ -64,7 +69,7 @@ public class MucOptions {
 		PARTICIPANT("participant", R.string.participant,2),
 		NONE("none", R.string.no_role,0);
 
-		private Role(String string, int resId, int rank) {
+		Role(String string, int resId, int rank) {
 			this.string = string;
 			this.resId = resId;
 			this.rank = rank;
@@ -88,21 +93,26 @@ public class MucOptions {
 		}
 	}
 
-	public static final int ERROR_NO_ERROR = 0;
-	public static final int ERROR_NICK_IN_USE = 1;
-	public static final int ERROR_UNKNOWN = 2;
-	public static final int ERROR_PASSWORD_REQUIRED = 3;
-	public static final int ERROR_BANNED = 4;
-	public static final int ERROR_MEMBERS_ONLY = 5;
-
-	public static final int KICKED_FROM_ROOM = 9;
+	public enum Error {
+		NO_RESPONSE,
+		NONE,
+		NICK_IN_USE,
+		PASSWORD_REQUIRED,
+		BANNED,
+		MEMBERS_ONLY,
+		KICKED,
+		SHUTDOWN,
+		UNKNOWN
+	}
 
 	public static final String STATUS_CODE_ROOM_CONFIG_CHANGED = "104";
 	public static final String STATUS_CODE_SELF_PRESENCE = "110";
 	public static final String STATUS_CODE_BANNED = "301";
 	public static final String STATUS_CODE_CHANGED_NICK = "303";
 	public static final String STATUS_CODE_KICKED = "307";
-	public static final String STATUS_CODE_LOST_MEMBERSHIP = "321";
+	public static final String STATUS_CODE_AFFILIATION_CHANGE = "321";
+	public static final String STATUS_CODE_LOST_MEMBERSHIP = "322";
+	public static final String STATUS_CODE_SHUTDOWN = "332";
 
 	private interface OnEventListener {
 		void onSuccess();
@@ -236,12 +246,13 @@ public class MucOptions {
 	}
 
 	private Account account;
-	private final List<User> users = new ArrayList<>();
-	private List<String> features = new ArrayList<>();
+	private final Map<String, User> users = Collections.synchronizedMap(new LinkedHashMap<String, User>());
+	private final Set<Jid> members = Collections.synchronizedSet(new HashSet<Jid>());
+	private final List<String> features = new ArrayList<>();
 	private Data form = new Data();
 	private Conversation conversation;
 	private boolean isOnline = false;
-	private int error = ERROR_UNKNOWN;
+	private Error error = Error.NONE;
 	public OnRenameListener onRenameListener = null;
 	private User self;
 	private String subject = null;
@@ -278,7 +289,9 @@ public class MucOptions {
 	}
 
 	public boolean participating() {
-		return !online() || self.getRole().ranks(Role.PARTICIPANT);
+		return !online()
+				|| self.getRole().ranks(Role.PARTICIPANT)
+				|| hasFeature("muc_unmoderated");
 	}
 
 	public boolean membersOnly() {
@@ -302,68 +315,51 @@ public class MucOptions {
 		return hasFeature("muc_moderated");
 	}
 
-	public void deleteUser(String name) {
-		synchronized (this.users) {
-			for (int i = 0; i < users.size(); ++i) {
-				if (users.get(i).getName().equals(name)) {
-					users.remove(i);
-					return;
-				}
-			}
-		}
+	public User deleteUser(String name) {
+		return this.users.remove(name);
 	}
 
 	public void addUser(User user) {
-		synchronized (this.users) {
-			for (int i = 0; i < users.size(); ++i) {
-				if (users.get(i).getName().equals(user.getName())) {
-					users.set(i, user);
-					return;
-				}
-			}
-			users.add(user);
-		}
+		this.users.put(user.getName(), user);
 	}
 
 	public User findUser(String name) {
-		if (name == null) {
-			return null;
-		}
-		synchronized (this.users) {
-			for (User user : users) {
-				if (user.getName().equals(name)) {
-					return user;
-				}
-			}
-		}
-		return null;
+		return this.users.get(name);
 	}
 
 	public boolean isUserInRoom(String name) {
 		return findUser(name) != null;
 	}
 
-	public void setError(int error) {
-		this.isOnline = error == ERROR_NO_ERROR;
+	public void setError(Error error) {
+		this.isOnline = isOnline && error == Error.NONE;
 		this.error = error;
 	}
 
+	public void setOnline() {
+		this.isOnline = true;
+	}
+
 	public ArrayList<User> getUsers() {
-		synchronized (this.users) {
-			return new ArrayList(this.users);
-		}
+		return new ArrayList<>(users.values());
 	}
 
 	public List<User> getUsers(int max) {
-		synchronized (this.users) {
-			return new ArrayList<>(users.subList(0,Math.min(users.size(),5)));
+		ArrayList<User> users = new ArrayList<>();
+		int i = 1;
+		for(User user : this.users.values()) {
+			users.add(user);
+			if (i >= max) {
+				break;
+			} else {
+				++i;
+			}
 		}
+		return users;
 	}
 
 	public int getUserCount() {
-		synchronized (this.users) {
-			return this.users.size();
-		}
+		return this.users.size();
 	}
 
 	public String getProposedNick() {
@@ -390,7 +386,7 @@ public class MucOptions {
 		return this.isOnline;
 	}
 
-	public int getError() {
+	public Error getError() {
 		return this.error;
 	}
 
@@ -400,7 +396,7 @@ public class MucOptions {
 
 	public void setOffline() {
 		this.users.clear();
-		this.error = 0;
+		this.error = Error.NO_RESPONSE;
 		this.isOnline = false;
 	}
 
@@ -417,38 +413,34 @@ public class MucOptions {
 	}
 
 	public String createNameFromParticipants() {
-		synchronized (this.users) {
-			if (users.size() >= 2) {
-				List<String> names = new ArrayList<String>();
-				for (User user : users) {
-					Contact contact = user.getContact();
-					if (contact != null && !contact.getDisplayName().isEmpty()) {
-						names.add(contact.getDisplayName().split("\\s+")[0]);
-					} else {
-						names.add(user.getName());
-					}
+		if (users.size() >= 2) {
+			List<String> names = new ArrayList<>();
+			for (User user : getUsers(5)) {
+				Contact contact = user.getContact();
+				if (contact != null && !contact.getDisplayName().isEmpty()) {
+					names.add(contact.getDisplayName().split("\\s+")[0]);
+				} else {
+					names.add(user.getName());
 				}
-				StringBuilder builder = new StringBuilder();
-				for (int i = 0; i < names.size(); ++i) {
-					builder.append(names.get(i));
-					if (i != names.size() - 1) {
-						builder.append(", ");
-					}
-				}
-				return builder.toString();
-			} else {
-				return null;
 			}
+			StringBuilder builder = new StringBuilder();
+			for (int i = 0; i < names.size(); ++i) {
+				builder.append(names.get(i));
+				if (i != names.size() - 1) {
+					builder.append(", ");
+				}
+			}
+			return builder.toString();
+		} else {
+			return null;
 		}
 	}
 
 	public long[] getPgpKeyIds() {
 		List<Long> ids = new ArrayList<>();
-		synchronized (this.users) {
-			for (User user : this.users) {
-				if (user.getPgpKeyId() != 0) {
-					ids.add(user.getPgpKeyId());
-				}
+		for (User user : this.users.values()) {
+			if (user.getPgpKeyId() != 0) {
+				ids.add(user.getPgpKeyId());
 			}
 		}
 		ids.add(account.getPgpId());
@@ -460,22 +452,18 @@ public class MucOptions {
 	}
 
 	public boolean pgpKeysInUse() {
-		synchronized (this.users) {
-			for (User user : this.users) {
-				if (user.getPgpKeyId() != 0) {
-					return true;
-				}
+		for (User user : this.users.values()) {
+			if (user.getPgpKeyId() != 0) {
+				return true;
 			}
 		}
 		return false;
 	}
 
 	public boolean everybodyHasKeys() {
-		synchronized (this.users) {
-			for (User user : this.users) {
-				if (user.getPgpKeyId() == 0) {
-					return false;
-				}
+		for (User user : this.users.values()) {
+			if (user.getPgpKeyId() == 0) {
+				return false;
 			}
 		}
 		return true;
@@ -489,15 +477,9 @@ public class MucOptions {
 		}
 	}
 
-	public Jid getTrueCounterpart(String counterpart) {
-		synchronized (this.users) {
-			for (User user : this.users) {
-				if (user.getName().equals(counterpart)) {
-					return user.getJid();
-				}
-			}
-		}
-		return null;
+	public Jid getTrueCounterpart(String name) {
+		User user = findUser(name);
+		return user == null ? null : user.getJid();
 	}
 
 	public String getPassword() {
@@ -521,5 +503,13 @@ public class MucOptions {
 
 	public Conversation getConversation() {
 		return this.conversation;
+	}
+
+	public void putMember(Jid jid) {
+		members.add(jid);
+	}
+
+	public List<Jid> getMembers() {
+		return new ArrayList<>(members);
 	}
 }

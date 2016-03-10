@@ -3,6 +3,7 @@ package eu.siacs.conversations.entities;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.os.SystemClock;
+import android.util.Pair;
 
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import net.java.otr4j.crypto.OtrCryptoEngineImpl;
@@ -14,6 +15,7 @@ import org.json.JSONObject;
 import java.security.PublicKey;
 import java.security.interfaces.DSAPublicKey;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -48,6 +50,7 @@ public class Account extends AbstractEntity {
 	public static final int OPTION_DISABLED = 1;
 	public static final int OPTION_REGISTER = 2;
 	public static final int OPTION_USECOMPRESSION = 3;
+	public final HashSet<Pair<String, String>> inProgressDiscoFetches = new HashSet<>();
 
 	public boolean httpUploadAvailable() {
 		return xmppConnection != null && xmppConnection.getFeatures().httpUpload();
@@ -162,16 +165,12 @@ public class Account extends AbstractEntity {
 	private List<Bookmark> bookmarks = new CopyOnWriteArrayList<>();
 	private final Collection<Jid> blocklist = new CopyOnWriteArraySet<>();
 
-	public Account() {
-		this.uuid = "0";
-	}
-
 	public Account(final Jid jid, final String password) {
 		this(java.util.UUID.randomUUID().toString(), jid,
 				password, 0, null, "", null, null, null, 5222);
 	}
 
-	public Account(final String uuid, final Jid jid,
+	private Account(final String uuid, final Jid jid,
 			final String password, final int options, final String rosterVersion, final String keys,
 			final String avatar, String displayName, String hostname, int port) {
 		this.uuid = uuid;
@@ -281,7 +280,7 @@ public class Account extends AbstractEntity {
 	}
 
 	public boolean hasErrorStatus() {
-		return getXmppConnection() != null && getStatus().isError() && getXmppConnection().getAttempt() >= 2;
+		return getXmppConnection() != null && getStatus().isError() && getXmppConnection().getAttempt() >= 3;
 	}
 
 	public String getResource() {

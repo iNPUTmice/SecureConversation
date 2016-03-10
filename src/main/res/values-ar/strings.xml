@@ -9,7 +9,6 @@
   <string name="action_secure">تشفير المحادثة</string>
   <string name="action_add_account">إضافة حساب</string>
   <string name="action_edit_contact">تعديل الإسم</string>
-  <string name="action_add_phone_book">إضافة لسجل الهاتف</string>
   <string name="action_delete_contact">حذف من الإضافات</string>
   <string name="action_block_contact">حجب جهة إتصال</string>
   <string name="action_unblock_contact">إنهاء حجب جهة اتصال</string>
@@ -93,14 +92,12 @@
   <string name="pref_xmpp_resource">الريسورس</string>
   <string name="pref_accept_files">ضبط استقبال الملفات</string>
   <string name="pref_accept_files_summary">اقبل تلقائيا الملفات أقل من</string>
-  <string name="pref_notification_settings">اعدادات الإشعارات</string>
   <string name="pref_notifications">الإشعارات</string>
   <string name="pref_notifications_summary">أخبرني عندما تصل رساله جديده</string>
   <string name="pref_vibrate">إعداد الإهتزاز</string>
   <string name="pref_vibrate_summary">تفعيل الاهتزاز عندما تصل رساله جديده</string>
   <string name="pref_sound">التبيه الصوتي</string>
   <string name="pref_sound_summary">سماع صوت عندما تصل رساله</string>
-  <string name="pref_advanced_options">اعدادات متقدمّة</string>
   <string name="pref_never_send_crash">لا ترسل تقارير أخطاء</string>
   <string name="pref_never_send_crash_summary">الغاء ارسال تقارير الأخطاء يقلل من فرص حل المشكلة سريعا فكن متعاون</string>
   <string name="pref_confirm_messages">تأكيد الرسالة</string>
@@ -179,7 +176,6 @@
   <string name="bookmark_already_exists">موجوده بالمفضلة سابقا</string>
   <string name="you">انت</string>
   <string name="action_edit_subject">تعديل موضوع الغرفة</string>
-  <string name="conference_not_found">الغرفة غير متاحه .. تأكد من عنوان الغرفة</string>
   <string name="leave">غادر</string>
   <string name="contact_added_you">جهة اتصال أضافتك </string>
   <string name="publish">نشر</string>
@@ -193,7 +189,6 @@
   <string name="skip">تجاهل</string>
   <string name="disable_notifications">ايقاف التنبيهات</string>
   <string name="disable_notifications_for_this_conversation">ايقاف التنبيهات لتلك المحادثة</string>
-  <string name="notifications_disabled">التنبيهات غير فعاله</string>
   <string name="enable">تفعيل</string>
   <string name="conference_requires_password">الغرفة تطلب كلمة مرور</string>
   <string name="enter_password">أدخل كلمة المرور</string>
@@ -290,7 +285,6 @@
   <string name="two_hours">ساعتين</string>
   <string name="eight_hours">8 ساعات</string>
   <string name="until_further_notice">حتى إشعار آخر</string>
-  <string name="pref_input_options">خيارات الادخال</string>
   <string name="pref_enter_is_send">أدخل للإرسال</string>
   <string name="pref_enter_is_send_summary">استخدام مفتاح الدخول لإرسال رسالة</string>
   <string name="pref_display_enter_key">عرض مفتاح الادخال</string>

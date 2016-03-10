@@ -9,6 +9,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Base64;
 import android.util.Log;
+import android.util.Pair;
 
 import org.whispersystems.libaxolotl.AxolotlAddress;
 import org.whispersystems.libaxolotl.IdentityKey;
@@ -18,13 +19,19 @@ import org.whispersystems.libaxolotl.state.PreKeyRecord;
 import org.whispersystems.libaxolotl.state.SessionRecord;
 import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
+import org.json.JSONException;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
@@ -35,6 +42,7 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Roster;
+import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -43,7 +51,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	private static DatabaseBackend instance = null;
 
 	private static final String DATABASE_NAME = "history";
-	private static final int DATABASE_VERSION = 21;
+	private static final int DATABASE_VERSION = 25;
 
 	private static String CREATE_CONTATCS_STATEMENT = "create table "
 			+ Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -56,6 +64,14 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			+ Account.TABLENAME + "(" + Account.UUID
 			+ ") ON DELETE CASCADE, UNIQUE(" + Contact.ACCOUNT + ", "
 			+ Contact.JID + ") ON CONFLICT REPLACE);";
+
+	private static String CREATE_DISCOVERY_RESULTS_STATEMENT = "create table "
+			+ ServiceDiscoveryResult.TABLENAME + "("
+			+ ServiceDiscoveryResult.HASH + " TEXT, "
+			+ ServiceDiscoveryResult.VER + " TEXT, "
+			+ ServiceDiscoveryResult.RESULT + " TEXT, "
+			+ "UNIQUE(" + ServiceDiscoveryResult.HASH + ", "
+			+ ServiceDiscoveryResult.VER + ") ON CONFLICT REPLACE);";
 
 	private static String CREATE_PREKEYS_STATEMENT = "CREATE TABLE "
 			+ SQLiteAxolotlStore.PREKEY_TABLENAME + "("
@@ -101,6 +117,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			+ SQLiteAxolotlStore.NAME + " TEXT, "
 			+ SQLiteAxolotlStore.OWN + " INTEGER, "
 			+ SQLiteAxolotlStore.FINGERPRINT + " TEXT, "
+			+ SQLiteAxolotlStore.CERTIFICATE + " BLOB, "
 			+ SQLiteAxolotlStore.TRUSTED + " INTEGER, "
 			+ SQLiteAxolotlStore.KEY + " TEXT, FOREIGN KEY("
 			+ SQLiteAxolotlStore.ACCOUNT
@@ -144,13 +161,16 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				+ Message.SERVER_MSG_ID + " TEXT, "
 				+ Message.FINGERPRINT + " TEXT, "
 				+ Message.CARBON + " INTEGER, "
+				+ Message.EDITED + " TEXT, "
 				+ Message.READ + " NUMBER DEFAULT 1, "
+				+ Message.OOB + " INTEGER, "
 				+ Message.REMOTE_MSG_ID + " TEXT, FOREIGN KEY("
 				+ Message.CONVERSATION + ") REFERENCES "
 				+ Conversation.TABLENAME + "(" + Conversation.UUID
 				+ ") ON DELETE CASCADE);");
 
 		db.execSQL(CREATE_CONTATCS_STATEMENT);
+		db.execSQL(CREATE_DISCOVERY_RESULTS_STATEMENT);
 		db.execSQL(CREATE_SESSIONS_STATEMENT);
 		db.execSQL(CREATE_PREKEYS_STATEMENT);
 		db.execSQL(CREATE_SIGNED_PREKEYS_STATEMENT);
@@ -344,6 +364,22 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 						+ "=?", new String[]{account.getUuid()});
 			}
 		}
+
+		if (oldVersion < 22 && newVersion >= 22) {
+			db.execSQL("ALTER TABLE " + SQLiteAxolotlStore.IDENTITIES_TABLENAME + " ADD COLUMN " + SQLiteAxolotlStore.CERTIFICATE);
+		}
+
+		if (oldVersion < 23 && newVersion >= 23) {
+			db.execSQL(CREATE_DISCOVERY_RESULTS_STATEMENT);
+		}
+
+		if (oldVersion < 24 && newVersion >= 24) {
+			db.execSQL("ALTER TABLE " + Message.TABLENAME + " ADD COLUMN " + Message.EDITED + " TEXT");
+		}
+
+		if (oldVersion < 25 && newVersion >= 25) {
+			db.execSQL("ALTER TABLE " + Message.TABLENAME + " ADD COLUMN " + Message.OOB + " INTEGER");
+		}
 	}
 
 	public static synchronized DatabaseBackend getInstance(Context context) {
@@ -368,20 +404,28 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		db.insert(Account.TABLENAME, null, account.getContentValues());
 	}
 
-	public void createContact(Contact contact) {
+	public void insertDiscoveryResult(ServiceDiscoveryResult result) {
 		SQLiteDatabase db = this.getWritableDatabase();
-		db.insert(Contact.TABLENAME, null, contact.getContentValues());
+		db.insert(ServiceDiscoveryResult.TABLENAME, null, result.getContentValues());
 	}
 
-	public int getConversationCount() {
+	public ServiceDiscoveryResult findDiscoveryResult(final String hash, final String ver) {
 		SQLiteDatabase db = this.getReadableDatabase();
-		Cursor cursor = db.rawQuery("select count(uuid) as count from "
-				+ Conversation.TABLENAME + " where " + Conversation.STATUS
-				+ "=" + Conversation.STATUS_AVAILABLE, null);
+		String[] selectionArgs = {hash, ver};
+		Cursor cursor = db.query(ServiceDiscoveryResult.TABLENAME, null,
+				ServiceDiscoveryResult.HASH + "=? AND " + ServiceDiscoveryResult.VER + "=?",
+				selectionArgs, null, null, null);
+		if (cursor.getCount() == 0)
+			return null;
 		cursor.moveToFirst();
-		int count = cursor.getInt(0);
+
+		ServiceDiscoveryResult result = null;
+		try {
+			result = new ServiceDiscoveryResult(cursor);
+		} catch (JSONException e) { /* result is still null */ }
+
 		cursor.close();
-		return count;
+		return result;
 	}
 
 	public CopyOnWriteArrayList<Conversation> getConversations(int status) {
@@ -552,6 +596,13 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				+ "=?", args);
 	}
 
+	public void updateMessage(Message message, String uuid) {
+		SQLiteDatabase db = this.getWritableDatabase();
+		String[] args = {uuid};
+		db.update(Message.TABLENAME, message.getContentValues(), Message.UUID
+				+ "=?", args);
+	}
+
 	public void readRoster(Roster roster) {
 		SQLiteDatabase db = this.getReadableDatabase();
 		Cursor cursor;
@@ -566,6 +617,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	public void writeRoster(final Roster roster) {
 		final Account account = roster.getAccount();
 		final SQLiteDatabase db = this.getWritableDatabase();
+		db.beginTransaction();
 		for (Contact contact : roster.getContacts()) {
 			if (contact.getOption(Contact.Options.IN_ROSTER)) {
 				db.insert(Contact.TABLENAME, null, contact.getContentValues());
@@ -575,14 +627,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				db.delete(Contact.TABLENAME, where, whereArgs);
 			}
 		}
+		db.setTransactionSuccessful();
+		db.endTransaction();
 		account.setRosterVersion(roster.getVersion());
 		updateAccount(account);
-	}
-
-	public void deleteMessage(Message message) {
-		SQLiteDatabase db = this.getWritableDatabase();
-		String[] args = {message.getUuid()};
-		db.delete(Message.TABLENAME, Message.UUID + "=?", args);
 	}
 
 	public void deleteMessagesInConversation(Conversation conversation) {
@@ -591,65 +639,21 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		db.delete(Message.TABLENAME, Message.CONVERSATION + "=?", args);
 	}
 
-	public Conversation findConversationByUuid(String conversationUuid) {
-		SQLiteDatabase db = this.getReadableDatabase();
-		String[] selectionArgs = {conversationUuid};
-		Cursor cursor = db.query(Conversation.TABLENAME, null,
-				Conversation.UUID + "=?", selectionArgs, null, null, null);
-		if (cursor.getCount() == 0) {
+	public Pair<Long, String> getLastMessageReceived(Account account) {
+		try {
+			SQLiteDatabase db = this.getReadableDatabase();
+			String sql = "select messages.timeSent,messages.serverMsgId from accounts join conversations on accounts.uuid=conversations.accountUuid join messages on conversations.uuid=messages.conversationUuid where accounts.uuid=? and (messages.status=0 or messages.carbon=1 or messages.serverMsgId not null) order by messages.timesent desc limit 1";
+			String[] args = {account.getUuid()};
+			Cursor cursor = db.rawQuery(sql, args);
+			if (cursor.getCount() == 0) {
+				return null;
+			} else {
+				cursor.moveToFirst();
+				return new Pair<>(cursor.getLong(0), cursor.getString(1));
+			}
+		} catch (Exception e) {
 			return null;
 		}
-		cursor.moveToFirst();
-		Conversation conversation = Conversation.fromCursor(cursor);
-		cursor.close();
-		return conversation;
-	}
-
-	public Message findMessageByUuid(String messageUuid) {
-		SQLiteDatabase db = this.getReadableDatabase();
-		String[] selectionArgs = {messageUuid};
-		Cursor cursor = db.query(Message.TABLENAME, null, Message.UUID + "=?",
-				selectionArgs, null, null, null);
-		if (cursor.getCount() == 0) {
-			return null;
-		}
-		cursor.moveToFirst();
-		Message message = Message.fromCursor(cursor);
-		cursor.close();
-		return message;
-	}
-
-	public Account findAccountByUuid(String accountUuid) {
-		SQLiteDatabase db = this.getReadableDatabase();
-		String[] selectionArgs = {accountUuid};
-		Cursor cursor = db.query(Account.TABLENAME, null, Account.UUID + "=?",
-				selectionArgs, null, null, null);
-		if (cursor.getCount() == 0) {
-			return null;
-		}
-		cursor.moveToFirst();
-		Account account = Account.fromCursor(cursor);
-		cursor.close();
-		return account;
-	}
-
-	public List<Message> getImageMessages(Conversation conversation) {
-		ArrayList<Message> list = new ArrayList<>();
-		SQLiteDatabase db = this.getReadableDatabase();
-		Cursor cursor;
-		String[] selectionArgs = {conversation.getUuid(), String.valueOf(Message.TYPE_IMAGE)};
-		cursor = db.query(Message.TABLENAME, null, Message.CONVERSATION
-				+ "=? AND " + Message.TYPE + "=?", selectionArgs, null, null, null);
-		if (cursor.getCount() > 0) {
-			cursor.moveToLast();
-			do {
-				Message message = Message.fromCursor(cursor);
-				message.setConversation(conversation);
-				list.add(message);
-			} while (cursor.moveToPrevious());
-		}
-		cursor.close();
-		return list;
 	}
 
 	private Cursor getCursorForSession(Account account, AxolotlAddress contact) {
@@ -1034,6 +1038,52 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 						+ SQLiteAxolotlStore.FINGERPRINT + " = ? ",
 				selectionArgs);
 		return rows == 1;
+	}
+
+	public boolean setIdentityKeyCertificate(Account account, String fingerprint, X509Certificate x509Certificate) {
+		SQLiteDatabase db = this.getWritableDatabase();
+		String[] selectionArgs = {
+				account.getUuid(),
+				fingerprint
+		};
+		try {
+			ContentValues values = new ContentValues();
+			values.put(SQLiteAxolotlStore.CERTIFICATE, x509Certificate.getEncoded());
+			return db.update(SQLiteAxolotlStore.IDENTITIES_TABLENAME, values,
+					SQLiteAxolotlStore.ACCOUNT + " = ? AND "
+							+ SQLiteAxolotlStore.FINGERPRINT + " = ? ",
+					selectionArgs) == 1;
+		} catch (CertificateEncodingException e) {
+			Log.d(Config.LOGTAG, "could not encode certificate");
+			return false;
+		}
+	}
+
+	public X509Certificate getIdentityKeyCertifcate(Account account, String fingerprint) {
+		SQLiteDatabase db = this.getReadableDatabase();
+		String[] selectionArgs = {
+				account.getUuid(),
+				fingerprint
+		};
+		String[] colums = {SQLiteAxolotlStore.CERTIFICATE};
+		String selection = SQLiteAxolotlStore.ACCOUNT + " = ? AND " + SQLiteAxolotlStore.FINGERPRINT + " = ? ";
+		Cursor cursor = db.query(SQLiteAxolotlStore.IDENTITIES_TABLENAME, colums, selection, selectionArgs, null, null, null);
+		if (cursor.getCount() < 1) {
+			return null;
+		} else {
+			cursor.moveToFirst();
+			byte[] certificate = cursor.getBlob(cursor.getColumnIndex(SQLiteAxolotlStore.CERTIFICATE));
+			if (certificate == null || certificate.length == 0) {
+				return null;
+			}
+			try {
+				CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+				return (X509Certificate) certificateFactory.generateCertificate(new ByteArrayInputStream(certificate));
+			} catch (CertificateException e) {
+				Log.d(Config.LOGTAG,"certificate exception "+e.getMessage());
+				return null;
+			}
+		}
 	}
 
 	public void storeIdentityKey(Account account, String name, IdentityKey identityKey) {

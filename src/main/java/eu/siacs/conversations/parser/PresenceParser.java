@@ -1,21 +1,28 @@
 package eu.siacs.conversations.parser;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.List;
 
+
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
-import eu.siacs.conversations.entities.Presences;
+import eu.siacs.conversations.entities.Presence;
+import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.generator.PresenceGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xmpp.OnIqPacketReceived;
 import eu.siacs.conversations.xmpp.OnPresencePacketReceived;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
+import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 
 public class PresenceParser extends AbstractParser implements
@@ -56,12 +63,17 @@ public class PresenceParser extends AbstractParser implements
 				if (x != null) {
 					Element item = x.findChild("item");
 					if (item != null && !from.isBareJid()) {
-						MucOptions.User user = new MucOptions.User(mucOptions,from);
+						mucOptions.setError(MucOptions.Error.NONE);
+						MucOptions.User user = new MucOptions.User(mucOptions, from);
 						user.setAffiliation(item.getAttribute("affiliation"));
 						user.setRole(item.getAttribute("role"));
-						user.setJid(item.getAttributeAsJid("jid"));
+						Jid real = item.getAttributeAsJid("jid");
+						if (real != null) {
+							user.setJid(real);
+							mucOptions.putMember(real.toBareJid());
+						}
 						if (codes.contains(MucOptions.STATUS_CODE_SELF_PRESENCE) || packet.getFrom().equals(mucOptions.getConversation().getJid())) {
-							mucOptions.setError(MucOptions.ERROR_NO_ERROR);
+							mucOptions.setOnline();
 							mucOptions.setSelf(user);
 							if (mucOptions.mNickChangingInProgress) {
 								if (mucOptions.onRenameListener != null) {
@@ -101,16 +113,24 @@ public class PresenceParser extends AbstractParser implements
 					if (codes.contains(MucOptions.STATUS_CODE_CHANGED_NICK)) {
 						mucOptions.mNickChangingInProgress = true;
 					} else if (codes.contains(MucOptions.STATUS_CODE_KICKED)) {
-						mucOptions.setError(MucOptions.KICKED_FROM_ROOM);
+						mucOptions.setError(MucOptions.Error.KICKED);
 					} else if (codes.contains(MucOptions.STATUS_CODE_BANNED)) {
-						mucOptions.setError(MucOptions.ERROR_BANNED);
+						mucOptions.setError(MucOptions.Error.BANNED);
 					} else if (codes.contains(MucOptions.STATUS_CODE_LOST_MEMBERSHIP)) {
-						mucOptions.setError(MucOptions.ERROR_MEMBERS_ONLY);
+						mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
+					} else if (codes.contains(MucOptions.STATUS_CODE_AFFILIATION_CHANGE)) {
+						mucOptions.setError(MucOptions.Error.MEMBERS_ONLY);
+					} else if (codes.contains(MucOptions.STATUS_CODE_SHUTDOWN)) {
+						mucOptions.setError(MucOptions.Error.SHUTDOWN);
 					} else {
-						mucOptions.setError(MucOptions.ERROR_UNKNOWN);
+						mucOptions.setError(MucOptions.Error.UNKNOWN);
+						Log.d(Config.LOGTAG, "unknown error in conference: " + packet);
 					}
 				} else if (!from.isBareJid()){
-					mucOptions.deleteUser(from.getResourcepart());
+					MucOptions.User user = mucOptions.deleteUser(from.getResourcepart());
+					if (user != null) {
+						mXmppConnectionService.getAvatarService().clear(user);
+					}
 				}
 			} else if (type.equals("error")) {
 				Element error = packet.findChild("error");
@@ -120,14 +140,14 @@ public class PresenceParser extends AbstractParser implements
 							mucOptions.onRenameListener.onFailure();
 						}
 					} else {
-						mucOptions.setError(MucOptions.ERROR_NICK_IN_USE);
+						mucOptions.setError(MucOptions.Error.NICK_IN_USE);
 					}
 				} else if (error != null && error.hasChild("not-authorized")) {
-					mucOptions.setError(MucOptions.ERROR_PASSWORD_REQUIRED);
+					mucOptions.setError(MucOptions.Error.PASSWORD_REQUIRED);
 				} else if (error != null && error.hasChild("forbidden")) {
-					mucOptions.setError(MucOptions.ERROR_BANNED);
+					mucOptions.setError(MucOptions.Error.BANNED);
 				} else if (error != null && error.hasChild("registration-required")) {
-					mucOptions.setError(MucOptions.ERROR_MEMBERS_ONLY);
+					mucOptions.setError(MucOptions.Error.BANNED);
 				}
 			}
 		}
@@ -157,7 +177,7 @@ public class PresenceParser extends AbstractParser implements
 		final String type = packet.getAttribute("type");
 		final Contact contact = account.getRoster().getContact(from);
 		if (type == null) {
-			String presence = from.isBareJid() ? "" : from.getResourcepart();
+			final String resource = from.isBareJid() ? "" : from.getResourcepart();
 			contact.setPresenceName(packet.findChildContent("nick", "http://jabber.org/protocol/nick"));
 			Avatar avatar = Avatar.parsePresence(packet.findChild("x", "vcard-temp:x:update"));
 			if (avatar != null && !contact.isSelf()) {
@@ -173,7 +193,15 @@ public class PresenceParser extends AbstractParser implements
 				}
 			}
 			int sizeBefore = contact.getPresences().size();
-			contact.updatePresence(presence, Presences.parseShow(packet.findChild("show")));
+
+			final String show = packet.findChildContent("show");
+			final Element caps = packet.findChild("c", "http://jabber.org/protocol/caps");
+			final Presence presence = Presence.parse(show, caps);
+			contact.updatePresence(resource, presence);
+			if (presence.hasCaps() && Config.REQUEST_DISCO) {
+				mXmppConnectionService.fetchCaps(account, from, presence);
+			}
+
 			PgpEngine pgp = mXmppConnectionService.getPgpEngine();
 			Element x = packet.findChild("x", "jabber:x:signed");
 			if (pgp != null && x != null) {
@@ -197,10 +225,12 @@ public class PresenceParser extends AbstractParser implements
 						mPresenceGenerator.sendPresenceUpdatesTo(contact));
 			} else {
 				contact.setOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST);
+				final Conversation conversation = mXmppConnectionService.findOrCreateConversation(
+						account, contact.getJid().toBareJid(), false);
 				final String statusMessage = packet.findChildContent("status");
-				if (statusMessage != null && !statusMessage.isEmpty()) {
-					final Conversation conversation = mXmppConnectionService.findOrCreateConversation(
-							account, contact.getJid().toBareJid(), false);
+				if (statusMessage != null
+						&& !statusMessage.isEmpty()
+						&& conversation.countMessages() == 0) {
 					conversation.add(new Message(
 							conversation,
 							statusMessage,
