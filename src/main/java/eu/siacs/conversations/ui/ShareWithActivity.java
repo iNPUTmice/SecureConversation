@@ -149,13 +149,15 @@ public class ShareWithActivity extends XmppActivity {
 		Log.d(Config.LOGTAG, "action: "+intent.getAction()+ ", type:"+type);
 		share.uuid = intent.getStringExtra("uuid");
 		if (Intent.ACTION_SEND.equals(intent.getAction())) {
+			final String text = getIntent().getStringExtra(Intent.EXTRA_TEXT);
 			final Uri uri = getIntent().getParcelableExtra(Intent.EXTRA_STREAM);
-			if (type != null && uri != null && !type.equalsIgnoreCase("text/plain")) {
+			if (type != null && uri != null &&
+					!(type.equalsIgnoreCase("text/plain") && text != null)) {
 				this.share.uris.clear();
 				this.share.uris.add(uri);
 				this.share.image = type.startsWith("image/") || isImage(uri);
 			} else {
-				this.share.text = getIntent().getStringExtra(Intent.EXTRA_TEXT);
+				this.share.text = text;
 			}
 		} else if (Intent.ACTION_SEND_MULTIPLE.equals(intent.getAction())) {
 			this.share.image = type != null && type.startsWith("image/");
