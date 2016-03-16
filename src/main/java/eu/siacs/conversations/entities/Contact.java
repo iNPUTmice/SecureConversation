@@ -438,7 +438,8 @@ public class Contact implements ListItem, Blockable {
 
 	public boolean hasIdentity(String category, String type) {
 		for(Presence p : this.presences.getPresences().values()) {
-			if(p.getServiceDiscoveryResult().hasIdentity(category, type)) {
+			if(p.getServiceDiscoveryResult() != null &&
+			   p.getServiceDiscoveryResult().hasIdentity(category, type)) {
 				return true;
 			}
 		}
