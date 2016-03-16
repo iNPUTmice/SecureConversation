@@ -228,6 +228,16 @@ public class ServiceDiscoveryResult {
 		return this.features;
 	}
 
+	public boolean hasFeature(String feature) {
+		for(String f : this.features) {
+			if(f.equals(feature)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public boolean hasIdentity(String category, String type) {
 		for(Identity id : this.getIdentities()) {
 			if((category == null || id.getCategory().equals(category)) &&

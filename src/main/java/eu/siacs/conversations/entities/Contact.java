@@ -436,6 +436,17 @@ public class Contact implements ListItem, Blockable {
 				another.getDisplayName());
 	}
 
+	public boolean hasFeature(String feature) {
+		for(Presence p : this.presences.getPresences().values()) {
+			if(p.getServiceDiscoveryResult() != null &&
+			   p.getServiceDiscoveryResult().hasFeature(feature)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	public boolean hasIdentity(String category, String type) {
 		for(Presence p : this.presences.getPresences().values()) {
 			if(p.getServiceDiscoveryResult() != null &&
