@@ -124,14 +124,12 @@ public class EnterJidDialog {
 				}
 			} else {
 				viewHolder.useButton(this.gateways.get(i-1).first.getDisplayName());
-
-				for(Presence p : this.gateways.get(i-1).first.getPresences().getPresences().values()) {
-					if(p.getServiceDiscoveryResult() != null) {
-						for(ServiceDiscoveryResult.Identity id : p.getServiceDiscoveryResult().getIdentities()) {
-							if(id.getCategory().equals("gateway")) {
-								viewHolder.useButton(id.getType());
-								break;
-							}
+				Pair<Jid,Presence> p = this.gateways.get(i-1).first.getIdentityPresence("gateway", null);
+				if(p != null) {
+					for(ServiceDiscoveryResult.Identity id : p.second.getServiceDiscoveryResult().getIdentities()) {
+						if(id.getCategory().equals("gateway")) {
+							viewHolder.useButton(id.getType());
+							break;
 						}
 					}
 				}

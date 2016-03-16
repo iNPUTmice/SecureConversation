@@ -57,7 +57,7 @@ public class Roster {
 	public List<Contact> getWithFeature(final String feature) {
 		List<Contact> with = new ArrayList<>();
 		for(Contact c : this.contacts.values()) {
-			if(c.hasFeature(feature)) {
+			if(c.getFeaturePresence(feature) != null) {
 				with.add(c);
 			}
 		}
@@ -67,7 +67,7 @@ public class Roster {
 	public List<Contact> getWithIdentity(final String category, final String type) {
 		List<Contact> with = new ArrayList<>();
 		for(Contact c : this.contacts.values()) {
-			if(c.hasIdentity(category, type)) {
+			if(c.getIdentityPresence(category, type) != null) {
 				with.add(c);
 			}
 		}
