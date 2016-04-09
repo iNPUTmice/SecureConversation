@@ -54,6 +54,7 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Transferable;
+import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
@@ -410,6 +411,7 @@ public class ConversationActivity extends XmppActivity
 					menuInviteContact.setVisible(getSelectedConversation().getMucOptions().canInvite());
 					menuSecure.setVisible((Config.supportOpenPgp() || Config.supportOmemo()) && Config.multipleEncryptionChoices()); //only if pgp is supported we have a choice
 				} else {
+					menuContactDetails.setVisible(!this.getSelectedConversation().withSelf());
 					menuMucDetails.setVisible(false);
 					menuSecure.setVisible(Config.multipleEncryptionChoices());
 				}
@@ -1298,12 +1300,26 @@ public class ConversationActivity extends XmppActivity
 					}
 				}
 			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
-				mPendingFileUris.clear();
-				mPendingFileUris.addAll(extractUriFromIntent(data));
-				if (xmppConnectionServiceBound) {
-					for (Iterator<Uri> i = mPendingFileUris.iterator(); i.hasNext(); i.remove()) {
-						attachFileToConversation(getSelectedConversation(), i.next());
+				final List<Uri> uris = extractUriFromIntent(data);
+				final Conversation c = getSelectedConversation();
+				final OnPresenceSelected callback = new OnPresenceSelected() {
+					@Override
+					public void onPresenceSelected() {
+						mPendingFileUris.clear();
+						mPendingFileUris.addAll(uris);
+						if (xmppConnectionServiceBound) {
+							for (Iterator<Uri> i = mPendingFileUris.iterator(); i.hasNext(); i.remove()) {
+								attachFileToConversation(c, i.next());
+							}
+						}
 					}
+				};
+				if (c == null || c.getMode() == Conversation.MODE_MULTI
+						|| FileBackend.allFilesUnderSize(this, uris, getMaxHttpUploadSize(c))
+						|| c.getNextEncryption() == Message.ENCRYPTION_OTR) {
+					callback.onPresenceSelected();
+				} else {
+					selectPresence(c, callback);
 				}
 			} else if (requestCode == ATTACHMENT_CHOICE_TAKE_PHOTO) {
 				if (mPendingImageUris.size() == 1) {
@@ -1346,6 +1362,10 @@ public class ConversationActivity extends XmppActivity
 				setNeverAskForBatteryOptimizationsAgain();
 			}
 		}
+	}
+
+	private long getMaxHttpUploadSize(Conversation conversation) {
+		return conversation.getAccount().getXmppConnection().getFeatures().getMaxHttpUploadSize();
 	}
 
 	private void setNeverAskForBatteryOptimizationsAgain() {
@@ -1570,9 +1590,14 @@ public class ConversationActivity extends XmppActivity
 	protected void refreshUiReal() {
 		updateConversationList();
 		if (conversationList.size() > 0) {
+			if (!this.mConversationFragment.isAdded()) {
+				Log.d(Config.LOGTAG,"fragment NOT added to activity. detached="+Boolean.toString(mConversationFragment.isDetached()));
+			}
 			ConversationActivity.this.mConversationFragment.updateMessages();
 			updateActionBarTitle();
 			invalidateOptionsMenu();
+		} else {
+			Log.d(Config.LOGTAG,"not updating conversations fragment because conversations list size was 0");
 		}
 	}
 

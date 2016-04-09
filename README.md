@@ -56,9 +56,8 @@ run your own XMPP server for you and your friends. These XEP's are:
 * [XEP-0352: Client State Indication](http://xmpp.org/extensions/xep-0352.html) lets the server know whether or not
   Conversations is in the background. Allows the server to save bandwidth by
   withholding unimportant packages.
-* [XEP-0363: HTTP File Upload](http://xmpp.org/extensions/xep-0363.html) allows you to share files in conferences and with offline
-  contacts. Requires an [additional component](https://github.com/siacs/HttpUploadComponent)
-  on your server. Alternatively, an [Ejabberd contrib-module](https://github.com/processone/ejabberd-contrib/tree/master/mod_http_upload) and a [Prosody module](http://modules.prosody.im/mod_http_upload.html) are available.
+* [XEP-0363: HTTP File Upload](http://xmpp.org/extensions/xep-0363.html) allows you to share files in conferences
+  and with offline contacts.
 
 ## Team
 
@@ -197,6 +196,12 @@ connection again. When the client fails to do so because the network
 connectivity is out for longer than that all messages sent to that client will
 be returned to the sender resulting in a delivery failed.
 
+Instead of returning a message to the sender both ejabberd and prosody have the
+ability to store messages in offline storage when the disconnecting client is
+the only client. In prosody this is available via an extra module called
+```mod_smacks_offline```. In ejabberd this is available via some configuration
+settings.
+
 Other less common reasons are that the message you sent didn't meet some
 criteria enforced by the server (too large, too many). Another reason could be
 that the recipient is offline and the server doesn't provide offline storage.
@@ -329,7 +334,7 @@ Make sure to have ANDROID_HOME point to your Android SDK. Use the Android SDK Ma
 
     git clone https://github.com/siacs/Conversations.git
     cd Conversations
-    ./gradlew assembleFreeRelease
+    ./gradlew assembleFreeDebug
 
 There are two build flavors available. *free* and *playstore*. Unless you know what you are doing you only need *free*.
 

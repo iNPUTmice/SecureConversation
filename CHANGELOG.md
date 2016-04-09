@@ -1,5 +1,24 @@
 ###Changelog
 
+####Version 1.11.5
+* check file ownership to not accidentally share private files
+
+####Version 1.11.4
+* fixed a bug where contacts are shown as offline
+* improved broken PEP detection
+
+####Version 1.11.3
+* check maximum file size when using HTTP Upload
+* properly calculate caps hash
+
+####Version 1.11.2
+* only add image files to media scanner
+* allow to delete files
+* various bug fixes
+
+####Version 1.11.1
+* fixed some bugs when sharing files with Conversations
+
 ####Version 1.11.0
 * OMEMO encrypted conferences
 

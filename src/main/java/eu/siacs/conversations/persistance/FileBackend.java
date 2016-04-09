@@ -1,12 +1,22 @@
 package eu.siacs.conversations.persistance;
 
+import android.annotation.TargetApi;
+import android.content.ContentResolver;
+import android.content.Context;
+import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Environment;
+import android.os.ParcelFileDescriptor;
+import android.provider.OpenableColumns;
+import android.system.Os;
+import android.system.StructStat;
 import android.util.Base64;
 import android.util.Base64OutputStream;
 import android.util.Log;
@@ -15,6 +25,7 @@ import android.webkit.MimeTypeMap;
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -26,15 +37,14 @@ import java.security.DigestOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
-import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.ExifHelper;
@@ -48,6 +58,37 @@ public class FileBackend {
 
 	public FileBackend(XmppConnectionService service) {
 		this.mXmppConnectionService = service;
+	}
+
+	private void createNoMedia() {
+		final File nomedia = new File(getConversationsFileDirectory()+".nomedia");
+		if (!nomedia.exists()) {
+			try {
+				nomedia.createNewFile();
+			} catch (Exception e) {
+				Log.d(Config.LOGTAG, "could not create nomedia file");
+			}
+		}
+	}
+
+	public void updateMediaScanner(File file) {
+		if (file.getAbsolutePath().startsWith(getConversationsImageDirectory())) {
+			Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
+			intent.setData(Uri.fromFile(file));
+			mXmppConnectionService.sendBroadcast(intent);
+		} else {
+			createNoMedia();
+		}
+	}
+
+	public boolean deleteFile(Message message) {
+		File file = getFile(message);
+		if (file.delete()) {
+			updateMediaScanner(file);
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	public DownloadableFile getFile(Message message) {
@@ -78,6 +119,27 @@ public class FileBackend {
 		} else {
 			return file;
 		}
+	}
+
+	private static long getFileSize(Context context, Uri uri) {
+		Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
+		if (cursor != null && cursor.moveToFirst()) {
+			return cursor.getLong(cursor.getColumnIndex(OpenableColumns.SIZE));
+		} else {
+			return -1;
+		}
+	}
+
+	public static boolean allFilesUnderSize(Context context, List<Uri> uris, long max) {
+		if (max <= 0) {
+			return true; //exception to be compatible with HTTP Upload < v0.2
+		}
+		for(Uri uri : uris) {
+			if (FileBackend.getFileSize(context, uri) > max) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	public static String getConversationsFileDirectory() {
@@ -589,6 +651,31 @@ public class FileBackend {
 				socket.close();
 			} catch (IOException e) {
 			}
+		}
+	}
+
+
+	public static boolean weOwnFile(Uri uri) {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+			return false;
+		} else {
+			return uri != null
+					&& ContentResolver.SCHEME_FILE.equals(uri.getScheme())
+					&& weOwnFileLollipop(uri);
+		}
+	}
+
+	@TargetApi(Build.VERSION_CODES.LOLLIPOP)
+	private static boolean weOwnFileLollipop(Uri uri) {
+		try {
+			File file = new File(uri.getPath());
+			FileDescriptor fd = ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).getFileDescriptor();
+			StructStat st = Os.fstat(fd);
+			return st.st_uid == android.os.Process.myUid();
+		} catch (FileNotFoundException e) {
+			return false;
+		} catch (Exception e) {
+			return true;
 		}
 	}
 }

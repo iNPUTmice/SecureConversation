@@ -737,14 +737,15 @@ public abstract class XmppActivity extends Activity {
 		view.setOnLongClickListener(purge);
 		key.setOnLongClickListener(purge);
 		keyType.setOnLongClickListener(purge);
-		boolean x509 = trust == XmppAxolotlSession.Trust.TRUSTED_X509 || trust == XmppAxolotlSession.Trust.INACTIVE_TRUSTED_X509;
+		boolean x509 = Config.X509_VERIFICATION
+				&& (trust == XmppAxolotlSession.Trust.TRUSTED_X509 || trust == XmppAxolotlSession.Trust.INACTIVE_TRUSTED_X509);
 		switch (trust) {
 			case UNTRUSTED:
 			case TRUSTED:
 			case TRUSTED_X509:
 				trustToggle.setChecked(trust.trusted(), false);
-				trustToggle.setEnabled(trust != XmppAxolotlSession.Trust.TRUSTED_X509);
-				if (trust == XmppAxolotlSession.Trust.TRUSTED_X509) {
+				trustToggle.setEnabled(!Config.X509_VERIFICATION || trust != XmppAxolotlSession.Trust.TRUSTED_X509);
+				if (Config.X509_VERIFICATION && trust == XmppAxolotlSession.Trust.TRUSTED_X509) {
 					trustToggle.setOnClickListener(null);
 				}
 				key.setTextColor(getPrimaryTextColor());
@@ -1001,6 +1002,10 @@ public abstract class XmppActivity extends Activity {
 		}
 	}
 
+	protected boolean neverCompressPictures() {
+		return getPreferences().getString("picture_compression", "auto").equals("never");
+	}
+
 	protected void unregisterNdefPushMessageCallback() {
 		NfcAdapter nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 		if (nfcAdapter != null && nfcAdapter.isEnabled()) {
@@ -1174,6 +1179,7 @@ public abstract class XmppActivity extends Activity {
 		} else {
 			if (cancelPotentialWork(message, imageView)) {
 				imageView.setBackgroundColor(0xff333333);
+				imageView.setImageDrawable(null);
 				final BitmapWorkerTask task = new BitmapWorkerTask(imageView);
 				final AsyncDrawable asyncDrawable = new AsyncDrawable(
 						getResources(), null, task);
