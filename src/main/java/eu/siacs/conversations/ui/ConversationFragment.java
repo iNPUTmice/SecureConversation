@@ -468,13 +468,15 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							highlightInConference(user);
 						}
 					} else {
-						activity.switchToContactDetails(message.getContact(), message.getAxolotlFingerprint());
+						if (!message.getContact().isSelf()) {
+							activity.switchToContactDetails(message.getContact(), message.getFingerprint());
+						}
 					}
 				} else {
 					Account account = message.getConversation().getAccount();
 					Intent intent = new Intent(activity, EditAccountActivity.class);
 					intent.putExtra("jid", account.getJid().toBareJid().toString());
-					intent.putExtra("fingerprint", message.getAxolotlFingerprint());
+					intent.putExtra("fingerprint", message.getFingerprint());
 					startActivity(intent);
 				}
 			}
@@ -527,6 +529,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			relevantForCorrection = relevantForCorrection.next();
 		}
 		if (m.getType() != Message.TYPE_STATUS) {
+			final boolean treatAsFile = m.getType() != Message.TYPE_TEXT
+					&& m.getType() != Message.TYPE_PRIVATE
+					&& t == null;
 			activity.getMenuInflater().inflate(R.menu.message_context, menu);
 			menu.setHeaderTitle(R.string.message_options);
 			MenuItem copyText = menu.findItem(R.id.copy_text);
@@ -537,8 +542,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			MenuItem copyUrl = menu.findItem(R.id.copy_url);
 			MenuItem downloadFile = menu.findItem(R.id.download_file);
 			MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
-			if ((m.getType() == Message.TYPE_TEXT || m.getType() == Message.TYPE_PRIVATE)
-					&& t == null
+			MenuItem deleteFile = menu.findItem(R.id.delete_file);
+			if (!treatAsFile
 					&& !GeoHelper.isGeoUri(m.getBody())
 					&& m.treatAsDownloadable() != Message.Decision.MUST) {
 				copyText.setVisible(true);
@@ -550,10 +555,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					&& relevantForCorrection.isLastCorrectableMessage()) {
 				correctMessage.setVisible(true);
 			}
-			if ((m.getType() != Message.TYPE_TEXT
-					&& m.getType() != Message.TYPE_PRIVATE
-					&& t == null)
-					|| (GeoHelper.isGeoUri(m.getBody()))) {
+			if (treatAsFile || (GeoHelper.isGeoUri(m.getBody()))) {
 				shareWith.setVisible(true);
 			}
 			if (m.getStatus() == Message.STATUS_SEND_FAILED) {
@@ -574,6 +576,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					|| (m.isFileOrImage() && (m.getStatus() == Message.STATUS_WAITING
 					|| m.getStatus() == Message.STATUS_OFFERED))) {
 				cancelTransmission.setVisible(true);
+			}
+			if (treatAsFile) {
+				deleteFile.setVisible(true);
+				deleteFile.setTitle(activity.getString(R.string.delete_x_file,UIHelper.getFileDescriptionString(activity, m)));
 			}
 		}
 	}
@@ -604,6 +610,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				return true;
 			case R.id.retry_decryption:
 				retryDecryption(selectedMessage);
+				return true;
+			case R.id.delete_file:
+				deleteFile(selectedMessage);
 				return true;
 			default:
 				return super.onContextItemSelected(item);
@@ -643,12 +652,22 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
+	private void deleteFile(Message message) {
+		if (activity.xmppConnectionService.getFileBackend().deleteFile(message)) {
+			message.setTransferable(new TransferablePlaceholder(Transferable.STATUS_DELETED));
+			activity.updateConversationList();
+			updateMessages();
+		}
+	}
+
 	private void resendMessage(Message message) {
 		if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
 			DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
 			if (!file.exists()) {
 				Toast.makeText(activity, R.string.file_deleted, Toast.LENGTH_SHORT).show();
 				message.setTransferable(new TransferablePlaceholder(Transferable.STATUS_DELETED));
+				activity.updateConversationList();
+				updateMessages();
 				return;
 			}
 		}
@@ -690,7 +709,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 	private void retryDecryption(Message message) {
 		message.setEncryption(Message.ENCRYPTION_PGP);
-		activity.xmppConnectionService.updateConversationUi();
+		activity.updateConversationList();
+		updateMessages();
 		conversation.getAccount().getPgpDecryptionService().add(message);
 	}
 

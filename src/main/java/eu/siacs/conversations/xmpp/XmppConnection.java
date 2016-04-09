@@ -39,6 +39,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
@@ -114,7 +116,9 @@ public class XmppConnection implements Runnable {
 	private long lastConnect = 0;
 	private long lastSessionStarted = 0;
 	private long lastDiscoStarted = 0;
-	private int mPendingServiceDiscoveries = 0;
+	private AtomicInteger mPendingServiceDiscoveries = new AtomicInteger(0);
+	private AtomicBoolean mIsServiceItemsDiscoveryPending = new AtomicBoolean(true);
+	private boolean mWaitForDisco = true;
 	private final ArrayList<String> mPendingServiceDiscoveriesIds = new ArrayList<>();
 	private boolean mInteractive = false;
 	private int attempt = 0;
@@ -219,12 +223,16 @@ public class XmppConnection implements Runnable {
 		}
 	}
 
+	public void prepareNewConnection() {
+		this.lastConnect = SystemClock.elapsedRealtime();
+		this.lastPingSent = SystemClock.elapsedRealtime();
+		this.lastDiscoStarted = Long.MAX_VALUE;
+		this.changeStatus(Account.State.CONNECTING);
+	}
+
 	protected void connect() {
 		Log.d(Config.LOGTAG, account.getJid().toBareJid().toString() + ": connecting");
 		features.encryptionEnabled = false;
-		lastConnect = SystemClock.elapsedRealtime();
-		lastPingSent = SystemClock.elapsedRealtime();
-		lastDiscoStarted = Long.MAX_VALUE;
 		this.attempt++;
 		switch (account.getJid().getDomainpart()) {
 			case "chat.facebook.com":
@@ -915,11 +923,11 @@ public class XmppConnection implements Runnable {
 							sendPostBindInitialization();
 						}
 					} else {
-						Log.d(Config.LOGTAG, account.getJid() + ": disconnecting because of bind failure");
+						Log.d(Config.LOGTAG, account.getJid() + ": disconnecting because of bind failure. (no jid)");
 						disconnect(true);
 					}
 				} else {
-					Log.d(Config.LOGTAG, account.getJid() + ": disconnecting because of bind failure");
+					Log.d(Config.LOGTAG, account.getJid() + ": disconnecting because of bind failure (" + packet.toString());
 					disconnect(true);
 				}
 			}
@@ -1004,11 +1012,12 @@ public class XmppConnection implements Runnable {
 		synchronized (this.disco) {
 			this.disco.clear();
 		}
-		mPendingServiceDiscoveries = mServerIdentity == Identity.NIMBUZZ ? 1 : 0;
+		mPendingServiceDiscoveries.set(0);
+		mIsServiceItemsDiscoveryPending.set(true);
+		mWaitForDisco = mServerIdentity != Identity.NIMBUZZ;
 		lastDiscoStarted = SystemClock.elapsedRealtime();
 		Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": starting service discovery");
 		mXmppConnectionService.scheduleWakeUpCall(Config.CONNECT_DISCO_TIMEOUT, account.getUuid().hashCode());
-		sendServiceDiscoveryItems(account.getServer());
 		Element caps = streamFeatures.findChild("c");
 		final String hash = caps == null ? null : caps.getAttribute("hash");
 		final String ver = caps == null ? null : caps.getAttribute("ver");
@@ -1023,13 +1032,15 @@ public class XmppConnection implements Runnable {
 			disco.put(account.getServer(), discoveryResult);
 		}
 		sendServiceDiscoveryInfo(account.getJid().toBareJid());
+		sendServiceDiscoveryItems(account.getServer());
+		if (!mWaitForDisco) {
+			finalizeBind();
+		}
 		this.lastSessionStarted = SystemClock.elapsedRealtime();
 	}
 
 	private void sendServiceDiscoveryInfo(final Jid jid) {
-		if (mServerIdentity != Identity.NIMBUZZ) {
-			mPendingServiceDiscoveries++;
-		}
+		mPendingServiceDiscoveries.incrementAndGet();
 		final IqPacket iq = new IqPacket(IqPacket.TYPE.GET);
 		iq.setTo(jid);
 		iq.query("http://jabber.org/protocol/disco#info");
@@ -1073,14 +1084,10 @@ public class XmppConnection implements Runnable {
 					Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": could not query disco info for " + jid.toString());
 				}
 				if (packet.getType() != IqPacket.TYPE.TIMEOUT) {
-					mPendingServiceDiscoveries--;
-					if (mPendingServiceDiscoveries == 0) {
-						Log.d(Config.LOGTAG,account.getJid().toBareJid()+": done with service discovery");
-						Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": online with resource " + account.getResource());
-						if (bindListener != null) {
-							bindListener.onBind(account);
-						}
-						changeStatus(Account.State.ONLINE);
+					if (mPendingServiceDiscoveries.decrementAndGet() == 0
+							&& !mIsServiceItemsDiscoveryPending.get()
+							&& mWaitForDisco) {
+						finalizeBind();
 					}
 				}
 			}
@@ -1088,6 +1095,14 @@ public class XmppConnection implements Runnable {
 		synchronized (this.mPendingServiceDiscoveriesIds) {
 			this.mPendingServiceDiscoveriesIds.add(id);
 		}
+	}
+
+	private void finalizeBind() {
+		Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": online with resource " + account.getResource());
+		if (bindListener != null) {
+			bindListener.onBind(account);
+		}
+		changeStatus(Account.State.ONLINE);
 	}
 
 	private void enableAdvancedStreamFeatures() {
@@ -1107,7 +1122,7 @@ public class XmppConnection implements Runnable {
 		final IqPacket iq = new IqPacket(IqPacket.TYPE.GET);
 		iq.setTo(server.toDomainJid());
 		iq.query("http://jabber.org/protocol/disco#items");
-		this.sendIqPacket(iq, new OnIqPacketReceived() {
+		String id = this.sendIqPacket(iq, new OnIqPacketReceived() {
 
 			@Override
 			public void onIqPacketReceived(final Account account, final IqPacket packet) {
@@ -1124,8 +1139,17 @@ public class XmppConnection implements Runnable {
 				} else {
 					Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": could not query disco items of " + server);
 				}
+				if (packet.getType() != IqPacket.TYPE.TIMEOUT) {
+					mIsServiceItemsDiscoveryPending.set(false);
+					if (mPendingServiceDiscoveries.get() == 0 && mWaitForDisco) {
+						finalizeBind();
+					}
+				}
 			}
 		});
+		synchronized (this.mPendingServiceDiscoveriesIds) {
+			this.mPendingServiceDiscoveriesIds.add(id);
+		}
 	}
 
 	private void sendEnableCarbons() {
@@ -1342,12 +1366,12 @@ public class XmppConnection implements Runnable {
 		this.streamId = null;
 	}
 
-	public List<Jid> findDiscoItemsByFeature(final String feature) {
+	private List<Entry<Jid, ServiceDiscoveryResult>> findDiscoItemsByFeature(final String feature) {
 		synchronized (this.disco) {
-			final List<Jid> items = new ArrayList<>();
+			final List<Entry<Jid, ServiceDiscoveryResult>> items = new ArrayList<>();
 			for (final Entry<Jid, ServiceDiscoveryResult> cursor : this.disco.entrySet()) {
 				if (cursor.getValue().getFeatures().contains(feature)) {
-					items.add(cursor.getKey());
+					items.add(cursor);
 				}
 			}
 			return items;
@@ -1355,9 +1379,9 @@ public class XmppConnection implements Runnable {
 	}
 
 	public Jid findDiscoItemByFeature(final String feature) {
-		final List<Jid> items = findDiscoItemsByFeature(feature);
+		final List<Entry<Jid, ServiceDiscoveryResult>> items = findDiscoItemsByFeature(feature);
 		if (items.size() >= 1) {
-			return items.get(0);
+			return items.get(0).getKey();
 		}
 		return null;
 	}
@@ -1501,7 +1525,6 @@ public class XmppConnection implements Runnable {
 
 		public boolean pep() {
 			synchronized (XmppConnection.this.disco) {
-				final Pair<String, String> needle = new Pair<>("pubsub", "pep");
 				ServiceDiscoveryResult info = disco.get(account.getServer());
 				if (info != null && info.hasIdentity("pubsub", "pep")) {
 					return true;
@@ -1530,8 +1553,35 @@ public class XmppConnection implements Runnable {
 			this.blockListRequested = value;
 		}
 
-		public boolean httpUpload() {
-			return !Config.DISABLE_HTTP_UPLOAD && findDiscoItemsByFeature(Xmlns.HTTP_UPLOAD).size() > 0;
+		public boolean httpUpload(long filesize) {
+			if (Config.DISABLE_HTTP_UPLOAD) {
+				return false;
+			} else {
+				List<Entry<Jid, ServiceDiscoveryResult>> items = findDiscoItemsByFeature(Xmlns.HTTP_UPLOAD);
+				if (items.size() > 0) {
+					try {
+						long maxsize = Long.parseLong(items.get(0).getValue().getExtendedDiscoInformation(Xmlns.HTTP_UPLOAD, "max-file-size"));
+						return filesize <= maxsize;
+					} catch (Exception e) {
+						return true;
+					}
+				} else {
+					return false;
+				}
+			}
+		}
+
+		public long getMaxHttpUploadSize() {
+			List<Entry<Jid, ServiceDiscoveryResult>> items = findDiscoItemsByFeature(Xmlns.HTTP_UPLOAD);
+				if (items.size() > 0) {
+					try {
+						return Long.parseLong(items.get(0).getValue().getExtendedDiscoInformation(Xmlns.HTTP_UPLOAD, "max-file-size"));
+					} catch (Exception e) {
+						return -1;
+					}
+				} else {
+					return -1;
+				}
 		}
 	}
 

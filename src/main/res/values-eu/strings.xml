@@ -71,6 +71,8 @@
   <string name="send_failed">huts bidaltzerakoan</string>
   <string name="send_rejected">ukatua</string>
   <string name="preparing_image">Irudia transmisiorako prestatzen. Mesedez itxaron…</string>
+  <string name="preparing_images">Irudiak transmisiorako prestatzen</string>
+  <string name="sharing_files_please_wait">Fitxategiak partekatzen. Mesedez itxaron...</string>
   <string name="action_clear_history">Historia garbitu</string>
   <string name="clear_conversation_history">Elkarrizketa historia garbitu</string>
   <string name="clear_histor_msg">Elkarrizketa honetako mezu guztiak ezabatu nahi al dituzu?\n\n<b>Abisua:</b> Honek ez du beste gailu edo zerbitzarietan gordetako mezuetan eraginik izango.</string>
@@ -312,6 +314,7 @@
   <string name="checking_x">%s egiaztatzen HTTP ostalarian</string>
   <string name="not_connected_try_again">Ez zaude konektatuta. Saiatu beranduago berriz</string>
   <string name="check_x_filesize">Egiaztatu %sren neurria</string>
+  <string name="check_x_filesize_on_host">Egiaztatu %1$sren neurria %2$s ostalarian</string>
   <string name="message_options">Mezuaren aukerak</string>
   <string name="copy_text">Testua kopiatu</string>
   <string name="copy_original_url">Jatorrizko URLa kopiatu</string>
@@ -350,6 +353,7 @@
   <string name="choose_file">Fitxategia aukeratu</string>
   <string name="receiving_x_file">%1$s jasotzen (%2$d%% osatua)</string>
   <string name="download_x_file">%s deskargatu</string>
+  <string name="delete_x_file">Ezabatu %s</string>
   <string name="file">fitxategia</string>
   <string name="open_x_file">%s ireki</string>
   <string name="sending_file">bidaltzen (%1$d%% osatua)</string>
@@ -504,6 +508,8 @@
   <string name="pref_away_when_screen_off_summary">Zure baliabidea urrun bezala markatzen du pantaila itzalita dagoenean</string>
   <string name="pref_xa_on_silent_mode">Ez eskuragarri modu isilean</string>
   <string name="pref_xa_on_silent_mode_summary">Zure baliabidea ez eskuragarri bezala markatzen du gailua modu isilean dagoenean</string>
+  <string name="pref_treat_vibrate_as_silent">Dardara modu isila bezala tratatu</string>
+  <string name="pref_treat_vibrate_as_silent_summary">Zure baliabidea ez eskuragarri bezala markatzen du gailua dardara moduan dagoenean</string>
   <string name="pref_show_connection_options">Konexioaren ezarpen luzatuak</string>
   <string name="pref_show_connection_options_summary">Ostalariaren izena eta ataka ezarpenak erakutsi kontu bat ezartzerakoan</string>
   <string name="hostname_example">xmpp.adibidea.com</string>
@@ -539,6 +545,7 @@
   <string name="load_more_messages">Mezu gehiago kargatu</string>
   <string name="shared_file_with_x">Fitxategia %s(r)ekin partekatu da</string>
   <string name="shared_image_with_x">Irudia %s(r)ekin partekatu da</string>
+  <string name="shared_images_with_x">Irudiak %s(r)ekin partekatu dira</string>
   <string name="no_storage_permission">Conversationsek kanpoko biltegirako sarbidea behar du</string>
   <string name="sync_with_contacts">Kontaktuekin sinkronizatu</string>
   <string name="sync_with_contacts_long">Conversationsek zure XMPP zerrenda eta zure kontaktuak uztartu nahi ditu haien izenak eta argazkiak erakusteko.\n\nConversationsek zure kontaktuak modu lokalean soilik irakurri eta uztartuko ditu, zure zerbitzarira kargatu gabe.\n\nJarraian baimenak eskatuko zaizkizu zure kontaktuetara sartu ahal izateko.</string>
@@ -567,4 +574,7 @@
   <string name="this_field_is_required">Datu hau beharrezkoa da</string>
   <string name="correct_message">Mezua zuzendu</string>
   <string name="send_corrected_message">Mezu zuzendua bidali</string>
+  <string name="no_keys_just_confirm">Kontaktu honetaz fidatzen zara dagoeneko. \'Eginda\' hautatuz %s konferentzia honen kidea dela egiaztatzen duzu besterik gabe.</string>
+  <string name="select_image_and_crop">Irudia hautatu eta moztu</string>
+  <string name="this_account_is_disabled">Kontu hau ezgaitu duzu</string>
 </resources>
