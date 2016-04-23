@@ -1,5 +1,14 @@
 ###Changelog
 
+####Version 1.11.7
+* Share xmpp uri from conference details
+* add setting to allow quick sharing
+* various bug fixes
+
+####Version 1.11.6
+* added preference to disable notification light
+* various bug fixes
+
 ####Version 1.11.5
 * check file ownership to not accidentally share private files
 

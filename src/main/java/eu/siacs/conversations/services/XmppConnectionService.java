@@ -403,7 +403,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	public void attachFileToConversation(final Conversation conversation,
 										 final Uri uri,
 										 final UiCallback<Message> callback) {
-		if (FileBackend.weOwnFile(uri)) {
+		if (FileBackend.weOwnFile(this, uri)) {
 			Log.d(Config.LOGTAG,"trying to attach file that belonged to us");
 			callback.error(R.string.security_error_invalid_file_access, null);
 			return;
@@ -446,7 +446,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	}
 
 	public void attachImageToConversation(final Conversation conversation, final Uri uri, final UiCallback<Message> callback) {
-		if (FileBackend.weOwnFile(uri)) {
+		if (FileBackend.weOwnFile(this, uri)) {
 			Log.d(Config.LOGTAG,"trying to attach file that belonged to us");
 			callback.error(R.string.security_error_invalid_file_access, null);
 			return;
@@ -509,7 +509,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 					}
 					return START_STICKY;
 				case Intent.ACTION_SHUTDOWN:
-					logoutAndSave();
+					logoutAndSave(true);
 					return START_NOT_STICKY;
 				case ACTION_CLEAR_NOTIFICATION:
 					mNotificationService.clear();
@@ -787,12 +787,16 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	public void onTaskRemoved(final Intent rootIntent) {
 		super.onTaskRemoved(rootIntent);
 		if (!getPreferences().getBoolean("keep_foreground_service", false)) {
-			this.logoutAndSave();
+			this.logoutAndSave(false);
 		}
 	}
 
-	private void logoutAndSave() {
+	private void logoutAndSave(boolean stop) {
+		int activeAccounts = 0;
 		for (final Account account : accounts) {
+			if (account.getStatus() != Account.State.DISABLED) {
+				activeAccounts++;
+			}
 			databaseBackend.writeRoster(account.getRoster());
 			if (account.getXmppConnection() != null) {
 				new Thread(new Runnable() {
@@ -801,11 +805,12 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 						disconnect(account, false);
 					}
 				}).start();
-				cancelWakeUpCall(account.getUuid().hashCode());
 			}
 		}
-		Log.d(Config.LOGTAG, "good bye");
-		stopSelf();
+		if (stop || activeAccounts == 0) {
+			Log.d(Config.LOGTAG, "good bye");
+			stopSelf();
+		}
 	}
 
 	private void cancelWakeUpCall(int requestCode) {
@@ -840,6 +845,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		connection.setOnBindListener(this.mOnBindListener);
 		connection.setOnMessageAcknowledgeListener(this.mOnMessageAcknowledgedListener);
 		connection.addOnAdvancedStreamFeaturesAvailableListener(this.mMessageArchiveService);
+		connection.addOnAdvancedStreamFeaturesAvailableListener(this.mAvatarService);
 		AxolotlService axolotlService = account.getAxolotlService();
 		if (axolotlService != null) {
 			connection.addOnAdvancedStreamFeaturesAvailableListener(axolotlService);
@@ -2338,9 +2344,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		}
 	}
 
-	public void publishAvatar(final Account account,
-							  final Uri image,
-							  final UiCallback<Avatar> callback) {
+	public void publishAvatar(Account account, Uri image, UiCallback<Avatar> callback) {
 		final Bitmap.CompressFormat format = Config.AVATAR_FORMAT;
 		final int size = Config.AVATAR_SIZE;
 		final Avatar avatar = getFileBackend().getPepAvatar(image, size, format);
@@ -2358,40 +2362,96 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 				callback.error(R.string.error_saving_avatar, avatar);
 				return;
 			}
-			final IqPacket packet = this.mIqGenerator.publishAvatar(avatar);
-			this.sendIqPacket(account, packet, new OnIqPacketReceived() {
+			publishAvatar(account, avatar, callback);
+		} else {
+			callback.error(R.string.error_publish_avatar_converting, null);
+		}
+	}
 
-				@Override
-				public void onIqPacketReceived(Account account, IqPacket result) {
-					if (result.getType() == IqPacket.TYPE.RESULT) {
-						final IqPacket packet = XmppConnectionService.this.mIqGenerator
-								.publishAvatarMetadata(avatar);
-						sendIqPacket(account, packet, new OnIqPacketReceived() {
-							@Override
-							public void onIqPacketReceived(Account account, IqPacket result) {
-								if (result.getType() == IqPacket.TYPE.RESULT) {
-									if (account.setAvatar(avatar.getFilename())) {
-										getAvatarService().clear(account);
-										databaseBackend.updateAccount(account);
-									}
+	public void publishAvatar(Account account, final Avatar avatar, final UiCallback<Avatar> callback) {
+		final IqPacket packet = this.mIqGenerator.publishAvatar(avatar);
+		this.sendIqPacket(account, packet, new OnIqPacketReceived() {
+
+			@Override
+			public void onIqPacketReceived(Account account, IqPacket result) {
+				if (result.getType() == IqPacket.TYPE.RESULT) {
+					final IqPacket packet = XmppConnectionService.this.mIqGenerator
+							.publishAvatarMetadata(avatar);
+					sendIqPacket(account, packet, new OnIqPacketReceived() {
+						@Override
+						public void onIqPacketReceived(Account account, IqPacket result) {
+							if (result.getType() == IqPacket.TYPE.RESULT) {
+								if (account.setAvatar(avatar.getFilename())) {
+									getAvatarService().clear(account);
+									databaseBackend.updateAccount(account);
+								}
+								if (callback != null) {
 									callback.success(avatar);
 								} else {
+									Log.d(Config.LOGTAG,account.getJid().toBareJid()+": published avatar");
+								}
+							} else {
+								if (callback != null) {
 									callback.error(
 											R.string.error_publish_avatar_server_reject,
 											avatar);
 								}
 							}
-						});
-					} else {
+						}
+					});
+				} else {
+					if (callback != null) {
 						callback.error(
 								R.string.error_publish_avatar_server_reject,
 								avatar);
 					}
 				}
-			});
-		} else {
-			callback.error(R.string.error_publish_avatar_converting, null);
+			}
+		});
+	}
+
+	public void republishAvatarIfNeeded(Account account) {
+		if (account.getAxolotlService().isPepBroken()) {
+			Log.d(Config.LOGTAG,account.getJid().toBareJid()+": skipping republication of avatar because pep is broken");
+			return;
 		}
+		IqPacket packet = this.mIqGenerator.retrieveAvatarMetaData(null);
+		this.sendIqPacket(account, packet, new OnIqPacketReceived() {
+
+			private Avatar parseAvatar(IqPacket packet) {
+				Element pubsub = packet.findChild("pubsub", "http://jabber.org/protocol/pubsub");
+				if (pubsub != null) {
+					Element items = pubsub.findChild("items");
+					if (items != null) {
+						return Avatar.parseMetadata(items);
+					}
+				}
+				return null;
+			}
+
+			private boolean errorIsItemNotFound(IqPacket packet) {
+				Element error = packet.findChild("error");
+				return packet.getType() == IqPacket.TYPE.ERROR
+						&& error != null
+						&& error.hasChild("item-not-found");
+			}
+
+			@Override
+			public void onIqPacketReceived(Account account, IqPacket packet) {
+				if (packet.getType() == IqPacket.TYPE.RESULT || errorIsItemNotFound(packet)) {
+					Avatar serverAvatar = parseAvatar(packet);
+					if (serverAvatar == null && account.getAvatar() != null) {
+						Avatar avatar = fileBackend.getStoredPepAvatar(account.getAvatar());
+						if (avatar != null) {
+							Log.d(Config.LOGTAG,account.getJid().toBareJid()+": avatar on server was null. republishing");
+							publishAvatar(account, fileBackend.getStoredPepAvatar(account.getAvatar()), null);
+						} else {
+							Log.e(Config.LOGTAG, account.getJid().toBareJid()+": error rereading avatar");
+						}
+					}
+				}
+			}
+		});
 	}
 
 	public void fetchAvatar(Account account, Avatar avatar) {
@@ -2401,9 +2461,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	public void fetchAvatar(Account account, final Avatar avatar, final UiCallback<Avatar> callback) {
 		final String KEY = generateFetchKey(account, avatar);
 		synchronized (this.mInProgressAvatarFetches) {
-			if (this.mInProgressAvatarFetches.contains(KEY)) {
-				return;
-			} else {
+			if (!this.mInProgressAvatarFetches.contains(KEY)) {
 				switch (avatar.origin) {
 					case PEP:
 						this.mInProgressAvatarFetches.add(KEY);
@@ -2526,8 +2584,7 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
 				if (packet.getType() == IqPacket.TYPE.RESULT) {
-					Element pubsub = packet.findChild("pubsub",
-							"http://jabber.org/protocol/pubsub");
+					Element pubsub = packet.findChild("pubsub","http://jabber.org/protocol/pubsub");
 					if (pubsub != null) {
 						Element items = pubsub.findChild("items");
 						if (items != null) {
@@ -3158,6 +3215,18 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 
 	public PushManagementService getPushManagementService() {
 		return mPushManagementService;
+	}
+
+	public Account getPendingAccount() {
+		Account pending = null;
+		for(Account account : getAccounts()) {
+			if (account.isOptionSet(Account.OPTION_REGISTER)) {
+				pending = account;
+			} else {
+				return null;
+			}
+		}
+		return pending;
 	}
 
 	public interface OnMamPreferencesFetched {
