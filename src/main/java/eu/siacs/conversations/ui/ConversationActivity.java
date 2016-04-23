@@ -16,6 +16,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.provider.Settings;
+import android.support.v4.app.RemoteInput;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
 import android.util.Log;
@@ -30,6 +31,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 import android.widget.Toast;
@@ -76,6 +78,7 @@ public class ConversationActivity extends XmppActivity
 	public static final String TEXT = "text";
 	public static final String NICK = "nick";
 	public static final String PRIVATE_MESSAGE = "pm";
+	public static final String EXTRA_VOICE_REPLY = "extra_voice_reply";
 
 	public static final int REQUEST_SEND_MESSAGE = 0x0201;
 	public static final int REQUEST_DECRYPT_PGP = 0x0202;
@@ -1199,9 +1202,18 @@ public class ConversationActivity extends XmppActivity
 	private void handleViewConversationIntent(final Intent intent) {
 		final String uuid = intent.getStringExtra(CONVERSATION);
 		final String downloadUuid = intent.getStringExtra(MESSAGE);
-		final String text = intent.getStringExtra(TEXT);
+		String text = intent.getStringExtra(TEXT);
 		final String nick = intent.getStringExtra(NICK);
-		final boolean pm = intent.getBooleanExtra(PRIVATE_MESSAGE, false);
+
+		final boolean pm = intent.getBooleanExtra(PRIVATE_MESSAGE,false);
+		boolean sendMessageImmediately = false;
+
+		final CharSequence remoteText = getRemoteInputText(intent);
+		if(remoteText != null){
+			text = remoteText.toString();
+			sendMessageImmediately = (null != text && text.length() > 0) ? true : true;
+		}
+
 		if (selectConversationByUuid(uuid)) {
 			this.mConversationFragment.reInit(getSelectedConversation());
 			if (nick != null) {
@@ -1229,6 +1241,11 @@ public class ConversationActivity extends XmppActivity
 				if (message != null) {
 					startDownloadable(message);
 				}
+			}
+
+			if(sendMessageImmediately){
+				ImageButton mSendButton = (ImageButton) this.findViewById(R.id.textSendButton);
+				mSendButton.performClick();
 			}
 		}
 	}
@@ -1650,6 +1667,14 @@ public class ConversationActivity extends XmppActivity
 		return !isConversationsOverviewHideable() || this.conversationWasSelectedByKeyboard;
 	}
 
+
+	private CharSequence getRemoteInputText(Intent intent) {
+		Bundle remoteInput = RemoteInput.getResultsFromIntent(intent);
+		if (remoteInput != null) {
+			return remoteInput.getCharSequence(EXTRA_VOICE_REPLY);
+		}
+		return null;
+	}
 	public void setMessagesLoaded() {
 		if (mConversationFragment != null) {
 			mConversationFragment.setMessagesLoaded();

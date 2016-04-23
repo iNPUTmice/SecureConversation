@@ -11,31 +11,31 @@ buildscript {
 }
 
 allprojects {
-	repositories {
-		jcenter()
-		mavenCentral()
-		maven {
-			url 'http://lorenzo.villani.me/android-cropimage/'
-		}
-	}
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven {
+            url 'http://lorenzo.villani.me/android-cropimage/'
+        }
+    }
 }
 
 apply plugin: 'com.android.application'
 
 repositories {
-	jcenter()
-	mavenCentral()
+    jcenter()
+    mavenCentral()
 }
 
 configurations {
-	playstoreCompile
+    playstoreCompile
 }
 
 dependencies {
 	compile project(':libs:MemorizingTrustManager')
 	compile 'org.sufficientlysecure:openpgp-api:10.0'
 	compile 'com.soundcloud.android:android-crop:1.0.1@aar'
-	compile 'com.android.support:support-v13:23.2.0'
+	compile 'com.android.support:support-v13:23.3.0'
 	compile 'org.bouncycastle:bcprov-jdk15on:1.52'
 	compile 'org.bouncycastle:bcmail-jdk15on:1.52'
 	compile 'org.jitsi:org.otr4j:0.22'
@@ -58,8 +58,8 @@ ext {
 }
 
 android {
-	compileSdkVersion 23
-	buildToolsVersion "23.0.2"
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
 
 	defaultConfig {
 		minSdkVersion 14
@@ -80,47 +80,47 @@ android {
 		targetCompatibility JavaVersion.VERSION_1_7
 	}
 
-   productFlavors {
-		playstore
-		free
-	}
-	if (project.hasProperty('mStoreFile') &&
-			project.hasProperty('mStorePassword') &&
-			project.hasProperty('mKeyAlias') &&
-			project.hasProperty('mKeyPassword')) {
-		signingConfigs {
-			release {
-				storeFile file(mStoreFile)
-					storePassword mStorePassword
-					keyAlias mKeyAlias
-					keyPassword mKeyPassword
-			}
-		}
-		buildTypes.release.signingConfig = signingConfigs.release
-	} else {
-		buildTypes.release.signingConfig = null
-	}
+    productFlavors {
+        playstore
+        free
+    }
+    if (project.hasProperty('mStoreFile') &&
+            project.hasProperty('mStorePassword') &&
+            project.hasProperty('mKeyAlias') &&
+            project.hasProperty('mKeyPassword')) {
+        signingConfigs {
+            release {
+                storeFile file(mStoreFile)
+                storePassword mStorePassword
+                keyAlias mKeyAlias
+                keyPassword mKeyPassword
+            }
+        }
+        buildTypes.release.signingConfig = signingConfigs.release
+    } else {
+        buildTypes.release.signingConfig = null
+    }
 
-	lintOptions {
-		disable 'ExtraTranslation', 'MissingTranslation', 'InvalidPackage', 'MissingQuantity', 'AppCompatResource'
-	}
+    lintOptions {
+        disable 'ExtraTranslation', 'MissingTranslation', 'InvalidPackage', 'MissingQuantity', 'AppCompatResource'
+    }
 
-	subprojects {
+    subprojects {
 
-		afterEvaluate {
-			if (getPlugins().hasPlugin('android') ||
-					getPlugins().hasPlugin('android-library')) {
+        afterEvaluate {
+            if (getPlugins().hasPlugin('android') ||
+                    getPlugins().hasPlugin('android-library')) {
 
-				configure(android.lintOptions) {
-					disable 'AndroidGradlePluginVersion', 'MissingTranslation'
-				}
-			}
+                configure(android.lintOptions) {
+                    disable 'AndroidGradlePluginVersion', 'MissingTranslation'
+                }
+            }
 
-		}
-	}
+        }
+    }
 
-	packagingOptions {
-		exclude 'META-INF/BCKEY.DSA'
-		exclude 'META-INF/BCKEY.SF'
-	}
+    packagingOptions {
+        exclude 'META-INF/BCKEY.DSA'
+        exclude 'META-INF/BCKEY.SF'
+    }
 }
