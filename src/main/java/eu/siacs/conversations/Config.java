@@ -38,6 +38,7 @@ public final class Config {
 
 
 	public static final String DOMAIN_LOCK = null; //only allow account creation for this domain
+	public static final String MAGIC_CREATE_DOMAIN = null;
 	public static final String CONFERENCE_DOMAIN_LOCK = null; //only allow conference creation for this domain
 	public static final boolean LOCK_DOMAINS_IN_CONVERSATIONS = false; //only add contacts and conferences for own domains
 
@@ -48,8 +49,7 @@ public final class Config {
 	public static final boolean FORCE_ORBOT = false; // always use TOR
 	public static final boolean HIDE_MESSAGE_TEXT_IN_NOTIFICATION = false;
 	public static final boolean SHOW_CONNECTED_ACCOUNTS = false; //show number of connected accounts in foreground notification
-
-	public static final boolean ALWAYS_NOTIFY_BY_DEFAULT = false;
+	public static final boolean SHOW_DISABLE_FOREGROUND = true; //if set to true the foreground notification has a button to disable it
 
 	public static final boolean LEGACY_NAMESPACE_HTTP_UPLOAD = false;
 

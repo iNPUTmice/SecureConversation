@@ -104,13 +104,18 @@
 	<string name="pref_xmpp_resource_summary">The name this client identifies itself with</string>
 	<string name="pref_accept_files">Accept files</string>
 	<string name="pref_accept_files_summary">Automatically accept files smaller than…</string>
+	<string name="pref_attachments">Attachments</string>
+	<string name="pref_return_to_previous">Quick Sharing</string>
+	<string name="pref_return_to_previous_summary">Immediately return to previous activity instead of opening the conversation after sharing something</string>
 	<string name="pref_notification_settings">Notification</string>
 	<string name="pref_notifications">Notifications</string>
 	<string name="pref_notifications_summary">Notify when a new message arrives</string>
 	<string name="pref_vibrate">Vibrate</string>
-	<string name="pref_vibrate_summary">Also vibrate when a new message arrives</string>
-	<string name="pref_sound">Sound</string>
-	<string name="pref_sound_summary">Play ringtone with notification</string>
+	<string name="pref_vibrate_summary">Vibrate when a new message arrives</string>
+	<string name="pref_led">LED Notification</string>
+	<string name="pref_led_summary">Blink notification light when a new message arrives</string>
+	<string name="pref_sound">Ringtone</string>
+	<string name="pref_sound_summary">Play sound when a new message arrives</string>
 	<string name="pref_notification_grace_period">Notification grace period</string>
 	<string name="pref_notification_grace_period_summary">Disable notifications for a short time after a carbon copy was received</string>
 	<string name="pref_advanced_options">Advanced</string>
@@ -579,6 +584,7 @@
 	<string name="shared_file_with_x">Shared file with %s</string>
 	<string name="shared_image_with_x">Shared image with %s</string>
 	<string name="shared_images_with_x">Shared images with %s</string>
+	<string name="shared_text_with_x">Shared text with %s</string>
 	<string name="no_storage_permission">Conversations need access to external storage</string>
 	<string name="sync_with_contacts">Synchronize with contacts</string>
 	<string name="sync_with_contacts_long">Conversations wants to match your XMPP roster with your contacts to show their full names and avatars.\n\nConversations will only read your contacts and match them locally without uploading them to your server.\n\nYou will now be asked to grant permission to access your contacts.</string>
@@ -611,4 +617,13 @@
 	<string name="select_image_and_crop">Select image and crop</string>
 	<string name="this_account_is_disabled">You have disabled this account</string>
 	<string name="security_error_invalid_file_access">Security error: Invalid file access</string>
+	<string name="no_application_to_share_uri">No application found to share URI</string>
+	<string name="share_uri_with">Share URI with…</string>
+	<string name="welcome_header">Join the Conversation</string>
+	<string name="welcome_text">XMPP is a provider independent protocol. You can use this client with what ever XMPP server you choose.\nHowever for your convenience we made it easy to create an account on conversations.im; a provider specially suited for the use with Conversations.</string>
+	<string name="magic_create_text">We will guide you through the process of creating an account on conversations.im.\nWhen picking conversations.im as a provider you will be able to communicate with users of other providers by giving them your full Jabber ID.</string>
+	<string name="your_full_jid_will_be">Your full Jabber ID will be: %s</string>
+	<string name="create_account">Create Account</string>
+	<string name="use_own_provider">Use my own provider</string>
+	<string name="pick_your_username">Pick your username</string>
 </resources>
