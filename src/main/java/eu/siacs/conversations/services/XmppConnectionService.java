@@ -979,6 +979,8 @@ public class XmppConnectionService extends Service {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			scheduleNextIdlePing();
 		}
+
+		if (mHandsFreeService==null) mHandsFreeService=new HandsFreeService(getApplicationContext());
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 			registerReceiver(this.mEventReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 		}
@@ -3901,6 +3903,19 @@ public class XmppConnectionService extends Service {
 		account.getBookmarks().add(bookmark);
 		pushBookmarks(account);
 		conversation.setBookmark(bookmark);
+	}
+
+	public void onRegisterConversationFragment(ConversationFragment fragement) {
+		if (mHandsFreeService!=null) mHandsFreeService.onRegisterConversationFragment(fragement);
+	}
+	public void onActivateConversationFragment(ConversationFragment fragement) {
+		if (mHandsFreeService!=null) mHandsFreeService.onActivateConversationFragement(fragement);
+	}
+	public void speakMessage(String message) {
+		if (mHandsFreeService!=null) mHandsFreeService.speakMessage(message);
+	}
+	public void handsFreePrompt() {
+		if (mHandsFreeService!=null) mHandsFreeService.handsFreePrompt();
 	}
 
 	public boolean verifyFingerprints(Contact contact, List<XmppUri.Fingerprint> fingerprints) {
