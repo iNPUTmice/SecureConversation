@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.text.InputType;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -34,6 +35,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
+import android.text.TextUtils;
 
 import net.java.otr4j.session.SessionStatus;
 
@@ -315,6 +317,11 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						}
 						break;
 					default:
+						if (activity.getPreferences().getBoolean("handsfree_enabled", false)) {
+							if (TextUtils.isEmpty(mEditMessage.getText().toString())) {
+								showHandsFreeDialog();
+							}
+						}
 						sendMessage();
 				}
 			} else {
@@ -339,7 +346,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.messagesLoaded = true;
 	}
 
-	private void sendMessage() {
+	public void sendMessage() {
 		final String body = mEditMessage.getText().toString();
 		if (body.length() == 0 || this.conversation == null) {
 			return;
@@ -807,6 +814,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			}
 			messagesView.setSelection(pos);
 		}
+		activity.xmppConnectionService.onRegisterConversationFragment(this);
 	}
 
 	private OnClickListener mEnableAccountListener = new OnClickListener() {
@@ -980,6 +988,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	enum SendButtonAction {TEXT, TAKE_PHOTO, SEND_LOCATION, RECORD_VOICE, CANCEL, CHOOSE_PICTURE}
 
 	private int getSendButtonImageResource(SendButtonAction action, Presence.Status status) {
+		if (activity.getPreferences().getBoolean("handsfree_enabled", false)) {
+			if (!activity.getPreferences().getBoolean("bluetoothonly_enabled", false)) {
+//				Log.d(Config.LOGTAG,"Bluetooth not enabled");
+				if (action == SendButtonAction.TEXT && TextUtils.isEmpty(mEditMessage.getText().toString())) {
+					action = SendButtonAction.RECORD_VOICE;
+				}
+			}
+		}
 		switch (action) {
 			case TEXT:
 				switch (status) {
@@ -1186,8 +1202,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 	protected void sendPlainTextMessage(Message message) {
 		ConversationActivity activity = (ConversationActivity) getActivity();
-		activity.xmppConnectionService.sendMessage(message);
-		messageSent();
+		if (activity != null && activity.xmppConnectionService!=null) {
+			activity.xmppConnectionService.sendMessage(message);
+			messageSent();
+		}
 	}
 
 	protected void sendPgpMessage(final Message message) {
@@ -1324,6 +1342,40 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			text = " " + text;
 		}
 		this.mEditMessage.append(text);
+	}
+
+	public void deleteLastWord() {
+		String previous = this.mEditMessage.getText().toString().replaceAll("\\s*\\b[^ ]+$", "");
+
+		this.mEditMessage.getEditableText().clear();
+		this.mEditMessage.append(previous);
+	}
+	public String currentText() {
+		return this.mEditMessage.getEditableText().toString();
+	}
+
+	public void replaceText(String text) {
+		this.mEditMessage.getEditableText().clear();
+		this.mEditMessage.append(text);
+	}
+
+	public void showHandsFreeDialog() {
+		AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+		builder.setIconAttribute(android.R.attr.alertDialogIcon);
+
+		builder.setTitle(getString(R.string.enable_handsfree));
+		builder.setMessage(getText(R.string.enable_handsfree));
+
+		builder.setNegativeButton(getString(R.string.cancel), null);
+		builder.setPositiveButton(getString(R.string.ok),
+				new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog,
+										int which) {
+						activity.xmppConnectionService.onActivateConversationFragment(ConversationFragment.this);
+					}
+				});
+		builder.create().show();
 	}
 
 	@Override

@@ -89,6 +89,7 @@ import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.ExceptionHelper;
@@ -352,6 +353,9 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 	private EventReceiver mEventReceiver = new EventReceiver();
 
 	private boolean mRestoredFromDatabase = false;
+
+
+	private HandsFreeService mHandsFreeService = null;
 
 	private static String generateFetchKey(Account account, final Avatar avatar) {
 		return account.getJid().toBareJid() + "_" + avatar.owner + "_" + avatar.sha1sum;
@@ -759,6 +763,8 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 		toggleForegroundService();
 		updateUnreadCountBadge();
 		toggleScreenEventReceiver();
+
+		if (mHandsFreeService==null) mHandsFreeService=new HandsFreeService(getApplicationContext());
 	}
 
 	@Override
@@ -3303,6 +3309,19 @@ public class XmppConnectionService extends Service implements OnPhoneContactsLoa
 			}
 		}
 		return templates;
+	}
+
+	public void onRegisterConversationFragment(ConversationFragment fragement) {
+		if (mHandsFreeService!=null) mHandsFreeService.onRegisterConversationFragment(fragement);
+	}
+	public void onActivateConversationFragment(ConversationFragment fragement) {
+		if (mHandsFreeService!=null) mHandsFreeService.onActivateConversationFragement(fragement);
+	}
+	public void speakMessage(String message) {
+		if (mHandsFreeService!=null) mHandsFreeService.speakMessage(message);
+	}
+	public void handsFreePrompt() {
+		if (mHandsFreeService!=null) mHandsFreeService.handsFreePrompt();
 	}
 
 	public interface OnMamPreferencesFetched {
