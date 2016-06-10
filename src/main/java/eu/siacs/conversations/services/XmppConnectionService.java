@@ -100,6 +100,7 @@ import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
@@ -412,6 +413,9 @@ public class XmppConnectionService extends Service {
 	private EventReceiver mEventReceiver = new EventReceiver();
 
 	private boolean mRestoredFromDatabase = false;
+
+
+	private HandsFreeService mHandsFreeService = null;
 
 	private static String generateFetchKey(Account account, final Avatar avatar) {
 		return account.getJid().toBareJid() + "_" + avatar.owner + "_" + avatar.sha1sum;
@@ -970,6 +974,8 @@ public class XmppConnectionService extends Service {
 		toggleForegroundService();
 		updateUnreadCountBadge();
 		toggleScreenEventReceiver();
+
+		if (mHandsFreeService==null) mHandsFreeService=new HandsFreeService(getApplicationContext());
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 			scheduleNextIdlePing();
 		}
@@ -3867,6 +3873,19 @@ public class XmppConnectionService extends Service {
 			}
 		}
 		return templates;
+	}
+
+	public void onRegisterConversationFragment(ConversationFragment fragement) {
+		if (mHandsFreeService!=null) mHandsFreeService.onRegisterConversationFragment(fragement);
+	}
+	public void onActivateConversationFragment(ConversationFragment fragement) {
+		if (mHandsFreeService!=null) mHandsFreeService.onActivateConversationFragement(fragement);
+	}
+	public void speakMessage(String message) {
+		if (mHandsFreeService!=null) mHandsFreeService.speakMessage(message);
+	}
+	public void handsFreePrompt() {
+		if (mHandsFreeService!=null) mHandsFreeService.handsFreePrompt();
 	}
 
 	public void saveConversationAsBookmark(Conversation conversation, String name) {

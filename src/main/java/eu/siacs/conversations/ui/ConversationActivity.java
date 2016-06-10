@@ -1,5 +1,6 @@
 package eu.siacs.conversations.ui;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.AlertDialog;
@@ -43,6 +44,7 @@ import org.openintents.openpgp.util.OpenPgpApi;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.RunnableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.timroes.android.listview.EnhancedListView;
@@ -340,6 +342,17 @@ public class ConversationActivity extends XmppActivity
 				}
 			});
 		}
+
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+			// this needs to be done by the conversation activity
+			if (checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+				requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, 0x1110);
+			}
+			if (checkSelfPermission(Manifest.permission.ACCESS_NOTIFICATION_POLICY) != PackageManager.PERMISSION_GRANTED) {
+				requestPermissions(new String[]{Manifest.permission.ACCESS_NOTIFICATION_POLICY}, 0x1110);
+			}
+		}
+
 	}
 
 	@Override
@@ -1160,9 +1173,23 @@ public class ConversationActivity extends XmppActivity
 		this.mActivityPaused = true;
 	}
 
+	protected Handler mVoiceHandler = new Handler();
+	private Runnable mOfferVoice= new Runnable() {
+		public void run() {
+			if (ConversationActivity.this.xmppConnectionServiceBound) {
+				xmppConnectionService.handsFreePrompt();//speakMessage(getString(R.string.handsfree_prompt));
+			}
+		}
+	};
 	@Override
 	public void onResume() {
 		super.onResume();
+		mVoiceHandler.postDelayed(mOfferVoice, 250);
+
+//		if (this.xmppConnectionServiceBound) {
+//			xmppConnectionService.speakMessage(getString(R.string.handsfree_prompt));
+//		}
+
 		final int theme = findTheme();
 		final boolean usingEnterKey = usingEnterKey();
 		if (this.mTheme != theme || usingEnterKey != mUsingEnterKey) {

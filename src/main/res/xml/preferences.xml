@@ -105,6 +105,89 @@
             android:entryValues="@array/grace_periods_values"
             />
     </PreferenceCategory>
+    <PreferenceCategory
+        android:key="handsfree"
+        android:title="@string/pref_handsfree_settings">
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:dependency="handsfree"
+            android:key="handsfree_enabled"
+            android:summary="@string/enable_handsfree"
+            android:title="@string/enable_handsfree_mode" />
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="ttsnotify_enabled"
+            android:summary="@string/tts_notify_enable"
+            android:title="@string/text_to_speech" />
+        <EditTextPreference
+            android:defaultValue="100"
+            android:digits="0123456789"
+            android:inputType="number"
+            android:key="max_tts_length"
+            android:summary="@string/max_tts_description"
+            android:dialogMessage="@string/max_tts_dialog"
+            android:title="@string/max_tts_length" />
+        <EditTextPreference
+            android:dependency="handsfree_enabled"
+            android:defaultValue="1000"
+            android:digits="0123456789"
+            android:inputType="number"
+            android:key="speach_delay"
+            android:summary="@string/speech_delay_summary"
+            android:dialogMessage="@string/speech_delay_dialog"
+            android:title="@string/speech_delay" />
+        <CheckBoxPreference
+            android:dependency="handsfree_enabled"
+            android:defaultValue="false"
+            android:key="bluetoothonly_enabled"
+            android:summary="@string/bluetoothonly_enable"
+            android:title="@string/bluetooth" />
+        <PreferenceScreen
+            android:dependency="handsfree_enabled"
+            android:key="handsfreestrings"
+            android:summary="@string/handsfreestrings"
+            android:title="@string/handsfreestrings">
+            <PreferenceCategory android:title="@string/handsfreestrings">
+                <eu.siacs.conversations.ui.EditTextPreference
+                    android:key="handsfree_prompt"
+                    android:summary="%s"
+                    android:inputType="text"
+                    android:defaultValue="@string/handsfree_prompt"
+                    android:title="@string/handsfree_prompt_title" />
+                <eu.siacs.conversations.ui.EditTextPreference
+                    android:key="handsfree_delete"
+                    android:summary="%s"
+                    android:inputType="text"
+                    android:defaultValue="@string/handsfree_delete"
+                    android:title="@string/handsfree_delete_title" />
+                <eu.siacs.conversations.ui.EditTextPreference
+                    android:key="handsfree_send"
+                    android:summary="%s"
+                    android:inputType="text"
+                    android:defaultValue="@string/handsfree_send"
+                    android:title="@string/handsfree_send_title" />
+                <eu.siacs.conversations.ui.EditTextPreference
+                    android:key="handsfree_stop"
+                    android:summary="%s"
+                    android:inputType="text"
+                    android:defaultValue="@string/handsfree_stop"
+                    android:title="@string/handsfree_stop_title" />
+                <eu.siacs.conversations.ui.EditTextPreference
+                    android:key="handsfree_clear"
+                    android:summary="%s"
+                    android:inputType="text"
+                    android:defaultValue="@string/handsfree_clear"
+                    android:title="@string/handsfree_clear_title" />
+                <EditTextPreference
+                    android:key="handsfree_user_replacements"
+                    android:inputType="textMultiLine"
+                    android:singleLine="false"
+                    android:dialogMessage="@string/handsfree_user_replacements_summary"
+                    android:title="@string/handsfree_user_replacements"
+                    android:hint="@string/handsfree_user_replacements_hint" />
+            </PreferenceCategory>
+        </PreferenceScreen>
+    </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_attachments">
         <ListPreference
             android:defaultValue="@integer/auto_accept_filesize"
