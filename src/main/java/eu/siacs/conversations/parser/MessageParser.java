@@ -556,11 +556,14 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			final HttpConnectionManager manager = this.mXmppConnectionService.getHttpConnectionManager();
 			if (message.trusted() && message.treatAsDownloadable() != Message.Decision.NEVER && manager.getAutoAcceptFileSize() > 0) {
 				manager.createNewDownloadConnection(message);
-			} else if (notify) {
-				if (query == null) {
-					mXmppConnectionService.getNotificationService().push(message);
-				} else if (query.getWith() == null) { // mam catchup
-					mXmppConnectionService.getNotificationService().pushFromBacklog(message);
+			} else {
+				mXmppConnectionService.speakMessage(message.getBody());
+				if (notify) {
+					if (query == null) {
+						mXmppConnectionService.getNotificationService().push(message);
+					} else if (query.getWith() == null) { // mam catchup
+						mXmppConnectionService.getNotificationService().pushFromBacklog(message);
+					}
 				}
 			}
 		} else if (!packet.hasChild("body")){ //no body
