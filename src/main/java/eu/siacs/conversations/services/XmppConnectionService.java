@@ -102,7 +102,7 @@ import eu.siacs.conversations.utils.Xmlns;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnBindListener;
 import eu.siacs.conversations.xmpp.OnContactStatusChanged;
-import eu.siacs.conversations.xmpp.OnGatewayPromptResult;
+import eu.siacs.conversations.xmpp.OnGatewayResult;
 import eu.siacs.conversations.xmpp.OnIqPacketReceived;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnMessageAcknowledged;
@@ -3256,18 +3256,26 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
-	public void fetchGatewayPrompt(Account account, final Jid jid, final OnGatewayPromptResult callback) {
-		IqPacket request = new IqPacket(IqPacket.TYPE.GET);
+	public void fetchFromGateway(Account account, final Jid jid, final String input, final OnGatewayResult callback) {
+		IqPacket request = new IqPacket(input == null ? IqPacket.TYPE.GET : IqPacket.TYPE.SET);
 		request.setTo(jid);
-		request.query("jabber:iq:gateway");
+		Element query = request.query("jabber:iq:gateway");
+		if(input != null) {
+			Element prompt = query.addChild("prompt");
+			prompt.setContent(input);
+		}
+
 		sendIqPacket(account, request, new OnIqPacketReceived() {
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
 				if (packet.getType() == IqPacket.TYPE.RESULT) {
-					callback.onGatewayPromptResult(packet.query().findChildContent("prompt"), null);
+					callback.onGatewayResult(
+						packet.query().findChildContent(input == null ? "prompt" : "jid"),
+						null
+					);
 				} else {
 					Element error = packet.findChild("error");
-					callback.onGatewayPromptResult(null, error == null ? null : error.findChildContent("text"));
+					callback.onGatewayResult(null, error == null ? null : error.findChildContent("text"));
 				}
 			}
 		});

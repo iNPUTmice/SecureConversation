@@ -29,7 +29,7 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
-import eu.siacs.conversations.xmpp.OnGatewayPromptResult;
+import eu.siacs.conversations.xmpp.OnGatewayResult;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -157,6 +157,21 @@ public class EnterJidDialog {
 			notifyItemChanged(i);
 		}
 
+		public Pair<String, Pair<Jid,Presence>> getSelected() {
+			if(this.selected == 0) {
+				return null; // No gateway, just use direct JID entry
+			}
+
+			Pair<Contact,String> gateway = this.gateways.get(this.selected - 1);
+			Pair<Jid,Presence> p = gateway.first.getFeaturePresence("jabber:iq:gateway");
+
+			if(p == null) {
+				p = gateway.first.getIdentityPresence("gateway", null);
+			}
+
+			return p == null ? null : new Pair(gateway.second, p);
+		}
+
 		public void clear() {
 			this.gateways.clear();
 			notifyDataSetChanged();
@@ -223,11 +238,14 @@ public class EnterJidDialog {
 					gateways.addAll(account.getRoster().getWithFeature("jabber:iq:gateway"));
 
 					for(final Contact gateway : gateways) {
-						context.xmppConnectionService.fetchGatewayPrompt(account, gateway.getJid(), new OnGatewayPromptResult() {
+						// Gateways are not required to advertise support for jabber:iq:gateway via discovery
+						// So, just try it on everyone and if it works, great, otherwise use fallbacks
+						context.xmppConnectionService.fetchFromGateway(account, gateway.getJid(), null, new OnGatewayResult() {
 							@Override
-							public void onGatewayPromptResult(final String prompt, String errorMessage) {
+							public void onGatewayResult(final String prompt, String errorMessage) {
 								if (prompt != null) {
 									context.runOnUiThread(new Runnable() {
+										@Override
 										public void run() {
 											((GatewayListAdapter) gatewayList.getAdapter()).add(gateway, prompt);
 										}
@@ -257,22 +275,51 @@ public class EnterJidDialog {
 					return;
 				}
 				final Jid accountJid = getAccountJid();
-				final Jid contactJid;
-				try {
-					contactJid = Jid.fromString(jid.getText().toString());
-				} catch (final InvalidJidException e) {
-					jid.setError(context.getString(R.string.invalid_jid));
-					return;
-				}
+				final Account account = context.xmppConnectionService.findAccountByJid(accountJid);
 
-				if(listener != null) {
-					try {
-						if(listener.onEnterJidDialogPositive(accountJid, contactJid)) {
-							dialog.dismiss();
-						}
-					} catch(JidError error) {
-						jid.setError(error.toString());
+				final OnGatewayResult finish = new OnGatewayResult() {
+					@Override
+					public void onGatewayResult(final String jidString, final String errorMessage) {
+						context.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								if(jidString == null) {
+									jid.setError(
+										errorMessage == null ?
+										context.getString(R.string.invalid_jid) :
+										errorMessage
+									);
+									return;
+								}
+
+								if(listener != null) {
+									try {
+										if(listener.onEnterJidDialogPositive(accountJid, Jid.fromString(jidString))) {
+											dialog.dismiss();
+										}
+									} catch (final InvalidJidException e) {
+										jid.setError(context.getString(R.string.invalid_jid));
+									} catch(JidError error) {
+										jid.setError(error.toString());
+									}
+								}
+							}
+						});
 					}
+				};
+
+				Pair<String,Pair<Jid,Presence>> p = ((GatewayListAdapter) gatewayList.getAdapter()).getSelected();
+
+				if(p == null) {
+					finish.onGatewayResult(jid.getText().toString(), null);
+				} else if(p.first != null) { // Gateway already responded to jabber:iq:gateway once
+					context.xmppConnectionService.fetchFromGateway(account, p.second.first, jid.getText().toString(), finish);
+				} else if(p.second.first.isDomainJid() && p.second.second.getServiceDiscoveryResult().hasFeature("jid\\20escaping")) {
+					finish.onGatewayResult(Jid.escapeLocalpart(jid.getText().toString()) + "@" + p.second.first.getDomainpart(), null);
+				} else if(p.second.first.isDomainJid()) {
+					finish.onGatewayResult(jid.getText().toString().replace("@", "%") + "@" + p.second.first.getDomainpart(), null);
+				} else {
+					finish.onGatewayResult(null, null);
 				}
 			}
 		};
