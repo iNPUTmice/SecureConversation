@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.DialogInterface.OnClickListener;
 import android.content.DialogInterface;
 import android.support.v7.widget.RecyclerView;
+import android.text.InputType;
 import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
@@ -147,9 +148,11 @@ public class EnterJidDialog {
 
 			if(i == 0) {
 				jid.setThreshold(1);
+				jid.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS | InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
 				jid.setHint(R.string.account_settings_example_jabber_id);
 			} else {
 				jid.setThreshold(999999); // do not autocomplete
+				jid.setInputType(InputType.TYPE_CLASS_TEXT);
 				jid.setHint(this.gateways.get(i-1).second);
 			}
 
