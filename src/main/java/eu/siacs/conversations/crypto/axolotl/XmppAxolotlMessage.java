@@ -11,6 +11,7 @@ import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.nio.ByteBuffer;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -152,13 +153,31 @@ public class XmppAxolotlMessage {
 		return iv;
 	}
 
+	private String padding_add(String plaintext) {
+		int pad = 256;
+		while (plaintext.length() > pad) {
+			pad *= 2;
+		}
+
+		// get a random offset
+		SecureRandom random = new SecureRandom();
+		byte[] offset_bytes = new byte[16];
+		random.nextBytes(offset_bytes);
+		ByteBuffer wrapped = ByteBuffer.wrap(offset_bytes);
+		int padding_offset = wrapped.getInt() % (pad - plaintext.length());
+
+		String padding_start = String.format("$" + padding_offset + "s");
+		String padding_end = String.format("$-" + (pad - plaintext.length() - padding_offset) + "s");
+		return padding_start + plaintext + padding_end;
+	}
+
 	public void encrypt(String plaintext) throws CryptoFailedException {
 		try {
 			SecretKey secretKey = new SecretKeySpec(innerKey, KEYTYPE);
 			IvParameterSpec ivSpec = new IvParameterSpec(iv);
 			Cipher cipher = Cipher.getInstance(CIPHERMODE, PROVIDER);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
-			this.ciphertext = cipher.doFinal(plaintext.getBytes());
+			this.ciphertext = cipher.doFinal(padding_add(plaintext).getBytes());
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
 				| IllegalBlockSizeException | BadPaddingException | NoSuchProviderException
 				| InvalidAlgorithmParameterException e) {
@@ -235,7 +254,7 @@ public class XmppAxolotlMessage {
 				cipher.init(Cipher.DECRYPT_MODE, keySpec, ivSpec);
 
 				String plaintext = new String(cipher.doFinal(ciphertext));
-				plaintextMessage = new XmppAxolotlPlaintextMessage(plaintext, session.getFingerprint());
+				plaintextMessage = new XmppAxolotlPlaintextMessage(plaintext.trim(), session.getFingerprint());
 
 			} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
 					| InvalidAlgorithmParameterException | IllegalBlockSizeException
