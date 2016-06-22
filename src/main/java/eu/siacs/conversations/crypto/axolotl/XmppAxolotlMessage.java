@@ -155,8 +155,8 @@ public class XmppAxolotlMessage {
 
 	private String padding_add(String plaintext) {
 		int pad = 256;
-		while (plaintext.length() > pad) {
-			pad *= 2;
+		if (plaintext.length() > pad) {
+			pad += ((((plaintext.length() - pad) / 128)+1)*128);
 		}
 
 		// get a random offset
