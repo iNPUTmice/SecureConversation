@@ -243,6 +243,11 @@ On the one hand Conversations supports Message Archive Management to keep a serv
 
 If you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) or ```adb backup``` from your computer.  It is important that your deactivate your account before backup and activate it only after a succesful restore. Otherwise OMEMO might not work afterwards. 
 
+#### Is it possible to remove unused devices from the OMEMO announcement?
+Yes, there is a "Clear devices" entry on the account details page which removes all the devices and their fingerprints from the OMEMO announcement. The next time they connect, they will reannounce themselves, but they might not receive messages sent in the meantime.
+
+Alternatively it is also possible to purge single keys by long-tapping on them, which considers the key to be compromised and makes Conversations not build a session with it again.
+
 #### Conversations is missing a certain feature
 
 I'm open for new feature suggestions. You can use the [issue tracker][issues] on
