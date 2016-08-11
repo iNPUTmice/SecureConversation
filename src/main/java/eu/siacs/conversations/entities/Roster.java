@@ -54,6 +54,26 @@ public class Roster {
 		}
 	}
 
+	public List<Contact> getWithFeature(final String feature) {
+		List<Contact> with = new ArrayList<>();
+		for(Contact c : this.contacts.values()) {
+			if(c.getFeaturePresence(feature) != null) {
+				with.add(c);
+			}
+		}
+		return with;
+	}
+
+	public List<Contact> getWithIdentity(final String category, final String type) {
+		List<Contact> with = new ArrayList<>();
+		for(Contact c : this.contacts.values()) {
+			if(c.getIdentityPresence(category, type) != null) {
+				with.add(c);
+			}
+		}
+		return with;
+	}
+
 	public List<Contact> getWithSystemAccounts() {
 		List<Contact> with = getContacts();
 		for(Iterator<Contact> iterator = with.iterator(); iterator.hasNext();) {

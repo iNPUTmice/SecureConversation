@@ -2,18 +2,35 @@ package eu.siacs.conversations.ui;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface.OnClickListener;
+import android.content.DialogInterface;
+import android.support.v7.widget.RecyclerView;
+import android.text.InputType;
+import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Spinner;
 import android.widget.TextView;
-
+import android.widget.ToggleButton;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.TreeSet;
+import org.solovyev.android.views.llm.LinearLayoutManager;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.Presence;
+import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
+import eu.siacs.conversations.xmpp.OnGatewayResult;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -34,23 +51,159 @@ public class EnterJidDialog {
 		}
 	}
 
+	protected class GatewayListAdapter extends RecyclerView.Adapter<GatewayListAdapter.ViewHolder> {
+		protected class ViewHolder extends RecyclerView.ViewHolder {
+			protected TextView label;
+			protected ToggleButton button;
+			protected int index;
+
+			public ViewHolder(View view, int i) {
+				super(view);
+				this.label = (TextView) view.findViewById(R.id.label);
+				this.button = (ToggleButton) view.findViewById(R.id.button);
+				setIndex(i);
+				button.setOnClickListener(new View.OnClickListener() {
+					@Override
+					public void onClick(View v) {
+						button.setChecked(true); // Force visual not to flap to unchecked
+						setSelected(index);
+					}
+				});
+			}
+
+			public void setIndex(int i) {
+				this.index = i;
+				button.setChecked(selected == i);
+			}
+
+			public void setText(int res) {
+				label.setText(res);
+				button.setVisibility(View.GONE);
+				label.setVisibility(View.VISIBLE);
+			}
+
+			public void useButton(int res) {
+				button.setText(res);
+				button.setTextOff(button.getText());
+				button.setTextOn(button.getText());
+				label.setVisibility(View.GONE);
+				button.setVisibility(View.VISIBLE);
+			}
+
+			public void useButton(String txt) {
+				button.setTextOff(txt);
+				button.setTextOn(txt);
+				button.setChecked(selected == this.index);
+				label.setVisibility(View.GONE);
+				button.setVisibility(View.VISIBLE);
+			}
+		}
+
+		protected List<Pair<Contact,String>> gateways;
+		protected int selected;
+
+		public GatewayListAdapter() {
+			this.gateways = new ArrayList<>();
+			this.selected = 0;
+		}
+
+		@Override
+		public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int i) {
+			View view = LayoutInflater.from(viewGroup.getContext()).inflate(R.layout.enter_jid_dialog_gateway_list_item, null);
+			return new ViewHolder(view, i);
+		}
+
+		@Override
+		public void onBindViewHolder(ViewHolder viewHolder, int i) {
+			viewHolder.setIndex(i);
+
+			if(i == 0) {
+				if(getItemCount() < 2) {
+					viewHolder.setText(R.string.account_settings_jabber_id);
+				} else {
+					viewHolder.useButton(R.string.account_settings_jabber_id);
+				}
+			} else {
+				viewHolder.useButton(this.gateways.get(i-1).first.getDisplayName());
+				Pair<Jid,Presence> p = this.gateways.get(i-1).first.getIdentityPresence("gateway", null);
+				if(p != null) {
+					for(ServiceDiscoveryResult.Identity id : p.second.getServiceDiscoveryResult().getIdentities()) {
+						if(id.getCategory().equals("gateway")) {
+							viewHolder.useButton(id.getType());
+							break;
+						}
+					}
+				}
+			}
+		}
+
+		@Override
+		public int getItemCount() {
+			return this.gateways.size() + 1;
+		}
+
+		public void setSelected(int i) {
+			int old = this.selected;
+			this.selected = i;
+
+			if(i == 0) {
+				jid.setThreshold(1);
+				jid.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS | InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE);
+				jid.setHint(R.string.account_settings_example_jabber_id);
+			} else {
+				jid.setThreshold(999999); // do not autocomplete
+				jid.setInputType(InputType.TYPE_CLASS_TEXT);
+				jid.setHint(this.gateways.get(i-1).second);
+			}
+
+			notifyItemChanged(old);
+			notifyItemChanged(i);
+		}
+
+		public Pair<String, Pair<Jid,Presence>> getSelected() {
+			if(this.selected == 0) {
+				return null; // No gateway, just use direct JID entry
+			}
+
+			Pair<Contact,String> gateway = this.gateways.get(this.selected - 1);
+			Pair<Jid,Presence> p = gateway.first.getFeaturePresence("jabber:iq:gateway");
+
+			if(p == null) {
+				p = gateway.first.getIdentityPresence("gateway", null);
+			}
+
+			return p == null ? null : new Pair(gateway.second, p);
+		}
+
+		public void clear() {
+			this.gateways.clear();
+			notifyDataSetChanged();
+			setSelected(0);
+		}
+
+		public void add(Contact gateway, String prompt) {
+			this.gateways.add(new Pair<>(gateway, prompt));
+			notifyDataSetChanged();
+		}
+	}
+
 	protected final AlertDialog dialog;
 	protected View.OnClickListener dialogOnClick;
 	protected OnEnterJidDialogPositiveListener listener = null;
+	protected final Spinner spinner;
+	protected final AutoCompleteTextView jid;
 
 	public EnterJidDialog(
-		final Context context, List<String> knownHosts, final List<String> activatedAccounts,
+		final XmppActivity context, List<String> knownHosts, final List<String> activatedAccounts,
 		final String title, final String positiveButton,
 		final String prefilledJid, final String account, boolean allowEditJid
 	) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(title);
 		View dialogView = LayoutInflater.from(context).inflate(R.layout.enter_jid_dialog, null);
-		final TextView jabberIdDesc = (TextView) dialogView.findViewById(R.id.jabber_id);
-		jabberIdDesc.setText(R.string.account_settings_jabber_id);
-		final Spinner spinner = (Spinner) dialogView.findViewById(R.id.account);
-		final AutoCompleteTextView jid = (AutoCompleteTextView) dialogView.findViewById(R.id.jid);
-		jid.setAdapter(new KnownHostsAdapter(context, R.layout.simple_list_item, knownHosts));
+		this.spinner = (Spinner) dialogView.findViewById(R.id.account);
+		jid = (AutoCompleteTextView) dialogView.findViewById(R.id.jid);
+		jid.setAdapter(new KnownHostsAdapter(context,R.layout.simple_list_item, knownHosts));
 		if (prefilledJid != null) {
 			jid.append(prefilledJid);
 			if (!allowEditJid) {
@@ -61,7 +214,9 @@ public class EnterJidDialog {
 			}
 		}
 
-		jid.setHint(R.string.account_settings_example_jabber_id);
+		final RecyclerView gatewayList = (RecyclerView) dialogView.findViewById(R.id.gateway_list);
+		gatewayList.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false));
+		gatewayList.setAdapter(new GatewayListAdapter());
 
 		if (account == null) {
 			StartConversationActivity.populateAccountSpinner(context, activatedAccounts, spinner);
@@ -74,6 +229,43 @@ public class EnterJidDialog {
 			spinner.setAdapter(adapter);
 		}
 
+		spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+			@Override
+			public void onItemSelected(AdapterView spinner, View view, int position, long id) {
+				final Jid accountJid = getAccountJid();
+				if(context.xmppConnectionService != null && accountJid != null) {
+					((GatewayListAdapter) gatewayList.getAdapter()).clear();
+
+					final Account account = context.xmppConnectionService.findAccountByJid(accountJid);
+					TreeSet<Contact> gateways = new TreeSet<>(account.getRoster().getWithIdentity("gateway", null));
+					gateways.addAll(account.getRoster().getWithFeature("jabber:iq:gateway"));
+
+					for(final Contact gateway : gateways) {
+						// Gateways are not required to advertise support for jabber:iq:gateway via discovery
+						// So, just try it on everyone and if it works, great, otherwise use fallbacks
+						context.xmppConnectionService.fetchFromGateway(account, gateway.getJid(), null, new OnGatewayResult() {
+							@Override
+							public void onGatewayResult(final String prompt, String errorMessage) {
+								if (prompt != null) {
+									context.runOnUiThread(new Runnable() {
+										@Override
+										public void run() {
+											((GatewayListAdapter) gatewayList.getAdapter()).add(gateway, prompt);
+										}
+									});
+								}
+							}
+						});
+					}
+				}
+			}
+
+			@Override
+			public void onNothingSelected(AdapterView spinner) {
+				((GatewayListAdapter) gatewayList.getAdapter()).clear();
+			}
+		});
+
 		builder.setView(dialogView);
 		builder.setNegativeButton(R.string.cancel, null);
 		builder.setPositiveButton(positiveButton, null);
@@ -82,38 +274,70 @@ public class EnterJidDialog {
 		this.dialogOnClick = new View.OnClickListener() {
 			@Override
 			public void onClick(final View v) {
-				final Jid accountJid;
 				if (!spinner.isEnabled() && account == null) {
 					return;
 				}
-				try {
-					if (Config.DOMAIN_LOCK != null) {
-						accountJid = Jid.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
-					} else {
-						accountJid = Jid.fromString((String) spinner.getSelectedItem());
-					}
-				} catch (final InvalidJidException e) {
-					return;
-				}
-				final Jid contactJid;
-				try {
-					contactJid = Jid.fromString(jid.getText().toString());
-				} catch (final InvalidJidException e) {
-					jid.setError(context.getString(R.string.invalid_jid));
-					return;
-				}
+				final Jid accountJid = getAccountJid();
+				final Account account = context.xmppConnectionService.findAccountByJid(accountJid);
 
-				if(listener != null) {
-					try {
-						if(listener.onEnterJidDialogPositive(accountJid, contactJid)) {
-							dialog.dismiss();
-						}
-					} catch(JidError error) {
-						jid.setError(error.toString());
+				final OnGatewayResult finish = new OnGatewayResult() {
+					@Override
+					public void onGatewayResult(final String jidString, final String errorMessage) {
+						context.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								if(jidString == null) {
+									jid.setError(
+										errorMessage == null ?
+										context.getString(R.string.invalid_jid) :
+										errorMessage
+									);
+									return;
+								}
+
+								if(listener != null) {
+									try {
+										if(listener.onEnterJidDialogPositive(accountJid, Jid.fromString(jidString))) {
+											dialog.dismiss();
+										}
+									} catch (final InvalidJidException e) {
+										jid.setError(context.getString(R.string.invalid_jid));
+									} catch(JidError error) {
+										jid.setError(error.toString());
+									}
+								}
+							}
+						});
 					}
+				};
+
+				Pair<String,Pair<Jid,Presence>> p = ((GatewayListAdapter) gatewayList.getAdapter()).getSelected();
+
+				if(p == null) {
+					finish.onGatewayResult(jid.getText().toString(), null);
+				} else if(p.first != null) { // Gateway already responded to jabber:iq:gateway once
+					context.xmppConnectionService.fetchFromGateway(account, p.second.first, jid.getText().toString(), finish);
+				} else if(p.second.first.isDomainJid() && p.second.second.getServiceDiscoveryResult().hasFeature("jid\\20escaping")) {
+					finish.onGatewayResult(Jid.escapeLocalpart(jid.getText().toString()) + "@" + p.second.first.getDomainpart(), null);
+				} else if(p.second.first.isDomainJid()) {
+					finish.onGatewayResult(jid.getText().toString().replace("@", "%") + "@" + p.second.first.getDomainpart(), null);
+				} else {
+					finish.onGatewayResult(null, null);
 				}
 			}
 		};
+	}
+
+	protected Jid getAccountJid() {
+		try {
+			if (Config.DOMAIN_LOCK != null) {
+				return Jid.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
+			} else {
+				return Jid.fromString((String) spinner.getSelectedItem());
+			}
+		} catch (final InvalidJidException e) {
+			return null;
+		}
 	}
 
 	public void setOnEnterJidDialogPositiveListener(OnEnterJidDialogPositiveListener listener) {

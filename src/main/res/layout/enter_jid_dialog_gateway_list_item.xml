@@ -1,0 +1,23 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:orientation="vertical"
+              android:paddingRight="5dp">
+
+    <TextView
+        android:id="@+id/label"
+        android:gravity="left"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/color_text_primary"
+        android:textSize="?attr/TextSizeBody" />
+
+    <ToggleButton
+        android:id="@+id/button"
+        android:gravity="center"
+        android:visibility="gone"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/color_text_primary"
+        android:textSize="?attr/TextSizeBody" />
+</LinearLayout>

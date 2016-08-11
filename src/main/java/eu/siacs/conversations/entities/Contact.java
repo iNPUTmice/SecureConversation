@@ -3,6 +3,7 @@ package eu.siacs.conversations.entities;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
+import android.util.Pair;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -11,6 +12,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.utils.UIHelper;
@@ -429,6 +431,38 @@ public class Contact implements ListItem, Blockable {
 	public int compareTo(final ListItem another) {
 		return this.getDisplayName().compareToIgnoreCase(
 				another.getDisplayName());
+	}
+
+	public Pair<Jid,Presence> getFeaturePresence(String feature) {
+		for(Map.Entry<String,Presence> e : this.presences.getPresences().entrySet()) {
+			if(e.getValue().getServiceDiscoveryResult() != null &&
+			   e.getValue().getServiceDiscoveryResult().hasFeature(feature)) {
+				try {
+					return new Pair<>(
+						Jid.fromParts(this.jid.getLocalpart(), this.jid.getDomainpart(), e.getKey()),
+						e.getValue()
+					);
+				} catch (final InvalidJidException ex) { /* Invalid, keep going */ }
+			}
+		}
+
+		return null;
+	}
+
+	public Pair<Jid,Presence> getIdentityPresence(String category, String type) {
+		for(Map.Entry<String,Presence> e : this.presences.getPresences().entrySet()) {
+			if(e.getValue().getServiceDiscoveryResult() != null &&
+			   e.getValue().getServiceDiscoveryResult().hasIdentity(category, type)) {
+				try {
+					return new Pair<>(
+						Jid.fromParts(this.jid.getLocalpart(), this.jid.getDomainpart(), e.getKey()),
+						e.getValue()
+					);
+				} catch (final InvalidJidException ex) { /* Invalid, keep going */ }
+			}
+		}
+
+		return null;
 	}
 
 	public Jid getServer() {

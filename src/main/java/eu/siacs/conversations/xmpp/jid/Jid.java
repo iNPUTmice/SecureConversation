@@ -37,6 +37,21 @@ public final class Jid {
 		return resourcepart;
 	}
 
+	// XEP-0106
+	public static String escapeLocalpart(String s) {
+		return s.
+			replace("\\", "\\5c").
+			replace("@", "\\40").
+			replace(">", "\\3e").
+			replace("<", "\\3c").
+			replace(":", "\\3a").
+			replace("/", "\\2f").
+			replace("\'", "\\27").
+			replace("&", "\\26").
+			replace("\"", "\\22").
+			replace(" ", "\\20");
+	}
+
 	public static Jid fromSessionID(final SessionID id) throws InvalidJidException{
 		if (id.getUserID().isEmpty()) {
 			return Jid.fromString(id.getAccountID());
@@ -221,6 +236,6 @@ public final class Jid {
 	}
 
 	public boolean isDomainJid() {
-		return !this.hasLocalpart();
+		return !this.hasLocalpart() && this.resourcepart.isEmpty();
 	}
 }
