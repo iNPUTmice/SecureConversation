@@ -46,6 +46,7 @@
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
+                <category android:name="android.intent.category.MULTIWINDOW_LAUNCHER"/>
             </intent-filter>
         </activity>
         <activity
@@ -191,6 +192,11 @@
                 <action android:name="android.service.chooser.ChooserTargetService"/>
             </intent-filter>
         </service>
+
+        <uses-library android:required="false" android:name="com.sec.android.app.multiwindow"> </uses-library>
+        <meta-data android:name="com.sec.android.support.multiwindow" android:value="true"/>
+        <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_W" android:value="360dp"/>
+        <meta-data android:name="com.sec.android.multiwindow.MINIMUM_SIZE_H" android:value="181dp"/> <!-- 48dp + 2*12dp + 53dp + 56dp -->
     </application>
 
 </manifest>
