@@ -14,6 +14,10 @@
         android:title="@string/attach_take_picture"/>
 
     <item
+        android:id="@+id/attach_take_video"
+        android:title="@string/attach_take_video"/>
+
+    <item
         android:id="@+id/attach_choose_picture"
         android:title="@string/attach_choose_picture"/>
 

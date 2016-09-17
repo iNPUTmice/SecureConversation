@@ -139,6 +139,7 @@
 	<string name="ask_for_presence_updates">Ask for presence updates</string>
 	<string name="attach_choose_picture">Choose picture</string>
 	<string name="attach_take_picture">Take picture</string>
+	<string name="attach_take_video">Take video</string>
 	<string name="preemptively_grant">Preemptively grant subscription request</string>
 	<string name="error_not_an_image_file">The file you selected is not an image</string>
 	<string name="error_compressing_image">Error while converting the image file</string>

@@ -443,6 +443,19 @@ public class FileBackend {
 		return FileProvider.getUriForFile(mXmppConnectionService,"eu.siacs.conversations.files",file);
 	}
 
+	public Uri getTakeVideoUri() {
+		StringBuilder pathBuilder = new StringBuilder();
+		pathBuilder.append(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM));
+		pathBuilder.append('/');
+		pathBuilder.append("Camera");
+		pathBuilder.append('/');
+		pathBuilder.append("VID_" + this.imageDateFormat.format(new Date()) + ".mp4");
+		Uri uri = Uri.parse("file://" + pathBuilder.toString());
+		File file = new File(uri.toString());
+		file.getParentFile().mkdirs();
+		return uri;
+	}
+
 	public Avatar getPepAvatar(Uri image, int size, Bitmap.CompressFormat format) {
 		try {
 			Avatar avatar = new Avatar();
