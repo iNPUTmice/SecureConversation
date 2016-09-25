@@ -1,3 +1,3 @@
-include ':MemorizingTrustManager'
+include ':MemorizingTrustManager', ':conversations'
 
 rootProject.name = 'Conversations'
