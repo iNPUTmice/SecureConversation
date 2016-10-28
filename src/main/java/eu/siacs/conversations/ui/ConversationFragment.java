@@ -536,6 +536,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			activity.getMenuInflater().inflate(R.menu.message_context, menu);
 			menu.setHeaderTitle(R.string.message_options);
 			MenuItem copyText = menu.findItem(R.id.copy_text);
+			MenuItem forwardText = menu.findItem(R.id.forward_text);
 			MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
 			MenuItem correctMessage = menu.findItem(R.id.correct_message);
 			MenuItem shareWith = menu.findItem(R.id.share_with);
@@ -598,6 +599,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			case R.id.copy_text:
 				copyText(selectedMessage);
 				return true;
+			case R.id.forward_text :
+				forwardTextMessage(selectedMessage);
 			case R.id.correct_message:
 				correctMessage(selectedMessage);
 				return true;
@@ -657,6 +660,18 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
+	
+	private void forwardTextMessage(Message message){
+		
+		Intent inten= new Intent(activity,ShareWithActivity.class);
+		inten.setAction(Intent.ACTION_SEND);
+		Bundle b = new Bundle();
+		b.putString(Intent.EXTRA_TEXT,  message.getMergedBody());
+		inten.putExtras(b);
+		activity.startActivity(inten);
+	}
+	
+	
 	private void deleteFile(Message message) {
 		if (activity.xmppConnectionService.getFileBackend().deleteFile(message)) {
 			message.setTransferable(new TransferablePlaceholder(Transferable.STATUS_DELETED));
