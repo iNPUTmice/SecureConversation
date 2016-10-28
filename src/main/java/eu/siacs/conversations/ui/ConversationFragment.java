@@ -549,6 +549,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					&& !GeoHelper.isGeoUri(m.getBody())
 					&& m.treatAsDownloadable() != Message.Decision.MUST) {
 				copyText.setVisible(true);
+				forwardText.setVisible(true);
 			}
 			if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 				retryDecryption.setVisible(true);
