@@ -557,7 +557,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				retryDecryption.setVisible(true);
 			}
 			if (relevantForCorrection.getType() == Message.TYPE_TEXT
-					&& relevantForCorrection.isLastCorrectableMessage()) {
+					&& relevantForCorrection.isLastCorrectableMessage()
+					&& (m.getConversation().getMucOptions().nonanonymous() || m.getConversation().getMode() == Conversation.MODE_SINGLE)) {
 				correctMessage.setVisible(true);
 			}
 			if (treatAsFile || (GeoHelper.isGeoUri(m.getBody()))) {

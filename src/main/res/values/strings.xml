@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<string name="app_name" translatable="false">sunehaG</string>
 	<string name="action_settings">Settings</string>
@@ -703,4 +703,7 @@
 	<string name="error_message">Error Message</string>
 	<string name="muc_share_via_qr_code">Share via QR Code</string>
 	<string name="contact_details_share_via_qr_code">Share via QR Code</string>
+	<string name="data_saver_enabled">Data saver enabled</string>
+	<string name="data_saver_enabled_explained">Your operating system is restricting Conversations from accessing the Internet when in background. To receive notifications of new messages you should allow Conversations unrestricted access when Data saver is on.\nConversations will still make an effort to save data when possible.</string>
+	<string name="device_does_not_support_data_saver">Your device does not support disabling Data saver for Conversations.</string>
 </resources>

@@ -53,7 +53,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	private static DatabaseBackend instance = null;
 
 	private static final String DATABASE_NAME = "history";
-	private static final int DATABASE_VERSION = 29;
+	private static final int DATABASE_VERSION = 30;
 
 	private static String CREATE_CONTATCS_STATEMENT = "create table "
 			+ Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -138,6 +138,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			+ ") ON CONFLICT IGNORE"
 			+ ");";
 
+	private static String START_TIMES_TABLE = "start_times";
+
+	private static String CREATE_START_TIMES_TABLE = "create table "+START_TIMES_TABLE+" (timestamp NUMBER);";
+
 	private DatabaseBackend(Context context) {
 		super(context, DATABASE_NAME, null, DATABASE_VERSION);
 	}
@@ -193,6 +197,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		db.execSQL(CREATE_SIGNED_PREKEYS_STATEMENT);
 		db.execSQL(CREATE_IDENTITIES_STATEMENT);
 		db.execSQL(CREATE_PRESENCE_TEMPLATES_STATEMENT);
+		db.execSQL(CREATE_START_TIMES_TABLE);
 	}
 
 	@Override
@@ -336,6 +341,9 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
 		if (oldVersion < 29 && newVersion >= 29) {
 			db.execSQL("ALTER TABLE " + Message.TABLENAME + " ADD COLUMN " + Message.ERROR_MESSAGE + " TEXT");
+		}
+		if (oldVersion < 30 && newVersion >= 30) {
+			db.execSQL(CREATE_START_TIMES_TABLE);
 		}
 	}
 
@@ -1220,5 +1228,29 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		db.delete(SQLiteAxolotlStore.IDENTITIES_TABLENAME,
 				SQLiteAxolotlStore.ACCOUNT + " = ?",
 				deleteArgs);
+	}
+
+	public boolean startTimeCountExceedsThreshold() {
+		SQLiteDatabase db = this.getWritableDatabase();
+		long cleanBeforeTimestamp = System.currentTimeMillis() - Config.FREQUENT_RESTARTS_DETECTION_WINDOW;
+		db.execSQL("delete from "+START_TIMES_TABLE+" where timestamp < "+cleanBeforeTimestamp);
+		ContentValues values = new ContentValues();
+		values.put("timestamp",System.currentTimeMillis());
+		db.insert(START_TIMES_TABLE,null,values);
+		String[] columns = new String[]{"count(timestamp)"};
+		Cursor cursor = db.query(START_TIMES_TABLE,columns,null,null,null,null,null);
+		int count;
+		if (cursor.moveToFirst()) {
+			count = cursor.getInt(0);
+		} else {
+			count = 0;
+		}
+		cursor.close();
+		return count >= Config.FREQUENT_RESTARTS_THRESHOLD;
+	}
+
+	public void clearStartTimeCounter() {
+		SQLiteDatabase db = this.getWritableDatabase();
+		db.execSQL("delete from "+START_TIMES_TABLE);
 	}
 }

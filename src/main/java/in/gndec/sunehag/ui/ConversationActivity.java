@@ -121,6 +121,7 @@ public class ConversationActivity extends XmppActivity
 	private boolean mActivityPaused = false;
 	private AtomicBoolean mRedirected = new AtomicBoolean(false);
 	private Pair<Integer, Intent> mPostponedActivityResult;
+	private boolean mUnprocessedNewIntent = false;
 
 	public Conversation getSelectedConversation() {
 		return this.mSelectedConversation;
@@ -376,7 +377,7 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public void sendReadMarkerIfNecessary(final Conversation conversation) {
-		if (!mActivityPaused && conversation != null) {
+		if (!mActivityPaused && !mUnprocessedNewIntent && conversation != null) {
 			xmppConnectionService.sendReadMarker(conversation);
 		}
 	}
@@ -1088,6 +1089,7 @@ public class ConversationActivity extends XmppActivity
 	protected void onNewIntent(final Intent intent) {
 		if (intent != null && ACTION_VIEW_CONVERSATION.equals(intent.getAction())) {
 			mOpenConversation = null;
+			mUnprocessedNewIntent = true;
 			if (xmppConnectionServiceBound) {
 				handleViewConversationIntent(intent);
 				intent.setAction(Intent.ACTION_MAIN);
@@ -1125,6 +1127,7 @@ public class ConversationActivity extends XmppActivity
 			recreate();
 		}
 		this.mActivityPaused = false;
+
 
 		if (!isConversationsOverviewVisable() || !isConversationsOverviewHideable()) {
 			sendReadMarkerIfNecessary(getSelectedConversation());
@@ -1290,6 +1293,7 @@ public class ConversationActivity extends XmppActivity
 				this.mConversationFragment.appendText(text);
 			}
 			hideConversationsOverview();
+			mUnprocessedNewIntent = false;
 			openConversation();
 			if (mContentView instanceof SlidingPaneLayout) {
 				updateActionBarTitle(true); //fixes bug where slp isn't properly closed yet
@@ -1300,6 +1304,8 @@ public class ConversationActivity extends XmppActivity
 					startDownloadable(message);
 				}
 			}
+		} else {
+			mUnprocessedNewIntent = false;
 		}
 	}
 

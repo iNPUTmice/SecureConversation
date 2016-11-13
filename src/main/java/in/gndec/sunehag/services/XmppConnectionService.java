@@ -864,6 +864,11 @@ public class XmppConnectionService extends Service {
 		this.databaseBackend = DatabaseBackend.getInstance(getApplicationContext());
 		this.accounts = databaseBackend.getAccounts();
 
+		if (!keepForegroundService() && databaseBackend.startTimeCountExceedsThreshold()) {
+			getPreferences().edit().putBoolean("keep_foreground_service",true).commit();
+			Log.d(Config.LOGTAG,"number of restarts exceeds threshold. enabling foreground service");
+		}
+
 		restoreFromDatabase();
 
 		getContentResolver().registerContentObserver(ContactsContract.Contacts.CONTENT_URI, true, contactObserver);
@@ -894,6 +899,7 @@ public class XmppConnectionService extends Service {
 
 		this.pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
 		this.wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "XmppConnectionService");
+
 		toggleForegroundService();
 		updateUnreadCountBadge();
 		toggleScreenEventReceiver();
@@ -940,17 +946,21 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void toggleForegroundService() {
-		if (getPreferences().getBoolean("keep_foreground_service", false)) {
+		if (keepForegroundService()) {
 			startForeground(NotificationService.FOREGROUND_NOTIFICATION_ID, this.mNotificationService.createForegroundNotification());
 		} else {
 			stopForeground(true);
 		}
 	}
 
+	private boolean keepForegroundService() {
+		return getPreferences().getBoolean("keep_foreground_service",false);
+	}
+
 	@Override
 	public void onTaskRemoved(final Intent rootIntent) {
 		super.onTaskRemoved(rootIntent);
-		if (!getPreferences().getBoolean("keep_foreground_service", false)) {
+		if (!keepForegroundService()) {
 			this.logoutAndSave(false);
 		} else {
 			Log.d(Config.LOGTAG,"ignoring onTaskRemoved because foreground service is activated");
@@ -2118,9 +2128,6 @@ public class XmppConnectionService extends Service {
 							MucOptions.User user = AbstractParser.parseItem(conversation,child);
 							if (!user.realJidMatchesAccount()) {
 								conversation.getMucOptions().addUser(user);
-								getAvatarService().clear(conversation);
-								updateMucRosterUi();
-								updateConversationUi();
 							}
 						}
 					}
@@ -2130,6 +2137,9 @@ public class XmppConnectionService extends Service {
 				++i;
 				if (i >= affiliations.length) {
 					Log.d(Config.LOGTAG,account.getJid().toBareJid()+": retrieved members for "+conversation.getJid().toBareJid()+": "+conversation.getMucOptions().getMembers());
+					getAvatarService().clear(conversation);
+					updateMucRosterUi();
+					updateConversationUi();
 				}
 			}
 		};
@@ -2980,8 +2990,7 @@ public class XmppConnectionService extends Service {
 	public void markMessage(Message message, int status, String errorMessage) {
 		if (status == Message.STATUS_SEND_FAILED
 				&& (message.getStatus() == Message.STATUS_SEND_RECEIVED || message
-				.getStatus() == Message.STATUS_SEND_DISPLAYED)
-				&& errorMessage == null) {
+				.getStatus() == Message.STATUS_SEND_DISPLAYED)) {
 			return;
 		}
 		message.setErrorMessage(errorMessage);
@@ -3594,6 +3603,15 @@ public class XmppConnectionService extends Service {
 		account.getBookmarks().add(bookmark);
 		pushBookmarks(account);
 		conversation.setBookmark(bookmark);
+	}
+
+	public void clearStartTimeCounter() {
+		mDatabaseExecutor.execute(new Runnable() {
+			@Override
+			public void run() {
+				databaseBackend.clearStartTimeCounter();
+			}
+		});
 	}
 
 	public interface OnMamPreferencesFetched {
