@@ -16,6 +16,12 @@
             android:key="resource"
             android:summary="@string/pref_xmpp_resource_summary"
             android:title="@string/pref_xmpp_resource"/>
+        <EditTextPreference
+            android:defaultValue="0"
+            android:key="priority"
+            android:summary="@string/pref_xmpp_priority_summary"
+            android:title="@string/pref_xmpp_priority"
+            android:inputType="number"/>
     </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_privacy">
         <CheckBoxPreference

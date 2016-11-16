@@ -225,6 +225,7 @@ public class SettingsActivity extends XmppActivity implements
 	@Override
 	public void onSharedPreferenceChanged(SharedPreferences preferences, String name) {
 		final List<String> resendPresence = Arrays.asList(
+				"priority",
 				"confirm_messages",
 				"xa_on_silent_mode",
 				"away_when_screen_off",

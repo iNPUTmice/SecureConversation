@@ -3301,6 +3301,8 @@ public class XmppConnectionService extends Service {
 		} else {
 			packet = mPresenceGenerator.selfPresence(account, getTargetPresence());
 		}
+		String priority = getPreferences().getString("priority", "0");
+		packet.addChild(new Element("priority").setContent(priority));
 		if (mLastActivity > 0 && includeIdleTimestamp) {
 			long since = Math.min(mLastActivity, System.currentTimeMillis()); //don't send future dates
 			packet.addChild("idle","urn:xmpp:idle:1").setAttribute("since", AbstractGenerator.getTimestamp(since));
