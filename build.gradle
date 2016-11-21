@@ -26,7 +26,7 @@ dependencies {
     playstoreCompile 'com.google.android.gms:play-services-gcm:9.4.0'
     compile 'org.sufficientlysecure:openpgp-api:10.0'
     compile 'com.soundcloud.android:android-crop:1.0.1@aar'
-    compile 'com.android.support:support-v13:24.2.0'
+    compile 'com.android.support:support-v13:25.0.0'
     compile 'org.bouncycastle:bcprov-jdk15on:1.52'
     compile 'org.bouncycastle:bcmail-jdk15on:1.52'
     compile 'org.jitsi:org.otr4j:0.22'
@@ -49,12 +49,12 @@ ext {
 }
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 25
     buildToolsVersion "23.0.3"
 
     defaultConfig {
         minSdkVersion 14
-        targetSdkVersion 24
+        targetSdkVersion 25
         versionCode 182
         versionName "1.14.9"
         archivesBaseName += "-$versionName"

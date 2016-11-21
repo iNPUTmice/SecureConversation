@@ -12,6 +12,9 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
 import android.content.pm.PackageManager;
+import android.content.pm.ShortcutManager;
+import android.content.pm.ShortcutInfo;
+import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -327,6 +330,56 @@ public class ConversationActivity extends XmppActivity
 				}
 			});
 		}
+
+		buildShortcuts();
+	}
+
+	private void buildShortcuts() {
+		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+			return;
+		}
+
+		ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
+
+		Intent shortcutIntent = new Intent(this, StartConversationActivity.class);
+		shortcutIntent.setAction(Intent.ACTION_MAIN);
+
+		ArrayList<ShortcutInfo> shortcuts = new ArrayList<>();
+
+		ShortcutInfo shortcut = new ShortcutInfo.Builder(this, "idNew")
+				.setShortLabel(getString(R.string.action_add))
+				.setLongLabel(getString(R.string.action_add))
+				.setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_add_52dp))
+				.setIntent(shortcutIntent)
+				.build();
+
+		shortcuts.add(shortcut);
+
+		int i = 0;
+
+		for(Conversation c: conversationList) {
+			Contact contact = c.getContact();
+			String name = contact.getDisplayName();
+
+			Intent intent = new Intent(this, ConversationActivity.class);
+			intent.setAction(ACTION_VIEW_CONVERSATION);
+			intent.putExtra(CONVERSATION, c.getUuid());
+
+			ShortcutInfo.Builder builder = new ShortcutInfo.Builder(this, c.getUuid())
+					.setShortLabel(name)
+					.setLongLabel(name)
+					.setIntent(intent);
+
+			Icon avatar = Icon.createWithBitmap(avatarService().getRoundedBitmap(avatarService().get(c, 100), 100, "#FFFFFF"));
+			builder.setIcon(avatar);
+
+
+			shortcuts.add(builder.build());
+
+			if(i++ == 2) break;
+		}
+
+		shortcutManager.setDynamicShortcuts(shortcuts);
 	}
 
 	@Override
@@ -374,6 +427,7 @@ public class ConversationActivity extends XmppActivity
 			sendReadMarkerIfNecessary(conversation);
 		}
 		listAdapter.notifyDataSetChanged();
+		buildShortcuts();
 	}
 
 	public void sendReadMarkerIfNecessary(final Conversation conversation) {
@@ -741,6 +795,8 @@ public class ConversationActivity extends XmppActivity
 				}
 			}
 		}
+
+		buildShortcuts();
 	}
 
 	@SuppressLint("InflateParams")
@@ -1615,6 +1671,7 @@ public class ConversationActivity extends XmppActivity
 			}
 		}
 		listAdapter.notifyDataSetChanged();
+		buildShortcuts();
 	}
 
 	public void runIntent(PendingIntent pi, int requestCode) {
