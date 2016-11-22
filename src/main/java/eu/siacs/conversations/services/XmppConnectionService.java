@@ -9,8 +9,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.drawable.Icon;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -93,6 +96,8 @@ import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.ui.ConversationActivity;
+import eu.siacs.conversations.ui.StartConversationActivity;
 import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -378,6 +383,54 @@ public class XmppConnectionService extends Service {
 
 	private static String generateFetchKey(Account account, final Avatar avatar) {
 		return account.getJid().toBareJid() + "_" + avatar.owner + "_" + avatar.sha1sum;
+	}
+
+	private void buildShortcuts() {
+		if(Build.VERSION.SDK_INT < Build.VERSION_CODES.N_MR1) {
+			return;
+		}
+
+		ShortcutManager shortcutManager = getSystemService(ShortcutManager.class);
+
+		Intent shortcutIntent = new Intent(getApplicationContext(), StartConversationActivity.class);
+		shortcutIntent.setAction(Intent.ACTION_MAIN);
+
+		ArrayList<ShortcutInfo> shortcuts = new ArrayList<>();
+
+		ShortcutInfo shortcut = new ShortcutInfo.Builder(this, "idNew")
+				.setShortLabel(getString(R.string.action_add))
+				.setLongLabel(getString(R.string.action_add))
+				.setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_add_52dp))
+				.setIntent(shortcutIntent)
+				.build();
+
+		shortcuts.add(shortcut);
+
+		int i = 0;
+
+		for(Conversation c: getConversations()) {
+			Contact contact = c.getContact();
+			String name = contact.getDisplayName();
+
+			Intent intent = new Intent(getApplicationContext(), ConversationActivity.class);
+			intent.setAction(ConversationActivity.ACTION_VIEW_CONVERSATION);
+			intent.putExtra(ConversationActivity.CONVERSATION, c.getUuid());
+
+			ShortcutInfo.Builder builder = new ShortcutInfo.Builder(getApplicationContext(), c.getUuid())
+					.setShortLabel(name)
+					.setLongLabel(name)
+					.setIntent(intent);
+
+			Icon avatar = Icon.createWithBitmap(getAvatarService().getRoundedAvatar(contact, 100));
+			builder.setIcon(avatar);
+
+
+			shortcuts.add(builder.build());
+
+			if(i++ == 2) break;
+		}
+
+		shortcutManager.setDynamicShortcuts(shortcuts);
 	}
 
 	public boolean areMessagesInitialized() {
@@ -918,6 +971,8 @@ public class XmppConnectionService extends Service {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 			registerReceiver(this.mEventReceiver,new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 		}
+
+		buildShortcuts();
 	}
 
 	@Override
@@ -3061,6 +3116,8 @@ public class XmppConnectionService extends Service {
 		if (mOnConversationUpdate != null) {
 			mOnConversationUpdate.onConversationUpdate();
 		}
+
+		buildShortcuts();
 	}
 
 	public void updateAccountUi() {

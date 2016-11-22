@@ -410,6 +410,25 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		return true;
 	}
 
+	public Bitmap getRoundedAvatar(final Contact contact, int size) {
+		final String KEY = key(contact, size) + "rounded";
+		Bitmap avatar = this.mXmppConnectionService.getBitmapCache().get(KEY);
+
+		if (avatar != null) {
+			return avatar;
+		}
+
+		avatar = getRoundedBitmap(get(contact, size), size);
+
+		this.mXmppConnectionService.getBitmapCache().put(KEY, avatar);
+
+		return avatar;
+	}
+
+	public Bitmap getRoundedBitmap(Bitmap bmp, int radius) {
+		return getRoundedBitmap(bmp, radius, "#FFFFFF");
+	}
+
 	public Bitmap getRoundedBitmap(Bitmap bmp, int radius, String background) {
 		Bitmap sbmp;
 
