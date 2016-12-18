@@ -135,6 +135,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 
 	private OnClickListener onBadgeClick = new OnClickListener() {
 
+		//When contact's image is clicked
 		@Override
 		public void onClick(View v) {
 			Uri systemAccount = contact.getSystemAccount();

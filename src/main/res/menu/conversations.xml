@@ -67,4 +67,10 @@
         android:showAsAction="never"
         android:title="@string/action_settings"/>
 
+    <item
+        android:id="@+id/action_change_background_color"
+        android:orderInCategory="110"
+        android:showAsAction="never"
+        android:title="@string/action_change_background_color"/>
+
 </menu>

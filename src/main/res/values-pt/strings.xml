@@ -15,6 +15,7 @@
   <string name="action_unblock_contact">Desbloquear contacto</string>
   <string name="action_block_domain">Bloquear domínio</string>
   <string name="action_unblock_domain">Desbloquear domínio</string>
+  <string name="action_change_background_color">Alterar cor de fundo</string>
   <string name="title_activity_manage_accounts">Gerir contas</string>
   <string name="title_activity_settings">Definições</string>
   <string name="title_activity_conference_details">Detalhes da conferência</string>

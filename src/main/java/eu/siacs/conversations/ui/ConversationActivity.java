@@ -663,6 +663,7 @@ public class ConversationActivity extends XmppActivity
 		}
 	}
 
+	//When one of the buttons in the top of the conversation screen is clicked
 	@Override
 	public boolean onOptionsItemSelected(final MenuItem item) {
 		if (item.getItemId() == android.R.id.home) {
@@ -709,6 +710,9 @@ public class ConversationActivity extends XmppActivity
 					break;
 				case R.id.action_unblock:
 					BlockContactDialog.show(this, xmppConnectionService, getSelectedConversation());
+					break;
+				case R.id.action_change_background_color:
+					//TODO
 					break;
 				default:
 					break;
@@ -847,11 +851,11 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	protected void selectEncryptionDialog(final Conversation conversation) {
-		View menuItemView = findViewById(R.id.action_security);
+		View menuItemView = findViewById(R.id.action_security); //Gets the xml menu from resources
 		if (menuItemView == null) {
 			return;
 		}
-		PopupMenu popup = new PopupMenu(this, menuItemView);
+		PopupMenu popup = new PopupMenu(this, menuItemView); //MenuItemView is where the popup will appear from
 		final ConversationFragment fragment = (ConversationFragment) getFragmentManager()
 				.findFragmentByTag("conversation");
 		if (fragment != null) {
@@ -902,6 +906,7 @@ public class ConversationActivity extends XmppActivity
 			MenuItem none = popup.getMenu().findItem(R.id.encryption_choice_none);
 			MenuItem pgp = popup.getMenu().findItem(R.id.encryption_choice_pgp);
 			MenuItem axolotl = popup.getMenu().findItem(R.id.encryption_choice_axolotl);
+			//Sets each of the options visible if the encription mode is supported
 			pgp.setVisible(Config.supportOpenPgp());
 			none.setVisible(Config.supportUnencrypted() || conversation.getMode() == Conversation.MODE_MULTI);
 			otr.setVisible(Config.supportOtr());
@@ -956,6 +961,12 @@ public class ConversationActivity extends XmppActivity
 					}
 				});
 		builder.create().show();
+	}
+
+	protected void changeBackgroundColorDialog(final Conversation conversation)
+	{
+		//TODO
+		return;
 	}
 
 	public void unmuteConversation(final Conversation conversation) {
