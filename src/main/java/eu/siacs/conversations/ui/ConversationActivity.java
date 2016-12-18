@@ -97,6 +97,8 @@ public class ConversationActivity extends XmppActivity
 	private static final String STATE_FIRST_VISIBLE = "first_visible";
 	private static final String STATE_OFFSET_FROM_TOP = "offset_from_top";
 
+	private static String background_color = "grey";
+
 	private String mOpenConversation = null;
 	private boolean mPanelOpen = true;
 	private Pair<Integer,Integer> mScrollPosition = null;
@@ -395,6 +397,7 @@ public class ConversationActivity extends XmppActivity
 		final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
 		final MenuItem menuMute = menu.findItem(R.id.action_mute);
 		final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
+		final MenuItem menuBackground = menu.findItem(R.id.action_change_background_color);
 
 		if (isConversationsOverviewVisable() && isConversationsOverviewHideable()) {
 			menuArchive.setVisible(false);
@@ -406,6 +409,8 @@ public class ConversationActivity extends XmppActivity
 			menuClearHistory.setVisible(false);
 			menuMute.setVisible(false);
 			menuUnmute.setVisible(false);
+			menuBackground.setVisible(false);
+
 		} else {
 			menuAdd.setVisible(!isConversationsOverviewHideable());
 			if (this.getSelectedConversation() != null) {
@@ -712,7 +717,7 @@ public class ConversationActivity extends XmppActivity
 					BlockContactDialog.show(this, xmppConnectionService, getSelectedConversation());
 					break;
 				case R.id.action_change_background_color:
-					//TODO
+					changeBackgroundColorDialog(getSelectedConversation());
 					break;
 				default:
 					break;
@@ -963,9 +968,54 @@ public class ConversationActivity extends XmppActivity
 		builder.create().show();
 	}
 
+	//Shows a dialog that allows to change conversations background
 	protected void changeBackgroundColorDialog(final Conversation conversation)
 	{
-		//TODO
+		View menuItemView = findViewById(R.id.action_security);
+		if (menuItemView == null) {
+			return;
+		}
+		PopupMenu popup = new PopupMenu(this, menuItemView);
+		popup.inflate(R.menu.background_color_choice);
+		MenuItem grey = popup.getMenu().findItem(R.id.background_color_grey);
+		MenuItem red = popup.getMenu().findItem(R.id.background_color_red);
+		MenuItem blue = popup.getMenu().findItem(R.id.background_color_blue);
+		grey.setVisible(true);
+		red.setVisible(true);
+		blue.setVisible(true);
+
+		popup.setOnMenuItemClickListener(new OnMenuItemClickListener() {
+
+			@Override
+			public boolean onMenuItemClick(MenuItem item) {
+				switch (item.getItemId()) {
+					case R.id.background_color_grey:
+						setBackgroundColor("grey");
+						item.setChecked(true);
+						break;
+					case R.id.background_color_red:
+						setBackgroundColor("red");
+						item.setChecked(true);
+						break;
+					case R.id.background_color_blue:
+						setBackgroundColor("blue");
+						item.setChecked(true);
+						break;
+					default:
+						setBackgroundColor("grey");
+						break;
+				}
+				invalidateOptionsMenu();
+
+				mTheme = findTheme();
+				setTheme(mTheme);
+				setContentView(R.layout.fragment_conversations_overview);
+				recreate();
+				refreshUi();
+				return true;
+			}
+		});
+		popup.show();
 		return;
 	}
 
@@ -1775,6 +1825,66 @@ public class ConversationActivity extends XmppActivity
 		if (mConversationFragment != null) {
 			mConversationFragment.setMessagesLoaded();
 			mConversationFragment.updateMessages();
+		}
+	}
+
+	public String getBackgroundColor(){ return this.background_color;};
+
+	public void setBackgroundColor(String color)
+	{
+		this.background_color = color;
+	}
+
+	protected int findTheme() {
+		Boolean dark   = getPreferences().getString("theme", "light").equals("dark");
+		Boolean larger = getPreferences().getBoolean("use_larger_font", false);
+
+		if(dark) {
+			if(larger)
+			{
+				if(background_color == "grey")
+					return R.style.ConversationsTheme_Dark_LargerText_GreyBackgroundColor;
+				else if(background_color == "red")
+					return R.style.ConversationsTheme_Dark_LargerText_RedBackgroundColor;
+				else if(background_color == "blue")
+					return R.style.ConversationsTheme_Dark_LargerText_BlueBackgroundColor;
+				else
+					return R.style.ConversationsTheme_Dark_LargerText_GreyBackgroundColor;
+			}
+			else
+			{
+				if(background_color == "grey")
+					return R.style.ConversationsTheme_Dark_GreyBackgroundColor;
+				else if(background_color == "red")
+					return R.style.ConversationsTheme_Dark_RedBackgroundColor;
+				else if(background_color == "blue")
+					return R.style.ConversationsTheme_Dark_BlueBackgroundColor;
+				else
+					return R.style.ConversationsTheme_Dark_GreyBackgroundColor;
+			}
+		} else {
+			if (larger)
+			{
+				if(background_color == "grey")
+					return R.style.ConversationsTheme_LargerText_GreyBackgroundColor;
+				else if(background_color == "red")
+					return R.style.ConversationsTheme_LargerText_RedBackgroundColor;
+				else if(background_color == "blue")
+					return R.style.ConversationsTheme_LargerText_BlueBackgroundColor;
+				else
+					return R.style.ConversationsTheme_LargerText_GreyBackgroundColor;
+			}
+			else
+			{
+				if(background_color == "grey")
+					return R.style.ConversationsTheme_GreyBackgroundColor;
+				else if(background_color == "red")
+					return R.style.ConversationsTheme_RedBackgroundColor;
+				else if(background_color == "blue")
+					return R.style.ConversationsTheme_BlueBackgroundColor;
+				else
+					return R.style.ConversationsTheme_GreyBackgroundColor;
+			}
 		}
 	}
 }

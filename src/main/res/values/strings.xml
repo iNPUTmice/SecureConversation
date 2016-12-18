@@ -17,6 +17,9 @@
 	<string name="action_block_domain">Block domain</string>
 	<string name="action_unblock_domain">Unblock domain</string>
 	<string name="action_change_background_color">Change Background Color</string>
+	<string name="background_grey">Grey</string>
+	<string name="background_red">Red</string>
+	<string name="background_blue">Blue</string>
 	<string name="title_activity_manage_accounts">Manage Accounts</string>
 	<string name="title_activity_settings">Settings</string>
 	<string name="title_activity_conference_details">Conference Details</string>
