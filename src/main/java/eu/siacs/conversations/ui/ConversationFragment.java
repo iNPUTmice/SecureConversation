@@ -9,8 +9,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.v13.view.inputmethod.InputConnectionCompat;
+import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
@@ -30,6 +33,7 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -289,6 +293,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 		@Override
 		public void onClick(View v) {
+			Log.i("MICHAELS DEBUG", ConversationFragment.this.mEditMessage.getText().toString());
 			Object tag = v.getTag();
 			if (tag instanceof SendButtonAction) {
 				SendButtonAction action = (SendButtonAction) tag;
@@ -416,6 +421,13 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		final View view = inflater.inflate(R.layout.fragment_conversation, container, false);
 		view.setOnClickListener(null);
+		// TODO: get this values from somewhere
+		String[] mimeTypes = {
+				"image/png",
+				"image/gif",
+				"image/jpeg",
+				"image/webp"
+        };
 		mEditMessage = (EditMessage) view.findViewById(R.id.textinput);
 		mEditMessage.setOnClickListener(new OnClickListener() {
 
@@ -427,6 +439,48 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			}
 		});
 		mEditMessage.setOnEditorActionListener(mEditorActionListener);
+		// TODO: move this anonymous class to a member variable
+		mEditMessage.setRichContentListener(mimeTypes, new EditMessage.OnCommitContentListener() {
+			@Override
+			public boolean onCommitContent(InputContentInfoCompat inputContentInfo, int flags, Bundle opts, String[] contentMimeTypes) {
+				// double check we received the supported mime types
+				boolean supported = false;
+				for (final String mimeType : contentMimeTypes) {
+					if (inputContentInfo.getDescription().hasMimeType(mimeType)) {
+						supported = true;
+						break;
+					}
+				}
+				if (!supported) {
+					return false;
+				}
+
+				// try to get permission to read the image, if applicable
+				Uri mediaUri =  inputContentInfo.getContentUri();
+				if ((flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
+					try {
+						inputContentInfo.requestPermission();
+					} catch (Exception e) {
+						Log.e(Config.LOGTAG, "InputContentInfoCompat#requestPermission() failed.", e);
+						// TODO: save in strings database
+						Toast.makeText(activity, "Could not get permission to read " + mediaUri.toString(), Toast.LENGTH_LONG).show();
+						return false;
+					}
+				}
+
+				// TODO: send image
+				Toast.makeText(activity, "GOT IMAGE! " + mediaUri.toString(), Toast.LENGTH_LONG).show();
+
+				// revoke permissions
+				try {
+					inputContentInfo.releasePermission();
+				} catch (Exception e) {
+					Log.e(Config.LOGTAG, "InputContentInfoCompat#releasePermission() failed.", e);
+				}
+
+				return true;
+			}
+		});
 
 		mSendButton = (ImageButton) view.findViewById(R.id.textSendButton);
 		mSendButton.setOnClickListener(this.mSendButtonListener);
