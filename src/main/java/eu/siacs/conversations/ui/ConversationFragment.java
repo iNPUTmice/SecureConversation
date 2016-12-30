@@ -289,11 +289,41 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			}
 		}
 	};
+	private EditMessage.OnCommitContentListener mEditorContentListener = new EditMessage.OnCommitContentListener() {
+		@Override
+		public boolean onCommitContent(InputContentInfoCompat inputContentInfo, int flags, Bundle opts, String[] contentMimeTypes) {
+			// try to get permission to read the image, if applicable
+			if ((flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
+				try {
+					inputContentInfo.requestPermission();
+				} catch (Exception e) {
+					Log.e(Config.LOGTAG, "InputContentInfoCompat#requestPermission() failed.", e);
+					Toast.makeText(
+							activity,
+							activity.getString(R.string.no_permission_to_access_x, inputContentInfo.getDescription()),
+							Toast.LENGTH_LONG
+					).show();
+					return false;
+				}
+			}
+
+			// send the image
+			activity.attachImageToConversation(inputContentInfo.getContentUri());
+
+			// TODO: revoke permissions?
+			// since uploading an image is async its tough to wire a callback to when
+			// the image has finished uploading.
+			// According to the docs: "calling IC#releasePermission() is just to be a
+			// good citizen. Even if we failed to call that method, the system would eventually revoke
+			// the permission sometime after inputContentInfo object gets garbage-collected."
+			// See: https://developer.android.com/samples/CommitContentSampleApp/src/com.example.android.commitcontent.app/MainActivity.html#l164
+			return true;
+		}
+	};
 	private OnClickListener mSendButtonListener = new OnClickListener() {
 
 		@Override
 		public void onClick(View v) {
-			Log.i("MICHAELS DEBUG", ConversationFragment.this.mEditMessage.getText().toString());
 			Object tag = v.getTag();
 			if (tag instanceof SendButtonAction) {
 				SendButtonAction action = (SendButtonAction) tag;
@@ -421,13 +451,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		final View view = inflater.inflate(R.layout.fragment_conversation, container, false);
 		view.setOnClickListener(null);
-		// TODO: get this values from somewhere
-		String[] mimeTypes = {
-				"image/png",
-				"image/gif",
-				"image/jpeg",
-				"image/webp"
-        };
+
+		String[] allImagesMimeType = {"image/*"};
 		mEditMessage = (EditMessage) view.findViewById(R.id.textinput);
 		mEditMessage.setOnClickListener(new OnClickListener() {
 
@@ -439,48 +464,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			}
 		});
 		mEditMessage.setOnEditorActionListener(mEditorActionListener);
-		// TODO: move this anonymous class to a member variable
-		mEditMessage.setRichContentListener(mimeTypes, new EditMessage.OnCommitContentListener() {
-			@Override
-			public boolean onCommitContent(InputContentInfoCompat inputContentInfo, int flags, Bundle opts, String[] contentMimeTypes) {
-				// double check we received the supported mime types
-				boolean supported = false;
-				for (final String mimeType : contentMimeTypes) {
-					if (inputContentInfo.getDescription().hasMimeType(mimeType)) {
-						supported = true;
-						break;
-					}
-				}
-				if (!supported) {
-					return false;
-				}
-
-				// try to get permission to read the image, if applicable
-				Uri mediaUri =  inputContentInfo.getContentUri();
-				if ((flags & InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION) != 0) {
-					try {
-						inputContentInfo.requestPermission();
-					} catch (Exception e) {
-						Log.e(Config.LOGTAG, "InputContentInfoCompat#requestPermission() failed.", e);
-						// TODO: save in strings database
-						Toast.makeText(activity, "Could not get permission to read " + mediaUri.toString(), Toast.LENGTH_LONG).show();
-						return false;
-					}
-				}
-
-				// TODO: send image
-				Toast.makeText(activity, "GOT IMAGE! " + mediaUri.toString(), Toast.LENGTH_LONG).show();
-
-				// revoke permissions
-				try {
-					inputContentInfo.releasePermission();
-				} catch (Exception e) {
-					Log.e(Config.LOGTAG, "InputContentInfoCompat#releasePermission() failed.", e);
-				}
-
-				return true;
-			}
-		});
+		mEditMessage.setRichContentListener(allImagesMimeType, mEditorContentListener);
 
 		mSendButton = (ImageButton) view.findViewById(R.id.textSendButton);
 		mSendButton.setOnClickListener(this.mSendButtonListener);

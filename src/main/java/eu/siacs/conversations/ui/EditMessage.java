@@ -12,7 +12,6 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.Spanned;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -148,7 +147,6 @@ public class EditMessage extends EditText {
 
 	@Override
 	public InputConnection onCreateInputConnection(EditorInfo editorInfo) {
-		Log.i("MICHAELS DEBUG", "Created input connection!");
 		final InputConnection ic = super.onCreateInputConnection(editorInfo);
 
 		if (mimeTypes != null && mCommitContentListener != null) {
