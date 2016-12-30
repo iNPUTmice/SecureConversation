@@ -7,6 +7,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -621,6 +623,12 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 			}
 			ImageView iv = (ImageView) view.findViewById(R.id.contact_photo);
 			iv.setImageBitmap(avatarService().get(user, getPixel(48), false));
+			if (user.getRole() == MucOptions.Role.NONE) {
+				view.setAlpha(0.4f);
+				ColorMatrix colorMatrix = new ColorMatrix();
+				colorMatrix.setSaturation(0f);
+				iv.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
+			}
 			membersView.addView(view);
 			if (mConversation.getMucOptions().canInvite()) {
 				mInviteButton.setVisibility(View.VISIBLE);
