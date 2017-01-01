@@ -38,6 +38,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.List;
@@ -64,6 +66,8 @@ import eu.siacs.conversations.ui.widget.ListSelectionManager;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
+import pl.droidsonroids.gif.GifDrawable;
+import pl.droidsonroids.gif.GifImageView;
 
 public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextView.CopyHandler {
 
@@ -518,7 +522,6 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(scaledW, scaledH);
 		layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
 		viewHolder.image.setLayoutParams(layoutParams);
-		activity.loadBitmap(message, viewHolder.image);
 		viewHolder.image.setOnClickListener(new OnClickListener() {
 
 			@Override
@@ -526,6 +529,23 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 				openDownloadable(message);
 			}
 		});
+
+		// if its a GIF
+		if (message.getMimeType() != null && message.getMimeType().endsWith("/gif")) {
+			try {
+				File gif = activity.xmppConnectionService.getFileBackend().getFile(message);
+				GifDrawable drawable = new GifDrawable(gif);
+				viewHolder.image.setImageDrawable(drawable);
+			}
+			catch (IOException error) {
+				// TODO: something better?
+				error.printStackTrace();
+			}
+		}
+		// if its just a bitmap
+		else {
+			activity.loadBitmap(message, viewHolder.image);
+		}
 	}
 
 	private void loadMoreMessages(Conversation conversation) {
@@ -566,7 +586,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 					viewHolder.indicator = (ImageView) view
 						.findViewById(R.id.security_indicator);
 					viewHolder.edit_indicator = (ImageView) view.findViewById(R.id.edit_indicator);
-					viewHolder.image = (ImageView) view
+					viewHolder.image = (GifImageView) view
 						.findViewById(R.id.message_image);
 					viewHolder.messageBody = (CopyTextView) view
 						.findViewById(R.id.message_body);
@@ -587,7 +607,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 					viewHolder.indicator = (ImageView) view
 						.findViewById(R.id.security_indicator);
 					viewHolder.edit_indicator = (ImageView) view.findViewById(R.id.edit_indicator);
-					viewHolder.image = (ImageView) view
+					viewHolder.image = (GifImageView) view
 						.findViewById(R.id.message_image);
 					viewHolder.messageBody = (CopyTextView) view
 						.findViewById(R.id.message_body);
@@ -930,7 +950,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 
 		protected LinearLayout message_box;
 		protected Button download_button;
-		protected ImageView image;
+		protected GifImageView image;
 		protected ImageView indicator;
 		protected ImageView indicatorReceived;
 		protected TextView time;

@@ -613,6 +613,8 @@
 	<string name="notify_paused">Notifications paused</string>
 	<string name="pref_picture_compression">Compress Pictures</string>
 	<string name="pref_picture_compression_summary">Resize and compress pictures</string>
+	<string name="pref_compress_gifs">Compress GIFs</string>
+	<string name="pref_compress_gifs_summary">Uploading compressed GIFs will disable animations, but reduce network usage.</string>
 	<string name="always">Always</string>
 	<string name="automatically">Automatically</string>
 	<string name="battery_optimizations_enabled">Battery optimizations enabled</string>

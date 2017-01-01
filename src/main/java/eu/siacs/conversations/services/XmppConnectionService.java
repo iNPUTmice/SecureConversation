@@ -98,6 +98,7 @@ import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.ExceptionHelper;
+import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.utils.OnPhoneContactsLoadedListener;
 import eu.siacs.conversations.utils.PRNGFixes;
 import eu.siacs.conversations.utils.PhoneHelper;
@@ -493,9 +494,15 @@ public class XmppConnectionService extends Service {
 			callback.error(R.string.security_error_invalid_file_access, null);
 			return;
 		}
+
+		final String mimeType = MimeUtils.guessMimeTypeFromUri(this, uri);
 		final String compressPictures = getCompressPicturesPreference();
+		final boolean compressGifs = getCompressGifsPreference();
+		final boolean isGif = mimeType != null && mimeType.endsWith("/gif");
+
 		if ("never".equals(compressPictures)
-				|| ("auto".equals(compressPictures) && getFileBackend().useImageAsIs(uri))) {
+				|| ("auto".equals(compressPictures) && getFileBackend().useImageAsIs(uri))
+				|| (isGif && !compressGifs)) {
 			Log.d(Config.LOGTAG,conversation.getAccount().getJid().toBareJid()+ ": not compressing picture. sending as file");
 			attachFileToConversation(conversation, uri, callback);
 			return;
@@ -781,6 +788,10 @@ public class XmppConnectionService extends Service {
 
 	private String getCompressPicturesPreference() {
 		return getPreferences().getString("picture_compression", "auto");
+	}
+
+	private boolean getCompressGifsPreference() {
+		return getPreferences().getBoolean("compress_gifs", false);
 	}
 
 	private Presence.Status getTargetPresence() {
