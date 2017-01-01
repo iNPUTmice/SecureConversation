@@ -31,7 +31,6 @@ import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.LruCache;
 import android.util.Pair;
-import android.webkit.MimeTypeMap;
 
 import net.java.otr4j.OtrException;
 import net.java.otr4j.session.Session;

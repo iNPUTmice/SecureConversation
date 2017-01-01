@@ -523,6 +523,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		layoutParams.setMargins(0, (int) (metrics.density * 4), 0, (int) (metrics.density * 4));
 		viewHolder.image.setLayoutParams(layoutParams);
 		viewHolder.image.setOnClickListener(new OnClickListener() {
+
 			@Override
 			public void onClick(View v) {
 				openDownloadable(message);
