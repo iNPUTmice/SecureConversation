@@ -58,6 +58,7 @@ run your own XMPP server for you and your friends. These XEP's are:
   withholding unimportant packages.
 * [XEP-0363: HTTP File Upload](http://xmpp.org/extensions/xep-0363.html) allows you to share files in conferences
   and with offline contacts.
+* [XEP-0384: OMEMO Encryption](http://xmpp.org/extensions/xep-0384.html) for secure multi-client end-to-end encryption.
 
 ## Team
 
