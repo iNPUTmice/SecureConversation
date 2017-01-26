@@ -66,6 +66,10 @@ public class NotificationService {
 		);
 	}
 
+	public boolean useSubjectToIdentifyConference() {
+		return mXmppConnectionService.getPreferences().getBoolean("use_subject", true);
+	}
+
 	public boolean notificationsEnabled() {
 		return mXmppConnectionService.getPreferences().getBoolean("show_notification", true);
 	}
@@ -258,7 +262,12 @@ public class NotificationService {
 		for (final ArrayList<Message> messages : notifications.values()) {
 			if (messages.size() > 0) {
 				conversation = messages.get(0).getConversation();
-				final String name = conversation.getName();
+				final String name;
+				if (conversation.getMode() == Conversation.MODE_SINGLE || useSubjectToIdentifyConference()) {
+					name = conversation.getName();
+				} else {
+					name = conversation.getJid().toBareJid().toString();
+				}
 				if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
 					int count = messages.size();
 					style.addLine(Html.fromHtml("<b>"+name+"</b>: "+mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count)));
