@@ -46,9 +46,9 @@ import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.services.BarcodeProvider;
-import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
+import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.UIHelper;
@@ -94,6 +94,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 	private TextView mAxolotlFingerprint;
 	private TextView mOwnFingerprintDesc;
 	private TextView mAccountJidLabel;
+	private TextView mAccountPasswordLabel;
 	private ImageView mAvatar;
 	private RelativeLayout mOtrFingerprintBox;
 	private RelativeLayout mAxolotlFingerprintBox;
@@ -183,7 +184,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				}
 			}
 
-			if (jid.isDomainJid()) {
+			if (jid.isDomainJid() && !getPreferences().getBoolean(SettingsActivity.ENABLE_ANON_LOGIN, false)) {
 				if (mUsernameMode) {
 					mAccountJid.setError(getString(R.string.invalid_username));
 				} else {
@@ -481,12 +482,14 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		this.mAccountJid = (AutoCompleteTextView) findViewById(R.id.account_jid);
 		this.mAccountJid.addTextChangedListener(this.mTextWatcher);
 		this.mAccountJidLabel = (TextView) findViewById(R.id.account_jid_label);
+		this.mAccountPasswordLabel = (TextView) findViewById(R.id.account_password_label);
 		this.mPassword = (EditText) findViewById(R.id.account_password);
 		this.mPassword.addTextChangedListener(this.mTextWatcher);
 		this.mPasswordConfirm = (EditText) findViewById(R.id.account_password_confirm);
 		this.mAvatar = (ImageView) findViewById(R.id.avater);
 		this.mAvatar.setOnClickListener(this.mAvatarClickListener);
 		this.mRegisterNew = (CheckBox) findViewById(R.id.account_register_new);
+		final CheckBox mLoginAnon = (CheckBox) findViewById(R.id.account_use_anon);
 		this.mStats = (LinearLayout) findViewById(R.id.stats);
 		this.mOsOptimizations = (RelativeLayout) findViewById(R.id.os_optimization);
 		this.mDisableOsOptimizationsButton = (Button) findViewById(R.id.os_optimization_disable);
@@ -545,9 +548,30 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				updateSaveButton();
 			}
 		};
+		final OnCheckedChangeListener OnCheckedHideLogin = new OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(final CompoundButton buttonView,
+			                             final boolean isChecked) {
+				if (isChecked) {
+					mRegisterNew.setVisibility(View.GONE);
+					mPassword.setVisibility(View.GONE);
+					mAccountPasswordLabel.setVisibility(View.GONE);
+				} else {
+					mRegisterNew.setVisibility(View.VISIBLE);
+					mPassword.setVisibility(View.VISIBLE);
+					mAccountPasswordLabel.setVisibility(View.VISIBLE);
+				}
+				getPreferences().edit().putBoolean(SettingsActivity.ENABLE_ANON_LOGIN, isChecked).apply();
+				updateSaveButton();
+			}
+		};
 		this.mRegisterNew.setOnCheckedChangeListener(OnCheckedShowConfirmPassword);
+		mLoginAnon.setOnCheckedChangeListener(OnCheckedHideLogin);
 		if (Config.DISALLOW_REGISTRATION_IN_UI) {
 			this.mRegisterNew.setVisibility(View.GONE);
+		}
+		if (Config.DISALLOW_ANON_LOGIN) {
+			mLoginAnon.setVisibility(View.GONE);
 		}
 	}
 

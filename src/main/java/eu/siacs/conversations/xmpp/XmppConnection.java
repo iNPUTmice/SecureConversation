@@ -7,6 +7,7 @@ import android.os.Parcelable;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.security.KeyChain;
 import android.util.Base64;
 import android.util.Log;
@@ -65,6 +66,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.utils.DNSHelper;
 import eu.siacs.conversations.utils.SSLSocketHelper;
 import eu.siacs.conversations.utils.SocksSocketFactory;
@@ -862,7 +864,8 @@ public class XmppConnection implements Runnable {
 			saslMechanism = new Plain(tagWriter, account);
 		} else if (mechanisms.contains("DIGEST-MD5")) {
 			saslMechanism = new DigestMd5(tagWriter, account, mXmppConnectionService.getRNG());
-		} else if (mechanisms.contains("ANONYMOUS")) {
+		} else if (mechanisms.contains("ANONYMOUS") &&
+				PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService.getApplicationContext()).getBoolean(SettingsActivity.ENABLE_ANON_LOGIN, false)) {
 			saslMechanism = new Anonymous(tagWriter, account, mXmppConnectionService.getRNG());
 		}
 		if (saslMechanism != null) {

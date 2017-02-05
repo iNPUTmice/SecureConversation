@@ -61,6 +61,7 @@
                         android:textSize="?attr/TextSizeBody"/>
 
                     <TextView
+                        android:id="@+id/account_password_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -136,6 +137,15 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/register_account"
+                        android:textColor="?attr/color_text_primary"
+                        android:textSize="?attr/TextSizeBody"/>
+
+                    <CheckBox
+                        android:id="@+id/account_use_anon"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/use_anon_login"
                         android:textColor="?attr/color_text_primary"
                         android:textSize="?attr/TextSizeBody"/>
 
