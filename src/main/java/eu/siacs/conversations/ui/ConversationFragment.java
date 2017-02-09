@@ -608,6 +608,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			MenuItem sendAgain = menu.findItem(R.id.send_again);
 			MenuItem copyUrl = menu.findItem(R.id.copy_url);
 			MenuItem downloadFile = menu.findItem(R.id.download_file);
+			MenuItem exportFile = menu.findItem(R.id.export_file);
 			MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
 			MenuItem deleteFile = menu.findItem(R.id.delete_file);
 			MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
@@ -653,6 +654,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				if (path == null || !path.startsWith("/")) {
 					deleteFile.setVisible(true);
 					deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
+					if (Config.ONLY_INTERNAL_STORAGE) {
+						exportFile.setVisible(true);
+						exportFile.setTitle(activity.getString(R.string.export_x_file, UIHelper.getFileDescriptionString(activity, m)));
+					}
 				}
 			}
 			if (m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null) {
@@ -684,6 +689,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				return true;
 			case R.id.download_file:
 				downloadFile(selectedMessage);
+				return true;
+			case R.id.export_file:
+				exportFile(selectedMessage);
 				return true;
 			case R.id.cancel_transmission:
 				cancelTransmission(selectedMessage);
@@ -762,6 +770,15 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					ListSelectionManager.startSelection(messageBody);
 				}
 			}
+		}
+	}
+
+	private void exportFile(Message message) {
+		if (activity.xmppConnectionService.getFileBackend().copyFileToExternalStorage(message)) {
+
+			Toast.makeText(activity, R.string.file_exported, Toast.LENGTH_LONG).show();
+		} else {
+			Toast.makeText(activity, R.string.file_not_exported, Toast.LENGTH_LONG).show();
 		}
 	}
 

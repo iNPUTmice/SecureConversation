@@ -85,8 +85,12 @@ public class FileBackend {
 	}
 
 	public void updateMediaScanner(File file) {
+		updateMediaScanner(file, false);
+	}
+
+	public void updateMediaScanner(File file, boolean exportedFile ) {
 		String path = file.getAbsolutePath();
-		if (!path.startsWith(getConversationsDirectory("Files"))) {
+		if (!path.startsWith(getConversationsDirectory("Files")) || exportedFile) {
 			Intent intent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
 			intent.setData(Uri.fromFile(file));
 			mXmppConnectionService.sendBroadcast(intent);
@@ -101,6 +105,19 @@ public class FileBackend {
 			updateMediaScanner(file);
 			return true;
 		} else {
+			return false;
+		}
+	}
+
+	public boolean copyFileToExternalStorage(Message message) {
+		String newFilePath = getConversationsExportDirectory()+"/"+message.getRelativeFilePath();
+		File newFile = new File(newFilePath);
+		Uri originalFile = Uri.fromFile(getFile(message));
+		try {
+			copyFileToStorage(newFile, originalFile, false);
+			updateMediaScanner(newFile, true);
+			return true;
+		} catch (FileBackend.FileCopyException e) {
 			return false;
 		}
 	}
@@ -158,6 +175,10 @@ public class FileBackend {
 			}
 		}
 		return true;
+	}
+
+	public String getConversationsExportDirectory() {
+		return Environment.getExternalStorageDirectory().getAbsolutePath() + "/Conversations/Exports";
 	}
 
 	public String getConversationsDirectory(final String type) {
@@ -237,8 +258,12 @@ public class FileBackend {
 		return FileUtils.getPath(mXmppConnectionService,uri);
 	}
 
-	public void copyFileToPrivateStorage(File file, Uri uri) throws FileCopyException {
-		Log.d(Config.LOGTAG,"copy file ("+uri.toString()+") to private storage "+file.getAbsolutePath());
+	public void copyFileToStorage(File file, Uri uri, boolean toPrivate) throws FileCopyException {
+		if (toPrivate) {
+			Log.d(Config.LOGTAG, "copy file (" + uri.toString() + ") to private storage " + file.getAbsolutePath());
+		} else {
+			Log.d(Config.LOGTAG,"copy file ("+uri.toString()+") to external storage "+file.getAbsolutePath());
+		}
 		file.getParentFile().mkdirs();
 		OutputStream os = null;
 		InputStream is = null;
@@ -281,7 +306,7 @@ public class FileBackend {
 			extension = getExtensionFromUri(uri);
 		}
 		message.setRelativeFilePath(message.getUuid() + "." + extension);
-		copyFileToPrivateStorage(mXmppConnectionService.getFileBackend().getFile(message), uri);
+		copyFileToStorage(mXmppConnectionService.getFileBackend().getFile(message), uri, true);
 	}
 
 	private String getExtensionFromUri(Uri uri) {

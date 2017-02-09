@@ -38,6 +38,10 @@
         android:title="@string/download_x_file"
         android:visible="false"/>
     <item
+        android:id="@+id/export_file"
+        android:title="@string/export_x_file"
+        android:visible="false"/>
+    <item
         android:id="@+id/cancel_transmission"
         android:title="@string/cancel_transmission"
         android:visible="false"/>
