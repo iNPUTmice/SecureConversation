@@ -45,6 +45,7 @@ public class SettingsActivity extends XmppActivity implements
 	public static final String MANUALLY_CHANGE_PRESENCE = "manually_change_presence";
 	public static final String BLIND_TRUST_BEFORE_VERIFICATION = "btbv";
 	public static final String AUTOMATIC_MESSAGE_DELETION = "automatic_message_deletion";
+	public static final String AUTOMATIC_PRIVATE_ATTACHMENT_DELETION = "automatic_private_attachment_deletion";
 
 	public static final int REQUEST_WRITE_LOGS = 0xbf8701;
 	private SettingsFragment mSettingsFragment;
@@ -188,26 +189,6 @@ public class SettingsActivity extends XmppActivity implements
 			}
 		});
 
-		if (Config.ONLY_INTERNAL_STORAGE) {
-			final Preference cleanCachePreference = mSettingsFragment.findPreference("clean_cache");
-			cleanCachePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					cleanCache();
-					return true;
-				}
-			});
-
-			final Preference cleanPrivateStoragePreference = mSettingsFragment.findPreference("clean_private_storage");
-			cleanPrivateStoragePreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
-				@Override
-				public boolean onPreferenceClick(Preference preference) {
-					cleanPrivateStorage();
-					return true;
-				}
-			});
-		}
-
 		final Preference deleteOmemoPreference = mSettingsFragment.findPreference("delete_omemo_identities");
 		deleteOmemoPreference.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
 			@Override
@@ -216,57 +197,6 @@ public class SettingsActivity extends XmppActivity implements
 				return true;
 			}
 		});
-	}
-
-	private void cleanCache() {
-		Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-		intent.setData(Uri.parse("package:" + getPackageName()));
-		startActivity(intent);
-	}
-
-	private void cleanPrivateStorage() {
-		cleanPrivatePictures();
-		cleanPrivateFiles();
-	}
-
-	private void cleanPrivatePictures() {
-		try {
-			File dir = new File(getFilesDir().getAbsolutePath(), "/Pictures/");
-			File[] array = dir.listFiles();
-			if (array != null) {
-				for (int b = 0; b < array.length; b++) {
-					String name = array[b].getName().toLowerCase();
-					if (name.equals(".nomedia")) {
-						continue;
-					}
-					if (array[b].isFile()) {
-						array[b].delete();
-					}
-				}
-			}
-		} catch (Throwable e) {
-			Log.e("CleanCache", e.toString());
-		}
-	}
-
-	private void cleanPrivateFiles() {
-		try {
-			File dir = new File(getFilesDir().getAbsolutePath(), "/Files/");
-			File[] array = dir.listFiles();
-			if (array != null) {
-				for (int b = 0; b < array.length; b++) {
-					String name = array[b].getName().toLowerCase();
-					if (name.equals(".nomedia")) {
-						continue;
-					}
-					if (array[b].isFile()) {
-						array[b].delete();
-					}
-				}
-			}
-		} catch (Throwable e) {
-			Log.e("CleanCache", e.toString());
-		}
 	}
 
 	private void deleteOmemoIdentities() {
@@ -374,6 +304,9 @@ public class SettingsActivity extends XmppActivity implements
 			reconnectAccounts();
 		} else if (name.equals(AUTOMATIC_MESSAGE_DELETION)) {
 			xmppConnectionService.expireOldMessages(true);
+		} else if (name.equals(AUTOMATIC_PRIVATE_ATTACHMENT_DELETION)) {
+			xmppConnectionService.expireOldAttachments();
+			xmppConnectionService.expireOldCache();
 		}
 
 	}

@@ -95,6 +95,35 @@ public class FileBackend {
 		}
 	}
 
+	public void cleanInternalStorage(File dir, long timestamp) {
+		File[] dirArray = dir.listFiles();
+		if (dirArray != null) {
+			for (File aDirArray : dirArray) {
+				cleanFilesInSubfolder(aDirArray, timestamp);
+			}
+		}
+	}
+
+	private void cleanFilesInSubfolder(File dir, long timestamp) {
+		try {
+			File[] array = dir.listFiles();
+			if (array != null) {
+				for (File anArray : array) {
+					String name = anArray.getName().toLowerCase();
+					if (name.equals(".nomedia")) {
+						continue;
+					}
+					if (anArray.isFile() && anArray.lastModified() < timestamp) {
+						Log.d("CleanInternalStorage", "Deleting : " + anArray.toString());
+						anArray.delete();
+					}
+				}
+			}
+		} catch (Throwable e) {
+			Log.e("CleanFiles", e.toString());
+		}
+	}
+
 	public boolean deleteFile(Message message) {
 		File file = getFile(message);
 		if (file.delete()) {

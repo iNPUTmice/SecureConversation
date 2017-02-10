@@ -45,6 +45,7 @@ import org.openintents.openpgp.IOpenPgpService2;
 import org.openintents.openpgp.util.OpenPgpApi;
 import org.openintents.openpgp.util.OpenPgpServiceConnection;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.math.BigInteger;
@@ -937,6 +938,26 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
+	public void expireOldCache() {
+		File dir = new File(getCacheDir().getAbsolutePath());
+		long deletionAttachmentDate = System.currentTimeMillis() - Config.CACHE_MAX_AGE;
+		Log.d(Config.LOGTAG, "deleting cache files that are older than "+AbstractGenerator.getTimestamp(deletionAttachmentDate));
+		expireOldFiles(dir, deletionAttachmentDate);
+	}
+
+	public void expireOldAttachments() {
+		long deletionAttachmentDate = getAutomaticPrivateAttachmentDeletionDate();
+		File dir = new File(getFilesDir().getAbsolutePath());
+		Log.d(Config.LOGTAG, "deleting attachments that are older than "+AbstractGenerator.getTimestamp(deletionAttachmentDate));
+		expireOldFiles(dir, deletionAttachmentDate);
+	}
+
+	public void expireOldFiles(File dir, long deletionAttachmentDate) {
+		if (deletionAttachmentDate > 0) {
+			fileBackend.cleanInternalStorage(dir, deletionAttachmentDate);
+		}
+	}
+
 	private void expireOldMessages() {
 		expireOldMessages(false);
 	}
@@ -1455,6 +1476,10 @@ public class XmppConnectionService extends Service {
 			Runnable runnable = new Runnable() {
 				@Override
 				public void run() {
+					if (Config.ONLY_INTERNAL_STORAGE) {
+						expireOldCache();
+						expireOldAttachments();
+					}
 					long deletionDate = getAutomaticMessageDeletionDate();
 					mLastExpiryRun.set(SystemClock.elapsedRealtime());
 					if (deletionDate > 0) {
@@ -3179,6 +3204,15 @@ public class XmppConnectionService extends Service {
 	public long getAutomaticMessageDeletionDate() {
 		try {
 			final long timeout = Long.parseLong(getPreferences().getString(SettingsActivity.AUTOMATIC_MESSAGE_DELETION, "0")) * 1000;
+			return timeout == 0 ? timeout : System.currentTimeMillis() - timeout;
+		} catch (NumberFormatException e) {
+			return 0;
+		}
+	}
+
+	public long getAutomaticPrivateAttachmentDeletionDate() {
+		try {
+			final long timeout = Long.parseLong(getPreferences().getString(SettingsActivity.AUTOMATIC_PRIVATE_ATTACHMENT_DELETION, "0")) * 1000;
 			return timeout == 0 ? timeout : System.currentTimeMillis() - timeout;
 		} catch (NumberFormatException e) {
 			return 0;

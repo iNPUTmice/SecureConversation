@@ -58,10 +58,8 @@ public class SettingsFragment extends PreferenceFragment {
 		// Remove from standard preferences if the flag ONLY_INTERNAL_STORAGE is not true
 		if (!Config.ONLY_INTERNAL_STORAGE) {
 			PreferenceCategory mCategory = (PreferenceCategory) findPreference("security_options");
-			Preference mPref1 = findPreference("clean_cache");
-			Preference mPref2 = findPreference("clean_private_storage");
+			Preference mPref1 = findPreference("automatic_private_attachment_deletion");
 			mCategory.removePreference(mPref1);
-			mCategory.removePreference(mPref2);
 		}
 
 	}
