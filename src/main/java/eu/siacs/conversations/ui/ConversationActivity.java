@@ -351,17 +351,25 @@ public class ConversationActivity extends XmppActivity
 		final Conversation conversation = getSelectedConversation();
 		if (ab != null) {
 			if (titleShouldBeName && conversation != null) {
-				ab.setDisplayHomeAsUpEnabled(true);
-				ab.setHomeButtonEnabled(true);
 				if (conversation.getMode() == Conversation.MODE_SINGLE || useSubjectToIdentifyConference()) {
-					ab.setTitle(conversation.getName());
+					if (! ab.getTitle().equals(conversation.getName())) {
+						ab.setDisplayHomeAsUpEnabled(true);
+						ab.setHomeButtonEnabled(true);
+						ab.setTitle(conversation.getName());
+					}
 				} else {
-					ab.setTitle(conversation.getJid().toBareJid().toString());
+					if (! ab.getTitle().equals(conversation.getJid().toBareJid().toString())) {
+						ab.setDisplayHomeAsUpEnabled(true);
+						ab.setHomeButtonEnabled(true);
+						ab.setTitle(conversation.getJid().toBareJid().toString());
+					}
 				}
 			} else {
-				ab.setDisplayHomeAsUpEnabled(false);
-				ab.setHomeButtonEnabled(false);
-				ab.setTitle(R.string.app_name);
+				if (! ab.getTitle().equals(R.string.app_name)) {
+					ab.setDisplayHomeAsUpEnabled(false);
+					ab.setHomeButtonEnabled(false);
+					ab.setTitle(R.string.app_name);
+				}
 			}
 		}
 	}
