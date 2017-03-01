@@ -43,11 +43,13 @@ import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.ListItem;
+import eu.siacs.conversations.generator.AbstractGenerator;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -410,13 +412,20 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 			lastseen.setVisibility(View.VISIBLE);
 			lastseen.setText(R.string.contact_blocked);
 		} else {
-			if (showLastSeen && contact.getLastseen() > 0) {
+			if (!contact.isActive() && contact.getPresences().allOrNonSupport(Namespace.IDLE)){
+				lastseen.setVisibility(View.VISIBLE);
+				lastseen.setText(UIHelper.readableTimeDifference(getApplicationContext(), contact.getLastseen()));
+			/*if (showLastSeen && contact.getLastseen() > 0) {
 				lastseen.setVisibility(View.VISIBLE);
 				lastseen.setText(UIHelper.lastseen(getApplicationContext(), contact.isActive(), contact.getLastseen()));
+			*/
 			} else {
 				lastseen.setVisibility(View.GONE);
 			}
 		}
+
+
+
 
 		if (contact.getPresences().size() > 1) {
 			contactJidTv.setText(contact.getDisplayJid() + " ("

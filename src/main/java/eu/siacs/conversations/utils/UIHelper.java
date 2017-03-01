@@ -108,7 +108,7 @@ public class UIHelper {
 			.get(Calendar.DAY_OF_YEAR);
 	}
 
-	public static String lastseen(Context context, boolean active, long time) {
+	/*public static String lastseen(Context context, boolean active, long time) {
 		long difference = (System.currentTimeMillis() - time) / 1000;
 		active = active && difference <= 300;
 		if (active || difference < 60) {
@@ -129,7 +129,7 @@ public class UIHelper {
 			return context.getString(R.string.last_seen_days,
 					Math.round(difference / (60.0 * 60.0 * 24.0)));
 		}
-	}
+	}*/
 
 	public static int getColorForName(String name) {
 		if (name == null || name.isEmpty()) {
