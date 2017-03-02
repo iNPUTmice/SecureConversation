@@ -346,6 +346,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							if (conversation.getCorrectingMessage() != null) {
 								conversation.setCorrectingMessage(null);
 								mEditMessage.getEditableText().clear();
+								if(conversation.getDraftMessage()!=null) {
+									mEditMessage.getEditableText().append(conversation.getDraftMessage());
+								}
+								conversation.setDraftMessage(null);
 							}
 							if (conversation.getMode() == Conversation.MODE_MULTI) {
 								conversation.setNextCounterpart(null);
@@ -411,6 +415,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			default:
 				sendPlainTextMessage(message);
 		}
+		if(this.conversation.getDraftMessage()!=null) {
+			this.mEditMessage.getEditableText().append(this.conversation.getDraftMessage());
+		}
+		this.conversation.setDraftMessage(null);
 	}
 
 	public void updateChatMsgHint() {
@@ -839,6 +847,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			message = message.next();
 		}
 		this.conversation.setCorrectingMessage(message);
+		final Editable editable = mEditMessage.getText();
+		this.conversation.setDraftMessage(editable.toString());
 		this.mEditMessage.getEditableText().clear();
 		this.mEditMessage.getEditableText().append(message.getBody());
 
@@ -1072,6 +1082,11 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 	protected void messageSent() {
 		mEditMessage.setText("");
+		if(this.conversation.getDraftMessage()!=null) {
+			this.mEditMessage.getEditableText().append(this.conversation.getDraftMessage());
+		}
+		this.conversation.setDraftMessage(null);
+
 		updateChatMsgHint();
 		new Handler().post(new Runnable() {
 			@Override
