@@ -17,6 +17,7 @@ import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.Pair;
 import android.view.ContextMenu;
@@ -122,6 +123,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
+	private String draftMessage=null;
 
 	private OnScrollListener mOnScrollListener = new OnScrollListener() {
 
@@ -396,6 +398,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			message.setEdited(message.getUuid());
 			message.setUuid(UUID.randomUUID().toString());
 			conversation.setCorrectingMessage(null);
+
 		}
 		switch (conversation.getNextEncryption()) {
 			case Message.ENCRYPTION_OTR:
@@ -412,7 +415,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			default:
 				sendPlainTextMessage(message);
 		}
-	}
+
+		if(draftMessage!=null)
+		{
+			this.mEditMessage.getEditableText().clear();
+			this.mEditMessage.getEditableText().append(draftMessage);
+		}
+		draftMessage=null;
+}
 
 	public void updateChatMsgHint() {
 		final boolean multi = conversation.getMode() == Conversation.MODE_MULTI;
@@ -840,6 +850,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			message = message.next();
 		}
 		this.conversation.setCorrectingMessage(message);
+		final Editable editable = mEditMessage.getText();
+		draftMessage = editable.toString().trim();
 		this.mEditMessage.getEditableText().clear();
 		this.mEditMessage.getEditableText().append(message.getBody());
 
