@@ -62,7 +62,7 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 		ImageView notificationStatus = (ImageView) view.findViewById(R.id.notification_status);
 
 		Message message = conversation.getLatestMessage();
-
+		int unreadcount = conversation.unreadCount();
 		if (!conversation.isRead()) {
 			convName.setTypeface(null, Typeface.BOLD);
 		} else {
@@ -79,7 +79,14 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 			Pair<String,Boolean> preview = UIHelper.getMessagePreview(activity,message);
 			mLastMessage.setVisibility(View.VISIBLE);
 			imagePreview.setVisibility(View.GONE);
-			mLastMessage.setText(preview.first);
+			
+		        if(unreadcount>0) {
+				mLastMessage.setText(preview.first.substring(0, preview.first.length()>=10?10:preview.first.length()) + "... (" + String.valueOf(unreadcount) + ")");
+			}
+			else{
+				mLastMessage.setText(preview.first);
+			}
+			
 			if (preview.second) {
 				if (conversation.isRead()) {
 					mLastMessage.setTypeface(null, Typeface.ITALIC);
