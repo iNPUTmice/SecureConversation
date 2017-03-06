@@ -1268,50 +1268,54 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						}
 					}
 				}
-			}
-			else if(conversation.getMode()==Conversation.MODE_MULTI){
-					ChatState state=conversation.getIncomingChatState();
-					if (state == ChatState.COMPOSING) {
-						StringBuilder statusStringBuilder=new StringBuilder();
-						boolean first=true;
-						for(MucOptions.User user:conversation.getAllUsersWithState(ChatState.COMPOSING)){
-							if(first){
-								statusStringBuilder.append(user.getName());
-								first=false;
-							}else{
-								statusStringBuilder.append(",");
-								statusStringBuilder.append(user.getName());
-							}
-						}
-						if(conversation.getAllUsersWithState(ChatState.COMPOSING).size()==1){
-							this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
-						}else if(conversation.getAllUsersWithState(ChatState.COMPOSING).size()>1){
-							this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contacts_are_typing, statusStringBuilder.toString())));
-						}
-
-					} else if (state == ChatState.PAUSED) {
-						StringBuilder statusStringBuilder=new StringBuilder();
-						boolean first=true;
-						for(MucOptions.User user:conversation.getAllUsersWithState(ChatState.PAUSED)){
-							if(first){
-								statusStringBuilder.append(user.getName());
-								first=false;
-							}else{
-								statusStringBuilder.append(",");
-								statusStringBuilder.append(user.getName());
-							}
-						}
-						if(conversation.getAllUsersWithState(ChatState.PAUSED).size()!=0){
-							if(conversation.getAllUsersWithState(ChatState.PAUSED).size()==1){
-								this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_has_stopped_typing, statusStringBuilder.toString())));
-							}else{
-								this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_have_stopped_typing, statusStringBuilder.toString())));
-							}
-						}
+			} else if (conversation.getMode() == Conversation.MODE_MULTI) {
+				StringBuilder statusStringBuilder = new StringBuilder();
+				boolean first = true;
+				for (MucOptions.User user : conversation.getAllUsersWithState(ChatState.COMPOSING)) {
+					if (first) {
+						statusStringBuilder.append(user.getName());
+						first = false;
+					} else {
+						statusStringBuilder.append(",");
+						statusStringBuilder.append(user.getName());
 					}
 				}
+				String typingText="";
+				if (conversation.getAllUsersWithState(ChatState.COMPOSING).size() == 1) {
+					typingText=getString(R.string.contact_is_typing, statusStringBuilder.toString());
+				} else if (conversation.getAllUsersWithState(ChatState.COMPOSING).size() > 1) {
+					typingText=getString(R.string.contacts_are_typing, statusStringBuilder.toString());
+				}
+				statusStringBuilder = new StringBuilder();
+				first = true;
+				for (MucOptions.User user : conversation.getAllUsersWithState(ChatState.PAUSED)) {
+					if (first) {
+						statusStringBuilder.append(user.getName());
+						first = false;
+					} else {
+						statusStringBuilder.append(",");
+						statusStringBuilder.append(user.getName());
+					}
+				}
+				String pausedText="";
+				if (conversation.getAllUsersWithState(ChatState.PAUSED).size() != 0) {
+					if (conversation.getAllUsersWithState(ChatState.PAUSED).size() == 1) {
+						pausedText=getString(R.string.contact_has_stopped_typing, statusStringBuilder.toString());
+					} else {
+						pausedText=getString(R.string.contact_have_stopped_typing, statusStringBuilder.toString());
+					}
+				}
+				if(typingText.equals("")){
+					if(!pausedText.equals(""))this.messageList.add(Message.createStatusMessage(conversation, pausedText));
+				}
+				else if(pausedText.equals("") && !typingText.equals("")){
+					this.messageList.add(Message.createStatusMessage(conversation, typingText));
+				}
+				else this.messageList.add(Message.createStatusMessage(conversation, typingText +"\n"+pausedText));
+
 			}
 		}
+	}
 
 	private boolean showLoadMoreMessages(final Conversation c) {
 		final boolean mam = hasMamSupport(c);
