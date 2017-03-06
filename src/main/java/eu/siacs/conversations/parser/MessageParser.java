@@ -35,6 +35,7 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.chatstate.MUCChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -65,7 +66,28 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		}
 		return false;
 	}
-
+	private boolean extractChatStateMUC(Conversation conversation, final MessagePacket packet) {
+		Log.d("ConversationsMUC","Receiving ChatState Extract");
+		ChatState state = ChatState.parse(packet);
+		Jid FROM=packet.getFrom();
+		if (state != null && conversation != null) {
+			final Account account = conversation.getAccount();
+			Jid from = packet.getFrom();
+			if (from.toBareJid().equals(account.getJid().toBareJid())) {
+				conversation.setOutgoingChatState(state);
+				if (state == ChatState.ACTIVE || state == ChatState.COMPOSING) {
+					mXmppConnectionService.markRead(conversation);
+					activateGracePeriod(account);
+				}
+				return false;
+			} else {
+				Log.d("ConversationsMUC","Receiving ChatState Extract done");
+				MUCChatState chatState=new MUCChatState(FROM,state);
+				return conversation.setIncomingChatStateMUC(chatState);
+			}
+		}
+		return false;
+	}
 	private Message parseOtrChat(String body, Jid from, String id, Conversation conversation) {
 		String presence;
 		if (from.isBareJid()) {
@@ -292,6 +314,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
 	@Override
 	public void onMessagePacketReceived(Account account, MessagePacket original) {
+		Log.d("ConversationsMUC",original.toString());
 		if (handleErrorMessage(account, original)) {
 			return;
 		}
@@ -359,7 +382,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			Log.d(Config.LOGTAG,"no from in: "+packet.toString());
 			return;
 		}
-		
 		boolean isTypeGroupChat = packet.getType() == MessagePacket.TYPE_GROUPCHAT;
 		boolean isProperlyAddressed = (to != null ) && (!to.isBareJid() || account.countPresences() == 0);
 		boolean isMucStatusMessage = from.isBareJid() && mucUserElement != null && mucUserElement.hasChild("status");
@@ -381,7 +403,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 				&& extractChatState(mXmppConnectionService.find(account, counterpart.toBareJid()), packet)) {
 			mXmppConnectionService.updateConversationUi();
 		}
-
+		if (isTypeGroupChat
+				&& query == null
+				&& extractChatStateMUC(mXmppConnectionService.find(account, counterpart.toBareJid()), packet)) {
+			mXmppConnectionService.updateConversationUi();
+		}
 		if ((body != null || pgpEncrypted != null || axolotlEncrypted != null) && !isMucStatusMessage) {
 			Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.toBareJid(), isTypeGroupChat, false, query);
 			final boolean conversationMultiMode = conversation.getMode() == Conversation.MODE_MULTI;

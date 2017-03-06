@@ -1172,6 +1172,7 @@ public class XmppConnectionService extends Service {
 	public void sendChatState(Conversation conversation) {
 		if (sendChatStates()) {
 			MessagePacket packet = mMessageGenerator.generateChatState(conversation);
+			Log.d("ConversationsMUC","sending status packet");
 			sendMessagePacket(conversation.getAccount(), packet);
 		}
 	}
@@ -3477,6 +3478,7 @@ public class XmppConnectionService extends Service {
 	public void sendMessagePacket(Account account, MessagePacket packet) {
 		XmppConnection connection = account.getXmppConnection();
 		if (connection != null) {
+			Log.d("ConversationsMUC","sending status packet final");
 			connection.sendMessagePacket(packet);
 		}
 	}

@@ -13,6 +13,7 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
@@ -45,8 +46,11 @@ import android.widget.Toast;
 import net.java.otr4j.session.SessionStatus;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -75,6 +79,7 @@ import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.chatstate.MUCChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
@@ -122,7 +127,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
-
+	private ArrayList<String> typingContacts;
 	private OnScrollListener mOnScrollListener = new OnScrollListener() {
 
 		@Override
@@ -470,6 +475,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
 		snackbarAction = (TextView) view.findViewById(R.id.snackbar_action);
 
+		typingContacts=new ArrayList<String>();
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
 		messagesView.setOnScrollListener(mOnScrollListener);
 		messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
@@ -1271,6 +1277,47 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					}
 				}
 			}
+			else if(conversation.getMode()==Conversation.MODE_MULTI){
+				MUCChatState mstate=conversation.getIncomingChatStateMUC();
+				if(mstate==null) return;
+				else{
+					ChatState state=conversation.getIncomingChatStateMUC().getChatState();
+					if (state == ChatState.COMPOSING) {
+						boolean contactExists=false;
+						StringBuilder statusStringBuilder=new StringBuilder();
+						for(int i=0; i<conversation.typingContacts.size(); i++) {
+							String s=conversation.typingContacts.get(i);
+							if(s.equals(mstate.getFrom().getResourcepart())) contactExists=true;
+							statusStringBuilder.append(s);
+							if(i!=conversation.typingContacts.size()-1){
+								statusStringBuilder.append(",");
+							}
+						}
+						if(!contactExists) {
+							if(conversation.typingContacts.size()!=0)statusStringBuilder.append(",");
+							conversation.typingContacts.add(mstate.getFrom().getResourcepart());
+							if(conversation.typingContacts.size()!=0) statusStringBuilder.append(conversation.typingContacts.get(conversation.typingContacts.size()-1));
+						}
+
+						this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
+					} else if (state == ChatState.PAUSED) {
+						StringBuilder statusStringBuilder=new StringBuilder();
+						for(int i=0; i<conversation.typingContacts.size(); i++){
+							String s=conversation.typingContacts.get(i);
+							if(s.equals(mstate.getFrom().getResourcepart())){
+								conversation.typingContacts.remove(i);
+								i--;
+							}
+							statusStringBuilder.append(s);
+							if(i!=conversation.typingContacts.size()-1){
+								statusStringBuilder.append(",");
+							}
+						}
+						if(conversation.typingContacts.size()!=0)
+						this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
+					}
+				}
+			}
 		}
 	}
 
@@ -1472,6 +1519,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		Account.State status = conversation.getAccount().getStatus();
 		if (status == Account.State.ONLINE && conversation.setOutgoingChatState(ChatState.COMPOSING)) {
 			activity.xmppConnectionService.sendChatState(conversation);
+			Log.d("ConversationsMUC","sending typing status");
 		}
 		activity.hideConversationsOverview();
 		updateSendButton();

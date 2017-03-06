@@ -28,6 +28,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
+import eu.siacs.conversations.xmpp.chatstate.MUCChatState;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -57,6 +58,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static final String ATTRIBUTE_ALWAYS_NOTIFY = "always_notify";
 	public static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
 	public static final String ATTRIBUTE_LAST_CLEAR_HISTORY = "last_clear_history";
+
+	public ArrayList<String> typingContacts;
 
 	private String draftMessage;
 	private String name;
@@ -90,6 +93,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private boolean messagesLeftOnServer = true;
 	private ChatState mOutgoingChatState = Config.DEFAULT_CHATSTATE;
 	private ChatState mIncomingChatState = Config.DEFAULT_CHATSTATE;
+	private MUCChatState mMucIncomingChatState=null;
 	private String mLastReceivedOtrMessageId = null;
 	private String mFirstMamReference = null;
 	private Message correctingMessage;
@@ -187,15 +191,25 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		this.mIncomingChatState = state;
 		return true;
 	}
+	public boolean setIncomingChatStateMUC(MUCChatState state) {
+		if (this.mMucIncomingChatState == state) {
+			return false;
+		}
+		this.mMucIncomingChatState= state;
+		return true;
+	}
+
 
 	public ChatState getIncomingChatState() {
 		return this.mIncomingChatState;
 	}
 
+	public MUCChatState getIncomingChatStateMUC(){ return this.mMucIncomingChatState; }
+
 	public boolean setOutgoingChatState(ChatState state) {
-		if (mode == MODE_MULTI) {
+		/*if (mode == MODE_MULTI) {
 			return false;
-		}
+		}*/
 		if (this.mOutgoingChatState != state) {
 			this.mOutgoingChatState = state;
 			return true;
@@ -401,11 +415,13 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				.getUuid(), contactJid, System.currentTimeMillis(),
 				STATUS_AVAILABLE, mode, "");
 		this.account = account;
+		typingContacts=new ArrayList<>();
 	}
 
 	public Conversation(final String uuid, final String name, final String contactUuid,
 			final String accountUuid, final Jid contactJid, final long created, final int status,
 			final int mode, final String attributes) {
+		typingContacts=new ArrayList<>();
 		this.uuid = uuid;
 		this.name = name;
 		this.contactUuid = contactUuid;
