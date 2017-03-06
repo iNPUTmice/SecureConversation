@@ -1283,38 +1283,54 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				else{
 					ChatState state=conversation.getIncomingChatStateMUC().getChatState();
 					if (state == ChatState.COMPOSING) {
-						boolean contactExists=false;
-						StringBuilder statusStringBuilder=new StringBuilder();
-						for(int i=0; i<conversation.typingContacts.size(); i++) {
-							String s=conversation.typingContacts.get(i);
-							if(s.equals(mstate.getFrom().getResourcepart())) contactExists=true;
-							statusStringBuilder.append(s);
-							if(i!=conversation.typingContacts.size()-1){
-								statusStringBuilder.append(",");
+						Log.d("ConversationsMUC","Received composing from:"+mstate.getFrom().getResourcepart());
+						for(MucOptions.User user:conversation.getMucOptions().getUsers()) {
+							if (user.getName().equals(mstate.getFrom().getResourcepart())) {
+								user.setUserState(MucOptions.State.COMPOSING);
 							}
 						}
-						if(!contactExists) {
-							if(conversation.typingContacts.size()!=0)statusStringBuilder.append(",");
-							conversation.typingContacts.add(mstate.getFrom().getResourcepart());
-							if(conversation.typingContacts.size()!=0) statusStringBuilder.append(conversation.typingContacts.get(conversation.typingContacts.size()-1));
+						StringBuilder statusStringBuilder=new StringBuilder();
+						boolean first=true;
+						for(MucOptions.User user:conversation.getAllUsersWithState(MucOptions.State.COMPOSING)){
+							if(first){
+								statusStringBuilder.append(user.getName());
+								first=false;
+							}else{
+								statusStringBuilder.append(",");
+								statusStringBuilder.append(user.getName());
+							}
+						}
+						if(conversation.getAllUsersWithState(MucOptions.State.COMPOSING).size()==1){
+							this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
+						}else if(conversation.getAllUsersWithState(MucOptions.State.COMPOSING).size()>1){
+							this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contacts_are_typing, statusStringBuilder.toString())));
 						}
 
-						this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
 					} else if (state == ChatState.PAUSED) {
 						StringBuilder statusStringBuilder=new StringBuilder();
-						for(int i=0; i<conversation.typingContacts.size(); i++){
-							String s=conversation.typingContacts.get(i);
-							if(s.equals(mstate.getFrom().getResourcepart())){
-								conversation.typingContacts.remove(i);
-								i--;
-							}
-							statusStringBuilder.append(s);
-							if(i!=conversation.typingContacts.size()-1){
-								statusStringBuilder.append(",");
+						Log.d("ConversationsMUC","Received paused from:"+mstate.getFrom().getResourcepart());
+						for(MucOptions.User user:conversation.getMucOptions().getUsers()) {
+							if (user.getName().equals(mstate.getFrom().getResourcepart())) {
+								user.setUserState(MucOptions.State.PAUSED);
 							}
 						}
-						if(conversation.typingContacts.size()!=0)
-						this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
+						boolean first=true;
+						for(MucOptions.User user:conversation.getAllUsersWithState(MucOptions.State.PAUSED)){
+							if(first){
+								statusStringBuilder.append(user.getName());
+								first=false;
+							}else{
+								statusStringBuilder.append(",");
+								statusStringBuilder.append(user.getName());
+							}
+						}
+						if(conversation.getAllUsersWithState(MucOptions.State.PAUSED).size()!=0){
+							if(conversation.getAllUsersWithState(MucOptions.State.PAUSED).size()==1){
+								this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_has_stopped_typing, statusStringBuilder.toString())));
+							}else{
+								this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_have_stopped_typing, statusStringBuilder.toString())));
+							}
+						}
 					}
 				}
 			}

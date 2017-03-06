@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -1006,7 +1007,13 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			return count;
 		}
 	}
-
+	public ArrayList<MucOptions.User> getAllUsersWithState(MucOptions.State state){
+		ArrayList<MucOptions.User> users=new ArrayList<>();
+		for(MucOptions.User user:getMucOptions().getUsers()){
+			if(user.getUserState()==state) users.add(user);
+		}
+		return users;
+	}
 	public class Smp {
 		public static final int STATUS_NONE = 0;
 		public static final int STATUS_CONTACT_REQUESTED = 1;

@@ -126,7 +126,11 @@ public class MucOptions {
 		SHUTDOWN,
 		UNKNOWN
 	}
-
+	public enum State{
+		COMPOSING,
+		PAUSED,
+		IDLE
+	}
 	public static final String STATUS_CODE_SELF_PRESENCE = "110";
 	public static final String STATUS_CODE_ROOM_CREATED = "201";
 	public static final String STATUS_CODE_BANNED = "301";
@@ -154,12 +158,17 @@ public class MucOptions {
 		private long pgpKeyId = 0;
 		private Avatar avatar;
 		private MucOptions options;
-
+		private State userState=State.IDLE;
 		public User(MucOptions options, Jid from) {
 			this.options = options;
 			this.fullJid = from;
 		}
-
+		public State getUserState(){
+			return userState;
+		}
+		public void setUserState(State state){
+			userState=state;
+		}
 		public String getName() {
 			return fullJid == null ? null : fullJid.getResourcepart();
 		}
