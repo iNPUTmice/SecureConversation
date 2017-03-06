@@ -69,20 +69,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		ChatState state = ChatState.parse(packet);
 		Jid FROM=packet.getFrom();
 		if (state != null && conversation != null) {
-			final Account account = conversation.getAccount();
-			Jid from = packet.getFrom();
-			if (from.toBareJid().equals(account.getJid().toBareJid())) {
-				conversation.setOutgoingChatState(state);
-				if (state == ChatState.ACTIVE || state == ChatState.COMPOSING) {
-					mXmppConnectionService.markRead(conversation);
-					activateGracePeriod(account);
-				}
-				return false;
-			} else {
 				if(conversation.getMucOptions().findUserByFullJid(FROM)!=null)
 				conversation.getMucOptions().findUserByFullJid(FROM).setChatState(state);
 				return conversation.setIncomingChatState(state);
-			}
 		}
 		return false;
 	}

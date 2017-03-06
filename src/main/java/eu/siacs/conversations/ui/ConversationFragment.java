@@ -1270,8 +1270,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				}
 			}
 			else if(conversation.getMode()==Conversation.MODE_MULTI){
-				if(false) return;
-				else{
 					ChatState state=conversation.getIncomingChatState();
 					if (state == ChatState.COMPOSING) {
 						StringBuilder statusStringBuilder=new StringBuilder();
@@ -1314,7 +1312,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				}
 			}
 		}
-	}
 
 	private boolean showLoadMoreMessages(final Conversation c) {
 		final boolean mam = hasMamSupport(c);

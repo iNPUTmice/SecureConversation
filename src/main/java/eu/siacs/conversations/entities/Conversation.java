@@ -58,7 +58,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
 	public static final String ATTRIBUTE_LAST_CLEAR_HISTORY = "last_clear_history";
 
-	public ArrayList<String> typingContacts;
 
 	private String draftMessage;
 	private String name;
@@ -405,13 +404,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				.getUuid(), contactJid, System.currentTimeMillis(),
 				STATUS_AVAILABLE, mode, "");
 		this.account = account;
-		typingContacts=new ArrayList<>();
 	}
 
 	public Conversation(final String uuid, final String name, final String contactUuid,
 			final String accountUuid, final Jid contactJid, final long created, final int status,
 			final int mode, final String attributes) {
-		typingContacts=new ArrayList<>();
 		this.uuid = uuid;
 		this.name = name;
 		this.contactUuid = contactUuid;
