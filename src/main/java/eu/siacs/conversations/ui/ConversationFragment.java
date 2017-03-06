@@ -9,11 +9,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.NonNull;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
@@ -35,7 +32,6 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -46,11 +42,8 @@ import android.widget.Toast;
 import net.java.otr4j.session.SessionStatus;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -79,7 +72,6 @@ import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
-import eu.siacs.conversations.xmpp.chatstate.MUCChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
@@ -1278,20 +1270,13 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				}
 			}
 			else if(conversation.getMode()==Conversation.MODE_MULTI){
-				MUCChatState mstate=conversation.getIncomingChatStateMUC();
-				if(mstate==null) return;
+				if(false) return;
 				else{
-					ChatState state=conversation.getIncomingChatStateMUC().getChatState();
+					ChatState state=conversation.getIncomingChatState();
 					if (state == ChatState.COMPOSING) {
-						Log.d("ConversationsMUC","Received composing from:"+mstate.getFrom().getResourcepart());
-						for(MucOptions.User user:conversation.getMucOptions().getUsers()) {
-							if (user.getName().equals(mstate.getFrom().getResourcepart())) {
-								user.setUserState(MucOptions.State.COMPOSING);
-							}
-						}
 						StringBuilder statusStringBuilder=new StringBuilder();
 						boolean first=true;
-						for(MucOptions.User user:conversation.getAllUsersWithState(MucOptions.State.COMPOSING)){
+						for(MucOptions.User user:conversation.getAllUsersWithState(ChatState.COMPOSING)){
 							if(first){
 								statusStringBuilder.append(user.getName());
 								first=false;
@@ -1300,22 +1285,16 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 								statusStringBuilder.append(user.getName());
 							}
 						}
-						if(conversation.getAllUsersWithState(MucOptions.State.COMPOSING).size()==1){
+						if(conversation.getAllUsersWithState(ChatState.COMPOSING).size()==1){
 							this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_is_typing, statusStringBuilder.toString())));
-						}else if(conversation.getAllUsersWithState(MucOptions.State.COMPOSING).size()>1){
+						}else if(conversation.getAllUsersWithState(ChatState.COMPOSING).size()>1){
 							this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contacts_are_typing, statusStringBuilder.toString())));
 						}
 
 					} else if (state == ChatState.PAUSED) {
 						StringBuilder statusStringBuilder=new StringBuilder();
-						Log.d("ConversationsMUC","Received paused from:"+mstate.getFrom().getResourcepart());
-						for(MucOptions.User user:conversation.getMucOptions().getUsers()) {
-							if (user.getName().equals(mstate.getFrom().getResourcepart())) {
-								user.setUserState(MucOptions.State.PAUSED);
-							}
-						}
 						boolean first=true;
-						for(MucOptions.User user:conversation.getAllUsersWithState(MucOptions.State.PAUSED)){
+						for(MucOptions.User user:conversation.getAllUsersWithState(ChatState.PAUSED)){
 							if(first){
 								statusStringBuilder.append(user.getName());
 								first=false;
@@ -1324,8 +1303,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 								statusStringBuilder.append(user.getName());
 							}
 						}
-						if(conversation.getAllUsersWithState(MucOptions.State.PAUSED).size()!=0){
-							if(conversation.getAllUsersWithState(MucOptions.State.PAUSED).size()==1){
+						if(conversation.getAllUsersWithState(ChatState.PAUSED).size()!=0){
+							if(conversation.getAllUsersWithState(ChatState.PAUSED).size()==1){
 								this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_has_stopped_typing, statusStringBuilder.toString())));
 							}else{
 								this.messageList.add(Message.createStatusMessage(conversation, getString(R.string.contact_have_stopped_typing, statusStringBuilder.toString())));

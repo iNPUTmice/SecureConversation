@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -29,7 +28,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
-import eu.siacs.conversations.xmpp.chatstate.MUCChatState;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -94,7 +92,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private boolean messagesLeftOnServer = true;
 	private ChatState mOutgoingChatState = Config.DEFAULT_CHATSTATE;
 	private ChatState mIncomingChatState = Config.DEFAULT_CHATSTATE;
-	private MUCChatState mMucIncomingChatState=null;
 	private String mLastReceivedOtrMessageId = null;
 	private String mFirstMamReference = null;
 	private Message correctingMessage;
@@ -192,20 +189,12 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		this.mIncomingChatState = state;
 		return true;
 	}
-	public boolean setIncomingChatStateMUC(MUCChatState state) {
-		if (this.mMucIncomingChatState == state) {
-			return false;
-		}
-		this.mMucIncomingChatState= state;
-		return true;
-	}
 
 
 	public ChatState getIncomingChatState() {
 		return this.mIncomingChatState;
 	}
 
-	public MUCChatState getIncomingChatStateMUC(){ return this.mMucIncomingChatState; }
 
 	public boolean setOutgoingChatState(ChatState state) {
 		/*if (mode == MODE_MULTI) {
@@ -1007,10 +996,10 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			return count;
 		}
 	}
-	public ArrayList<MucOptions.User> getAllUsersWithState(MucOptions.State state){
+	public ArrayList<MucOptions.User> getAllUsersWithState(ChatState state){
 		ArrayList<MucOptions.User> users=new ArrayList<>();
 		for(MucOptions.User user:getMucOptions().getUsers()){
-			if(user.getUserState()==state) users.add(user);
+			if(user.getChatState()==state) users.add(user);
 		}
 		return users;
 	}

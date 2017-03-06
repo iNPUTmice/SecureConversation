@@ -35,7 +35,6 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
-import eu.siacs.conversations.xmpp.chatstate.MUCChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -67,7 +66,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		return false;
 	}
 	private boolean extractChatStateMUC(Conversation conversation, final MessagePacket packet) {
-		Log.d("ConversationsMUC","Receiving ChatState Extract");
 		ChatState state = ChatState.parse(packet);
 		Jid FROM=packet.getFrom();
 		if (state != null && conversation != null) {
@@ -81,9 +79,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 				}
 				return false;
 			} else {
-				Log.d("ConversationsMUC","Receiving ChatState Extract done");
-				MUCChatState chatState=new MUCChatState(FROM,state);
-				return conversation.setIncomingChatStateMUC(chatState);
+				if(conversation.getMucOptions().findUserByFullJid(FROM)!=null)
+				conversation.getMucOptions().findUserByFullJid(FROM).setChatState(state);
+				return conversation.setIncomingChatState(state);
 			}
 		}
 		return false;
@@ -314,7 +312,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
 	@Override
 	public void onMessagePacketReceived(Account account, MessagePacket original) {
-		Log.d("ConversationsMUC",original.toString());
 		if (handleErrorMessage(account, original)) {
 			return;
 		}

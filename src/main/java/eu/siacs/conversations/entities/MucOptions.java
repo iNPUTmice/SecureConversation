@@ -9,6 +9,7 @@ import java.util.Set;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.xml.Namespace;
+import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.forms.Field;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
@@ -158,15 +159,15 @@ public class MucOptions {
 		private long pgpKeyId = 0;
 		private Avatar avatar;
 		private MucOptions options;
-		private State userState=State.IDLE;
+		private ChatState userState=ChatState.INACTIVE;
 		public User(MucOptions options, Jid from) {
 			this.options = options;
 			this.fullJid = from;
 		}
-		public State getUserState(){
+		public ChatState getChatState(){
 			return userState;
 		}
-		public void setUserState(State state){
+		public void setChatState(ChatState state){
 			userState=state;
 		}
 		public String getName() {
