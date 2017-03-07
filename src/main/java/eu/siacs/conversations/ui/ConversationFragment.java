@@ -945,10 +945,17 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				}
 			});
 			if (conversation.isDomainBlocked()) {
-				BlockContactDialog.show(activity, activity.xmppConnectionService, conversation);
+				BlockContactDialog.show(activity, conversation);
 			} else {
 				activity.unblockConversation(conversation);
 			}
+		}
+	};
+
+	private OnClickListener mBlockClickListener = new OnClickListener() {
+		@Override
+		public void onClick(final View v) {
+			BlockContactDialog.show(activity, conversation);
 		}
 	};
 
@@ -1045,6 +1052,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				&& (conversation.getOtrSession().getSessionStatus() == SessionStatus.ENCRYPTED)
 				&& (!conversation.isOtrFingerprintVerified())) {
 			showSnackbar(R.string.unknown_otr_fingerprint, R.string.verify, clickToVerify);
+		} else if (conversation.isWithStranger() && !conversation.isBlocked()) {
+			showSnackbar(R.string.received_message_from_stranger,R.string.block, mBlockClickListener);
 		} else {
 			hideSnackbar();
 		}

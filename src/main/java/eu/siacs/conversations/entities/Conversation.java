@@ -458,7 +458,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public Message getLatestMessage() {
 		if (this.messages.size() == 0) {
 			Message message = new Message(this, "", Message.ENCRYPTION_NONE);
-			message.setTime(getCreated());
+			message.setType(Message.TYPE_STATUS);
+			message.setTime(Math.max(getCreated(),getLastClearHistory()));
 			return message;
 		} else {
 			Message message = this.messages.get(this.messages.size() - 1);
@@ -1000,6 +1001,27 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 		return users;
 	}
+
+	private int sentMessagesCount() {
+		int count = 0;
+		synchronized (this.messages) {
+			for(Message message : messages) {
+				if (message.getStatus() != Message.STATUS_RECEIVED) {
+					++count;
+				}
+			}
+		}
+		return count;
+	}
+
+	public boolean isWithStranger() {
+		if (mode == MODE_SINGLE) {
+			return !getContact().mutualPresenceSubscription() && sentMessagesCount() == 0;
+		} else {
+			return false;
+		}
+	}
+
 	public class Smp {
 		public static final int STATUS_NONE = 0;
 		public static final int STATUS_CONTACT_REQUESTED = 1;
