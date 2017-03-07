@@ -167,8 +167,12 @@ public class MucOptions {
 		public ChatState getChatState(){
 			return userState;
 		}
-		public void setChatState(ChatState state){
-			userState=state;
+		public boolean setChatState(ChatState state){
+			if(userState==state) return false;
+			else {
+				userState=state;
+				return true;
+			}
 		}
 		public String getName() {
 			return fullJid == null ? null : fullJid.getResourcepart();

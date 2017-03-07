@@ -69,9 +69,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		ChatState state = ChatState.parse(packet);
 		Jid FROM=packet.getFrom();
 		if (state != null && conversation != null) {
-				if(conversation.getMucOptions().findUserByFullJid(FROM)!=null)
-				conversation.getMucOptions().findUserByFullJid(FROM).setChatState(state);
-				return conversation.setIncomingChatState(state);
+			MucOptions.User user = conversation.getMucOptions().findUserByFullJid(FROM);
+				if(user!=null) {
+					return user.setChatState(state);
+				}
 		}
 		return false;
 	}
