@@ -1602,10 +1602,30 @@ public class XmppConnectionService extends Service {
 			}
 		}
 		try {
-			Collections.sort(list);
+			sortConversations(list);
 		} catch (IllegalArgumentException e) {
 			//ignore
 		}
+	}
+
+	private void sortConversations(List<Conversation> list) {
+		List<Conversation> groupConversations = new ArrayList<>();
+		List<Conversation> singleConversations = new ArrayList<>();
+
+		for (Conversation conversation : list) {
+			if (conversation.getMode() == Conversation.MODE_MULTI) {
+				groupConversations.add(conversation);
+			} else {
+				singleConversations.add(conversation);
+			}
+		}
+
+		Collections.sort(groupConversations);
+		Collections.sort(singleConversations);
+
+		list.clear();
+		list.addAll(groupConversations);
+		list.addAll(singleConversations);
 	}
 
 	public void loadMoreMessages(final Conversation conversation, final long timestamp, final OnMoreMessagesLoaded callback) {
