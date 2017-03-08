@@ -9,8 +9,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
@@ -34,7 +32,6 @@ import android.widget.AbsListView;
 import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
@@ -122,7 +119,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
-
+	private ArrayList<String> typingContacts;
 	private OnScrollListener mOnScrollListener = new OnScrollListener() {
 
 		@Override
@@ -470,6 +467,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
 		snackbarAction = (TextView) view.findViewById(R.id.snackbar_action);
 
+		typingContacts=new ArrayList<String>();
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
 		messagesView.setOnScrollListener(mOnScrollListener);
 		messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
@@ -1281,6 +1279,58 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						}
 					}
 				}
+			} else if (conversation.getMode() == Conversation.MODE_MULTI) {
+				StringBuilder statusStringBuilder = new StringBuilder();
+				boolean first = true;
+				ArrayList<MucOptions.User> composingUsers,pausedUsers;
+				composingUsers=conversation.getAllUsersWithState(ChatState.COMPOSING);
+				pausedUsers=conversation.getAllUsersWithState(ChatState.PAUSED);
+				for (MucOptions.User user : composingUsers) {
+					if (first) {
+						statusStringBuilder.append(user.getName());
+						first = false;
+					} else {
+						statusStringBuilder.append(",");
+						statusStringBuilder.append(user.getName());
+					}
+				}
+				String typingText="";
+				int noOfTypingUsers=composingUsers.size();
+				if (noOfTypingUsers == 1) {
+					typingText=getString(R.string.contact_is_typing, statusStringBuilder.toString());
+				} else if (noOfTypingUsers> 1) {
+					typingText=getString(R.string.contacts_are_typing, statusStringBuilder.toString());
+				}
+				statusStringBuilder = new StringBuilder();
+				first = true;
+				for (MucOptions.User user : pausedUsers) {
+					if (first) {
+						statusStringBuilder.append(user.getName());
+						first = false;
+					} else {
+						statusStringBuilder.append(",");
+						statusStringBuilder.append(user.getName());
+					}
+				}
+				String pausedText="";
+				int noOfPausedUsers=pausedUsers.size();
+				if (noOfPausedUsers!= 0) {
+					if (noOfPausedUsers == 1) {
+						pausedText=getString(R.string.contact_has_stopped_typing, statusStringBuilder.toString());
+					} else {
+						pausedText=getString(R.string.contact_have_stopped_typing, statusStringBuilder.toString());
+					}
+				}
+				boolean isTypingTextEmpty=typingText.equals("");
+				boolean isPausedTextEmpty=pausedText.equals("");
+				if(isTypingTextEmpty){
+					if(!pausedText.equals(""))this.messageList.add(Message.createStatusMessage(conversation, pausedText));
+				}
+				else if(isPausedTextEmpty && !isTypingTextEmpty){
+					this.messageList.add(Message.createStatusMessage(conversation, typingText));
+				}
+				else this.messageList.add(Message.createStatusMessage(conversation, typingText +"\n"+pausedText));
+
 			}
 		}
 	}
@@ -1483,6 +1533,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		Account.State status = conversation.getAccount().getStatus();
 		if (status == Account.State.ONLINE && conversation.setOutgoingChatState(ChatState.COMPOSING)) {
 			activity.xmppConnectionService.sendChatState(conversation);
+			Log.d("ConversationsMUC","sending typing status");
 		}
 		activity.hideConversationsOverview();
 		updateSendButton();

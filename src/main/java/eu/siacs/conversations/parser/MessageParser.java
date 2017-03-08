@@ -65,7 +65,17 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		}
 		return false;
 	}
-
+	private boolean extractChatStateMUC(Conversation conversation, final MessagePacket packet) {
+		ChatState state = ChatState.parse(packet);
+		Jid FROM=packet.getFrom();
+		if (state != null && conversation != null) {
+			MucOptions.User user = conversation.getMucOptions().findUserByFullJid(FROM);
+				if(user!=null) {
+					return user.setChatState(state);
+				}
+		}
+		return false;
+	}
 	private Message parseOtrChat(String body, Jid from, String id, Conversation conversation) {
 		String presence;
 		if (from.isBareJid()) {
@@ -379,7 +389,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			Log.d(Config.LOGTAG,"no from in: "+packet.toString());
 			return;
 		}
-		
 		boolean isTypeGroupChat = packet.getType() == MessagePacket.TYPE_GROUPCHAT;
 		boolean isProperlyAddressed = (to != null ) && (!to.isBareJid() || account.countPresences() == 0);
 		boolean isMucStatusMessage = from.isBareJid() && mucUserElement != null && mucUserElement.hasChild("status");
@@ -401,7 +410,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 				&& extractChatState(mXmppConnectionService.find(account, counterpart.toBareJid()), packet)) {
 			mXmppConnectionService.updateConversationUi();
 		}
-
+		if (isTypeGroupChat
+				&& query == null
+				&& extractChatStateMUC(mXmppConnectionService.find(account, counterpart.toBareJid()), packet)) {
+			mXmppConnectionService.updateConversationUi();
+		}
 		if ((body != null || pgpEncrypted != null || axolotlEncrypted != null) && !isMucStatusMessage) {
 			Conversation conversation = mXmppConnectionService.findOrCreateConversation(account, counterpart.toBareJid(), isTypeGroupChat, false, query);
 			final boolean conversationMultiMode = conversation.getMode() == Conversation.MODE_MULTI;

@@ -9,6 +9,7 @@ import java.util.Set;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.xml.Namespace;
+import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.forms.Field;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
@@ -126,7 +127,11 @@ public class MucOptions {
 		SHUTDOWN,
 		UNKNOWN
 	}
-
+	public enum State{
+		COMPOSING,
+		PAUSED,
+		IDLE
+	}
 	public static final String STATUS_CODE_SELF_PRESENCE = "110";
 	public static final String STATUS_CODE_ROOM_CREATED = "201";
 	public static final String STATUS_CODE_BANNED = "301";
@@ -154,12 +159,21 @@ public class MucOptions {
 		private long pgpKeyId = 0;
 		private Avatar avatar;
 		private MucOptions options;
-
+		private ChatState userState=ChatState.INACTIVE;
 		public User(MucOptions options, Jid from) {
 			this.options = options;
 			this.fullJid = from;
 		}
-
+		public ChatState getChatState(){
+			return userState;
+		}
+		public boolean setChatState(ChatState state){
+			if(userState==state) return false;
+			else {
+				userState=state;
+				return true;
+			}
+		}
 		public String getName() {
 			return fullJid == null ? null : fullJid.getResourcepart();
 		}

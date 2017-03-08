@@ -58,6 +58,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
 	public static final String ATTRIBUTE_LAST_CLEAR_HISTORY = "last_clear_history";
 
+
 	private String draftMessage;
 	private String name;
 	private String contactUuid;
@@ -188,14 +189,16 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		return true;
 	}
 
+
 	public ChatState getIncomingChatState() {
 		return this.mIncomingChatState;
 	}
 
+
 	public boolean setOutgoingChatState(ChatState state) {
-		if (mode == MODE_MULTI) {
+		/*if (mode == MODE_MULTI) {
 			return false;
-		}
+		}*/
 		if (this.mOutgoingChatState != state) {
 			this.mOutgoingChatState = state;
 			return true;
@@ -990,6 +993,13 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			}
 			return count;
 		}
+	}
+	public ArrayList<MucOptions.User> getAllUsersWithState(ChatState state){
+		ArrayList<MucOptions.User> users=new ArrayList<>();
+		for(MucOptions.User user:getMucOptions().getUsers()){
+			if(user.getChatState()==state) users.add(user);
+		}
+		return users;
 	}
 
 	private int sentMessagesCount() {
