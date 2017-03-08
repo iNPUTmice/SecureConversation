@@ -463,6 +463,22 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 				message = new Message(conversation, body, Message.ENCRYPTION_NONE, status);
 			}
 
+
+			if (serverMsgId == null) {
+				final Jid by;
+				final boolean safeToExtract;
+				if (isTypeGroupChat) {
+					by = conversation.getJid().toBareJid();
+					safeToExtract = conversation.getMucOptions().hasFeature(Namespace.STANZA_IDS);
+				} else {
+					by = account.getJid().toBareJid();
+					safeToExtract = account.getXmppConnection().getFeatures().stanzaIds();
+				}
+				if (safeToExtract) {
+					serverMsgId = extractStanzaId(packet, by);
+				}
+			}
+
 			message.setCounterpart(counterpart);
 			message.setRemoteMsgId(remoteMsgId);
 			message.setServerMsgId(serverMsgId);
