@@ -46,6 +46,8 @@ public class SettingsActivity extends XmppActivity implements
 	public static final String BLIND_TRUST_BEFORE_VERIFICATION = "btbv";
 	public static final String AUTOMATIC_MESSAGE_DELETION = "automatic_message_deletion";
 
+    private ListPreference themePreference;
+
 	public static final int REQUEST_WRITE_LOGS = 0xbf8701;
 	private SettingsFragment mSettingsFragment;
 
@@ -63,6 +65,7 @@ public class SettingsActivity extends XmppActivity implements
 		setTheme(this.mTheme);
 
 		int bgcolor = getPrimaryBackgroundColor();
+
 		getWindow().getDecorView().setBackgroundColor(bgcolor);
 
 	}

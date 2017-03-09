@@ -103,7 +103,7 @@
 	<string name="pref_general">General</string>
 	<string name="pref_xmpp_resource">XMPP resource</string>
 	<string name="pref_xmpp_resource_summary">The name this client identifies itself with</string>
-	<string name="pref_accept_files">Accept files</string>
+	<string name="pref_accept_files">Accept files smaller than</string>
 	<string name="pref_accept_files_summary">Automatically accept files smaller than…</string>
 	<string name="pref_attachments">Attachments</string>
 	<string name="pref_return_to_previous">Quick Sharing</string>
@@ -529,7 +529,7 @@
 		<item quantity="other">Select %d contacts</item>
 	</plurals>
 	<string name="pref_quick_action_summary">Replace send button with quick action</string>
-	<string name="pref_quick_action">Quick Action</string>
+	<string name="pref_quick_action">Quick Action Button</string>
 	<string name="none">None</string>
 	<string name="recently_used">Most recently used</string>
 	<string name="choose_quick_action">Choose quick action</string>
@@ -609,7 +609,7 @@
 	<string name="notify_only_when_highlighted">Notify only when highlighted</string>
 	<string name="notify_never">Notifications disabled</string>
 	<string name="notify_paused">Notifications paused</string>
-	<string name="pref_picture_compression">Compress Pictures</string>
+	<string name="pref_picture_compression">Compress and Resize Pictures</string>
 	<string name="pref_picture_compression_summary">Resize and compress pictures</string>
 	<string name="always">Always</string>
 	<string name="automatically">Automatically</string>
@@ -739,4 +739,9 @@
 	<string name="pref_notifications_from_strangers">Notifications from strangers</string>
 	<string name="pref_notifications_from_strangers_summary">Notify for messages received from strangers.</string>
 	<string name="received_message_from_stranger">Received message from stranger</string>
+	<string name="KiB256">256 KiB</string>
+	<string name="KiB512">512 KiB</string>
+	<string name="MiB1">1 MiB</string>
+	<string name="MiB5">5 MiB</string>
+	<string name="MiB10">10 MiB</string>
 </resources>
