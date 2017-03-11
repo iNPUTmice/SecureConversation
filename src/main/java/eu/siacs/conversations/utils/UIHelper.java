@@ -22,9 +22,11 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class UIHelper {
@@ -205,7 +207,7 @@ public class UIHelper {
 				for(String l : lines) {
 					if (l.length() > 0) {
 						char first = l.charAt(0);
-						if ((first != '>' || isPositionFollowedByNumber(l,0)) && first != '\u00bb') {
+						if ((first != '>' || !isPositionFollowedByQuoteableCharacter(l,0)) && first != '\u00bb') {
 							String line = l.trim();
 							if (line.isEmpty()) {
 								continue;
@@ -229,7 +231,11 @@ public class UIHelper {
 		}
 	}
 
-	public static boolean isPositionFollowedByNumber(CharSequence body, int pos) {
+	public static boolean isPositionFollowedByQuoteableCharacter(CharSequence body, int pos) {
+		return !isPositionFollowedByNumber(body, pos) && !isPositionFollowedByBigGrin(body,pos);
+	}
+
+	private static boolean isPositionFollowedByNumber(CharSequence body, int pos) {
 		boolean previousWasNumber = false;
 		for (int i = pos +1; i < body.length(); i++) {
 			char c = body.charAt(i);
@@ -242,6 +248,20 @@ public class UIHelper {
 			}
 		}
 		return previousWasNumber;
+	}
+
+	private static boolean isPositionFollowedByBigGrin(CharSequence body, int pos) {
+		return body.length() <= pos + 1
+				|| ((body.charAt(pos + 1) == '<') && (body.length() == pos + 2 || Character.isWhitespace(body.charAt(pos + 2))));
+	}
+
+	public static String getDisplayName(MucOptions.User user) {
+		Contact contact = user.getContact();
+		if (contact != null) {
+			return contact.getDisplayName();
+		} else {
+			return user.getName();
+		}
 	}
 
 	public static String getFileDescriptionString(final Context context, final Message message) {

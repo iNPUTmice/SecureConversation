@@ -1,5 +1,14 @@
 ###Changelog
 
+####Version 1.17.0
+* Do not notify for messages from strangers by default
+* Blocking a JID closes the corresponding conversation
+* Show message sender in conversation overview
+* Show unread counter for every conversation
+* Send typing notifications in private, non-anonymous MUCs
+* Support for the latest MAM namespace
+* Icons for attach menu
+
 ####Version 1.16.2
 * change mam catchup strategie. support mam:1
 * bug fixes

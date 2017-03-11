@@ -47,20 +47,29 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		super(service);
 	}
 
-	private boolean extractChatState(Conversation conversation, final MessagePacket packet) {
+	private boolean extractChatState(Conversation c, final boolean isTypeGroupChat, final MessagePacket packet) {
 		ChatState state = ChatState.parse(packet);
-		if (state != null && conversation != null) {
-			final Account account = conversation.getAccount();
+		if (state != null && c != null) {
+			final Account account = c.getAccount();
 			Jid from = packet.getFrom();
 			if (from.toBareJid().equals(account.getJid().toBareJid())) {
-				conversation.setOutgoingChatState(state);
+				c.setOutgoingChatState(state);
 				if (state == ChatState.ACTIVE || state == ChatState.COMPOSING) {
-					mXmppConnectionService.markRead(conversation);
+					mXmppConnectionService.markRead(c);
 					activateGracePeriod(account);
 				}
 				return false;
 			} else {
-				return conversation.setIncomingChatState(state);
+				if (isTypeGroupChat) {
+					MucOptions.User user = c.getMucOptions().findUserByFullJid(from);
+					if (user != null) {
+						return user.setChatState(state);
+					} else {
+						return false;
+					}
+				} else {
+					return c.setIncomingChatState(state);
+				}
 			}
 		}
 		return false;
@@ -212,7 +221,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		return null;
 	}
 
-	private static String extractStanzaid(Element packet, boolean isTypeGroupChat, Conversation conversation) {
+	private static String extractStanzaId(Element packet, boolean isTypeGroupChat, Conversation conversation) {
 		final Jid by;
 		final boolean safeToExtract;
 		if (isTypeGroupChat) {
@@ -366,7 +375,13 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		final Jid counterpart;
 		final Jid to = packet.getTo();
 		final Jid from = packet.getFrom();
-		final String remoteMsgId = packet.getId();
+		final Element originId = packet.findChild("origin-id",Namespace.STANZA_IDS);
+		final String remoteMsgId;
+		if (originId != null && originId.getAttribute("id") != null) {
+			remoteMsgId = originId.getAttribute("id");
+		} else {
+			remoteMsgId = packet.getId();
+		}
 		boolean notify = false;
 
 		if (from == null) {
@@ -390,9 +405,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			return;
 		}
 
-		if (!isTypeGroupChat
-				&& query == null
-				&& extractChatState(mXmppConnectionService.find(account, counterpart.toBareJid()), packet)) {
+		if (query == null && extractChatState(mXmppConnectionService.find(account, counterpart.toBareJid()), isTypeGroupChat, packet)) {
 			mXmppConnectionService.updateConversationUi();
 		}
 
@@ -401,11 +414,11 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			final boolean conversationMultiMode = conversation.getMode() == Conversation.MODE_MULTI;
 
 			if (serverMsgId == null) {
-				extractStanzaid(packet, isTypeGroupChat, conversation);
+				serverMsgId = extractStanzaId(packet, isTypeGroupChat, conversation);
 			}
 
 			if (isTypeGroupChat) {
-				if (counterpart.getResourcepart().equals(conversation.getMucOptions().getActualNick())) {
+				if (conversation.getMucOptions().isSelf(counterpart)) {
 					status = Message.STATUS_SEND_RECEIVED;
 					isCarbon = true; //not really carbon but received from another resource
 					if (mXmppConnectionService.markMessage(conversation, remoteMsgId, status, serverMsgId)) {

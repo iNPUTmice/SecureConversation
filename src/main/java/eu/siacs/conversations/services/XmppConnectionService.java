@@ -2138,7 +2138,11 @@ public class XmppConnectionService extends Service {
 	private void switchToForeground() {
 		final boolean broadcastLastActivity = broadcastLastActivity();
 		for (Conversation conversation : getConversations()) {
-			conversation.setIncomingChatState(ChatState.ACTIVE);
+			if (conversation.getMode() == Conversation.MODE_MULTI) {
+				conversation.getMucOptions().resetChatState();
+			} else {
+				conversation.setIncomingChatState(Config.DEFAULT_CHATSTATE);
+			}
 		}
 		for (Account account : getAccounts()) {
 			if (account.getStatus() == Account.State.ONLINE) {
@@ -3630,9 +3634,15 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void clearConversationHistory(final Conversation conversation) {
+		long clearDate;
+		if (conversation.countMessages() > 0) {
+			clearDate = conversation.getLatestMessage().getTimeSent() + 1000;
+		} else {
+			clearDate = System.currentTimeMillis();
+		}
 		conversation.clearMessages();
 		conversation.setHasMessagesLeftOnServer(false); //avoid messages getting loaded through mam
-		conversation.setLastClearHistory(System.currentTimeMillis());
+		conversation.setLastClearHistory(clearDate);
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {

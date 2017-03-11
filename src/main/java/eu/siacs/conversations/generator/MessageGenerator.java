@@ -18,6 +18,7 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -45,6 +46,7 @@ public class MessageGenerator extends AbstractGenerator {
 		} else if (message.getType() == Message.TYPE_PRIVATE) {
 			packet.setTo(message.getCounterpart());
 			packet.setType(MessagePacket.TYPE_CHAT);
+			packet.addChild("x","http://jabber.org/protocol/muc#user");
 			if (this.mXmppConnectionService.indicateReceived()) {
 				packet.addChild("request", "urn:xmpp:receipts");
 			}
@@ -54,6 +56,7 @@ public class MessageGenerator extends AbstractGenerator {
 		}
 		packet.setFrom(account.getJid());
 		packet.setId(message.getUuid());
+		packet.addChild("origin-id", Namespace.STANZA_IDS).setAttribute("id",message.getUuid());
 		if (message.edited()) {
 			packet.addChild("replace","urn:xmpp:message-correct:0").setAttribute("id",message.getEditedId());
 		}
@@ -152,7 +155,7 @@ public class MessageGenerator extends AbstractGenerator {
 	public MessagePacket generateChatState(Conversation conversation) {
 		final Account account = conversation.getAccount();
 		MessagePacket packet = new MessagePacket();
-		packet.setType(MessagePacket.TYPE_CHAT);
+		packet.setType(conversation.getMode() == Conversation.MODE_MULTI ? MessagePacket.TYPE_GROUPCHAT : MessagePacket.TYPE_CHAT);
 		packet.setTo(conversation.getJid().toBareJid());
 		packet.setFrom(account.getJid());
 		packet.addChild(ChatState.toElement(conversation.getOutgoingChatState()));
