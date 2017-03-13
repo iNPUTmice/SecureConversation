@@ -28,7 +28,14 @@
                 android:layout_height="56dp"
                 android:layout_alignParentLeft="true"
                 android:scaleType="centerCrop"
-                app:riv_corner_radius="2dp"/>
+                app:riv_corner_radius_bottom_right="2dp"
+                app:riv_corner_radius_top_right="2dp"/>
+
+            <View
+                android:id="@+id/contact_status"
+                android:layout_width="3dp"
+                android:layout_height="56dp"
+                android:layout_alignParentLeft="true"/>
 
             <RelativeLayout
                 android:layout_width="fill_parent"
