@@ -161,6 +161,11 @@
             android:key="show_dynamic_tags"
             android:summary="@string/pref_show_dynamic_tags_summary"
             android:title="@string/pref_show_dynamic_tags"/>
+        <CheckBoxPreference
+            android:defaultValue="false"
+            android:key="always_also_end_conversation"
+            android:summary="@string/pref_always_also_end_conversation_summary"
+            android:title="@string/pref_always_also_end_conversation"/>
     </PreferenceCategory>
     <PreferenceCategory
         android:key="advanced"

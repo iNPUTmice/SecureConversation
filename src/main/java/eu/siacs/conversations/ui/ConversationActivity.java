@@ -759,6 +759,7 @@ public class ConversationActivity extends XmppActivity
 				R.layout.dialog_clear_history, null);
 		final CheckBox endConversationCheckBox = (CheckBox) dialogView
 				.findViewById(R.id.end_conversation_checkbox);
+		endConversationCheckBox.setChecked(alwaysAlsoEndConversation());
 		builder.setView(dialogView);
 		builder.setNegativeButton(getString(R.string.cancel), null);
 		builder.setPositiveButton(getString(R.string.delete_messages),
@@ -1722,6 +1723,10 @@ public class ConversationActivity extends XmppActivity
 
 	public boolean useGreenBackground() {
 		return getPreferences().getBoolean("use_green_background",true);
+	}
+
+	public boolean alwaysAlsoEndConversation() {
+		return getPreferences().getBoolean("always_also_end_conversation",false);
 	}
 
 	protected boolean trustKeysIfNeeded(int requestCode) {
