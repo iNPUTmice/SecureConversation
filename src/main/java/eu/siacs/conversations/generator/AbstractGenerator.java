@@ -34,7 +34,8 @@ public abstract class AbstractGenerator {
 			"http://jabber.org/protocol/nick+notify",
 			"urn:xmpp:ping",
 			"jabber:iq:version",
-			"http://jabber.org/protocol/chatstates"
+			"http://jabber.org/protocol/chatstates",
+			"urn:xmpp:idle:1",
 	};
 	private final String[] MESSAGE_CONFIRMATION_FEATURES = {
 			"urn:xmpp:chat-markers:0",
