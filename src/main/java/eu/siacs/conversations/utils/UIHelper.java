@@ -253,7 +253,18 @@ public class UIHelper {
 
 	private static boolean isPositionFollowedByBigGrin(CharSequence body, int pos) {
 		return body.length() <= pos + 1
-				|| ((body.charAt(pos + 1) == '<') && (body.length() == pos + 2 || Character.isWhitespace(body.charAt(pos + 2))));
+				|| checkSmiley(body,pos,"><")
+				|| checkSmiley(body,pos,">-<")
+				|| checkSmiley(body,pos,">u<");
+	}
+
+	private static boolean checkSmiley(CharSequence body, int pos, CharSequence smiley){
+		for (int i=1;i<smiley.length();i++){
+			if(body.charAt(pos+i) != smiley.charAt(i)){
+				return false;
+			}
+		}
+		return body.length() == pos + smiley.length() || Character.isWhitespace(body.charAt(pos + smiley.length()));
 	}
 
 	public static String getDisplayName(MucOptions.User user) {
