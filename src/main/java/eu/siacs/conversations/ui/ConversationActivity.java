@@ -7,6 +7,7 @@ import android.app.FragmentTransaction;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
@@ -20,6 +21,8 @@ import android.provider.MediaStore;
 import android.provider.Settings;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
@@ -28,10 +31,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.Surface;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 import android.widget.Toast;
@@ -70,7 +76,7 @@ import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationActivity extends XmppActivity
-	implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast {
+		implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist, MenuItem.OnActionExpandListener, XmppConnectionService.OnShowErrorToast {
 
 	public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.action.VIEW";
 	public static final String CONVERSATION = "conversationUuid";
@@ -398,6 +404,10 @@ public class ConversationActivity extends XmppActivity
 		final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
 		final MenuItem menuMute = menu.findItem(R.id.action_mute);
 		final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
+		final MenuItem menuSearchHistory = menu.findItem(R.id.action_search_history);
+
+		final View menuSeachHisoryView = menuSearchHistory.getActionView();
+		menuSearchHistory.setOnActionExpandListener(this);
 
 		if (isConversationsOverviewVisable() && isConversationsOverviewHideable()) {
 			menuArchive.setVisible(false);
@@ -1815,5 +1825,87 @@ public class ConversationActivity extends XmppActivity
 
 	public boolean highlightSelectedConversations() {
 		return !isConversationsOverviewHideable() || this.conversationWasSelectedByKeyboard;
+	}
+
+	@Override
+	public boolean onMenuItemActionExpand(final MenuItem menuItem) {
+		if(menuItem.getItemId() == R.id.action_search_history) {
+			View searchView = menuItem.getActionView();
+			final EditText searchField = (EditText) searchView.findViewById(R.id.search_field);
+			final ImageButton searchUp = (ImageButton) searchView.findViewById(R.id.search_up);
+			final ImageButton searchDown = (ImageButton) searchView.findViewById(R.id.search_down);
+
+			searchField.post(new Runnable() {
+				@Override
+				public void run() {
+					searchField.requestFocus();
+					final InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+					imm.showSoftInput(searchField,
+							InputMethodManager.SHOW_IMPLICIT);
+				}
+			});
+
+			searchField.addTextChangedListener(new TextWatcher() {
+				@Override
+				public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+				}
+
+				@Override
+				public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+				}
+
+				@Override
+				public void afterTextChanged(Editable editable) {
+					if(mConversationFragment != null) {
+						String query = editable.toString();
+						if(!query.isEmpty()) {
+							Message found = mConversationFragment.searchHistory(query);
+							searchUp.setEnabled(found != null);
+							searchDown.setEnabled(found != null);
+						}
+					}
+				}
+			});
+
+			searchUp.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					if(mConversationFragment != null) {
+						String query = searchField.getText().toString();
+						if(!query.isEmpty()) {
+							mConversationFragment.searchHistory(searchField.getText().toString(), true);
+						}
+					}
+				}
+			});
+
+			searchDown.setOnClickListener(new View.OnClickListener() {
+				@Override
+				public void onClick(View view) {
+					if(mConversationFragment != null) {
+						String query = searchField.getText().toString();
+						if(!query.isEmpty()) {
+							mConversationFragment.searchHistory(query, false);
+						}
+					}
+				}
+			});
+		}
+		return true;
+	}
+
+	@Override
+	public boolean onMenuItemActionCollapse(MenuItem menuItem) {
+		if(menuItem.getItemId() == R.id.action_search_history) {
+			View searchView = menuItem.getActionView();
+			final EditText searchField = (EditText) searchView.findViewById(R.id.search_field);
+			final InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.hideSoftInputFromWindow(searchField.getWindowToken(),
+					InputMethodManager.HIDE_IMPLICIT_ONLY);
+			searchField.setText("");
+		}
+		return true;
 	}
 }
