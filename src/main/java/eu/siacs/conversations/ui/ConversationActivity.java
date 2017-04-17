@@ -419,6 +419,7 @@ public class ConversationActivity extends XmppActivity
 			menuClearHistory.setVisible(false);
 			menuMute.setVisible(false);
 			menuUnmute.setVisible(false);
+			menuSearchHistory.setVisible(false);
 		} else {
 			menuAdd.setVisible(!isConversationsOverviewHideable());
 			if (this.getSelectedConversation() != null) {
