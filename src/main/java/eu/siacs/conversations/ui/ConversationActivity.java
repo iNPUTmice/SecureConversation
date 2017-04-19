@@ -406,7 +406,6 @@ public class ConversationActivity extends XmppActivity
 		final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
 		final MenuItem menuSearchHistory = menu.findItem(R.id.action_search_history);
 
-		final View menuSeachHisoryView = menuSearchHistory.getActionView();
 		menuSearchHistory.setOnActionExpandListener(this);
 
 		if (isConversationsOverviewVisable() && isConversationsOverviewHideable()) {
@@ -1830,11 +1829,15 @@ public class ConversationActivity extends XmppActivity
 
 	@Override
 	public boolean onMenuItemActionExpand(final MenuItem menuItem) {
+		/* Search chat history */
 		if(menuItem.getItemId() == R.id.action_search_history) {
-			View searchView = menuItem.getActionView();
+			final View searchView = menuItem.getActionView();
 			final EditText searchField = (EditText) searchView.findViewById(R.id.search_field);
 			final ImageButton searchUp = (ImageButton) searchView.findViewById(R.id.search_up);
 			final ImageButton searchDown = (ImageButton) searchView.findViewById(R.id.search_down);
+
+			searchDown.setVisibility(searchField.getText().toString().isEmpty() ? View.GONE : View.VISIBLE);
+			searchUp.setVisibility(searchField.getText().toString().isEmpty() ? View.GONE : View.VISIBLE);
 
 			searchField.post(new Runnable() {
 				@Override
@@ -1848,51 +1851,46 @@ public class ConversationActivity extends XmppActivity
 
 			searchField.addTextChangedListener(new TextWatcher() {
 				@Override
-				public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-				}
+				public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
 				@Override
-				public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-				}
+				public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
 				@Override
 				public void afterTextChanged(Editable editable) {
 					if(mConversationFragment != null) {
 						String query = editable.toString();
+
 						if(!query.isEmpty()) {
+							searchUp.setVisibility(View.VISIBLE);
+							searchDown.setVisibility(View.VISIBLE);
+
 							Message found = mConversationFragment.searchHistory(query);
 							searchUp.setEnabled(found != null);
 							searchDown.setEnabled(found != null);
+
+						} else {
+							searchUp.setVisibility(View.GONE);
+							searchDown.setVisibility(View.GONE);
 						}
 					}
 				}
 			});
 
-			searchUp.setOnClickListener(new View.OnClickListener() {
+			View.OnClickListener upDownListener = new View.OnClickListener() {
 				@Override
 				public void onClick(View view) {
 					if(mConversationFragment != null) {
-						String query = searchField.getText().toString();
-						if(!query.isEmpty()) {
-							mConversationFragment.searchHistory(searchField.getText().toString(), true);
+						String searchQuery = searchField.getText().toString();
+						if(!searchQuery.isEmpty()) {
+							mConversationFragment.searchHistory(searchQuery, view.getId() == R.id.search_up);
 						}
 					}
 				}
-			});
+			};
 
-			searchDown.setOnClickListener(new View.OnClickListener() {
-				@Override
-				public void onClick(View view) {
-					if(mConversationFragment != null) {
-						String query = searchField.getText().toString();
-						if(!query.isEmpty()) {
-							mConversationFragment.searchHistory(query, false);
-						}
-					}
-				}
-			});
+			searchUp.setOnClickListener(upDownListener);
+			searchDown.setOnClickListener(upDownListener);
 		}
 		return true;
 	}
