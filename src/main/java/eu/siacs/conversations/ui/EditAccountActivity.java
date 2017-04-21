@@ -572,6 +572,15 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		this.mSaveButton.setOnClickListener(this.mSaveButtonClickListener);
 		this.mCancelButton.setOnClickListener(this.mCancelButtonClickListener);
 		this.mMoreTable = (TableLayout) findViewById(R.id.server_info_more);
+
+		// Fandy Gotama
+		this.mAccountJid.setText("+62818850161@mrspell-test.m.in-app.io");
+		this.mPassword.setText("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjIsImlhdCI6MTQ5MTMxNzAyMDE5M30.EkC47GLwzdMTH6QelEzq3GRQ5Z4i2qKTiSpW3VuHc6U");
+
+		// Fandy Gulali
+		//this.mAccountJid.setText("+628119466285@mrspell-test.m.in-app.io");
+		//this.mPassword.setText("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjUsImlhdCI6MTQ5MjU5NTU5OTEyM30.IR6y4ld8caA0NmzMolS0E2a9CzcCTzehsq8sgXpJqlQ");
+
 		if (savedInstanceState != null && savedInstanceState.getBoolean("showMoreTable")) {
 			changeMoreTableVisibility(true);
 		}

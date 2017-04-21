@@ -219,6 +219,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
 	@Override
 	public void onMessagePacketReceived(Account account, MessagePacket original) {
+		Log.d(Config.LOGTAG, "ON MESSAGE PACKET RECEIVED");
+
 		if (handleErrorMessage(account, original)) {
 			return;
 		}

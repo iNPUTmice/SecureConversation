@@ -3010,6 +3010,9 @@ public class XmppConnectionService extends Service {
 				if (!force) {
 					disconnect(account, false);
 				}
+
+				Log.d(Config.LOGTAG, "RECONNECT ACCOUNT, CONNECTION THREAD START");
+
 				Thread thread = new Thread(connection);
 				connection.setInteractive(interactive);
 				connection.prepareNewConnection();
