@@ -40,8 +40,6 @@ import net.java.otr4j.session.SessionStatus;
 
 import org.openintents.openpgp.util.OpenPgpApi;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -52,7 +50,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
-import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Blockable;
 import eu.siacs.conversations.entities.Contact;
@@ -665,7 +662,7 @@ public class ConversationActivity extends XmppActivity
 			if (!transferable.start()) {
 				Toast.makeText(this, R.string.not_connected_try_again, Toast.LENGTH_SHORT).show();
 			}
-		} else if (message.treatAsDownloadable() != Message.Decision.NEVER) {
+		} else if (message.treatAsDownloadable()) {
 			xmppConnectionService.getHttpConnectionManager().createNewDownloadConnection(message, true);
 		}
 	}
@@ -1487,7 +1484,7 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	private void setNeverAskForBatteryOptimizationsAgain() {
-		getPreferences().edit().putBoolean("show_battery_optimization", false).commit();
+		getPreferences().edit().putBoolean("show_battery_optimization", false).apply();
 	}
 
 	private void openBatteryOptimizationDialogIfNeeded() {
@@ -1689,9 +1686,12 @@ public class ConversationActivity extends XmppActivity
 					public void success(Message message) {
 						message.setEncryption(Message.ENCRYPTION_DECRYPTED);
 						xmppConnectionService.sendMessage(message);
-						if (mConversationFragment != null) {
-							mConversationFragment.messageSent();
-						}
+						runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								mConversationFragment.messageSent();
+							}
+						});
 					}
 
 					@Override
@@ -1699,15 +1699,14 @@ public class ConversationActivity extends XmppActivity
 						runOnUiThread(new Runnable() {
 							@Override
 							public void run() {
+								mConversationFragment.doneSendingPgpMessage();
 								Toast.makeText(ConversationActivity.this,
 										R.string.unable_to_connect_to_keychain,
 										Toast.LENGTH_SHORT
 								).show();
 							}
 						});
-						if (mConversationFragment != null) {
-							mConversationFragment.doneSendingPgpMessage();
-						}
+
 					}
 				});
 	}

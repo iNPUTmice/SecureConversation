@@ -8,7 +8,6 @@ import android.widget.PopupMenu;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -25,8 +24,6 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.entities.Transferable;
-import eu.siacs.conversations.ui.XmppActivity;
-import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class UIHelper {
@@ -115,8 +112,9 @@ public class UIHelper {
 
 	public static String lastseen(Context context, boolean active, long time) {
 		long difference = (System.currentTimeMillis() - time) / 1000;
-		active = active && difference <= 300;
-		if (active || difference < 60) {
+		if (active) {
+			return context.getString(R.string.online_right_now);
+		} else if (difference < 60) {
 			return context.getString(R.string.last_seen_now);
 		} else if (difference < 60 * 2) {
 			return context.getString(R.string.last_seen_min);
@@ -198,7 +196,7 @@ public class UIHelper {
 				} else {
 					return new Pair<>(context.getString(R.string.location), true);
 				}
-			} else if (message.treatAsDownloadable() == Message.Decision.MUST) {
+			} else if (message.treatAsDownloadable()) {
 				return new Pair<>(context.getString(R.string.x_file_offered_for_download,
 						getFileDescriptionString(context,message)),true);
 			} else {
@@ -232,7 +230,9 @@ public class UIHelper {
 	}
 
 	public static boolean isPositionFollowedByQuoteableCharacter(CharSequence body, int pos) {
-		return !isPositionFollowedByNumber(body, pos) && !isPositionFollowedByBigGrin(body,pos);
+		return !isPositionFollowedByNumber(body, pos)
+				&& !isPositionFollowedByEmoticon(body,pos)
+				&& !isPositionFollowedByEquals(body,pos);
 	}
 
 	private static boolean isPositionFollowedByNumber(CharSequence body, int pos) {
@@ -244,15 +244,55 @@ public class UIHelper {
 			} else if (previousWasNumber && (c == '.' || c == ',')) {
 				previousWasNumber = false;
 			} else {
-				return Character.isWhitespace(c) && previousWasNumber;
+				return (Character.isWhitespace(c) || c == '%' || c == '+') && previousWasNumber;
 			}
 		}
 		return previousWasNumber;
 	}
 
-	private static boolean isPositionFollowedByBigGrin(CharSequence body, int pos) {
-		return body.length() <= pos + 1
-				|| ((body.charAt(pos + 1) == '<') && (body.length() == pos + 2 || Character.isWhitespace(body.charAt(pos + 2))));
+	private static boolean isPositionFollowedByEquals(CharSequence body, int pos) {
+		return body.length() > pos + 1 && body.charAt(pos+1) == '=';
+	}
+
+	private static boolean isPositionFollowedByEmoticon(CharSequence body, int pos) {
+		if (body.length() <= pos +1) {
+			return false;
+		} else {
+			final char first = body.charAt(pos +1);
+			return first == ';'
+				|| first == ':'
+				|| smallerThanBeforeWhitespace(body,pos+1);
+		}
+	}
+
+	private static boolean smallerThanBeforeWhitespace(CharSequence body, int pos) {
+		for(int i = pos; i < body.length(); ++i) {
+			final char c = body.charAt(i);
+			if (Character.isWhitespace(c)) {
+				return false;
+			} else if (c == '<') {
+				return body.length() == i + 1 || Character.isWhitespace(body.charAt(i + 1));
+			}
+		}
+		return false;
+	}
+
+	public static boolean isPositionFollowedByQuote(CharSequence body, int pos) {
+		if (body.length() <= pos + 1 || Character.isWhitespace(body.charAt(pos+1))) {
+			return false;
+		}
+		boolean previousWasWhitespace = false;
+		for (int i = pos +1; i < body.length(); i++) {
+			char c = body.charAt(i);
+			if (c == '\n' || c == '»') {
+				return false;
+			} else if (c == '«' && !previousWasWhitespace) {
+				return true;
+			} else {
+				previousWasWhitespace = Character.isWhitespace(c);
+			}
+		}
+		return false;
 	}
 
 	public static String getDisplayName(MucOptions.User user) {

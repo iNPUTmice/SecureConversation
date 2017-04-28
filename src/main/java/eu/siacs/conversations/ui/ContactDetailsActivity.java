@@ -13,6 +13,7 @@ import android.preference.PreferenceManager;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -48,6 +49,7 @@ import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -410,7 +412,9 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 			lastseen.setVisibility(View.VISIBLE);
 			lastseen.setText(R.string.contact_blocked);
 		} else {
-			if (showLastSeen && contact.getLastseen() > 0) {
+			if (showLastSeen
+					&& contact.getLastseen() > 0
+					&& contact.getPresences().allOrNonSupport(Namespace.IDLE)) {
 				lastseen.setVisibility(View.VISIBLE);
 				lastseen.setText(UIHelper.lastseen(getApplicationContext(), contact.isActive(), contact.getLastseen()));
 			} else {
@@ -449,7 +453,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 				key.setText(CryptoHelper.prettifyFingerprint(otrFingerprint));
 				if (otrFingerprint != null && otrFingerprint.equals(messageFingerprint)) {
 					keyType.setText(R.string.otr_fingerprint_selected_message);
-					keyType.setTextColor(getResources().getColor(R.color.accent));
+					keyType.setTextColor(ContextCompat.getColor(this, R.color.accent));
 				} else {
 					keyType.setText(R.string.otr_fingerprint);
 				}
@@ -498,29 +502,26 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 			TextView keyType = (TextView) view.findViewById(R.id.key_type);
 			keyType.setText(R.string.openpgp_key_id);
 			if ("pgp".equals(messageFingerprint)) {
-				keyType.setTextColor(getResources().getColor(R.color.accent));
+				keyType.setTextColor(ContextCompat.getColor(this, R.color.accent));
 			}
 			key.setText(OpenPgpUtils.convertKeyIdToHex(contact.getPgpKeyId()));
-			view.setOnClickListener(new OnClickListener() {
+			final OnClickListener openKey = new OnClickListener() {
 
 				@Override
 				public void onClick(View v) {
-					PgpEngine pgp = ContactDetailsActivity.this.xmppConnectionService
-						.getPgpEngine();
-					if (pgp != null) {
-						PendingIntent intent = pgp.getIntentForKey(contact);
-						if (intent != null) {
-							try {
-								startIntentSenderForResult(
-										intent.getIntentSender(), 0, null, 0,
-										0, 0);
-							} catch (SendIntentException e) {
-
-							}
-						}
+					PgpEngine pgp = ContactDetailsActivity.this.xmppConnectionService.getPgpEngine();
+					try {
+						startIntentSenderForResult(
+								pgp.getIntentForKey(contact).getIntentSender(), 0, null, 0,
+								0, 0);
+					} catch (Throwable e) {
+						Toast.makeText(ContactDetailsActivity.this,R.string.openpgp_error,Toast.LENGTH_SHORT).show();
 					}
 				}
-			});
+			};
+			view.setOnClickListener(openKey);
+			key.setOnClickListener(openKey);
+			keyType.setOnClickListener(openKey);
 			keys.addView(view);
 		}
 		keysWrapper.setVisibility(hasKeys ? View.VISIBLE : View.GONE);

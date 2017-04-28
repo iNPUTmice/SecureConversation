@@ -1,6 +1,5 @@
 package eu.siacs.conversations.http;
 
-import android.app.PendingIntent;
 import android.os.PowerManager;
 import android.util.Log;
 import android.util.Pair;
@@ -24,7 +23,6 @@ import eu.siacs.conversations.parser.IqParser;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.AbstractConnectionManager;
 import eu.siacs.conversations.services.XmppConnectionService;
-import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
@@ -191,33 +189,13 @@ public class HttpUploadConnection implements Transferable {
 				if (code == 200 || code == 201) {
 					Log.d(Config.LOGTAG, "finished uploading file");
 					if (key != null) {
-						mGetUrl = new URL(mGetUrl.toString() + "#" + CryptoHelper.bytesToHex(key));
+						mGetUrl = CryptoHelper.toAesGcmUrl(new URL(mGetUrl.toString() + "#" + CryptoHelper.bytesToHex(key)));
 					}
 					mXmppConnectionService.getFileBackend().updateFileParams(message, mGetUrl);
 					mXmppConnectionService.getFileBackend().updateMediaScanner(file);
 					message.setTransferable(null);
 					message.setCounterpart(message.getConversation().getJid().toBareJid());
-					if (message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
-						mXmppConnectionService.getPgpEngine().encrypt(message, new UiCallback<Message>() {
-							@Override
-							public void success(Message message) {
-								mXmppConnectionService.resendMessage(message,delayed);
-							}
-
-							@Override
-							public void error(int errorCode, Message object) {
-								Log.d(Config.LOGTAG,"pgp encryption failed");
-								fail("pgp encryption failed");
-							}
-
-							@Override
-							public void userInputRequried(PendingIntent pi, Message object) {
-								fail("pgp encryption failed");
-							}
-						});
-					} else {
-						mXmppConnectionService.resendMessage(message, delayed);
-					}
+					mXmppConnectionService.resendMessage(message, delayed);
 				} else {
 					Log.d(Config.LOGTAG,"http upload failed because response code was "+code);
 					fail("http upload failed because response code was "+code);

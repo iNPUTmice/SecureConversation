@@ -1,5 +1,26 @@
 ###Changelog
 
+####Version 1.18.3
+* limited GPG encryption for MUC offline members
+
+####Version 1.18.2
+* added support for Android Auto
+* fixed HTTP Download over Tor
+* work around for nimbuzz.com MUCs
+
+####Version 1.18.1
+* bug fixes
+
+####Version 1.18.0
+* Conversations <1.16.0 will be unable to receive OMEMO encrypted messages
+* OMEMO: put auth tag into key (verify auth tag as well)
+* offer to block entire domain in message from stranger snackbar 
+* treat URL as file if URL is in oob or contains key
+
+####Version 1.17.1
+* Switch Aztec to QR for faster scans
+* Fixed unread counter for image messages
+
 ####Version 1.17.0
 * Do not notify for messages from strangers by default
 * Blocking a JID closes the corresponding conversation

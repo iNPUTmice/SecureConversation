@@ -11,6 +11,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -93,7 +94,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 	private static final Linkify.MatchFilter WEBURL_MATCH_FILTER = new Linkify.MatchFilter() {
 		@Override
 		public boolean acceptMatch(CharSequence cs, int start, int end) {
-			return start < 1 || (cs.charAt(start-1) != '@' && !cs.subSequence(Math.max(0,start - 3),start).equals("://"));
+			return start < 1 || (cs.charAt(start-1) != '@' && cs.charAt(start-1) != '.' && !cs.subSequence(Math.max(0,start - 3),start).equals("://"));
 		}
 	};
 
@@ -153,13 +154,13 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 
 	private int getMessageTextColor(boolean onDark, boolean primary) {
 		if (onDark) {
-			return activity.getResources().getColor(primary ? R.color.white : R.color.white70);
+			return ContextCompat.getColor(activity, primary ? R.color.white : R.color.white70);
 		} else {
-			return activity.getResources().getColor(primary ? R.color.black87 : R.color.black54);
+			return ContextCompat.getColor(activity, primary ? R.color.black87 : R.color.black54);
 		}
 	}
 
-	private void displayStatus(ViewHolder viewHolder, Message message, int type, boolean darkBackground, boolean inValidSession) {
+	private void displayStatus(ViewHolder viewHolder, Message message, int type, boolean darkBackground) {
 		String filesize = null;
 		String info = null;
 		boolean error = false;
@@ -182,8 +183,10 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			FileParams params = message.getFileParams();
 			if (params.size > (1.5 * 1024 * 1024)) {
 				filesize = params.size / (1024 * 1024)+ " MiB";
-			} else if (params.size > 0) {
+			} else if (params.size >= 1024) {
 				filesize = params.size / 1024 + " KiB";
+			} else if (params.size > 0){
+				filesize = params.size + " B";
 			}
 			if (message.getTransferable() != null && message.getTransferable().getStatus() == Transferable.STATUS_FAILED) {
 				error = true;
@@ -332,7 +335,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			body.setSpan(new DividerSpan(false), end, end + 2, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 		}
 		int color = darkBackground ? this.getMessageTextColor(darkBackground, false)
-				: getContext().getResources().getColor(R.color.bubble);
+				: ContextCompat.getColor(activity, R.color.bubble);
 		DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
 		body.setSpan(new QuoteSpan(color, metrics), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 		return 0;
@@ -352,7 +355,8 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			char current = body.length() > i ? body.charAt(i) : '\n';
 			if (lineStart == -1) {
 				if (previous == '\n') {
-					if ((current == '>' && UIHelper.isPositionFollowedByQuoteableCharacter(body,i)) || current == '\u00bb') {
+					if ((current == '>' && UIHelper.isPositionFollowedByQuoteableCharacter(body,i))
+							|| current == '\u00bb' && !UIHelper.isPositionFollowedByQuote(body,i)) {
 						// Line start with quote
 						lineStart = i;
 						if (quoteStart == -1) quoteStart = i;
@@ -471,7 +475,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		}
 		viewHolder.messageBody.setTextColor(this.getMessageTextColor(darkBackground, true));
 		viewHolder.messageBody.setLinkTextColor(this.getMessageTextColor(darkBackground, true));
-		viewHolder.messageBody.setHighlightColor(activity.getResources().getColor(darkBackground
+		viewHolder.messageBody.setHighlightColor(ContextCompat.getColor(activity, darkBackground
 				? (type == SENT || !mUseGreenBackground ? R.color.black26 : R.color.grey800) : R.color.grey500));
 		viewHolder.messageBody.setTypeface(null, Typeface.NORMAL);
 	}
@@ -762,7 +766,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 				displayLocationMessage(viewHolder,message);
 			} else if (message.bodyIsHeart()) {
 				displayHeartMessage(viewHolder, message.getBody().trim());
-			} else if (message.treatAsDownloadable() == Message.Decision.MUST) {
+			} else if (message.treatAsDownloadable()) {
 				try {
 					URL url = new URL(message.getBody());
 					displayDownloadableMessage(viewHolder,
@@ -802,7 +806,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			}
 		}
 
-		displayStatus(viewHolder, message, type, darkBackground, isInValidSession);
+		displayStatus(viewHolder, message, type, darkBackground);
 
 		return view;
 	}

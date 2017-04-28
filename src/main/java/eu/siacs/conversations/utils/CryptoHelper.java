@@ -8,6 +8,8 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x500.style.IETFUtils;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
@@ -27,6 +29,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.http.AesGcmURLStreamHandler;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
@@ -229,5 +232,35 @@ public final class CryptoHelper {
 			default:
 				return R.string.encryption_choice_pgp;
 		}
+	}
+
+	public static URL toAesGcmUrl(URL url) {
+		if (!url.getProtocol().equalsIgnoreCase("https")) {
+			return url;
+		}
+		try {
+			return new URL(AesGcmURLStreamHandler.PROTOCOL_NAME+url.toString().substring(url.getProtocol().length()));
+		} catch (MalformedURLException e) {
+			return url;
+		}
+	}
+
+	public static URL toHttpsUrl(URL url) {
+		if (!url.getProtocol().equalsIgnoreCase(AesGcmURLStreamHandler.PROTOCOL_NAME)) {
+			return url;
+		}
+		try {
+			return new URL("https"+url.toString().substring(url.getProtocol().length()));
+		} catch (MalformedURLException e) {
+			return url;
+		}
+	}
+
+	public static boolean isPgpEncryptedUrl(String url) {
+		if (url == null) {
+			return false;
+		}
+		final String u = url.toLowerCase();
+		return !u.contains(" ") && (u.startsWith("https://") || u.startsWith("http://")) && u.endsWith(".pgp");
 	}
 }

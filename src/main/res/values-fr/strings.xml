@@ -259,7 +259,7 @@
   <string name="leave">Partir</string>
   <string name="contact_added_you">Votre correspondant vous a ajouté dans sa liste de contacts</string>
   <string name="add_back">Ré-ajouter</string>
-  <string name="contact_has_read_up_to_this_point">%s a tout lu jusqu\'à ici</string>
+  <string name="contact_has_read_up_to_this_point">%s a tout lu jusqu\'ici</string>
   <string name="publish">Publier</string>
   <string name="touch_to_choose_picture">Toucher l\'avatar pour choisir une image depuis la galerie.</string>
   <string name="publish_avatar_explanation">Note : toutes les personnes ayant souscrit à vos mises jour de disponibilité verront cette image.</string>
@@ -471,6 +471,8 @@
   <string name="disable_account">Désactiver le compte</string>
   <string name="contact_is_typing">%s est en train d\'écrire</string>
   <string name="contact_has_stopped_typing">%s a arrêté d\'écrire</string>
+  <string name="contacts_are_typing">%s est en train d\'écrire...</string>
+  <string name="contacts_have_stopped_typing">%s a cessé d\'écrire</string>
   <string name="pref_chat_states">Notifications d\'écriture</string>
   <string name="pref_chat_states_summary">Informer vos contacts quand vous leur écrivez des messages</string>
   <string name="send_location">Envoyer la position</string>
@@ -706,4 +708,7 @@
   <string name="pref_notifications_from_strangers">Notifications d\'inconnus</string>
   <string name="pref_notifications_from_strangers_summary">Notifier pour les messages envoyés par des personnes inconnues</string>
   <string name="received_message_from_stranger">Message d\'un inconnu reçu</string>
+  <string name="block_stranger">Bloquer l\'inconnu</string>
+  <string name="block_entire_domain">Bloquer le domaine entier</string>
+  <string name="online_right_now">En ligne actuellement</string>
 </resources>

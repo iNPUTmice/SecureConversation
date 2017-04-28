@@ -120,6 +120,8 @@ public class XmppConnection implements Runnable {
 	private long lastDiscoStarted = 0;
 	private AtomicInteger mPendingServiceDiscoveries = new AtomicInteger(0);
 	private AtomicBoolean mWaitForDisco = new AtomicBoolean(true);
+	private AtomicBoolean mWaitingForSmCatchup = new AtomicBoolean(false);
+	private AtomicInteger mSmCatchupMessageCounter = new AtomicInteger(0);
 	private boolean mInteractive = false;
 	private int attempt = 0;
 	private final Hashtable<String, Pair<IqPacket, OnIqPacketReceived>> packetCallbacks = new Hashtable<>();
@@ -217,6 +219,7 @@ public class XmppConnection implements Runnable {
 	protected synchronized void changeStatus(final Account.State nextStatus) {
 		if (Thread.currentThread().isInterrupted()) {
 			Log.d(Config.LOGTAG,account.getJid().toBareJid()+": not changing status to "+nextStatus+" because thread was interrupted");
+			return;
 		}
 		if (account.getStatus() != nextStatus) {
 			if ((nextStatus == Account.State.OFFLINE)
@@ -239,7 +242,16 @@ public class XmppConnection implements Runnable {
 		this.lastConnect = SystemClock.elapsedRealtime();
 		this.lastPingSent = SystemClock.elapsedRealtime();
 		this.lastDiscoStarted = Long.MAX_VALUE;
+		this.mWaitingForSmCatchup.set(false);
 		this.changeStatus(Account.State.CONNECTING);
+	}
+
+	public boolean isWaitingForSmCatchup() {
+		return mWaitingForSmCatchup.get();
+	}
+
+	public void incrementSmCatchupMessageCounter() {
+		this.mSmCatchupMessageCounter.incrementAndGet();
 	}
 
 	protected void connect() {
@@ -443,7 +455,7 @@ public class XmppConnection implements Runnable {
 	 * Starts xmpp protocol, call after connecting to socket
 	 * @return true if server returns with valid xmpp, false otherwise
      */
-	private boolean startXmpp(Socket socket) throws Exception {
+	private synchronized boolean startXmpp(Socket socket) throws Exception {
 		if (Thread.currentThread().isInterrupted()) {
 			throw new InterruptedException();
 		}
@@ -570,6 +582,7 @@ public class XmppConnection implements Runnable {
 				final RequestPacket r = new RequestPacket(smVersion);
 				tagWriter.writeStanzaAsync(r);
 			} else if (nextTag.isStart("resumed")) {
+				this.tagWriter.writeStanzaAsync(new RequestPacket(smVersion));
 				lastPacketReceived = SystemClock.elapsedRealtime();
 				final Element resumed = tagReader.readElement(nextTag);
 				final String h = resumed.getAttribute("h");
@@ -613,6 +626,13 @@ public class XmppConnection implements Runnable {
 				final AckPacket ack = new AckPacket(this.stanzasReceived, smVersion);
 				tagWriter.writeStanzaAsync(ack);
 			} else if (nextTag.isStart("a")) {
+				if (mWaitingForSmCatchup.compareAndSet(true,false)) {
+					int count = mSmCatchupMessageCounter.get();
+					Log.d(Config.LOGTAG,account.getJid().toBareJid()+": SM catchup complete ("+count+")");
+					if (count > 0) {
+						mXmppConnectionService.getNotificationService().finishBacklog(true,account);
+					}
+				}
 				final Element ack = tagReader.readElement(nextTag);
 				lastPacketReceived = SystemClock.elapsedRealtime();
 				try {
@@ -839,6 +859,8 @@ public class XmppConnection implements Runnable {
 				Log.d(Config.LOGTAG,account.getJid().toBareJid()+": resuming after stanza #"+stanzasReceived);
 			}
 			final ResumePacket resume = new ResumePacket(this.streamId, stanzasReceived, smVersion);
+			this.mSmCatchupMessageCounter.set(0);
+			this.mWaitingForSmCatchup.set(true);
 			this.tagWriter.writeStanzaAsync(resume);
 		} else if (needsBinding) {
 			if (this.streamFeatures.hasChild("bind")) {

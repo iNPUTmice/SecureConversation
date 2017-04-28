@@ -80,15 +80,15 @@ public class Message extends AbstractEntity {
 	protected boolean read = true;
 	protected String remoteMsgId = null;
 	protected String serverMsgId = null;
-	protected Conversation conversation = null;
+	private final Conversation conversation;
 	protected Transferable transferable = null;
 	private Message mNextMessage = null;
 	private Message mPreviousMessage = null;
 	private String axolotlFingerprint = null;
 	private String errorMessage = null;
 
-	private Message() {
-
+	private Message(Conversation conversation) {
+		this.conversation = conversation;
 	}
 
 	public Message(Conversation conversation, String body, int encryption) {
@@ -96,7 +96,7 @@ public class Message extends AbstractEntity {
 	}
 
 	public Message(Conversation conversation, String body, int encryption, int status) {
-		this(java.util.UUID.randomUUID().toString(),
+		this(conversation, java.util.UUID.randomUUID().toString(),
 				conversation.getUuid(),
 				conversation.getJid() == null ? null : conversation.getJid().toBareJid(),
 				null,
@@ -114,15 +114,15 @@ public class Message extends AbstractEntity {
 				null,
 				false,
 				null);
-		this.conversation = conversation;
 	}
 
-	private Message(final String uuid, final String conversationUUid, final Jid counterpart,
+	private Message(final Conversation conversation, final String uuid, final String conversationUUid, final Jid counterpart,
 					final Jid trueCounterpart, final String body, final long timeSent,
 					final int encryption, final int status, final int type, final boolean carbon,
 					final String remoteMsgId, final String relativeFilePath,
 					final String serverMsgId, final String fingerprint, final boolean read,
 					final String edited, final boolean oob, final String errorMessage) {
+		this.conversation = conversation;
 		this.uuid = uuid;
 		this.conversationUuid = conversationUUid;
 		this.counterpart = counterpart;
@@ -143,7 +143,7 @@ public class Message extends AbstractEntity {
 		this.errorMessage = errorMessage;
 	}
 
-	public static Message fromCursor(Cursor cursor) {
+	public static Message fromCursor(Cursor cursor, Conversation conversation) {
 		Jid jid;
 		try {
 			String value = cursor.getString(cursor.getColumnIndex(COUNTERPART));
@@ -168,7 +168,8 @@ public class Message extends AbstractEntity {
 		} catch (InvalidJidException e) {
 			trueCounterpart = null;
 		}
-		return new Message(cursor.getString(cursor.getColumnIndex(UUID)),
+		return new Message(conversation,
+				cursor.getString(cursor.getColumnIndex(UUID)),
 				cursor.getString(cursor.getColumnIndex(CONVERSATION)),
 				jid,
 				trueCounterpart,
@@ -189,17 +190,15 @@ public class Message extends AbstractEntity {
 	}
 
 	public static Message createStatusMessage(Conversation conversation, String body) {
-		final Message message = new Message();
+		final Message message = new Message(conversation);
 		message.setType(Message.TYPE_STATUS);
-		message.setConversation(conversation);
 		message.setBody(body);
 		return message;
 	}
 
 	public static Message createLoadMoreMessage(Conversation conversation) {
-		final Message message = new Message();
+		final Message message = new Message(conversation);
 		message.setType(Message.TYPE_STATUS);
-		message.setConversation(conversation);
 		message.setBody("LOAD_MORE");
 		return message;
 	}
@@ -242,10 +241,6 @@ public class Message extends AbstractEntity {
 
 	public Conversation getConversation() {
 		return this.conversation;
-	}
-
-	public void setConversation(Conversation conv) {
-		this.conversation = conv;
 	}
 
 	public Jid getCounterpart() {
@@ -492,8 +487,8 @@ public class Message extends AbstractEntity {
 						this.getBody().length() + message.getBody().length() <= Config.MAX_DISPLAY_MESSAGE_CHARS &&
 						!GeoHelper.isGeoUri(message.getBody()) &&
 						!GeoHelper.isGeoUri(this.body) &&
-						message.treatAsDownloadable() == Decision.NEVER &&
-						this.treatAsDownloadable() == Decision.NEVER &&
+						!message.treatAsDownloadable() &&
+						!this.treatAsDownloadable() &&
 						!message.getBody().startsWith(ME_COMMAND) &&
 						!this.getBody().startsWith(ME_COMMAND) &&
 						!this.bodyIsHeart() &&
@@ -506,10 +501,9 @@ public class Message extends AbstractEntity {
 		return a == b || (
 				(a == Message.STATUS_SEND_RECEIVED && b == Message.STATUS_UNSEND)
 						|| (a == Message.STATUS_SEND_RECEIVED && b == Message.STATUS_SEND)
-						|| (a == Message.STATUS_UNSEND && b == Message.STATUS_SEND)
-						|| (a == Message.STATUS_UNSEND && b == Message.STATUS_SEND_RECEIVED)
+						|| (a == Message.STATUS_SEND_RECEIVED && b == Message.STATUS_WAITING)
 						|| (a == Message.STATUS_SEND && b == Message.STATUS_UNSEND)
-						|| (a == Message.STATUS_SEND && b == Message.STATUS_SEND_RECEIVED)
+						|| (a == Message.STATUS_SEND && b == Message.STATUS_WAITING)
 		);
 	}
 
@@ -603,12 +597,6 @@ public class Message extends AbstractEntity {
 		this.oob = isOob;
 	}
 
-	public enum Decision {
-		MUST,
-		SHOULD,
-		NEVER,
-	}
-
 	private static String extractRelevantExtension(URL url) {
 		String path = url.getPath();
 		return extractRelevantExtension(path);
@@ -651,39 +639,20 @@ public class Message extends AbstractEntity {
 		}
 	}
 
-	public Decision treatAsDownloadable() {
+	public boolean treatAsDownloadable() {
 		if (body.trim().contains(" ")) {
-			return Decision.NEVER;
+			return false;
 		}
 		try {
-			URL url = new URL(body);
-			String ref = url.getRef();
+			final URL url = new URL(body);
+			final String ref = url.getRef();
 			final String protocol = url.getProtocol();
 			final boolean encrypted = ref != null && ref.matches("([A-Fa-f0-9]{2}){48}");
-			if (AesGcmURLStreamHandler.PROTOCOL_NAME.equalsIgnoreCase(protocol) && encrypted) {
-				return Decision.MUST;
-			}
-			if (!url.getProtocol().equalsIgnoreCase("http") && !url.getProtocol().equalsIgnoreCase("https")) {
-				return Decision.NEVER;
-			} else if (oob) {
-				return Decision.MUST;
-			}
-			String extension = extractRelevantExtension(url);
-			if (extension == null) {
-				return Decision.NEVER;
-			}
-
-			if (encrypted) {
-				return Decision.MUST;
-			} else if (Transferable.VALID_IMAGE_EXTENSIONS.contains(extension)
-					|| Transferable.WELL_KNOWN_EXTENSIONS.contains(extension)) {
-				return Decision.SHOULD;
-			} else {
-				return Decision.NEVER;
-			}
+			return (AesGcmURLStreamHandler.PROTOCOL_NAME.equalsIgnoreCase(protocol) && encrypted)
+					|| (("http".equalsIgnoreCase(protocol) || "https".equalsIgnoreCase(protocol)) && (oob || encrypted));
 
 		} catch (MalformedURLException e) {
-			return Decision.NEVER;
+			return false;
 		}
 	}
 
