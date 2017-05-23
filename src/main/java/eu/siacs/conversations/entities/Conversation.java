@@ -54,6 +54,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static final String ATTRIBUTE_MUTED_TILL = "muted_till";
 	public static final String ATTRIBUTE_ALWAYS_NOTIFY = "always_notify";
 	public static final String ATTRIBUTE_LAST_CLEAR_HISTORY = "last_clear_history";
+	public static final String ATTRIBUTE_REAL_TIME_TEXT = "rtt_status";
 
 	private static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
 
@@ -932,7 +933,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 	}
 
-	private boolean getBooleanAttribute(String key, boolean defaultValue) {
+	public boolean getBooleanAttribute(String key, boolean defaultValue) {
 		String value = this.getAttribute(key);
 		if (value == null) {
 			return defaultValue;

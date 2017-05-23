@@ -32,6 +32,7 @@
         <item name="attr/ic_attach_location">@drawable/ic_attach_location</item>
         <item name="attr/ic_attach_photo">@drawable/ic_attach_photo</item>
         <item name="attr/ic_attach_record">@drawable/ic_attach_record</item>
+        <item name="attr/ic_status_rtt">@drawable/ic_action_rtt</item>
 
         <item name="attr/icon_add_group">@drawable/ic_action_add_group</item>
         <item name="attr/icon_add_person">@drawable/ic_action_add_person</item>
@@ -52,6 +53,8 @@
         <item name="attr/conversations_overview_background">@color/primary700</item>
 
         <item name="attr/icon_alpha">1.0</item>
+        <item name="attr/icon_alpha_active">0.87</item>
+        <item name="attr/icon_alpha_inactive">0.38</item>
 
         <item name="attr/dialog_horizontal_padding">16dp</item>
         <item name="attr/dialog_vertical_padding">16dp</item>
@@ -107,6 +110,7 @@
         <item name="attr/ic_attach_location">@drawable/ic_attach_location_white</item>
         <item name="attr/ic_attach_photo">@drawable/ic_attach_photo_white</item>
         <item name="attr/ic_attach_record">@drawable/ic_attach_record_white</item>
+        <item name="attr/ic_status_rtt">@drawable/ic_action_rtt_white</item>
 
         <item name="attr/message_bubble_received_monochrome">@drawable/message_bubble_received_grey</item>
         <item name="attr/message_bubble_sent">@drawable/message_bubble_sent_grey</item>
@@ -117,6 +121,8 @@
         <item name="attr/conversations_overview_background">@color/primary900</item>
 
         <item name="attr/icon_alpha">1.0</item>
+        <item name="attr/icon_alpha_active">1.0</item>
+        <item name="attr/icon_alpha_inactive">0.5</item>
 
         <item name="attr/dialog_horizontal_padding">16dp</item>
         <item name="attr/dialog_vertical_padding">16dp</item>

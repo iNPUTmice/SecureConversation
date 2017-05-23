@@ -1775,6 +1775,8 @@ public class ConversationActivity extends XmppActivity
 			}
 			Log.d(Config.LOGTAG,"not updating conversations fragment because conversations list size was 0");
 		}
+
+		mConversationFragment.checkRttButtonStatus();
 	}
 
 	@Override

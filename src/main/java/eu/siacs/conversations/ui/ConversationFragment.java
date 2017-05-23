@@ -17,6 +17,7 @@ import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
 import android.util.Pair;
+import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -75,6 +76,7 @@ import eu.siacs.conversations.ui.widget.ListSelectionManager;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.NickValidityChecker;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
@@ -120,6 +122,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	protected MessageAdapter messageListAdapter;
 	private EditMessage mEditMessage;
 	private ImageButton mSendButton;
+	private ImageButton rttStatusButton;
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
@@ -326,6 +329,26 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			return true;
 		}
 	};
+	private OnClickListener rttStatusCheckListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (conversation != null) {
+				Contact contact = conversation.getContact();
+				if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
+					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "false");
+					setRttButtonAlpha(false);
+				} else if (contact != null && contact.getPresences().supports(Namespace.RTT)
+						&& activity.xmppConnectionService.useRealTimeText()) {
+					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "true");
+					setRttButtonAlpha(true);
+				} else if (!activity.xmppConnectionService.useRealTimeText()) {
+					Toast.makeText(activity, "You have turned off RTT", Toast.LENGTH_LONG).show();
+				} else {
+					Toast.makeText(activity, "Other user doesn't support RTT", Toast.LENGTH_LONG).show();
+				}
+			}
+		}
+	};
 	private OnClickListener mSendButtonListener = new OnClickListener() {
 
 		@Override
@@ -471,6 +494,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 		mSendButton = (ImageButton) view.findViewById(R.id.textSendButton);
 		mSendButton.setOnClickListener(this.mSendButtonListener);
+
+		rttStatusButton = (ImageButton) view.findViewById(R.id.rttToggleButton);
+		rttStatusButton.setOnClickListener(this.rttStatusCheckListener);
 
 		snackbar = (RelativeLayout) view.findViewById(R.id.snackbar);
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
@@ -917,6 +943,11 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.messagesView.setAdapter(messageListAdapter);
 		updateMessages();
 		this.conversation.messagesLoaded.set(true);
+		if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
+			setRttButtonAlpha(true);
+		} else {
+			setRttButtonAlpha(false);
+		}
 		synchronized (this.messageList) {
 			final Message first = conversation.getFirstUnreadMessage();
 			final int bottom = Math.max(0, this.messageList.size() - 1);
@@ -1555,6 +1586,29 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			text = " " + text;
 		}
 		this.mEditMessage.append(text);
+	}
+
+	public void setRttButtonAlpha(boolean active) {
+		TypedValue typedValue = new TypedValue();
+		if (active) {
+			activity.getTheme().resolveAttribute(R.attr.icon_alpha_active, typedValue, true);
+		} else {
+			activity.getTheme().resolveAttribute(R.attr.icon_alpha_inactive, typedValue, true);
+		}
+		rttStatusButton.setAlpha(typedValue.getFloat());
+	}
+
+	public void checkRttButtonStatus() {
+		Contact contact = conversation == null ? null : conversation.getContact();
+		if (contact != null && contact.getPresences().supports(Namespace.RTT)
+				&& activity.xmppConnectionService.useRealTimeText()
+				&& conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
+			conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "true");
+			setRttButtonAlpha(true);
+		} else {
+			conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "false");
+			setRttButtonAlpha(false);
+		}
 	}
 
 	@Override
