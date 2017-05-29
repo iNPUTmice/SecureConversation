@@ -20,7 +20,9 @@ import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Pair;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -39,14 +41,18 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.TimePreference;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xmpp.XmppConnection;
 
 public class NotificationService {
+
+	public static final Object CATCHUP_LOCK = new Object();
 
 	private static final String CONVERSATIONS_GROUP = "eu.siacs.conversations";
 	private final XmppConnectionService mXmppConnectionService;
@@ -169,6 +175,18 @@ public class NotificationService {
 	}
 
 	public void push(final Message message) {
+		synchronized (CATCHUP_LOCK) {
+			final XmppConnection connection = message.getConversation().getAccount().getXmppConnection();
+			if (connection.isWaitingForSmCatchup()) {
+				connection.incrementSmCatchupMessageCounter();
+				pushFromBacklog(message);
+			} else {
+				pushNow(message);
+			}
+		}
+	}
+
+	private void pushNow(final Message message) {
 		mXmppConnectionService.updateUnreadCountBadge();
 		if (!notify(message)) {
 			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().toBareJid()+": suppressing notification because turned off");
@@ -249,13 +267,13 @@ public class NotificationService {
 			} else {
 				mBuilder = buildMultipleConversation();
 				modifyForSoundVibrationAndLight(mBuilder, notify, preferences);
-				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 				for(Map.Entry<String,ArrayList<Message>> entry : notifications.entrySet()) {
 					Builder singleBuilder = buildSingleConversations(entry.getValue());
 					singleBuilder.setGroup(CONVERSATIONS_GROUP);
 					modifyForSoundVibrationAndLight(singleBuilder,notify,preferences);
 					notificationManager.notify(entry.getKey(), NOTIFICATION_ID ,singleBuilder.build());
 				}
+				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 			}
 		}
 	}
@@ -274,7 +292,12 @@ public class NotificationService {
 				mBuilder.setVibrate(new long[]{0});
 			}
 			if (ringtone != null) {
-				mBuilder.setSound(Uri.parse(ringtone));
+				Uri uri = Uri.parse(ringtone);
+				try {
+					mBuilder.setSound(fixRingtoneUri(uri));
+				} catch (SecurityException e) {
+					Log.d(Config.LOGTAG,"unable to use custom notification sound "+uri.toString());
+				}
 			}
 		}
 		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -285,6 +308,14 @@ public class NotificationService {
 		mBuilder.setDefaults(0);
 		if (led) {
 			mBuilder.setLights(0xff00FF00, 2000, 3000);
+		}
+	}
+
+	private Uri fixRingtoneUri(Uri uri) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && "file".equals(uri.getScheme())) {
+			return FileBackend.getUriForFile(mXmppConnectionService,new File(uri.getPath()));
+		} else {
+			return uri;
 		}
 	}
 
@@ -433,8 +464,6 @@ public class NotificationService {
 			for (Message message : messages) {
 				String sender = message.getStatus() == Message.STATUS_RECEIVED ? UIHelper.getMessageDisplayName(message) : null;
 				messagingStyle.addMessage(UIHelper.getMessagePreview(mXmppConnectionService,message).first, message.getTimeSent(), sender);
-				uBuilder.addMessage(UIHelper.getMessagePreview(mXmppConnectionService,message).first);
-				uBuilder.setLatestTimestamp(message.getTimeSent());
 			}
 			builder.setStyle(messagingStyle);
 		} else {
@@ -460,6 +489,15 @@ public class NotificationService {
 				} else {
 					builder.setContentText(mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count));
 				}
+			}
+		}
+		/** message preview for Android Auto **/
+		for (Message message : messages) {
+			Pair<String,Boolean> preview = UIHelper.getMessagePreview(mXmppConnectionService, message);
+			// only show user written text
+			if (preview.second == false) {
+				uBuilder.addMessage(preview.first);
+				uBuilder.setLatestTimestamp(message.getTimeSent());
 			}
 		}
 	}

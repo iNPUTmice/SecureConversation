@@ -135,6 +135,7 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.OnJinglePacketReceived;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
+import eu.siacs.conversations.xmpp.mam.MamReference;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
@@ -675,7 +676,7 @@ public class XmppConnectionService extends Service {
 					}
 					break;
 				case ACTION_MARK_AS_READ:
-					markRead(c, true);
+					sendReadMarker(c);
 					break;
 				case AudioManager.RINGER_MODE_CHANGED_ACTION:
 					if (xaOnSilentMode()) {
@@ -991,7 +992,9 @@ public class XmppConnectionService extends Service {
 			}
 		};
 
+		Log.d(Config.LOGTAG,"initializing database...");
 		this.databaseBackend = DatabaseBackend.getInstance(getApplicationContext());
+		Log.d(Config.LOGTAG,"restoring accounts...");
 		this.accounts = databaseBackend.getAccounts();
 
 		if (Config.FREQUENT_RESTARTS_THRESHOLD != 0
@@ -1183,7 +1186,8 @@ public class XmppConnectionService extends Service {
 	private void sendFileMessage(final Message message, final boolean delay) {
 		Log.d(Config.LOGTAG, "send file message");
 		final Account account = message.getConversation().getAccount();
-		if (account.httpUploadAvailable(fileBackend.getFile(message,false).getSize())) {
+		if (account.httpUploadAvailable(fileBackend.getFile(message,false).getSize())
+				|| message.getConversation().getMode() == Conversation.MODE_MULTI) {
 			mHttpConnectionManager.createNewUploadConnection(message, delay);
 		} else {
 			mJingleConnectionManager.createNewConnection(message);
@@ -1449,6 +1453,8 @@ public class XmppConnectionService extends Service {
 			for (Account account : this.accounts) {
 				accountLookupTable.put(account.getUuid(), account);
 			}
+			Log.d(Config.LOGTAG,"restoring conversations...");
+			final long startTimeConversationsRestore = SystemClock.elapsedRealtime();
 			this.conversations.addAll(databaseBackend.getConversations(Conversation.STATUS_AVAILABLE));
 			for(Iterator<Conversation> iterator = conversations.listIterator(); iterator.hasNext();) {
 				Conversation conversation = iterator.next();
@@ -1460,6 +1466,8 @@ public class XmppConnectionService extends Service {
 					iterator.remove();
 				}
 			}
+			long diffConversationsRestore = SystemClock.elapsedRealtime() - startTimeConversationsRestore;
+			Log.d(Config.LOGTAG,"finished restoring conversations in "+diffConversationsRestore+"ms");
 			Runnable runnable = new Runnable() {
 				@Override
 				public void run() {
@@ -1469,14 +1477,15 @@ public class XmppConnectionService extends Service {
 						Log.d(Config.LOGTAG, "deleting messages that are older than "+AbstractGenerator.getTimestamp(deletionDate));
 						databaseBackend.expireOldMessages(deletionDate);
 					}
-					Log.d(Config.LOGTAG, "restoring roster");
+					Log.d(Config.LOGTAG,"restoring roster...");
 					for (Account account : accounts) {
 						databaseBackend.readRoster(account.getRoster());
 						account.initAccountServices(XmppConnectionService.this); //roster needs to be loaded at this stage
 					}
 					getBitmapCache().evictAll();
 					loadPhoneContacts();
-					Log.d(Config.LOGTAG, "restoring messages");
+					Log.d(Config.LOGTAG, "restoring messages...");
+					final long startMessageRestore = SystemClock.elapsedRealtime();
 					for (Conversation conversation : conversations) {
 						conversation.addAll(0, databaseBackend.getMessages(conversation, Config.PAGE_SIZE));
 						checkDeletedFiles(conversation);
@@ -1496,7 +1505,8 @@ public class XmppConnectionService extends Service {
 					}
 					mNotificationService.finishBacklog(false);
 					mRestoredFromDatabase = true;
-					Log.d(Config.LOGTAG, "restored all messages");
+					final long diffMessageRestore = SystemClock.elapsedRealtime() - startMessageRestore;
+					Log.d(Config.LOGTAG, "finished restoring messages in "+diffMessageRestore+"ms");
 					updateConversationUi();
 				}
 			};
@@ -1636,10 +1646,10 @@ public class XmppConnectionService extends Service {
 					callback.onMoreMessagesLoaded(messages.size(), conversation);
 				} else if (conversation.hasMessagesLeftOnServer()
 						&& account.isOnlineAndConnected()
-						&& conversation.getLastClearHistory() == 0) {
+						&& conversation.getLastClearHistory().getTimestamp() == 0) {
 					if ((conversation.getMode() == Conversation.MODE_SINGLE && account.getXmppConnection().getFeatures().mam())
 							|| (conversation.getMode() == Conversation.MODE_MULTI && conversation.getMucOptions().mamSupport())) {
-						MessageArchiveService.Query query = getMessageArchiveService().query(conversation, 0, timestamp);
+						MessageArchiveService.Query query = getMessageArchiveService().query(conversation, new MamReference(0), timestamp, false);
 						if (query != null) {
 							query.setCallback(callback);
 							callback.informUser(R.string.fetching_history_from_server);
@@ -1753,7 +1763,7 @@ public class XmppConnectionService extends Service {
 							mMessageArchiveService.query(c);
 						} else {
 							if (query.getConversation() == null) {
-								mMessageArchiveService.query(c, query.getStart());
+								mMessageArchiveService.query(c, query.getStart(),query.isCatchup());
 							}
 						}
 					}
@@ -2245,7 +2255,7 @@ public class XmppConnectionService extends Service {
 						x.addChild("history").setAttribute("maxchars", "0");
 					} else {
 						// Fallback to muc history
-						x.addChild("history").setAttribute("since", PresenceGenerator.getTimestamp(conversation.getLastMessageTransmitted()));
+						x.addChild("history").setAttribute("since", PresenceGenerator.getTimestamp(conversation.getLastMessageTransmitted().getTimestamp()));
 					}
 					sendPresencePacket(account, packet);
 					if (onConferenceJoined != null) {
@@ -3492,6 +3502,12 @@ public class XmppConnectionService extends Service {
 				if (server != null && !mucServers.contains(server)) {
 					mucServers.add(server);
 				}
+				for(Bookmark bookmark : account.getBookmarks()) {
+					final String s = bookmark.getJid().getDomainpart();
+					if (s != null && !mucServers.contains(s)) {
+						mucServers.add(s);
+					}
+				}
 			}
 		}
 		return mucServers;
@@ -3650,15 +3666,19 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void clearConversationHistory(final Conversation conversation) {
-		long clearDate;
+		final long clearDate;
+		final String reference;
 		if (conversation.countMessages() > 0) {
-			clearDate = conversation.getLatestMessage().getTimeSent() + 1000;
+			Message latestMessage = conversation.getLatestMessage();
+			clearDate = latestMessage.getTimeSent() + 1000;
+			reference = latestMessage.getServerMsgId();
 		} else {
 			clearDate = System.currentTimeMillis();
+			reference = null;
 		}
 		conversation.clearMessages();
 		conversation.setHasMessagesLeftOnServer(false); //avoid messages getting loaded through mam
-		conversation.setLastClearHistory(clearDate);
+		conversation.setLastClearHistory(clearDate,reference);
 		Runnable runnable = new Runnable() {
 			@Override
 			public void run() {

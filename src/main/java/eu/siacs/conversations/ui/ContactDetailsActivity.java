@@ -1,11 +1,9 @@
 package eu.siacs.conversations.ui;
 
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender.SendIntentException;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
@@ -37,7 +35,6 @@ import java.util.List;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
@@ -451,7 +448,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 						.findViewById(R.id.button_remove);
 				removeButton.setVisibility(View.VISIBLE);
 				key.setText(CryptoHelper.prettifyFingerprint(otrFingerprint));
-				if (otrFingerprint != null && otrFingerprint.equals(messageFingerprint)) {
+				if (otrFingerprint != null && otrFingerprint.equalsIgnoreCase(messageFingerprint)) {
 					keyType.setText(R.string.otr_fingerprint_selected_message);
 					keyType.setTextColor(ContextCompat.getColor(this, R.color.accent));
 				} else {
@@ -509,14 +506,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 
 				@Override
 				public void onClick(View v) {
-					PgpEngine pgp = ContactDetailsActivity.this.xmppConnectionService.getPgpEngine();
-					try {
-						startIntentSenderForResult(
-								pgp.getIntentForKey(contact).getIntentSender(), 0, null, 0,
-								0, 0);
-					} catch (Throwable e) {
-						Toast.makeText(ContactDetailsActivity.this,R.string.openpgp_error,Toast.LENGTH_SHORT).show();
-					}
+					launchOpenKeyChain(contact.getPgpKeyId());
 				}
 			};
 			view.setOnClickListener(openKey);

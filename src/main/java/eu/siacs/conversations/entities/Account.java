@@ -118,9 +118,11 @@ public class Account extends AbstractEntity {
 		REGISTRATION_CONFLICT(true),
 		REGISTRATION_SUCCESSFUL,
 		REGISTRATION_NOT_SUPPORTED(true),
-		SECURITY_ERROR(true),
+		TLS_ERROR(true),
 		INCOMPATIBLE_SERVER(true),
 		TOR_NOT_AVAILABLE(true),
+		DOWNGRADE_ATTACK(true),
+		SESSION_FAILURE(true),
 		BIND_FAILURE(true),
 		HOST_UNKNOWN(true),
 		REGISTRATION_PLEASE_WAIT(true),
@@ -168,14 +170,18 @@ public class Account extends AbstractEntity {
 					return R.string.account_status_regis_success;
 				case REGISTRATION_NOT_SUPPORTED:
 					return R.string.account_status_regis_not_sup;
-				case SECURITY_ERROR:
-					return R.string.account_status_security_error;
+				case TLS_ERROR:
+					return R.string.account_status_tls_error;
 				case INCOMPATIBLE_SERVER:
 					return R.string.account_status_incompatible_server;
 				case TOR_NOT_AVAILABLE:
 					return R.string.account_status_tor_unavailable;
 				case BIND_FAILURE:
 					return R.string.account_status_bind_failure;
+				case SESSION_FAILURE:
+					return R.string.session_failure;
+				case DOWNGRADE_ATTACK:
+					return R.string.sasl_downgrade;
 				case HOST_UNKNOWN:
 					return R.string.account_status_host_unknown;
 				case POLICY_VIOLATION:
@@ -551,7 +557,11 @@ public class Account extends AbstractEntity {
 	public boolean setPgpSignId(long pgpID) {
 		synchronized (this.keys) {
 			try {
-				keys.put(KEY_PGP_ID, pgpID);
+				if (pgpID == 0) {
+					keys.remove(KEY_PGP_ID);
+				} else {
+					keys.put(KEY_PGP_ID, pgpID);
+				}
 			} catch (JSONException e) {
 				return false;
 			}
