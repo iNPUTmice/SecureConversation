@@ -195,9 +195,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	}
 
 	public boolean setOutgoingChatState(ChatState state) {
-		if (mode == MODE_MULTI && (getNextCounterpart() != null || !isPnNA())) {
-			return false;
-		}
 		if (this.mOutgoingChatState != state) {
 			this.mOutgoingChatState = state;
 			return true;
