@@ -19,7 +19,7 @@
 	<string name="title_activity_manage_accounts">Manage Accounts</string>
 	<string name="title_activity_settings">Settings</string>
 	<string name="title_activity_conference_details">Conference Details</string>
-	<string name="title_activity_contact_details">Contact Details</string>
+	<string name="title_activity_contact_details">Contacct Details</string>
 	<string name="title_activity_sharewith">Share with Conversation</string>
 	<string name="title_activity_start_conversation">Start Conversation</string>
 	<string name="title_activity_choose_contact">Choose contact</string>
@@ -402,15 +402,15 @@
 	<string name="pref_export_logs_summary">Write conversations history logs to SD card</string>
 	<string name="notification_export_logs_title">Writing logs to SD card</string>
 	<string name="choose_file">Choose file</string>
-	<string name="receiving_x_file">Receiving %1$s (%2$d%% completed)</string>
+	<string name="receiving_x_file">Receiving %1$s (%2$d%% downloaded)</string>
 	<string name="download_x_file">Download %s</string>
 	<string name="delete_x_file">Delete %s</string>
 	<string name="file">file</string>
 	<string name="open_x_file">Open %s</string>
-	<string name="sending_file">sending (%1$d%% completed)</string>
+	<string name="sending_file">sending (%1$d%% uploaded)</string>
 	<string name="preparing_file">Preparing file for transmission</string>
 	<string name="x_file_offered_for_download">%s offered for download</string>
-	<string name="cancel_transmission">Cancel transmission</string>
+	<string name="cancel_transmission">Cancel file transmission</string>
 	<string name="file_transmission_failed">file transmission failed</string>
 	<string name="file_deleted">The file has been deleted</string>
 	<string name="no_application_found_to_open_file">No application found to open file</string>
