@@ -305,6 +305,15 @@ OMEMO has two requirements: Your server and the server of your contact need to s
 For conferences only OMEMO and OpenPGP are supported as encryption method. (OTR
 does not work with multiple participants).
 
+#### Why aren't new conversations encrypted by default?
+
+Selecting a default encryption (in our case OMEMO) has several down sides.
+* users might have perfectly valid reasons not to use encryption at all, such as using the same private server.
+* the way it was implemented, Conversations would automatically fall back to plain text as soon
+as the conditions changed (recipient switches to device with no encryption) which lead to unexpected situations.
+* having a default encryption speaks against the 'mission statement' of Conversations of not forcing its security and privacy aspects upon the user
+* the goal of implementing this feature in the first place: _Be encrypted by default didn't work at all._ As users don't  get 'tricked' into using OMEMO who otherwise wouldn't have used it.
+
 ##### OMEMO
 
 OMEMO encryption works only in private (members only) conferences that are non-anonymous.
