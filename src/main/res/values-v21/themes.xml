@@ -127,7 +127,7 @@
 
         <item name="attr/conversations_overview_background">@color/primary900</item>
 
-        <item name="attr/icon_alpha">1.0</item>
+        <item name="attr/icon_alpha">0.7</item>
         <item name="attr/icon_alpha_active">1.0</item>
         <item name="attr/icon_alpha_inactive">0.5</item>
 

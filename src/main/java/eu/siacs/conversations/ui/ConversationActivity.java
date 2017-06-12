@@ -1777,6 +1777,11 @@ public class ConversationActivity extends XmppActivity
 		}
 
 		mConversationFragment.checkRttButtonStatus();
+		if (!xmppConnectionService.useRealTimeText()) {
+			mConversationFragment.rttStatusButton.setVisibility(View.GONE);
+		} else {
+			mConversationFragment.rttStatusButton.setVisibility(View.VISIBLE);
+		}
 	}
 
 	@Override

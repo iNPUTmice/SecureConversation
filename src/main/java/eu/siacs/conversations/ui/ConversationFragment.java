@@ -80,6 +80,7 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.rtt.RttEventListener;
 
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
 
@@ -121,8 +122,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	final protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
 	private EditMessage mEditMessage;
+	private RttEventListener rttEventListener;
 	private ImageButton mSendButton;
-	private ImageButton rttStatusButton;
+	protected ImageButton rttStatusButton;
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
@@ -939,6 +941,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mEditMessage.setText("");
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.mEditMessage.setKeyboardListener(this);
+		this.rttEventListener = new RttEventListener();
+		this.mEditMessage.addTextChangedListener(this.rttEventListener);
 		messageListAdapter.updatePreferences();
 		this.messagesView.setAdapter(messageListAdapter);
 		updateMessages();
