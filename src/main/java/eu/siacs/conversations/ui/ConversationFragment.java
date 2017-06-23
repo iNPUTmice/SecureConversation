@@ -337,14 +337,11 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			if (conversation != null) {
 				Contact contact = conversation.getContact();
 				if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
-					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "false");
+					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false);
 					setRttButtonAlpha(false);
-				} else if (contact != null && contact.getPresences().supports(Namespace.RTT)
-						&& activity.xmppConnectionService.useRealTimeText()) {
-					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "true");
+				} else if (contact != null && contact.getPresences().supports(Namespace.RTT)) {
+					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, true);
 					setRttButtonAlpha(true);
-				} else if (!activity.xmppConnectionService.useRealTimeText()) {
-					Toast.makeText(activity, "You have turned off RTT", Toast.LENGTH_LONG).show();
 				} else {
 					Toast.makeText(activity, "Other user doesn't support RTT", Toast.LENGTH_LONG).show();
 				}
@@ -941,17 +938,16 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mEditMessage.setText("");
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.mEditMessage.setKeyboardListener(this);
+		if (rttEventListener != null) {
+			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
+		}
 		this.rttEventListener = new RttEventListener();
 		this.mEditMessage.addTextChangedListener(this.rttEventListener);
 		messageListAdapter.updatePreferences();
 		this.messagesView.setAdapter(messageListAdapter);
 		updateMessages();
 		this.conversation.messagesLoaded.set(true);
-		if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
-			setRttButtonAlpha(true);
-		} else {
-			setRttButtonAlpha(false);
-		}
+		checkRttButtonStatus();
 		synchronized (this.messageList) {
 			final Message first = conversation.getFirstUnreadMessage();
 			final int bottom = Math.max(0, this.messageList.size() - 1);
@@ -1603,15 +1599,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	}
 
 	public void checkRttButtonStatus() {
-		Contact contact = conversation == null ? null : conversation.getContact();
-		if (contact != null && contact.getPresences().supports(Namespace.RTT)
-				&& activity.xmppConnectionService.useRealTimeText()
-				&& conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
-			conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "true");
-			setRttButtonAlpha(true);
-		} else {
-			conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, "false");
-			setRttButtonAlpha(false);
+		if (conversation != null) {
+			Contact contact = conversation.getContact();
+			if (contact != null && contact.getPresences().supports(Namespace.RTT)
+					&& conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
+				setRttButtonAlpha(true);
+			} else {
+				setRttButtonAlpha(false);
+			}
 		}
 	}
 

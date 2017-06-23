@@ -3,8 +3,11 @@ package eu.siacs.conversations.xmpp.rtt;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 
 import java.util.LinkedList;
+
+import eu.siacs.conversations.Config;
 
 public class RttEventListener implements TextWatcher {
 
@@ -17,7 +20,7 @@ public class RttEventListener implements TextWatcher {
 	 * will empty the queue and actually send these events to the other device packed in <rtt />
 	 * stanzas.
 	 */
-	private LinkedList<RttEvent> rttEventQueue;
+	private final LinkedList<RttEvent> rttEventQueue;
 
 	/*
 	 * Stores number of milliseconds from epoch at the time of the latest edit
@@ -36,6 +39,7 @@ public class RttEventListener implements TextWatcher {
 
 	public RttEventListener() {
 		rttEventQueue = new LinkedList<>();
+		currentMessageMillis = lastMessageMillis = 0;
 	}
 
 	@Override
@@ -50,6 +54,9 @@ public class RttEventListener implements TextWatcher {
 		_afterlen = _after.length();
 
 		currentMessageMillis = SystemClock.elapsedRealtime();
+		if (lastMessageMillis == 0) {
+			lastMessageMillis = currentMessageMillis;
+		}
 
 		if (_afterlen > _beforelen) {
 			if (_after.startsWith(_before)) {
@@ -92,6 +99,7 @@ public class RttEventListener implements TextWatcher {
 
 			synchronized (rttEventQueue) {
 				rttEventQueue.addLast(t);
+				Log.i(Config.LOGTAG, "Text RTT event with text = " + t.getText() + " at position = " + t.getPosition());
 			}
 		}
 	}
@@ -103,6 +111,7 @@ public class RttEventListener implements TextWatcher {
 
 			synchronized (rttEventQueue) {
 				rttEventQueue.addLast(w);
+				Log.i(Config.LOGTAG, "Wait RTT event with " + w.getWaitInterval() + " milliseconds");
 			}
 		}
 
@@ -110,13 +119,16 @@ public class RttEventListener implements TextWatcher {
 	}
 
 	private void addEraseEvent(int number, int position) {
-		addWaitEvent();
-		EraseEvent e = new EraseEvent();
-		e.setPosition(position);
-		e.setNumber(number);
+		if (number > 0) {
+			addWaitEvent();
+			EraseEvent e = new EraseEvent();
+			e.setPosition(position);
+			e.setNumber(number);
 
-		synchronized (rttEventQueue) {
-			rttEventQueue.addLast(e);
+			synchronized (rttEventQueue) {
+				rttEventQueue.addLast(e);
+				Log.i(Config.LOGTAG, "Erase RTT event to erase " + e.getNumber() + "characters from " + e.getPosition() + "th character");
+			}
 		}
 	}
 }

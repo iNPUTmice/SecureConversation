@@ -1116,6 +1116,12 @@ public class ConversationActivity extends XmppActivity
 		if (conversationList.size() >= 1) {
 			this.onConversationUpdate();
 		}
+
+		if (!getPreferences().getBoolean(SettingsActivity.REAL_TIME_TEXT, false)) {
+			mConversationFragment.rttStatusButton.setVisibility(View.GONE);
+		} else {
+			mConversationFragment.rttStatusButton.setVisibility(View.VISIBLE);
+		}
 	}
 
 	@Override
@@ -1777,11 +1783,6 @@ public class ConversationActivity extends XmppActivity
 		}
 
 		mConversationFragment.checkRttButtonStatus();
-		if (!xmppConnectionService.useRealTimeText()) {
-			mConversationFragment.rttStatusButton.setVisibility(View.GONE);
-		} else {
-			mConversationFragment.rttStatusButton.setVisibility(View.VISIBLE);
-		}
 	}
 
 	@Override

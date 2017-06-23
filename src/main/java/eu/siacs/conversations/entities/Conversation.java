@@ -851,6 +851,10 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		return mode == MODE_SINGLE || getBooleanAttribute(ATTRIBUTE_ALWAYS_NOTIFY, Config.ALWAYS_NOTIFY_BY_DEFAULT || isPnNA());
 	}
 
+	public boolean setAttribute(String key, boolean value) {
+		return setAttribute(key, String.valueOf(value));
+	}
+
 	public boolean setAttribute(String key, String value) {
 		synchronized (this.attributes) {
 			try {
