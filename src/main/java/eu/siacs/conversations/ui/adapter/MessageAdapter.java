@@ -72,6 +72,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 	private static final int SENT = 0;
 	private static final int RECEIVED = 1;
 	private static final int STATUS = 2;
+	private static final int DATETAG = 3;
 	private static final Pattern XMPP_PATTERN = Pattern
 			.compile("xmpp\\:(?:(?:["
 					+ Patterns.GOOD_IRI_CHAR
@@ -135,11 +136,14 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 
 	@Override
 	public int getViewTypeCount() {
-		return 3;
+		return 4;
 	}
 
 	public int getItemViewType(Message message) {
-		if (message.getType() == Message.TYPE_STATUS) {
+		if (message.getType() == Message.TYPE_DATETAG){
+			return DATETAG;
+		}
+		else if (message.getType() == Message.TYPE_STATUS) {
 			return STATUS;
 		} else if (message.getStatus() <= Message.STATUS_RECEIVED) {
 			return RECEIVED;
@@ -591,6 +595,10 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		if (view == null) {
 			viewHolder = new ViewHolder();
 			switch (type) {
+				case DATETAG:
+					view = activity.getLayoutInflater().inflate(R.layout.date_tag, parent, false);
+					viewHolder.messageBody = (CopyTextView) view.findViewById(R.id.message_body);
+					break;
 				case SENT:
 					view = activity.getLayoutInflater().inflate(
 							R.layout.message_sent, parent, false);
@@ -659,7 +667,11 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 
 		boolean darkBackground = type == RECEIVED && (!isInValidSession || mUseGreenBackground) || activity.isDarkTheme();
 
-		if (type == STATUS) {
+		if (type == DATETAG){
+			viewHolder.messageBody.setText(message.getBody());
+			return view;
+		}
+		else if (type == STATUS) {
 			if ("LOAD_MORE".equals(message.getBody())) {
 				viewHolder.status_message.setVisibility(View.GONE);
 				viewHolder.contact_picture.setVisibility(View.GONE);

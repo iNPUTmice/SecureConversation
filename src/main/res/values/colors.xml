@@ -24,4 +24,5 @@
 	<color name="bubble">#ff4b9b4a</color>
 	<color name="unreadcountlight">#ff4b9b4a</color>
 	<color name="unreadcountdark">#ff326130</color>
+	<color name="datetagtextcolor">#43A047</color>
 </resources>

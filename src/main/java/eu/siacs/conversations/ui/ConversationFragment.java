@@ -42,9 +42,11 @@ import android.widget.Toast;
 
 import net.java.otr4j.session.SessionStatus;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -165,6 +167,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 									final int pxOffset = (v == null) ? 0 : v.getTop();
 									ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
 									try {
+										updateDateTag();
 										updateStatusMessages();
 									} catch (IllegalStateException e) {
 										Log.d(Config.LOGTAG,"caught illegal state exception while updating status messages");
@@ -1103,6 +1106,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			if (this.conversation != null) {
 				conversation.populateWithMessages(ConversationFragment.this.messageList);
 				updateSnackBar(conversation);
+				updateDateTag();
 				updateStatusMessages();
 				this.messageListAdapter.notifyDataSetChanged();
 				updateChatMsgHint();
@@ -1296,6 +1300,23 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 		this.mSendButton.setTag(action);
 		this.mSendButton.setImageResource(getSendButtonImageResource(action, status));
+	}
+
+	protected void updateDateTag(){
+		String currentDate=null;
+		String pattern = "MMMM dd";
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+		for(int i = 0; i < this.messageList.size(); i++){
+			Date date=new Date(this.messageList.get(i).getTimeSent());
+			String formatDate = simpleDateFormat.format(date);
+			if(currentDate == null||!currentDate.equals(formatDate)){
+				currentDate = formatDate;
+				Message message = new Message(this.conversation,currentDate,Message.ENCRYPTION_NONE);
+				message.setTime(this.messageList.get(i).getTimeSent());
+				message.setType(Message.TYPE_DATETAG);
+				this.messageList.add(i,message);
+			}
+		}
 	}
 
 	protected void updateStatusMessages() {
