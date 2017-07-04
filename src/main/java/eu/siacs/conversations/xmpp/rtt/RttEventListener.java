@@ -8,6 +8,7 @@ import android.util.Log;
 import java.util.LinkedList;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.xmpp.rtt.RttEvent.Type;
 
 public class RttEventListener implements TextWatcher {
 
@@ -98,6 +99,16 @@ public class RttEventListener implements TextWatcher {
 			t.setText(String.valueOf(text));
 
 			synchronized (rttEventQueue) {
+				if (rttEventQueue.getLast().type == Type.TEXT) {
+					TextEvent top = (TextEvent) rttEventQueue.getLast();
+					if (top.getPosition() + top.getText().length() == t.getPosition()) {
+						t.setPosition(top.getPosition());
+						t.setText(top.getText() + t.getText());
+						rttEventQueue.removeLast();
+						Log.i(Config.LOGTAG, "Text RTT events merged");
+					}
+				}
+
 				rttEventQueue.addLast(t);
 				Log.i(Config.LOGTAG, "Text RTT event with text = " + t.getText() + " at position = " + t.getPosition());
 			}
@@ -110,6 +121,13 @@ public class RttEventListener implements TextWatcher {
 			w.setWaitInterval(currentMessageMillis - lastMessageMillis);
 
 			synchronized (rttEventQueue) {
+				if (rttEventQueue.getLast().type == Type.WAIT) {
+					WaitEvent top = (WaitEvent) rttEventQueue.getLast();
+					w.setWaitInterval(w.getWaitInterval() + top.getWaitInterval());
+					rttEventQueue.removeLast();
+					Log.i(Config.LOGTAG, "Wait RTT events merged");
+				}
+
 				rttEventQueue.addLast(w);
 				Log.i(Config.LOGTAG, "Wait RTT event with " + w.getWaitInterval() + " milliseconds");
 			}
@@ -126,6 +144,16 @@ public class RttEventListener implements TextWatcher {
 			e.setNumber(number);
 
 			synchronized (rttEventQueue) {
+				if (rttEventQueue.getLast().type == Type.ERASE) {
+					EraseEvent top = (EraseEvent) rttEventQueue.getLast();
+					if (top.getPosition() - top.getNumber() == e.getPosition()) {
+						e.setPosition(top.getPosition());
+						e.setNumber(top.getNumber() + e.getNumber());
+						rttEventQueue.removeLast();
+						Log.i(Config.LOGTAG, "Erase RTT events merged");
+					}
+				}
+
 				rttEventQueue.addLast(e);
 				Log.i(Config.LOGTAG, "Erase RTT event to erase " + e.getNumber() + "characters from " + e.getPosition() + "th character");
 			}
