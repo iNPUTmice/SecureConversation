@@ -36,7 +36,8 @@ public class RttEventListener implements TextWatcher {
 	private static final long MIN_WAIT_DUR = 100;
 
 	private String _before, _after;
-	private int _beforelen, _afterlen;
+
+	private int length_before;
 
 	public RttEventListener() {
 		rttEventQueue = new LinkedList<>();
@@ -46,40 +47,48 @@ public class RttEventListener implements TextWatcher {
 	@Override
 	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
 		_before = String.valueOf(s.subSequence(start, start + count));
-		_beforelen = _before.length();
+		length_before = s.length();
 	}
 
 	@Override
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
+		int position;
+
 		_after = String.valueOf(s.subSequence(start, start + count));
-		_afterlen = _after.length();
 
 		currentMessageMillis = SystemClock.elapsedRealtime();
 		if (lastMessageMillis == 0) {
 			lastMessageMillis = currentMessageMillis;
 		}
 
-		if (_afterlen > _beforelen) {
+		if (_after.length() > _before.length()) {
 			if (_after.startsWith(_before)) {
 				String changedPart = String.valueOf(_after.subSequence(_before.length(), _after.length()));
-				addTextEvent(changedPart, start + _before.length());
+				position = start + _before.length();
+				addTextEvent(changedPart, position == length_before ? null : position);
 			} else if (_after.endsWith(_before)) {
 				String changedPart = String.valueOf(_after.subSequence(0, _after.length() - _before.length()));
-				addTextEvent(changedPart, start);
+				position = start;
+				addTextEvent(changedPart, position == length_before ? null : position);
 			} else {
-				addEraseEvent(before, start + before);
+				position = start + before;
+				addEraseEvent(before, position == length_before ? null : position);
 				addTextEvent(_after, start);
 			}
-		} else if (_afterlen == _beforelen) {
-			addEraseEvent(before, start + before);
+		} else if (_after.length() == _before.length()) {
+			position = start + before;
+			addEraseEvent(before, position == length_before ? null : position);
 			addTextEvent(_after, start);
 		} else {
 			if (_before.startsWith(_after)) {
-				addEraseEvent(_beforelen - _afterlen, start + _beforelen);
+				position = start + _before.length();
+				addEraseEvent(_before.length() - _after.length(), position == length_before ? null : position);
 			} else if (_before.endsWith(_after)) {
-				addEraseEvent(_beforelen - _afterlen, start + _beforelen - _afterlen);
+				position = start + _before.length() - _after.length();
+				addEraseEvent(_before.length() - _after.length(), position == length_before ? null : position);
 			} else {
-				addEraseEvent(before, start + before);
+				position = start + before;
+				addEraseEvent(before, position == length_before ? null : position);
 				addTextEvent(_after, start);
 			}
 
@@ -91,7 +100,7 @@ public class RttEventListener implements TextWatcher {
 
 	}
 
-	private void addTextEvent(CharSequence text, int position) {
+	private void addTextEvent(CharSequence text, Integer position) {
 		if (text.length() > 0) {
 			addWaitEvent();
 			TextEvent t = new TextEvent();
@@ -99,9 +108,13 @@ public class RttEventListener implements TextWatcher {
 			t.setText(String.valueOf(text));
 
 			synchronized (rttEventQueue) {
-				if (rttEventQueue.getLast().type == Type.TEXT) {
+				if (rttEventQueue.size() > 0 && rttEventQueue.getLast().type == Type.TEXT) {
 					TextEvent top = (TextEvent) rttEventQueue.getLast();
-					if (top.getPosition() + top.getText().length() == t.getPosition()) {
+					if (top.getPosition() == null && t.getPosition() == null) {
+						t.setText(top.getText() + t.getText());
+						rttEventQueue.removeLast();
+						Log.i(Config.LOGTAG, "Text RTT events merged");
+					} else if (top.getPosition() != null && t.getPosition() != null && top.getPosition() + top.getText().length() == t.getPosition()) {
 						t.setPosition(top.getPosition());
 						t.setText(top.getText() + t.getText());
 						rttEventQueue.removeLast();
@@ -110,7 +123,7 @@ public class RttEventListener implements TextWatcher {
 				}
 
 				rttEventQueue.addLast(t);
-				Log.i(Config.LOGTAG, "Text RTT event with text = " + t.getText() + " at position = " + t.getPosition());
+				Log.i(Config.LOGTAG, "Text RTT event with text = " + t.getText() + " at position = " + (t.getPosition() == null ? "end" : t.getPosition()));
 			}
 		}
 	}
@@ -121,13 +134,6 @@ public class RttEventListener implements TextWatcher {
 			w.setWaitInterval(currentMessageMillis - lastMessageMillis);
 
 			synchronized (rttEventQueue) {
-				if (rttEventQueue.getLast().type == Type.WAIT) {
-					WaitEvent top = (WaitEvent) rttEventQueue.getLast();
-					w.setWaitInterval(w.getWaitInterval() + top.getWaitInterval());
-					rttEventQueue.removeLast();
-					Log.i(Config.LOGTAG, "Wait RTT events merged");
-				}
-
 				rttEventQueue.addLast(w);
 				Log.i(Config.LOGTAG, "Wait RTT event with " + w.getWaitInterval() + " milliseconds");
 			}
@@ -136,7 +142,7 @@ public class RttEventListener implements TextWatcher {
 		lastMessageMillis = currentMessageMillis;
 	}
 
-	private void addEraseEvent(int number, int position) {
+	private void addEraseEvent(Integer number, Integer position) {
 		if (number > 0) {
 			addWaitEvent();
 			EraseEvent e = new EraseEvent();
@@ -144,9 +150,13 @@ public class RttEventListener implements TextWatcher {
 			e.setNumber(number);
 
 			synchronized (rttEventQueue) {
-				if (rttEventQueue.getLast().type == Type.ERASE) {
+				if (rttEventQueue.size() > 0 && rttEventQueue.getLast().type == Type.ERASE) {
 					EraseEvent top = (EraseEvent) rttEventQueue.getLast();
-					if (top.getPosition() - top.getNumber() == e.getPosition()) {
+					if(top.getPosition() == null && e.getPosition() == null) {
+						e.setNumber(top.getNumber() + e.getNumber());
+						rttEventQueue.removeLast();
+						Log.i(Config.LOGTAG, "Erase RTT events merged");
+					} else if (top.getPosition() != null && e.getPosition() != null && top.getPosition() - top.getNumber() == e.getPosition()) {
 						e.setPosition(top.getPosition());
 						e.setNumber(top.getNumber() + e.getNumber());
 						rttEventQueue.removeLast();
@@ -155,7 +165,7 @@ public class RttEventListener implements TextWatcher {
 				}
 
 				rttEventQueue.addLast(e);
-				Log.i(Config.LOGTAG, "Erase RTT event to erase " + e.getNumber() + "characters from " + e.getPosition() + "th character");
+				Log.i(Config.LOGTAG, "Erase RTT event to erase " + e.getNumber() + "characters from " + (e.getPosition() == null ? "end" : e.getPosition() + "th character"));
 			}
 		}
 	}

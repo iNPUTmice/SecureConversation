@@ -11,20 +11,20 @@ public class EraseEvent extends RttEvent {
 		this.position = null;
 	}
 
-	public int getNumber() {
+	public Integer getNumber() {
 		if (number != null) return number;
 		else return 1;
 	}
 
-	public void setNumber(int number) {
+	public void setNumber(Integer number) {
 		if (number != 1) this.number = number;
 	}
 
-	public int getPosition() {
+	public Integer getPosition() {
 		return position;
 	}
 
-	public void setPosition(int position) {
+	public void setPosition(Integer position) {
 		this.position = position;
 	}
 }
