@@ -1,5 +1,6 @@
 package eu.siacs.conversations.xmpp.rtt;
 
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -8,6 +9,8 @@ import android.util.Log;
 import java.util.LinkedList;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.rtt.RttEvent.Type;
 
 public class RttEventListener implements TextWatcher {
@@ -34,14 +37,54 @@ public class RttEventListener implements TextWatcher {
 	private long currentMessageMillis;
 
 	private static final long MIN_WAIT_DUR = 100;
+	private static final int PACKET_SEND_DUR = 700;
+	private int rttStanzaSequence;
 
 	private String _before, _after;
 
 	private int length_before;
 
+	private Handler h;
+
 	public RttEventListener() {
 		rttEventQueue = new LinkedList<>();
 		currentMessageMillis = lastMessageMillis = 0;
+		rttStanzaSequence = 0;
+		h = new Handler();
+		h.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (rttEventQueue) {
+					if (rttEventQueue.size() > 0) {
+						rttStanzaSequence++;
+						Element rtt = new Element("rtt", Namespace.RTT);
+						rtt.setAttribute("seq", rttStanzaSequence);
+						while (rttEventQueue.size() > 0) {
+							RttEvent event = rttEventQueue.removeFirst();
+							if (event.getType() == Type.TEXT) {
+								TextEvent textEvent = (TextEvent) event;
+								Element t = new Element("t");
+								t.setContent(textEvent.getText());
+								if (textEvent.getPosition() != null) t.setAttribute("p", textEvent.getPosition());
+								rtt.addChild(t);
+							} else if (event.getType() == Type.ERASE) {
+								EraseEvent eraseEvent = (EraseEvent) event;
+								Element e = new Element("e");
+								if (eraseEvent.getPosition() != null) e.setAttribute("p", eraseEvent.getPosition());
+								if (eraseEvent.getNumber() != null) e.setAttribute("n", eraseEvent.getNumber());
+								rtt.addChild(e);
+							} else {
+								WaitEvent waitEvent = (WaitEvent) event;
+								Element w = new Element("w");
+								w.setAttribute("n", waitEvent.getWaitInterval());
+								rtt.addChild(w);
+							}
+						}
+					}
+				}
+				h.postDelayed(this, PACKET_SEND_DUR);
+			}
+		}, PACKET_SEND_DUR);
 	}
 
 	@Override
