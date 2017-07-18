@@ -1,5 +1,7 @@
 package eu.siacs.conversations.xmpp.rtt;
 
+import eu.siacs.conversations.xml.Element;
+
 public class EraseEvent extends RttEvent {
 
 	private Integer number;
@@ -26,5 +28,17 @@ public class EraseEvent extends RttEvent {
 
 	public void setPosition(Integer position) {
 		this.position = position;
+	}
+
+	@Override
+	public Element toElement() {
+		Element e = new Element("e");
+		if (position != null) {
+			e.setAttribute("p", position);
+		}
+		if (number != null) {
+			e.setAttribute("n", number);
+		}
+		return e;
 	}
 }

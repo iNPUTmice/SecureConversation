@@ -1,6 +1,8 @@
 package eu.siacs.conversations.xmpp.rtt;
 
-public class RttEvent {
+import eu.siacs.conversations.xml.Element;
+
+public abstract class RttEvent {
 	public enum Type {
 		TEXT,
 		ERASE,
@@ -16,4 +18,6 @@ public class RttEvent {
 	public Type getType() {
 		return type;
 	}
+
+	public abstract Element toElement();
 }

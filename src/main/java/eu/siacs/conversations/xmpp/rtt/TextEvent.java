@@ -1,5 +1,7 @@
 package eu.siacs.conversations.xmpp.rtt;
 
+import eu.siacs.conversations.xml.Element;
+
 public class TextEvent extends RttEvent {
 
 	private String text;
@@ -24,5 +26,15 @@ public class TextEvent extends RttEvent {
 
 	public void setPosition(Integer position) {
 		this.position = position;
+	}
+
+	@Override
+	public Element toElement() {
+		Element t = new Element("t");
+		t.setContent(text);
+		if (position != null) {
+			t.setAttribute("p", position);
+		}
+		return t;
 	}
 }

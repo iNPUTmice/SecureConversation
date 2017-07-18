@@ -38,6 +38,8 @@ public class RttEventListener implements TextWatcher {
 
 	private static final long MIN_WAIT_DUR = 100;
 	private static final int PACKET_SEND_DUR = 700;
+	private static final int TYPING_TIMEOUT = Config.TYPING_TIMEOUT * 1000;
+	private int currentIdleTime;
 	private int rttStanzaSequence;
 
 	private String _before, _after;
@@ -45,46 +47,14 @@ public class RttEventListener implements TextWatcher {
 	private int length_before;
 
 	private Handler h;
+	private boolean isTyping;
 
 	public RttEventListener() {
 		rttEventQueue = new LinkedList<>();
 		currentMessageMillis = lastMessageMillis = 0;
 		rttStanzaSequence = 0;
-		h = new Handler();
-		h.postDelayed(new Runnable() {
-			@Override
-			public void run() {
-				synchronized (rttEventQueue) {
-					if (rttEventQueue.size() > 0) {
-						rttStanzaSequence++;
-						Element rtt = new Element("rtt", Namespace.RTT);
-						rtt.setAttribute("seq", rttStanzaSequence);
-						while (rttEventQueue.size() > 0) {
-							RttEvent event = rttEventQueue.removeFirst();
-							if (event.getType() == Type.TEXT) {
-								TextEvent textEvent = (TextEvent) event;
-								Element t = new Element("t");
-								t.setContent(textEvent.getText());
-								if (textEvent.getPosition() != null) t.setAttribute("p", textEvent.getPosition());
-								rtt.addChild(t);
-							} else if (event.getType() == Type.ERASE) {
-								EraseEvent eraseEvent = (EraseEvent) event;
-								Element e = new Element("e");
-								if (eraseEvent.getPosition() != null) e.setAttribute("p", eraseEvent.getPosition());
-								if (eraseEvent.getNumber() != null) e.setAttribute("n", eraseEvent.getNumber());
-								rtt.addChild(e);
-							} else {
-								WaitEvent waitEvent = (WaitEvent) event;
-								Element w = new Element("w");
-								w.setAttribute("n", waitEvent.getWaitInterval());
-								rtt.addChild(w);
-							}
-						}
-					}
-				}
-				h.postDelayed(this, PACKET_SEND_DUR);
-			}
-		}, PACKET_SEND_DUR);
+		isTyping = false;
+		currentIdleTime = 0;
 	}
 
 	@Override
@@ -134,13 +104,12 @@ public class RttEventListener implements TextWatcher {
 				addEraseEvent(before, position == length_before ? null : position);
 				addTextEvent(_after, start);
 			}
-
 		}
 	}
 
 	@Override
 	public void afterTextChanged(Editable s) {
-
+		startSending();
 	}
 
 	private void addTextEvent(CharSequence text, Integer position) {
@@ -195,7 +164,7 @@ public class RttEventListener implements TextWatcher {
 			synchronized (rttEventQueue) {
 				if (rttEventQueue.size() > 0 && rttEventQueue.getLast().type == Type.ERASE) {
 					EraseEvent top = (EraseEvent) rttEventQueue.getLast();
-					if(top.getPosition() == null && e.getPosition() == null) {
+					if (top.getPosition() == null && e.getPosition() == null) {
 						e.setNumber(top.getNumber() + e.getNumber());
 						rttEventQueue.removeLast();
 						Log.i(Config.LOGTAG, "Erase RTT events merged");
@@ -210,6 +179,50 @@ public class RttEventListener implements TextWatcher {
 				rttEventQueue.addLast(e);
 				Log.i(Config.LOGTAG, "Erase RTT event to erase " + e.getNumber() + "characters from " + (e.getPosition() == null ? "end" : e.getPosition() + "th character"));
 			}
+		}
+	}
+
+	private void flushQueue() {
+		synchronized (rttEventQueue) {
+			if (rttEventQueue.size() > 0) {
+				rttStanzaSequence++;
+				currentIdleTime = 0;
+				Element rtt = new Element("rtt", Namespace.RTT);
+				rtt.setAttribute("seq", rttStanzaSequence);
+				while (rttEventQueue.size() > 0) {
+					RttEvent event = rttEventQueue.removeFirst();
+					if (event.getType() == Type.TEXT) {
+						TextEvent textEvent = (TextEvent) event;
+						rtt.addChild(textEvent.toElement());
+					} else if (event.getType() == Type.ERASE) {
+						EraseEvent eraseEvent = (EraseEvent) event;
+						rtt.addChild(eraseEvent.toElement());
+					} else {
+						WaitEvent waitEvent = (WaitEvent) event;
+						rtt.addChild(waitEvent.toElement());
+					}
+				}
+			} else {
+				currentIdleTime += PACKET_SEND_DUR;
+			}
+		}
+	}
+
+	private void startSending() {
+		if (!isTyping) {
+			isTyping = true;
+			h = new Handler();
+			h.postDelayed(new Runnable() {
+				@Override
+				public void run() {
+					flushQueue();
+					if (currentIdleTime > TYPING_TIMEOUT) {
+						isTyping = false;
+					} else {
+						h.postDelayed(this, PACKET_SEND_DUR);
+					}
+				}
+			}, PACKET_SEND_DUR);
 		}
 	}
 }
