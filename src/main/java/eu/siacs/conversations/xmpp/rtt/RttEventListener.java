@@ -225,4 +225,8 @@ public class RttEventListener implements TextWatcher {
 			}, PACKET_SEND_DUR);
 		}
 	}
+
+	public void stopHandler() {
+		h.removeCallbacksAndMessages(null);
+	}
 }

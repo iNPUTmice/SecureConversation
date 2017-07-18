@@ -939,6 +939,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.mEditMessage.setKeyboardListener(this);
 		if (rttEventListener != null) {
+			rttEventListener.stopHandler();
 			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
 		}
 		this.rttEventListener = new RttEventListener();
