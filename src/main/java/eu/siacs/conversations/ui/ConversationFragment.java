@@ -903,6 +903,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			this.conversation.setNextMessage(msg);
 			updateChatState(this.conversation, msg);
 		}
+		if (rttEventListener != null) {
+			rttEventListener.stopHandler();
+		}
 	}
 
 	private void updateChatState(final Conversation conversation, final String msg) {

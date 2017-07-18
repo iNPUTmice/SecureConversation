@@ -191,16 +191,7 @@ public class RttEventListener implements TextWatcher {
 				rtt.setAttribute("seq", rttStanzaSequence);
 				while (rttEventQueue.size() > 0) {
 					RttEvent event = rttEventQueue.removeFirst();
-					if (event.getType() == Type.TEXT) {
-						TextEvent textEvent = (TextEvent) event;
-						rtt.addChild(textEvent.toElement());
-					} else if (event.getType() == Type.ERASE) {
-						EraseEvent eraseEvent = (EraseEvent) event;
-						rtt.addChild(eraseEvent.toElement());
-					} else {
-						WaitEvent waitEvent = (WaitEvent) event;
-						rtt.addChild(waitEvent.toElement());
-					}
+					rtt.addChild(event.toElement());
 				}
 			} else {
 				currentIdleTime += PACKET_SEND_DUR;
