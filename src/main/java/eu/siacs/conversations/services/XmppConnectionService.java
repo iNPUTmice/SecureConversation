@@ -1395,6 +1395,11 @@ public class XmppConnectionService extends Service {
 		sendMessage(message, true, delay);
 	}
 
+	public void sendRttEvent(Conversation conversation, MessagePacket packet) {
+		packet.setTo(conversation.getJid());
+		sendMessagePacket(conversation.getAccount(), packet);
+	}
+
 	public void fetchRosterFromServer(final Account account) {
 		final IqPacket iqPacket = new IqPacket(IqPacket.TYPE.GET);
 		if (!"".equals(account.getRosterVersion())) {

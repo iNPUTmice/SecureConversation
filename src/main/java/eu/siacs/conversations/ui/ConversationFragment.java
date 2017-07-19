@@ -945,7 +945,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			rttEventListener.stopHandler();
 			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
 		}
-		this.rttEventListener = new RttEventListener();
+		this.rttEventListener = new RttEventListener(conversation, activity);
 		this.mEditMessage.addTextChangedListener(this.rttEventListener);
 		messageListAdapter.updatePreferences();
 		this.messagesView.setAdapter(messageListAdapter);

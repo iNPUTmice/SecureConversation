@@ -9,11 +9,17 @@ import android.util.Log;
 import java.util.LinkedList;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.rtt.RttEvent.Type;
+import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 
 public class RttEventListener implements TextWatcher {
+
+	private Conversation conversation;
+	private ConversationActivity conversationActivity;
 
 	/*
 	 * addLast()	 -> add Element to the queue
@@ -49,7 +55,9 @@ public class RttEventListener implements TextWatcher {
 	private Handler h;
 	private boolean isTyping;
 
-	public RttEventListener() {
+	public RttEventListener(Conversation conversation, ConversationActivity activity) {
+		this.conversation = conversation;
+		this.conversationActivity = activity;
 		rttEventQueue = new LinkedList<>();
 		currentMessageMillis = lastMessageMillis = 0;
 		rttStanzaSequence = 0;
@@ -193,6 +201,9 @@ public class RttEventListener implements TextWatcher {
 					RttEvent event = rttEventQueue.removeFirst();
 					rtt.addChild(event.toElement());
 				}
+				MessagePacket messagePacket = new MessagePacket();
+				messagePacket.addChild(rtt);
+				conversationActivity.xmppConnectionService.sendRttEvent(conversation, messagePacket);
 			} else {
 				currentIdleTime += PACKET_SEND_DUR;
 			}
