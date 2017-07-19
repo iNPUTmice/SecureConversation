@@ -904,7 +904,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			updateChatState(this.conversation, msg);
 		}
 		if (rttEventListener != null) {
-			rttEventListener.stopHandler();
+			rttEventListener.stop();
 		}
 	}
 
@@ -942,7 +942,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.mEditMessage.setKeyboardListener(this);
 		if (rttEventListener != null) {
-			rttEventListener.stopHandler();
+			rttEventListener.stop();
 			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
 		}
 		this.rttEventListener = new RttEventListener(conversation, activity);

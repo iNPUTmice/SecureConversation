@@ -228,7 +228,9 @@ public class RttEventListener implements TextWatcher {
 		}
 	}
 
-	public void stopHandler() {
+	public void stop() {
+		flushQueue();
+		isTyping.set(false);
 		h.removeCallbacksAndMessages(null);
 	}
 }
