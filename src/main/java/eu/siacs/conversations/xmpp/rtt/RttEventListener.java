@@ -7,6 +7,7 @@ import android.text.TextWatcher;
 import android.util.Log;
 
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Conversation;
@@ -53,7 +54,7 @@ public class RttEventListener implements TextWatcher {
 	private int length_before;
 
 	private Handler h;
-	private boolean isTyping;
+	private AtomicBoolean isTyping;
 
 	public RttEventListener(Conversation conversation, ConversationActivity activity) {
 		this.conversation = conversation;
@@ -61,7 +62,7 @@ public class RttEventListener implements TextWatcher {
 		rttEventQueue = new LinkedList<>();
 		currentMessageMillis = lastMessageMillis = 0;
 		rttStanzaSequence = 0;
-		isTyping = false;
+		isTyping.set(false);
 		currentIdleTime = 0;
 	}
 
@@ -211,15 +212,14 @@ public class RttEventListener implements TextWatcher {
 	}
 
 	private void startSending() {
-		if (!isTyping) {
-			isTyping = true;
+		if (isTyping.compareAndSet(false, true)) {
 			h = new Handler();
 			h.postDelayed(new Runnable() {
 				@Override
 				public void run() {
 					flushQueue();
 					if (currentIdleTime > TYPING_TIMEOUT) {
-						isTyping = false;
+						isTyping.set(false);
 					} else {
 						h.postDelayed(this, PACKET_SEND_DUR);
 					}
