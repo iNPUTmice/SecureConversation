@@ -27,6 +27,8 @@ import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.security.KeyChain;
+import android.support.annotation.BoolRes;
+import android.support.annotation.IntegerRes;
 import android.support.v4.app.RemoteInput;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -65,6 +67,7 @@ import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import de.duenndns.ssl.MemorizingTrustManager;
@@ -113,6 +116,7 @@ import eu.siacs.conversations.utils.OnPhoneContactsLoadedListener;
 import eu.siacs.conversations.utils.PRNGFixes;
 import eu.siacs.conversations.utils.PhoneHelper;
 import eu.siacs.conversations.utils.ReplacingSerialSingleThreadExecutor;
+import eu.siacs.conversations.utils.Resolver;
 import eu.siacs.conversations.utils.SerialSingleThreadExecutor;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.utils.XmppUri;
@@ -182,8 +186,9 @@ public class XmppConnectionService extends Service {
 	};
 	private FileBackend fileBackend = new FileBackend(this);
 	private MemorizingTrustManager mMemorizingTrustManager;
-	private NotificationService mNotificationService = new NotificationService(
-			this);
+	private NotificationService mNotificationService = new NotificationService(this);
+	private ShortcutService mShortcutService = new ShortcutService(this);
+	private AtomicBoolean mInitialAddressbookSyncCompleted = new AtomicBoolean(false);
 	private OnMessagePacketReceived mMessageParser = new MessageParser(this);
 	private OnPresencePacketReceived mPresenceParser = new PresenceParser(this);
 	private IqParser mIqParser = new IqParser(this);
@@ -679,7 +684,7 @@ public class XmppConnectionService extends Service {
 					sendReadMarker(c);
 					break;
 				case AudioManager.RINGER_MODE_CHANGED_ACTION:
-					if (xaOnSilentMode()) {
+					if (dndOnSilentMode()) {
 						refreshAllPresences();
 					}
 					break;
@@ -857,29 +862,29 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
-	private boolean xaOnSilentMode() {
-		return getPreferences().getBoolean("xa_on_silent_mode", false);
+	private boolean dndOnSilentMode() {
+		return getBooleanPreference(SettingsActivity.DND_ON_SILENT_MODE, R.bool.dnd_on_silent_mode);
 	}
 
 	private boolean manuallyChangePresence() {
-		return getPreferences().getBoolean(SettingsActivity.MANUALLY_CHANGE_PRESENCE, false);
+		return getBooleanPreference(SettingsActivity.MANUALLY_CHANGE_PRESENCE, R.bool.manually_change_presence);
 	}
 
 	private boolean treatVibrateAsSilent() {
-		return getPreferences().getBoolean(SettingsActivity.TREAT_VIBRATE_AS_SILENT, false);
+		return getBooleanPreference(SettingsActivity.TREAT_VIBRATE_AS_SILENT, R.bool.treat_vibrate_as_silent);
 	}
 
 	private boolean awayWhenScreenOff() {
-		return getPreferences().getBoolean(SettingsActivity.AWAY_WHEN_SCREEN_IS_OFF, false);
+		return getBooleanPreference(SettingsActivity.AWAY_WHEN_SCREEN_IS_OFF,R.bool.away_when_screen_off);
 	}
 
 	private String getCompressPicturesPreference() {
-		return getPreferences().getString("picture_compression", "auto");
+		return getPreferences().getString("picture_compression", getResources().getString(R.string.picture_compression));
 	}
 
 	private Presence.Status getTargetPresence() {
-		if (xaOnSilentMode() && isPhoneSilenced()) {
-			return Presence.Status.XA;
+		if (dndOnSilentMode() && isPhoneSilenced()) {
+			return Presence.Status.DND;
 		} else if (awayWhenScreenOff() && !isInteractive()) {
 			return Presence.Status.AWAY;
 		} else {
@@ -981,6 +986,7 @@ public class XmppConnectionService extends Service {
 	public void onCreate() {
 		ExceptionHelper.init(getApplicationContext());
 		PRNGFixes.apply();
+		Resolver.registerXmppConnectionService(this);
 		this.mRandom = new SecureRandom();
 		updateMemorizingTrustmanager();
 		final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
@@ -997,12 +1003,9 @@ public class XmppConnectionService extends Service {
 		Log.d(Config.LOGTAG,"restoring accounts...");
 		this.accounts = databaseBackend.getAccounts();
 
-		if (Config.FREQUENT_RESTARTS_THRESHOLD != 0
-				&& Config.FREQUENT_RESTARTS_DETECTION_WINDOW != 0
-				&& !keepForegroundService()
-				&& databaseBackend.startTimeCountExceedsThreshold()) {
+		if (this.accounts.size() == 0 && Arrays.asList("Sony","Sony Ericsson").contains(Build.MANUFACTURER)) {
 			getPreferences().edit().putBoolean(SettingsActivity.KEEP_FOREGROUND_SERVICE,true).commit();
-			Log.d(Config.LOGTAG,"number of restarts exceeds threshold. enabling foreground service");
+			Log.d(Config.LOGTAG,Build.MANUFACTURER+" is on blacklist. enabling foreground service");
 		}
 
 		restoreFromDatabase();
@@ -1082,15 +1085,15 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void toggleForegroundService() {
-		if (keepForegroundService()) {
+		if (keepForegroundService() && hasEnabledAccounts()) {
 			startForeground(NotificationService.FOREGROUND_NOTIFICATION_ID, this.mNotificationService.createForegroundNotification());
 		} else {
 			stopForeground(true);
 		}
 	}
 
-	private boolean keepForegroundService() {
-		return getPreferences().getBoolean(SettingsActivity.KEEP_FOREGROUND_SERVICE,false);
+	public boolean keepForegroundService() {
+		return getBooleanPreference(SettingsActivity.KEEP_FOREGROUND_SERVICE,R.bool.enable_foreground_service);
 	}
 
 	@Override
@@ -1105,7 +1108,6 @@ public class XmppConnectionService extends Service {
 
 	private void logoutAndSave(boolean stop) {
 		int activeAccounts = 0;
-		databaseBackend.clearStartTimeCounter(true); // regular swipes don't count towards restart counter
 		for (final Account account : accounts) {
 			if (account.getStatus() != Account.State.DISABLED) {
 				activeAccounts++;
@@ -1229,6 +1231,7 @@ public class XmppConnectionService extends Service {
 				case Message.ENCRYPTION_NONE:
 					if (message.needsUploading()) {
 						if (account.httpUploadAvailable(fileBackend.getFile(message,false).getSize())
+								|| conversation.getMode() == Conversation.MODE_MULTI
 								|| message.fixCounterpart()) {
 							this.sendFileMessage(message, delay);
 						} else {
@@ -1242,6 +1245,7 @@ public class XmppConnectionService extends Service {
 				case Message.ENCRYPTION_DECRYPTED:
 					if (message.needsUploading()) {
 						if (account.httpUploadAvailable(fileBackend.getFile(message,false).getSize())
+								|| conversation.getMode() == Conversation.MODE_MULTI
 								|| message.fixCounterpart()) {
 							this.sendFileMessage(message, delay);
 						} else {
@@ -1279,6 +1283,7 @@ public class XmppConnectionService extends Service {
 					message.setFingerprint(account.getAxolotlService().getOwnFingerprint());
 					if (message.needsUploading()) {
 						if (account.httpUploadAvailable(fileBackend.getFile(message,false).getSize())
+								|| conversation.getMode() == Conversation.MODE_MULTI
 								|| message.fixCounterpart()) {
 							this.sendFileMessage(message, delay);
 						} else {
@@ -1553,6 +1558,7 @@ public class XmppConnectionService extends Service {
 							}
 						}
 						Log.d(Config.LOGTAG, "finished merging phone contacts");
+						mShortcutService.refresh(mInitialAddressbookSyncCompleted.compareAndSet(false,true));
 						updateAccountUi();
 					}
 				});
@@ -1819,6 +1825,7 @@ public class XmppConnectionService extends Service {
 		this.accounts.add(account);
 		this.reconnectAccountInBackground(account);
 		updateAccountUi();
+		toggleForegroundService();
 	}
 
 	public void createAccountFromKey(final String alias, final OnAccountCreated callback) {
@@ -1888,6 +1895,7 @@ public class XmppConnectionService extends Service {
 			reconnectAccountInBackground(account);
 			updateAccountUi();
 			getNotificationService().updateErrorNotification();
+			toggleForegroundService();
 			return true;
 		} else {
 			return false;
@@ -2193,7 +2201,7 @@ public class XmppConnectionService extends Service {
 				XmppConnection connection = account.getXmppConnection();
 				if (connection != null) {
 					if (broadcastLastActivity) {
-						sendPresence(account, broadcastLastActivity);
+						sendPresence(account, true);
 					}
 					if (connection.getFeatures().csi()) {
 						connection.sendInactive();
@@ -2305,6 +2313,7 @@ public class XmppConnectionService extends Service {
 
 	private void fetchConferenceMembers(final Conversation conversation) {
 		final Account account = conversation.getAccount();
+		final AxolotlService axolotlService = account.getAxolotlService();
 		final String[] affiliations = {"member","admin","owner"};
 		OnIqPacketReceived callback = new OnIqPacketReceived() {
 
@@ -2320,7 +2329,10 @@ public class XmppConnectionService extends Service {
 						if ("item".equals(child.getName())) {
 							MucOptions.User user = AbstractParser.parseItem(conversation,child);
 							if (!user.realJidMatchesAccount()) {
-								conversation.getMucOptions().updateUser(user);
+								boolean isNew = conversation.getMucOptions().updateUser(user);
+								if (isNew && user.getRealJid() != null && axolotlService.hasEmptyDeviceList(user.getRealJid())) {
+									axolotlService.fetchDeviceIds(user.getRealJid());
+								}
 							}
 						}
 					}
@@ -2372,6 +2384,15 @@ public class XmppConnectionService extends Service {
 			updateConversation(conversation);
 			joinMuc(conversation);
 		}
+	}
+
+	private boolean hasEnabledAccounts() {
+		for(Account account : this.accounts) {
+			if (!account.isOptionSet(Account.OPTION_DISABLED)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	public void renameInMuc(final Conversation conversation, final String nick, final UiCallback<Conversation> callback) {
@@ -2568,6 +2589,10 @@ public class XmppConnectionService extends Service {
 		});
 	}
 
+	public void pushNodeConfiguration(Account account, final String node, final Bundle options, final OnConfigurationPushed callback) {
+		pushNodeConfiguration(account,account.getJid().toBareJid(),node,options,callback);
+	}
+
 	public void pushNodeConfiguration(Account account, final Jid jid, final String node, final Bundle options, final OnConfigurationPushed callback) {
 		sendIqPacket(account, mIqGenerator.requestPubsubConfiguration(jid,node), new OnIqPacketReceived() {
 			@Override
@@ -2582,17 +2607,17 @@ public class XmppConnectionService extends Service {
 						sendIqPacket(account, mIqGenerator.publishPubsubConfiguration(jid, node, data), new OnIqPacketReceived() {
 							@Override
 							public void onIqPacketReceived(Account account, IqPacket packet) {
-								if (packet.getType() == IqPacket.TYPE.RESULT) {
+								if (packet.getType() == IqPacket.TYPE.RESULT && callback != null) {
 									callback.onPushSucceeded();
 								} else {
 									Log.d(Config.LOGTAG,packet.toString());
 								}
 							}
 						});
-					} else {
+					} else if (callback !=null) {
 						callback.onPushFailed();
 					}
-				} else {
+				} else if (callback != null){
 					callback.onPushFailed();
 				}
 			}
@@ -2741,7 +2766,7 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void createContact(Contact contact) {
-		boolean autoGrant = getPreferences().getBoolean("grant_new_contacts", true);
+		boolean autoGrant = getBooleanPreference("grant_new_contacts", R.bool.grant_new_contacts);
 		if (autoGrant) {
 			contact.setOption(Contact.Options.PREEMPTIVE_GRANT);
 			contact.setOption(Contact.Options.ASKING);
@@ -3244,50 +3269,58 @@ public class XmppConnectionService extends Service {
 		updateConversationUi();
 	}
 
-	public SharedPreferences getPreferences() {
-		return PreferenceManager
-				.getDefaultSharedPreferences(getApplicationContext());
+	private SharedPreferences getPreferences() {
+		return PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 	}
 
 	public long getAutomaticMessageDeletionDate() {
+		final long timeout = getLongPreference(SettingsActivity.AUTOMATIC_MESSAGE_DELETION,R.integer.automatic_message_deletion);
+		return timeout == 0 ? timeout : (System.currentTimeMillis() - (timeout * 1000));
+	}
+
+	public long getLongPreference(String name, @IntegerRes int res) {
+		long defaultValue = getResources().getInteger(res);
 		try {
-			final long timeout = Long.parseLong(getPreferences().getString(SettingsActivity.AUTOMATIC_MESSAGE_DELETION, "0")) * 1000;
-			return timeout == 0 ? timeout : System.currentTimeMillis() - timeout;
+			return Long.parseLong(getPreferences().getString(name,String.valueOf(defaultValue)));
 		} catch (NumberFormatException e) {
-			return 0;
+			return defaultValue;
 		}
 	}
 
+	public boolean getBooleanPreference(String name, @BoolRes int res) {
+		return getPreferences().getBoolean(name,getResources().getBoolean(res));
+	}
+
 	public boolean confirmMessages() {
-		return getPreferences().getBoolean("confirm_messages", true);
+		return getBooleanPreference("confirm_messages", R.bool.confirm_messages);
 	}
 
 	public boolean allowMessageCorrection() {
-		return getPreferences().getBoolean("allow_message_correction", true);
+		return getBooleanPreference("allow_message_correction", R.bool.allow_message_correction);
 	}
 
 	public boolean sendChatStates() {
-		return getPreferences().getBoolean("chat_states", false);
+		return getBooleanPreference("chat_states", R.bool.chat_states);
 	}
 
 	private boolean respectAutojoin() {
-		return getPreferences().getBoolean("autojoin", true);
+		return getBooleanPreference("autojoin", R.bool.autojoin);
 	}
 
 	public boolean indicateReceived() {
-		return getPreferences().getBoolean("indicate_received", false);
+		return getBooleanPreference("indicate_received", R.bool.indicate_received);
 	}
 
 	public boolean useTorToConnect() {
-		return Config.FORCE_ORBOT || getPreferences().getBoolean("use_tor", false);
+		return Config.FORCE_ORBOT || getBooleanPreference("use_tor", R.bool.use_tor);
 	}
 
 	public boolean showExtendedConnectionOptions() {
-		return getPreferences().getBoolean("show_connection_options", false);
+		return getBooleanPreference("show_connection_options", R.bool.show_connection_options);
 	}
 
 	public boolean broadcastLastActivity() {
-		return getPreferences().getBoolean(SettingsActivity.BROADCAST_LAST_ACTIVITY, false);
+		return getBooleanPreference(SettingsActivity.BROADCAST_LAST_ACTIVITY, R.bool.last_activity);
 	}
 
 	public int unreadCount() {
@@ -3441,7 +3474,7 @@ public class XmppConnectionService extends Service {
 
 	public void updateMemorizingTrustmanager() {
 		final MemorizingTrustManager tm;
-		final boolean dontTrustSystemCAs = getPreferences().getBoolean("dont_trust_system_cas", false);
+		final boolean dontTrustSystemCAs = getBooleanPreference("dont_trust_system_cas", R.bool.dont_trust_system_cas);
 		if (dontTrustSystemCAs) {
 			tm = new MemorizingTrustManager(getApplicationContext(), null);
 		} else {
@@ -3503,7 +3536,8 @@ public class XmppConnectionService extends Service {
 					mucServers.add(server);
 				}
 				for(Bookmark bookmark : account.getBookmarks()) {
-					final String s = bookmark.getJid().getDomainpart();
+					final Jid jid = bookmark.getJid();
+					final String s = jid == null ? null : jid.getDomainpart();
 					if (s != null && !mucServers.contains(s)) {
 						mucServers.add(s);
 					}
@@ -3616,10 +3650,11 @@ public class XmppConnectionService extends Service {
 		return this.mMessageArchiveService;
 	}
 
-	public List<Contact> findContacts(Jid jid) {
+	public List<Contact> findContacts(Jid jid, String accountJid) {
 		ArrayList<Contact> contacts = new ArrayList<>();
 		for (Account account : getAccounts()) {
-			if (!account.isOptionSet(Account.OPTION_DISABLED)) {
+			if ((!account.isOptionSet(Account.OPTION_DISABLED) || accountJid != null)
+					&& (accountJid == null || accountJid.equals(account.getJid().toBareJid().toString()))) {
 				Contact contact = account.getRoster().getContactFromRoster(jid);
 				if (contact != null) {
 					contacts.add(contact);
@@ -3896,19 +3931,10 @@ public class XmppConnectionService extends Service {
 		if (name != null && !name.trim().isEmpty()) {
 			bookmark.setBookmarkName(name.trim());
 		}
-		bookmark.setAutojoin(getPreferences().getBoolean("autojoin",true));
+		bookmark.setAutojoin(getPreferences().getBoolean("autojoin",getResources().getBoolean(R.bool.autojoin)));
 		account.getBookmarks().add(bookmark);
 		pushBookmarks(account);
 		conversation.setBookmark(bookmark);
-	}
-
-	public void clearStartTimeCounter() {
-		mDatabaseExecutor.execute(new Runnable() {
-			@Override
-			public void run() {
-				databaseBackend.clearStartTimeCounter(false);
-			}
-		});
 	}
 
 	public boolean verifyFingerprints(Contact contact, List<XmppUri.Fingerprint> fingerprints) {
@@ -3961,7 +3987,11 @@ public class XmppConnectionService extends Service {
 	}
 
 	public boolean blindTrustBeforeVerification() {
-		return getPreferences().getBoolean(SettingsActivity.BLIND_TRUST_BEFORE_VERIFICATION, true);
+		return getBooleanPreference(SettingsActivity.BLIND_TRUST_BEFORE_VERIFICATION,R.bool.btbv);
+	}
+
+	public ShortcutService getShortcutService() {
+		return mShortcutService;
 	}
 
 	public interface OnMamPreferencesFetched {

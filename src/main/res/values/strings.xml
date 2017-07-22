@@ -558,10 +558,10 @@
 	<string name="pref_presence_settings">Presence</string>
 	<string name="pref_away_when_screen_off">Away when screen is off</string>
 	<string name="pref_away_when_screen_off_summary">Marks your resource as away when the screen is turned off</string>
-	<string name="pref_xa_on_silent_mode">Not available in silent mode</string>
-	<string name="pref_xa_on_silent_mode_summary">Marks your resource as not available when device is in silent mode</string>
+	<string name="pref_dnd_on_silent_mode">“Do not disturb” in silent mode</string>
+	<string name="pref_dnd_on_silent_mode_summary">Marks your resource as “Do not disturb” when device is in silent mode</string>
 	<string name="pref_treat_vibrate_as_silent">Treat vibrate as silent mode</string>
-	<string name="pref_treat_vibrate_as_silent_summary">Marks your resource as not available when device is on vibrate</string>
+	<string name="pref_treat_vibrate_as_dnd_summary">Marks your resource as “Do not disturb” when device is on vibrate</string>
 	<string name="pref_show_connection_options">Extended connection settings</string>
 	<string name="pref_show_connection_options_summary">Show hostname and port settings when setting up an account</string>
 	<string name="hostname_example">xmpp.example.com</string>
@@ -610,7 +610,7 @@
 	<string name="certicate_info_not_available">(Not available)</string>
 	<string name="certificate_not_found">No certificate found</string>
 	<string name="notify_on_all_messages">Notify on all messages</string>
-	<string name="notify_only_when_highlighted">Notify only when highlighted</string>
+	<string name="notify_only_when_highlighted">Notify only when mentioned</string>
 	<string name="notify_never">Notifications disabled</string>
 	<string name="notify_paused">Notifications paused</string>
 	<string name="pref_picture_compression">Compress Pictures</string>
@@ -749,4 +749,13 @@
 	<string name="retry_decryption">Retry decryption</string>
 	<string name="session_failure">Session failure</string>
 	<string name="sasl_downgrade">Downgraded SASL mechanism</string>
+	<string name="account_status_regis_web">Server requires registration on website</string>
+	<string name="open_website">Open website</string>
+	<string name="application_found_to_open_website">No application found to open website</string>
+	<string name="pref_headsup_notifications">Heads-up Notifications</string>
+	<string name="pref_headsup_notifications_summary">Show Heads-up Notifications</string>
+	<string name="today">Today</string>
+	<string name="yesterday">Yesterday</string>
+	<string name="pref_validate_hostname">Validate hostname with DNSSEC</string>
+	<string name="pref_validate_hostname_summary">Server certificates that contain the validated hostname are considered verified</string>
 </resources>

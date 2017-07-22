@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -154,14 +155,16 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 								@Override
 								public void run() {
 									final int oldPosition = messagesView.getFirstVisiblePosition();
-									final Message message;
-									if (oldPosition < messageList.size()) {
-										message = messageList.get(oldPosition);
-									}  else {
-										message = null;
+									Message message = null;
+									int childPos;
+									for(childPos = 0; childPos + oldPosition < messageList.size(); ++childPos) {
+										message =  messageList.get(oldPosition + childPos);
+										if (message.getType() != Message.TYPE_STATUS) {
+											break;
+										}
 									}
-									String uuid = message != null ? message.getUuid() : null;
-									View v = messagesView.getChildAt(0);
+									final String uuid = message != null ? message.getUuid() : null;
+									View v = messagesView.getChildAt(childPos);
 									final int pxOffset = (v == null) ? 0 : v.getTop();
 									ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
 									try {
@@ -354,6 +357,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							}
 							updateChatMsgHint();
 							updateSendButton();
+							updateEditablity();
 						}
 						break;
 					default:
@@ -805,6 +809,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		Transferable transferable = message.getTransferable();
 		if (transferable != null) {
 			transferable.cancel();
+		} else if (message.getStatus() != Message.STATUS_RECEIVED) {
+			activity.xmppConnectionService.markMessage(message,Message.STATUS_SEND_FAILED);
 		}
 	}
 
@@ -823,6 +829,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.conversation.setNextCounterpart(counterpart);
 		updateChatMsgHint();
 		updateSendButton();
+		updateEditablity();
 	}
 
 	private void correctMessage(Message message) {
@@ -902,9 +909,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 
 		this.conversation = conversation;
-		boolean canWrite = this.conversation.getMode() == Conversation.MODE_SINGLE || this.conversation.getMucOptions().participating();
-		this.mEditMessage.setEnabled(canWrite);
-		this.mSendButton.setEnabled(canWrite);
 		this.mEditMessage.setKeyboardListener(null);
 		this.mEditMessage.setText("");
 		this.mEditMessage.append(this.conversation.getNextMessage());
@@ -1110,7 +1114,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				if (!activity.isConversationsOverviewVisable() || !activity.isConversationsOverviewHideable()) {
 					activity.sendReadMarkerIfNecessary(conversation);
 				}
-				this.updateSendButton();
+				updateSendButton();
+				updateEditablity();
 			}
 		}
 	}
@@ -1227,6 +1232,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		return activity.getThemeResource(R.attr.ic_send_text_offline, R.drawable.ic_send_text_offline);
 	}
 
+	private void updateEditablity() {
+		boolean canWrite = this.conversation.getMode() == Conversation.MODE_SINGLE || this.conversation.getMucOptions().participating() || this.conversation.getNextCounterpart() != null;
+		this.mEditMessage.setFocusable(canWrite);
+		this.mEditMessage.setFocusableInTouchMode(canWrite);
+		this.mSendButton.setEnabled(canWrite);
+		this.mEditMessage.setCursorVisible(canWrite);
+	}
+
 	public void updateSendButton() {
 		final Conversation c = this.conversation;
 		final SendButtonAction action;
@@ -1247,7 +1260,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				if (conference && c.getNextCounterpart() != null) {
 					action = SendButtonAction.CANCEL;
 				} else {
-					String setting = activity.getPreferences().getString("quick_action", "recent");
+					String setting = activity.getPreferences().getString("quick_action", activity.getResources().getString(R.string.quick_action));
 					if (!setting.equals("none") && UIHelper.receivedLocationQuestion(conversation.getLatestMessage())) {
 						setting = "location";
 					} else if (setting.equals("recent")) {
@@ -1290,7 +1303,20 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mSendButton.setImageResource(getSendButtonImageResource(action, status));
 	}
 
+	protected void updateDateSeparators() {
+		synchronized (this.messageList) {
+			for(int i = 0; i < this.messageList.size(); ++i) {
+				final Message current = this.messageList.get(i);
+				if (i == 0 || !UIHelper.sameDay(this.messageList.get(i-1).getTimeSent(),current.getTimeSent())) {
+					this.messageList.add(i,Message.createDateSeparator(current));
+					i++;
+				}
+			}
+		}
+	}
+
 	protected void updateStatusMessages() {
+		updateDateSeparators();
 		synchronized (this.messageList) {
 			if (showLoadMoreMessages(conversation)) {
 				this.messageList.add(0, Message.createLoadMoreMessage(conversation));

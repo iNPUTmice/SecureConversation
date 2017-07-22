@@ -57,6 +57,7 @@ public class Account extends AbstractEntity {
 	public static final int OPTION_REGISTER = 2;
 	public static final int OPTION_USECOMPRESSION = 3;
 	public static final int OPTION_MAGIC_CREATE = 4;
+	public static final int OPTION_REQURIES_ACCESS_MODE_CHANGE = 5;
 	public final HashSet<Pair<String, String>> inProgressDiscoFetches = new HashSet<>();
 
 	public boolean httpUploadAvailable(long filesize) {
@@ -115,6 +116,7 @@ public class Account extends AbstractEntity {
 		UNAUTHORIZED(true),
 		SERVER_NOT_FOUND(true),
 		REGISTRATION_FAILED(true),
+		REGISTRATION_WEB(true),
 		REGISTRATION_CONFLICT(true),
 		REGISTRATION_SUCCESSFUL,
 		REGISTRATION_NOT_SUPPORTED(true),
@@ -164,6 +166,8 @@ public class Account extends AbstractEntity {
 					return R.string.account_status_no_internet;
 				case REGISTRATION_FAILED:
 					return R.string.account_status_regis_fail;
+				case REGISTRATION_WEB:
+					return R.string.account_status_regis_web;
 				case REGISTRATION_CONFLICT:
 					return R.string.account_status_regis_conflict;
 				case REGISTRATION_SUCCESSFUL:

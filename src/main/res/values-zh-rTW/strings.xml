@@ -523,10 +523,7 @@
   <string name="pref_presence_settings">存在</string>
   <string name="pref_away_when_screen_off">關閉螢幕時離開</string>
   <string name="pref_away_when_screen_off_summary">當螢幕關閉時將標記您的資源為離開狀態</string>
-  <string name="pref_xa_on_silent_mode">靜音模式時不可用</string>
-  <string name="pref_xa_on_silent_mode_summary">當設備進入靜音模式時把資源標識改為不可用</string>
   <string name="pref_treat_vibrate_as_silent">靜音模式開啟振動</string>
-  <string name="pref_treat_vibrate_as_silent_summary">當設備進入振動模式時把資源標識改為不可用</string>
   <string name="pref_show_connection_options">高級連接設置</string>
   <string name="pref_show_connection_options_summary">註冊帳戶時顯示主機名稱和埠</string>
   <string name="hostname_example">xmpp.example.com</string>
@@ -574,7 +571,6 @@
   <string name="certicate_info_not_available">(不可用）</string>
   <string name="certificate_not_found">未發現證書</string>
   <string name="notify_on_all_messages">為所有資訊顯示通知</string>
-  <string name="notify_only_when_highlighted">僅當高亮時顯示通知</string>
   <string name="notify_never">關閉通知</string>
   <string name="notify_paused">暫停通知</string>
   <string name="pref_picture_compression">壓縮圖片</string>

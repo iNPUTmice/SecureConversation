@@ -268,7 +268,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				if (counterpart.equals(message.getCounterpart())
 						&& ((message.getStatus() == Message.STATUS_RECEIVED) == received)
 						&& (carbon == message.isCarbon() || received) ) {
-					if (id.equals(message.getRemoteMsgId())) {
+					if (id.equals(message.getRemoteMsgId()) && !message.isFileOrImage() && !message.treatAsDownloadable()) {
 						return message;
 					} else {
 						return null;
@@ -470,13 +470,15 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	}
 
 	public Message getLatestMessage() {
-		if (this.messages.size() == 0) {
-			Message message = new Message(this, "", Message.ENCRYPTION_NONE);
-			message.setType(Message.TYPE_STATUS);
-			message.setTime(Math.max(getCreated(),getLastClearHistory().getTimestamp()));
-			return message;
-		} else {
-			return this.messages.get(this.messages.size() - 1);
+		synchronized (this.messages) {
+			if (this.messages.size() == 0) {
+				Message message = new Message(this, "", Message.ENCRYPTION_NONE);
+				message.setType(Message.TYPE_STATUS);
+				message.setTime(Math.max(getCreated(), getLastClearHistory().getTimestamp()));
+				return message;
+			} else {
+				return this.messages.get(this.messages.size() - 1);
+			}
 		}
 	}
 

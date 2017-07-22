@@ -13,13 +13,13 @@ import android.util.Log;
 import android.util.Pair;
 
 import org.json.JSONObject;
-import org.whispersystems.libaxolotl.AxolotlAddress;
-import org.whispersystems.libaxolotl.IdentityKey;
-import org.whispersystems.libaxolotl.IdentityKeyPair;
-import org.whispersystems.libaxolotl.InvalidKeyException;
-import org.whispersystems.libaxolotl.state.PreKeyRecord;
-import org.whispersystems.libaxolotl.state.SessionRecord;
-import org.whispersystems.libaxolotl.state.SignedPreKeyRecord;
+import org.whispersystems.libsignal.SignalProtocolAddress;
+import org.whispersystems.libsignal.IdentityKey;
+import org.whispersystems.libsignal.IdentityKeyPair;
+import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.state.PreKeyRecord;
+import org.whispersystems.libsignal.state.SessionRecord;
+import org.whispersystems.libsignal.state.SignedPreKeyRecord;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -49,6 +49,8 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.PresenceTemplate;
 import eu.siacs.conversations.entities.Roster;
 import eu.siacs.conversations.entities.ServiceDiscoveryResult;
+import eu.siacs.conversations.services.ShortcutService;
+import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
@@ -59,7 +61,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	private static DatabaseBackend instance = null;
 
 	private static final String DATABASE_NAME = "history";
-	private static final int DATABASE_VERSION = 35;
+	private static final int DATABASE_VERSION = 36;
 
 	private static String CREATE_CONTATCS_STATEMENT = "create table "
 			+ Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -275,8 +277,6 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			recreateAxolotlDb(db);
 			db.execSQL("ALTER TABLE " + Message.TABLENAME + " ADD COLUMN "
 					+ Message.FINGERPRINT + " TEXT");
-		} else if (oldVersion < 22 && newVersion >= 22) {
-			db.execSQL("ALTER TABLE " + SQLiteAxolotlStore.IDENTITIES_TABLENAME + " ADD COLUMN " + SQLiteAxolotlStore.CERTIFICATE);
 		}
 		if (oldVersion < 16 && newVersion >= 16) {
 			db.execSQL("ALTER TABLE " + Message.TABLENAME + " ADD COLUMN "
@@ -296,7 +296,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		/* Any migrations that alter the Account table need to happen BEFORE this migration, as it
 		 * depends on account de-serialization.
 		 */
-		if (oldVersion < 17 && newVersion >= 17) {
+		if (oldVersion < 17 && newVersion >= 17 && newVersion < 31) {
 			List<Account> accounts = getAccounts(db);
 			for (Account account : accounts) {
 				String ownDeviceIdString = account.getKey(SQLiteAxolotlStore.JSONKEY_REGISTRATION_ID);
@@ -304,13 +304,13 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 					continue;
 				}
 				int ownDeviceId = Integer.valueOf(ownDeviceIdString);
-				AxolotlAddress ownAddress = new AxolotlAddress(account.getJid().toBareJid().toPreppedString(), ownDeviceId);
+				SignalProtocolAddress ownAddress = new SignalProtocolAddress(account.getJid().toBareJid().toPreppedString(), ownDeviceId);
 				deleteSession(db, account, ownAddress);
 				IdentityKeyPair identityKeyPair = loadOwnIdentityKeyPair(db, account);
 				if (identityKeyPair != null) {
 					String[] selectionArgs = {
 							account.getUuid(),
-							identityKeyPair.getPublicKey().getFingerprint().replaceAll("\\s", "")
+							CryptoHelper.bytesToHex(identityKeyPair.getPublicKey().serialize())
 					};
 					ContentValues values = new ContentValues();
 					values.put(SQLiteAxolotlStore.TRUSTED, 2);
@@ -334,6 +334,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				db.update(Account.TABLENAME, account.getContentValues(), Account.UUID
 						+ "=?", new String[]{account.getUuid()});
 			}
+		}
+
+		if (oldVersion >= 15 && oldVersion < 22 && newVersion >= 22) {
+			db.execSQL("ALTER TABLE " + SQLiteAxolotlStore.IDENTITIES_TABLENAME + " ADD COLUMN " + SQLiteAxolotlStore.CERTIFICATE);
 		}
 
 		if (oldVersion < 23 && newVersion >= 23) {
@@ -366,7 +370,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		if (oldVersion < 30 && newVersion >= 30) {
 			db.execSQL(CREATE_START_TIMES_TABLE);
 		}
-		if (oldVersion < 31 && newVersion >= 31) {
+		if (oldVersion >= 15 && oldVersion < 31 && newVersion >= 31) {
 			db.execSQL("ALTER TABLE "+ SQLiteAxolotlStore.IDENTITIES_TABLENAME + " ADD COLUMN "+SQLiteAxolotlStore.TRUST + " TEXT");
 			db.execSQL("ALTER TABLE "+ SQLiteAxolotlStore.IDENTITIES_TABLENAME + " ADD COLUMN "+SQLiteAxolotlStore.ACTIVE + " NUMBER");
 			HashMap<Integer,ContentValues> migration = new HashMap<>();
@@ -386,13 +390,13 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 			}
 
 		}
-		if (oldVersion < 32 && newVersion >= 32) {
+		if (oldVersion >= 15 && oldVersion < 32 && newVersion >= 32) {
 			db.execSQL("ALTER TABLE "+ SQLiteAxolotlStore.IDENTITIES_TABLENAME + " ADD COLUMN "+SQLiteAxolotlStore.LAST_ACTIVATION + " NUMBER");
 			ContentValues defaults = new ContentValues();
 			defaults.put(SQLiteAxolotlStore.LAST_ACTIVATION,System.currentTimeMillis());
 			db.update(SQLiteAxolotlStore.IDENTITIES_TABLENAME,defaults,null,null);
 		}
-		if (oldVersion < 33 && newVersion >= 33) {
+		if (oldVersion >= 15 && oldVersion < 33 && newVersion >= 33) {
 			String whereClause = SQLiteAxolotlStore.OWN+"=1";
 			db.update(SQLiteAxolotlStore.IDENTITIES_TABLENAME,createFingerprintStatusContentValues(FingerprintStatus.Trust.VERIFIED,true),whereClause,null);
 		}
@@ -441,6 +445,14 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		}
 		if (oldVersion < 35 && newVersion >= 35) {
 			db.execSQL(CREATE_MESSAGE_CONVERSATION_INDEX);
+		}
+		if (oldVersion < 36 && newVersion >= 36) {
+			List<Account> accounts = getAccounts(db);
+			for (Account account : accounts) {
+				account.setOption(Account.OPTION_REQURIES_ACCESS_MODE_CHANGE,true);
+				db.update(Account.TABLENAME, account.getContentValues(), Account.UUID
+						+ "=?", new String[]{account.getUuid()});
+			}
 		}
 	}
 
@@ -886,7 +898,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		return maxClearDate;
 	}
 
-	private Cursor getCursorForSession(Account account, AxolotlAddress contact) {
+	private Cursor getCursorForSession(Account account, SignalProtocolAddress contact) {
 		final SQLiteDatabase db = this.getReadableDatabase();
 		String[] selectionArgs = {account.getUuid(),
 				contact.getName(),
@@ -900,7 +912,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				null, null, null);
 	}
 
-	public SessionRecord loadSession(Account account, AxolotlAddress contact) {
+	public SessionRecord loadSession(Account account, SignalProtocolAddress contact) {
 		SessionRecord session = null;
 		Cursor cursor = getCursorForSession(account, contact);
 		if (cursor.getCount() != 0) {
@@ -916,12 +928,12 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		return session;
 	}
 
-	public List<Integer> getSubDeviceSessions(Account account, AxolotlAddress contact) {
+	public List<Integer> getSubDeviceSessions(Account account, SignalProtocolAddress contact) {
 		final SQLiteDatabase db = this.getReadableDatabase();
 		return getSubDeviceSessions(db, account, contact);
 	}
 
-	private List<Integer> getSubDeviceSessions(SQLiteDatabase db, Account account, AxolotlAddress contact) {
+	private List<Integer> getSubDeviceSessions(SQLiteDatabase db, Account account, SignalProtocolAddress contact) {
 		List<Integer> devices = new ArrayList<>();
 		String[] columns = {SQLiteAxolotlStore.DEVICE_ID};
 		String[] selectionArgs = {account.getUuid(),
@@ -942,14 +954,31 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		return devices;
 	}
 
-	public boolean containsSession(Account account, AxolotlAddress contact) {
+	public List<String> getKnownSignalAddresses(Account account) {
+		List<String> addresses = new ArrayList<>();
+		String[] colums = {SQLiteAxolotlStore.NAME};
+		String[] selectionArgs = {account.getUuid()};
+		Cursor cursor = getReadableDatabase().query(SQLiteAxolotlStore.SESSION_TABLENAME,
+				colums,
+				SQLiteAxolotlStore.ACCOUNT + " = ?",
+				selectionArgs,
+				null,null,null
+				);
+		while (cursor.moveToNext()) {
+			addresses.add(cursor.getString(cursor.getColumnIndex(SQLiteAxolotlStore.NAME)));
+		}
+		cursor.close();
+		return addresses;
+	}
+
+	public boolean containsSession(Account account, SignalProtocolAddress contact) {
 		Cursor cursor = getCursorForSession(account, contact);
 		int count = cursor.getCount();
 		cursor.close();
 		return count != 0;
 	}
 
-	public void storeSession(Account account, AxolotlAddress contact, SessionRecord session) {
+	public void storeSession(Account account, SignalProtocolAddress contact, SessionRecord session) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		ContentValues values = new ContentValues();
 		values.put(SQLiteAxolotlStore.NAME, contact.getName());
@@ -959,12 +988,12 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		db.insert(SQLiteAxolotlStore.SESSION_TABLENAME, null, values);
 	}
 
-	public void deleteSession(Account account, AxolotlAddress contact) {
+	public void deleteSession(Account account, SignalProtocolAddress contact) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		deleteSession(db, account, contact);
 	}
 
-	private void deleteSession(SQLiteDatabase db, Account account, AxolotlAddress contact) {
+	private void deleteSession(SQLiteDatabase db, Account account, SignalProtocolAddress contact) {
 		String[] args = {account.getUuid(),
 				contact.getName(),
 				Integer.toString(contact.getDeviceId())};
@@ -975,7 +1004,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				args);
 	}
 
-	public void deleteAllSessions(Account account, AxolotlAddress contact) {
+	public void deleteAllSessions(Account account, SignalProtocolAddress contact) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		String[] args = {account.getUuid(), contact.getName()};
 		db.delete(SQLiteAxolotlStore.SESSION_TABLENAME,
@@ -1352,11 +1381,11 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	}
 
 	public void storeIdentityKey(Account account, String name, IdentityKey identityKey, FingerprintStatus status) {
-		storeIdentityKey(account, name, false, identityKey.getFingerprint().replaceAll("\\s", ""), Base64.encodeToString(identityKey.serialize(), Base64.DEFAULT), status);
+		storeIdentityKey(account, name, false, CryptoHelper.bytesToHex(identityKey.getPublicKey().serialize()), Base64.encodeToString(identityKey.serialize(), Base64.DEFAULT), status);
 	}
 
 	public void storeOwnIdentityKeyPair(Account account, IdentityKeyPair identityKeyPair) {
-		storeIdentityKey(account, account.getJid().toBareJid().toPreppedString(), true, identityKeyPair.getPublicKey().getFingerprint().replaceAll("\\s", ""), Base64.encodeToString(identityKeyPair.serialize(), Base64.DEFAULT), FingerprintStatus.createActiveVerified(false));
+		storeIdentityKey(account, account.getJid().toBareJid().toPreppedString(), true, CryptoHelper.bytesToHex(identityKeyPair.getPublicKey().serialize()), Base64.encodeToString(identityKeyPair.serialize(), Base64.DEFAULT), FingerprintStatus.createActiveVerified(false));
 	}
 
 
@@ -1393,34 +1422,20 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				deleteArgs);
 	}
 
-	public boolean startTimeCountExceedsThreshold() {
-		SQLiteDatabase db = this.getWritableDatabase();
-		long cleanBeforeTimestamp = System.currentTimeMillis() - Config.FREQUENT_RESTARTS_DETECTION_WINDOW;
-		db.execSQL("delete from "+START_TIMES_TABLE+" where timestamp < "+cleanBeforeTimestamp);
-		ContentValues values = new ContentValues();
-		values.put("timestamp",System.currentTimeMillis());
-		db.insert(START_TIMES_TABLE,null,values);
-		String[] columns = new String[]{"count(timestamp)"};
-		Cursor cursor = db.query(START_TIMES_TABLE,columns,null,null,null,null,null);
-		int count;
-		if (cursor.moveToFirst()) {
-			count = cursor.getInt(0);
-		} else {
-			count = 0;
+	public List<ShortcutService.FrequentContact> getFrequentContacts(int days) {
+		SQLiteDatabase db = this.getReadableDatabase();
+		final String SQL = "select "+Conversation.TABLENAME+"."+Conversation.ACCOUNT+","+Conversation.TABLENAME+"."+Conversation.CONTACTJID+" from "+Conversation.TABLENAME+" join "+Message.TABLENAME+" on conversations.uuid=messages.conversationUuid where messages.status!=0 and carbon==0  and conversations.mode=0 and messages.timeSent>=? group by conversations.uuid order by count(body) desc limit 4;";
+		String[] whereArgs = new String[]{String.valueOf(System.currentTimeMillis() - (Config.MILLISECONDS_IN_DAY * days))};
+		Cursor cursor = db.rawQuery(SQL,whereArgs);
+		ArrayList<ShortcutService.FrequentContact> contacts = new ArrayList<>();
+		while(cursor.moveToNext()) {
+			try {
+				contacts.add(new ShortcutService.FrequentContact(cursor.getString(0), Jid.fromString(cursor.getString(1))));
+			} catch (Exception e) {
+				Log.d(Config.LOGTAG,e.getMessage());
+			}
 		}
 		cursor.close();
-		Log.d(Config.LOGTAG,"start time counter reached "+count);
-		return count >= Config.FREQUENT_RESTARTS_THRESHOLD;
-	}
-
-	public void clearStartTimeCounter(boolean justOne) {
-		SQLiteDatabase db = this.getWritableDatabase();
-		if (justOne) {
-			db.execSQL("delete from "+START_TIMES_TABLE+" where timestamp in (select timestamp from "+START_TIMES_TABLE+" order by timestamp desc limit 1)");
-			Log.d(Config.LOGTAG,"do not count start up after being swiped away");
-		} else {
-			Log.d(Config.LOGTAG,"resetting start time counter");
-			db.execSQL("delete from " + START_TIMES_TABLE);
-		}
+		return contacts;
 	}
 }

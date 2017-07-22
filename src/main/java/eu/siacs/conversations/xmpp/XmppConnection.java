@@ -2,8 +2,6 @@ package eu.siacs.conversations.xmpp;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.os.Bundle;
-import android.os.Parcelable;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.SystemClock;
@@ -34,14 +32,15 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -50,6 +49,7 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import de.duenndns.ssl.DomainHostnameVerifier;
 import de.duenndns.ssl.MemorizingTrustManager;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.XmppDomainVerifier;
@@ -66,7 +66,9 @@ import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
-import eu.siacs.conversations.utils.DNSHelper;
+import eu.siacs.conversations.utils.IP;
+import eu.siacs.conversations.utils.Patterns;
+import eu.siacs.conversations.utils.Resolver;
 import eu.siacs.conversations.utils.SSLSocketHelper;
 import eu.siacs.conversations.utils.SocksSocketFactory;
 import eu.siacs.conversations.xml.Element;
@@ -137,6 +139,8 @@ public class XmppConnection implements Runnable {
 	private final XmppConnectionService mXmppConnectionService;
 
 	private SaslMechanism saslMechanism;
+	private String webRegistrationUrl = null;
+	private String verifiedHostname = null;
 
 	private class MyKeyManager implements X509KeyManager {
 		@Override
@@ -267,6 +271,7 @@ public class XmppConnection implements Runnable {
 		Log.d(Config.LOGTAG, account.getJid().toBareJid().toString() + ": connecting");
 		features.encryptionEnabled = false;
 		this.attempt++;
+		this.verifiedHostname = null; //will be set if user entered hostname is being used or hostname was verified with dnssec
 		try {
 			Socket localSocket;
 			shouldAuthenticate = needsBinding = !account.isOptionSet(Account.OPTION_REGISTER);
@@ -275,10 +280,11 @@ public class XmppConnection implements Runnable {
 			final boolean extended = mXmppConnectionService.showExtendedConnectionOptions();
 			if (useTor) {
 				String destination;
-				if (account.getHostname() == null || account.getHostname().isEmpty()) {
+				if (account.getHostname().isEmpty()) {
 					destination = account.getServer().toString();
 				} else {
 					destination = account.getHostname();
+					this.verifiedHostname = destination;
 				}
 				Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": connect to " + destination + " via Tor");
 				localSocket = SocksSocketFactory.createSocketOverTor(destination, account.getPort());
@@ -290,32 +296,32 @@ public class XmppConnection implements Runnable {
 				} catch (Exception e) {
 					throw new IOException(e.getMessage());
 				}
-			} else if (extended && account.getHostname() != null && !account.getHostname().isEmpty()) {
+			} else if (extended && !account.getHostname().isEmpty()) {
 
-				InetSocketAddress address = new InetSocketAddress(account.getHostname(), account.getPort());
-
-				features.encryptionEnabled = account.getPort() == 5223;
+				this.verifiedHostname = account.getHostname();
 
 				try {
+					InetSocketAddress address = new InetSocketAddress(this.verifiedHostname, account.getPort());
+					features.encryptionEnabled = address.getPort() == 5223;
 					if (features.encryptionEnabled) {
 						try {
 							final TlsFactoryVerifier tlsFactoryVerifier = getTlsFactoryVerifier();
 							localSocket = tlsFactoryVerifier.factory.createSocket();
 							localSocket.connect(address, Config.SOCKET_TIMEOUT * 1000);
 							final SSLSession session = ((SSLSocket) localSocket).getSession();
-							if (!tlsFactoryVerifier.verifier.verify(account.getServer().getDomainpart(), session)) {
+							final String domain = account.getJid().getDomainpart();
+							if (!tlsFactoryVerifier.verifier.verify(domain, this.verifiedHostname, session)) {
 								Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": TLS certificate verification failed");
 								throw new StateChangingException(Account.State.TLS_ERROR);
 							}
 						} catch (KeyManagementException e) {
-							features.encryptionEnabled = false;
-							localSocket = new Socket();
+							throw new StateChangingException(Account.State.TLS_ERROR);
 						}
 					} else {
 						localSocket = new Socket();
 						localSocket.connect(address, Config.SOCKET_TIMEOUT * 1000);
 					}
-				} catch (IOException e) {
+				} catch (IOException | IllegalArgumentException e) {
 					throw new UnknownHostException();
 				}
 				try {
@@ -326,7 +332,7 @@ public class XmppConnection implements Runnable {
 				} catch (Exception e) {
 					throw new IOException(e.getMessage());
 				}
-			} else if (DNSHelper.isIp(account.getServer().toString())) {
+			} else if (IP.matches(account.getServer().toString())) {
 				localSocket = new Socket();
 				try {
 					localSocket.connect(new InetSocketAddress(account.getServer().toString(), 5222), Config.SOCKET_TIMEOUT * 1000);
@@ -342,37 +348,28 @@ public class XmppConnection implements Runnable {
 					throw new IOException(e.getMessage());
 				}
 			} else {
-				final Bundle result = DNSHelper.getSRVRecord(account.getServer(), mXmppConnectionService);
-				final ArrayList<Parcelable> values = result.getParcelableArrayList("values");
-				for (Iterator<Parcelable> iterator = values.iterator(); iterator.hasNext(); ) {
+				List<Resolver.Result> results = Resolver.resolve(account.getJid().getDomainpart());
+				for (Iterator<Resolver.Result> iterator = results.iterator(); iterator.hasNext(); ) {
+					final Resolver.Result result = iterator.next();
 					if (Thread.currentThread().isInterrupted()) {
 						Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": Thread was interrupted");
 						return;
 					}
-					final Bundle namePort = (Bundle) iterator.next();
 					try {
-						String srvRecordServer;
-						try {
-							srvRecordServer = IDN.toASCII(namePort.getString("name"));
-						} catch (final IllegalArgumentException e) {
-							// TODO: Handle me?`
-							srvRecordServer = "";
-						}
-						final int srvRecordPort = namePort.getInt("port");
-						final String srvIpServer = namePort.getString("ip");
 						// if tls is true, encryption is implied and must not be started
-						features.encryptionEnabled = namePort.getBoolean("tls");
+						features.encryptionEnabled = result.isDirectTls();
+						verifiedHostname = result.isAuthenticated() ? result.getHostname().toString() : null;
 						final InetSocketAddress addr;
-						if (srvIpServer != null) {
-							addr = new InetSocketAddress(srvIpServer, srvRecordPort);
+						if (result.getIp() != null) {
+							addr = new InetSocketAddress(result.getIp(), result.getPort());
 							Log.d(Config.LOGTAG, account.getJid().toBareJid().toString()
-									+ ": using values from dns " + srvRecordServer
-									+ "[" + srvIpServer + "]:" + srvRecordPort + " tls: " + features.encryptionEnabled);
+									+ ": using values from dns " + result.getHostname().toString()
+									+ "/" + result.getIp().getHostAddress() + ":" + result.getPort() + " tls: " + features.encryptionEnabled);
 						} else {
-							addr = new InetSocketAddress(srvRecordServer, srvRecordPort);
+							addr = new InetSocketAddress(IDN.toASCII(result.getHostname().toString()), result.getPort());
 							Log.d(Config.LOGTAG, account.getJid().toBareJid().toString()
 									+ ": using values from dns "
-									+ srvRecordServer + ":" + srvRecordPort + " tls: " + features.encryptionEnabled);
+									+ result.getHostname().toString() + ":" + result.getPort() + " tls: " + features.encryptionEnabled);
 						}
 
 						if (!features.encryptionEnabled) {
@@ -392,9 +389,11 @@ public class XmppConnection implements Runnable {
 
 							localSocket.connect(addr, Config.SOCKET_TIMEOUT * 1000);
 
-							if (!tlsFactoryVerifier.verifier.verify(account.getServer().getDomainpart(), ((SSLSocket) localSocket).getSession())) {
+							if (!tlsFactoryVerifier.verifier.verify(account.getServer().getDomainpart(), verifiedHostname, ((SSLSocket) localSocket).getSession())) {
 								Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": TLS certificate verification failed");
-								throw new StateChangingException(Account.State.TLS_ERROR);
+								if (!iterator.hasNext()) {
+									throw new StateChangingException(Account.State.TLS_ERROR);
+								}
 							}
 						}
 						if (startXmpp(localSocket)) {
@@ -438,7 +437,7 @@ public class XmppConnection implements Runnable {
 					}
 				}
 			} else {
-				Log.d(Config.LOGTAG,account.getJid().toBareJid()+": not force closing socket and releasing wake lock because thread was interrupted");
+				Log.d(Config.LOGTAG,account.getJid().toBareJid()+": not force closing socket and releasing wake lock (is held="+wakeLock.isHeld()+") because thread was interrupted");
 			}
 		}
 	}
@@ -467,9 +466,9 @@ public class XmppConnection implements Runnable {
 
 	private static class TlsFactoryVerifier {
 		private final SSLSocketFactory factory;
-		private final HostnameVerifier verifier;
+		private final DomainHostnameVerifier verifier;
 
-		public TlsFactoryVerifier(final SSLSocketFactory factory, final HostnameVerifier verifier) throws IOException {
+		public TlsFactoryVerifier(final SSLSocketFactory factory, final DomainHostnameVerifier verifier) throws IOException {
 			this.factory = factory;
 			this.verifier = verifier;
 			if (factory == null || verifier == null) {
@@ -490,13 +489,7 @@ public class XmppConnection implements Runnable {
 		String domain = account.getJid().getDomainpart();
 		sc.init(keyManager, new X509TrustManager[]{mInteractive ? trustManager.getInteractive(domain) : trustManager.getNonInteractive(domain)}, mXmppConnectionService.getRNG());
 		final SSLSocketFactory factory = sc.getSocketFactory();
-		final HostnameVerifier verifier;
-		if (mInteractive) {
-			verifier = trustManager.wrapHostnameVerifier(new XmppDomainVerifier());
-		} else {
-			verifier = trustManager.wrapHostnameVerifierNonInteractive(new XmppDomainVerifier());
-		}
-
+		final DomainHostnameVerifier verifier = trustManager.wrapHostnameVerifier(new XmppDomainVerifier(), mInteractive);
 		return new TlsFactoryVerifier(factory, verifier);
 	}
 
@@ -820,7 +813,7 @@ public class XmppConnection implements Runnable {
 
 			SSLSocketHelper.setSecurity(sslSocket);
 
-			if (!tlsFactoryVerifier.verifier.verify(account.getServer().getDomainpart(), sslSocket.getSession())) {
+			if (!tlsFactoryVerifier.verifier.verify(account.getServer().getDomainpart(), this.verifiedHostname, sslSocket.getSession())) {
 				Log.d(Config.LOGTAG,account.getJid().toBareJid()+": TLS certificate verification failed");
 				throw new StateChangingException(Account.State.TLS_ERROR);
 			}
@@ -976,19 +969,38 @@ public class XmppConnection implements Runnable {
 				}
 
 				if (failed) {
-					final Element instructions = packet.query().findChild("instructions");
-					setAccountCreationFailed((instructions != null) ? instructions.getContent() : "");
+					final Element query = packet.query();
+					final String instructions = query.findChildContent("instructions");
+					final Element oob = query.findChild("x",Namespace.OOB);
+					final String url = oob == null ? null : oob.findChildContent("url");
+					if (url == null && instructions != null) {
+						Matcher matcher = Patterns.AUTOLINK_WEB_URL.matcher(instructions);
+						if (matcher.find()) {
+							setAccountCreationFailed(instructions.substring(matcher.start(),matcher.end()));
+						} else {
+							setAccountCreationFailed(null);
+						}
+					} else {
+						setAccountCreationFailed(url);
+					}
 				}
 			}
 		});
 	}
 
-	private void setAccountCreationFailed(String instructions) {
-		changeStatus(Account.State.REGISTRATION_FAILED);
+	private void setAccountCreationFailed(String url) {
+		if (url != null && (url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"))) {
+			changeStatus(Account.State.REGISTRATION_WEB);
+			this.webRegistrationUrl = url;
+		} else {
+			changeStatus(Account.State.REGISTRATION_FAILED);
+		}
 		disconnect(true);
-		Log.d(Config.LOGTAG, account.getJid().toBareJid()
-				+ ": could not register. instructions are"
-				+ instructions);
+		Log.d(Config.LOGTAG, account.getJid().toBareJid()+": could not register. url="+url);
+	}
+
+	public String getWebRegistrationUrl() {
+		return this.webRegistrationUrl;
 	}
 
 	public void resetEverything() {
@@ -996,6 +1008,7 @@ public class XmppConnection implements Runnable {
 		resetStreamId();
 		clearIqCallbacks();
 		mStanzaQueue.clear();
+		this.webRegistrationUrl = null;
 		synchronized (this.disco) {
 			disco.clear();
 		}
@@ -1072,13 +1085,19 @@ public class XmppConnection implements Runnable {
 			}
 		}
 		for(OnIqPacketReceived callback : callbacks) {
-			callback.onIqPacketReceived(account,failurePacket);
+			try {
+				callback.onIqPacketReceived(account, failurePacket);
+			} catch (StateChangingError error) {
+				Log.d(Config.LOGTAG,account.getJid().toBareJid()+": caught StateChangingError("+error.state.toString()+") while clearing callbacks");
+				//ignore
+			}
 		}
 		Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": done clearing iq callbacks. " + this.packetCallbacks.size() + " left");
 	}
 
 	public void sendDiscoTimeout() {
 		if (mWaitForDisco.compareAndSet(true, false)) {
+			Log.d(Config.LOGTAG,account.getJid().toBareJid()+": finalizing bind after disco timeout");
 			finalizeBind();
 		}
 	}
@@ -1218,14 +1237,18 @@ public class XmppConnection implements Runnable {
 			@Override
 			public void onIqPacketReceived(final Account account, final IqPacket packet) {
 				if (packet.getType() == IqPacket.TYPE.RESULT) {
+					HashSet<Jid> items = new HashSet<Jid>();
 					final List<Element> elements = packet.query().getChildren();
 					for (final Element element : elements) {
 						if (element.getName().equals("item")) {
 							final Jid jid = element.getAttributeAsJid("jid");
 							if (jid != null && !jid.equals(account.getServer())) {
-								sendServiceDiscoveryInfo(jid);
+								items.add(jid);
 							}
 						}
+					}
+					for(Jid jid : items) {
+						sendServiceDiscoveryInfo(jid);
 					}
 				} else {
 					Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": could not query disco items of " + server);
@@ -1303,8 +1326,7 @@ public class XmppConnection implements Runnable {
 
 	public synchronized String sendUnmodifiedIqPacket(final IqPacket packet, final OnIqPacketReceived callback) {
 		if (packet.getId() == null) {
-			final String id = nextRandomId();
-			packet.setAttribute("id", id);
+			packet.setAttribute("id", nextRandomId());
 		}
 		if (callback != null) {
 			synchronized (this.packetCallbacks) {
@@ -1646,6 +1668,13 @@ public class XmppConnection implements Runnable {
 			synchronized (XmppConnection.this.disco) {
 				ServiceDiscoveryResult info = disco.get(account.getJid().toBareJid());
 				return info != null && info.getFeatures().contains("http://jabber.org/protocol/pubsub#persistent-items");
+			}
+		}
+
+		public boolean pepPublishOptions() {
+			synchronized (XmppConnection.this.disco) {
+				ServiceDiscoveryResult info = disco.get(account.getJid().toBareJid());
+				return info != null && info.getFeatures().contains(Namespace.PUBSUB_PUBLISH_OPTIONS);
 			}
 		}
 

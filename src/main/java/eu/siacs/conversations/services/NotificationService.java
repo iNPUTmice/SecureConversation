@@ -9,6 +9,7 @@ import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.BigPictureStyle;
 import android.support.v4.app.NotificationCompat.Builder;
@@ -85,20 +86,20 @@ public class NotificationService {
 	}
 
 	public boolean notificationsEnabled() {
-		return mXmppConnectionService.getPreferences().getBoolean("show_notification", true);
+		return mXmppConnectionService.getBooleanPreference("show_notification",R.bool.show_notification);
 	}
 
 	private boolean notificationsFromStrangers() {
-		return mXmppConnectionService.getPreferences().getBoolean("notifications_from_strangers",
-				mXmppConnectionService.getResources().getBoolean(R.bool.notifications_from_strangers));
+		return mXmppConnectionService.getBooleanPreference("notifications_from_strangers",R.bool.notifications_from_strangers);
 	}
 
 	public boolean isQuietHours() {
-		if (!mXmppConnectionService.getPreferences().getBoolean("enable_quiet_hours", false)) {
+		if (!mXmppConnectionService.getBooleanPreference("enable_quiet_hours", R.bool.enable_quiet_hours)) {
 			return false;
 		}
-		final long startTime = mXmppConnectionService.getPreferences().getLong("quiet_hours_start", TimePreference.DEFAULT_VALUE) % Config.MILLISECONDS_IN_DAY;
-		final long endTime = mXmppConnectionService.getPreferences().getLong("quiet_hours_end", TimePreference.DEFAULT_VALUE) % Config.MILLISECONDS_IN_DAY;
+		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService);
+		final long startTime = preferences.getLong("quiet_hours_start", TimePreference.DEFAULT_VALUE) % Config.MILLISECONDS_IN_DAY;
+		final long endTime = preferences.getLong("quiet_hours_end", TimePreference.DEFAULT_VALUE) % Config.MILLISECONDS_IN_DAY;
 		final long nowTime = Calendar.getInstance().getTimeInMillis() % Config.MILLISECONDS_IN_DAY;
 
 		if (endTime < startTime) {
@@ -251,7 +252,7 @@ public class NotificationService {
 
 	public void updateNotification(final boolean notify) {
 		final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(mXmppConnectionService);
-		final SharedPreferences preferences = mXmppConnectionService.getPreferences();
+		final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService);
 
 		if (notifications.size() == 0) {
 			notificationManager.cancel(NOTIFICATION_ID);
@@ -283,6 +284,7 @@ public class NotificationService {
 		final String ringtone = preferences.getString("notification_ringtone", null);
 		final boolean vibrate = preferences.getBoolean("vibrate_on_notification", true);
 		final boolean led = preferences.getBoolean("led", true);
+		final boolean headsup = preferences.getBoolean("notification_headsup", mXmppConnectionService.getResources().getBoolean(R.bool.headsup_notifications));
 		if (notify && !isQuietHours()) {
 			if (vibrate) {
 				final int dat = 70;
@@ -303,7 +305,7 @@ public class NotificationService {
 		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
 			mBuilder.setCategory(Notification.CATEGORY_MESSAGE);
 		}
-		mBuilder.setPriority(notify ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_LOW);
+		mBuilder.setPriority(notify ? (headsup ? NotificationCompat.PRIORITY_HIGH : NotificationCompat.PRIORITY_DEFAULT) : NotificationCompat.PRIORITY_LOW);
 		setNotificationColor(mBuilder);
 		mBuilder.setDefaults(0);
 		if (led) {
@@ -724,7 +726,7 @@ public class NotificationService {
 				errors.add(account);
 			}
 		}
-		if (mXmppConnectionService.getPreferences().getBoolean(SettingsActivity.KEEP_FOREGROUND_SERVICE, false)) {
+		if (mXmppConnectionService.keepForegroundService()) {
 			notificationManager.notify(FOREGROUND_NOTIFICATION_ID, createForegroundNotification());
 		}
 		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);

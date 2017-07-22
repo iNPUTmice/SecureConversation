@@ -96,7 +96,11 @@ public class HttpUploadConnection implements Transferable {
 		this.message = message;
 		this.account = message.getConversation().getAccount();
 		this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
-		this.mime = this.file.getMimeType();
+		if (message.getEncryption() == Message.ENCRYPTION_PGP || message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
+			this.mime = "application/pgp-encrypted";
+		} else {
+			this.mime = this.file.getMimeType();
+		}
 		this.delayed = delay;
 		if (Config.ENCRYPT_ON_HTTP_UPLOADED
 				|| message.getEncryption() == Message.ENCRYPTION_AXOLOTL
@@ -156,7 +160,9 @@ public class HttpUploadConnection implements Transferable {
 			PowerManager.WakeLock wakeLock = mHttpConnectionManager.createWakeLock("http_upload_"+message.getUuid());
 			try {
 				wakeLock.acquire();
-				Log.d(Config.LOGTAG, "uploading to " + mPutUrl.toString());
+				final int expectedFileSize = (int) file.getExpectedSize();
+				final int readTimeout = (expectedFileSize / 2048) + Config.SOCKET_TIMEOUT; //assuming a minimum transfer speed of 16kbit/s
+				Log.d(Config.LOGTAG, "uploading to " + mPutUrl.toString()+ " w/ read timeout of "+readTimeout+"s");
 				if (mUseTor) {
 					connection = (HttpURLConnection) mPutUrl.openConnection(mHttpConnectionManager.getProxy());
 				} else {
@@ -166,12 +172,12 @@ public class HttpUploadConnection implements Transferable {
 					mHttpConnectionManager.setupTrustManager((HttpsURLConnection) connection, true);
 				}
 				connection.setRequestMethod("PUT");
-				connection.setFixedLengthStreamingMode((int) file.getExpectedSize());
+				connection.setFixedLengthStreamingMode(expectedFileSize);
 				connection.setRequestProperty("Content-Type", mime == null ? "application/octet-stream" : mime);
 				connection.setRequestProperty("User-Agent",mXmppConnectionService.getIqGenerator().getIdentityName());
 				connection.setDoOutput(true);
 				connection.setConnectTimeout(Config.SOCKET_TIMEOUT * 1000);
-				connection.setReadTimeout(Config.SOCKET_TIMEOUT * 1000);
+				connection.setReadTimeout(readTimeout * 1000);
 				connection.connect();
 				os = connection.getOutputStream();
 				transmitted = 0;

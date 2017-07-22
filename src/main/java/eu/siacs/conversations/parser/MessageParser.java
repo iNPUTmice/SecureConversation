@@ -13,10 +13,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.OtrService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
@@ -665,7 +667,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 								+user.getRealJid()+" to "+user.getAffiliation()+" in "
 								+conversation.getJid().toBareJid());
 						if (!user.realJidMatchesAccount()) {
-							conversation.getMucOptions().updateUser(user);
+							boolean isNew =conversation.getMucOptions().updateUser(user);
 							mXmppConnectionService.getAvatarService().clear(conversation);
 							mXmppConnectionService.updateMucRosterUi();
 							mXmppConnectionService.updateConversationUi();
@@ -677,6 +679,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 									conversation.setAcceptedCryptoTargets(cryptoTargets);
 									mXmppConnectionService.updateConversation(conversation);
 								}
+							} else if (isNew && user.getRealJid() != null && account.getAxolotlService().hasEmptyDeviceList(user.getRealJid())) {
+								account.getAxolotlService().fetchDeviceIds(user.getRealJid());
 							}
 						}
 					}
@@ -747,10 +751,10 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		}
 	}
 
-	private static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
+	private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH);
 
 	private void activateGracePeriod(Account account) {
-		long duration = mXmppConnectionService.getPreferences().getLong("race_period_length", 144) * 1000;
+		long duration = mXmppConnectionService.getLongPreference("grace_period_length",R.integer.grace_period) * 1000;
 		Log.d(Config.LOGTAG,account.getJid().toBareJid()+": activating grace period till "+TIME_FORMAT.format(new Date(System.currentTimeMillis() + duration)));
 		account.activateGracePeriod(duration);
 	}

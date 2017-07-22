@@ -1267,7 +1267,7 @@ public class ConversationActivity extends XmppActivity
 		}
 		forbidProcessingPendings = false;
 
-		if (!ExceptionHelper.checkForCrash(this, this.xmppConnectionService)) {
+		if (!ExceptionHelper.checkForCrash(this, this.xmppConnectionService) && !mRedirected.get()) {
 			openBatteryOptimizationDialogIfNeeded();
 		}
 		if (isConversationsOverviewVisable() && isConversationsOverviewHideable()) {
@@ -1515,7 +1515,9 @@ public class ConversationActivity extends XmppActivity
 					}
 				});
 			}
-			builder.create().show();
+			AlertDialog dialog = builder.create();
+			dialog.setCanceledOnTouchOutside(false);
+			dialog.show();
 		}
 	}
 
@@ -1712,15 +1714,15 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public boolean useSendButtonToIndicateStatus() {
-		return getPreferences().getBoolean("send_button_status", false);
+		return getPreferences().getBoolean("send_button_status", getResources().getBoolean(R.bool.send_button_status));
 	}
 
 	public boolean indicateReceived() {
-		return getPreferences().getBoolean("indicate_received", false);
+		return getPreferences().getBoolean("indicate_received", getResources().getBoolean(R.bool.indicate_received));
 	}
 
 	public boolean useGreenBackground() {
-		return getPreferences().getBoolean("use_green_background",true);
+		return getPreferences().getBoolean("use_green_background",getResources().getBoolean(R.bool.use_green_background));
 	}
 
 	protected boolean trustKeysIfNeeded(int requestCode) {
