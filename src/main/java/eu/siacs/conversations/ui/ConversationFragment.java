@@ -129,6 +129,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
+	public AtomicBoolean ignoreOneEvent;
 
 	private OnScrollListener mOnScrollListener = new OnScrollListener() {
 
@@ -922,6 +923,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 		this.activity = (ConversationActivity) getActivity();
 		setupIme();
+		this.ignoreOneEvent = new AtomicBoolean(false);
 		if (this.conversation != null) {
 			final String msg = mEditMessage.getText().toString();
 			this.conversation.setNextMessage(msg);
@@ -929,7 +931,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				updateChatState(this.conversation, msg);
 			}
 			this.conversation.trim();
-
 		}
 
 		if (activity != null) {
@@ -938,14 +939,18 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 		this.conversation = conversation;
 		this.mEditMessage.setKeyboardListener(null);
+		ignoreOneEvent.set(true);
 		this.mEditMessage.setText("");
+		if (this.conversation.getNextMessage().length() > 0) {
+			ignoreOneEvent.set(true);
+		}
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.mEditMessage.setKeyboardListener(this);
 		if (rttEventListener != null) {
 			rttEventListener.stop();
 			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
 		}
-		this.rttEventListener = new RttEventListener(conversation, activity);
+		this.rttEventListener = new RttEventListener(this, conversation, activity);
 		this.mEditMessage.addTextChangedListener(this.rttEventListener);
 		messageListAdapter.updatePreferences();
 		this.messagesView.setAdapter(messageListAdapter);
@@ -1157,6 +1162,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 	protected void messageSent() {
 		mSendingPgpMessage.set(false);
+		ignoreOneEvent.set(true);
 		mEditMessage.setText("");
 		if (conversation.setCorrectingMessage(null)) {
 			mEditMessage.append(conversation.getDraftMessage());

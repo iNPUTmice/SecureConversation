@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.ui.ConversationActivity;
+import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.rtt.RttEvent.Type;
@@ -21,6 +22,7 @@ public class RttEventListener implements TextWatcher {
 
 	private Conversation conversation;
 	private ConversationActivity conversationActivity;
+	private ConversationFragment conversationFragment;
 
 	/*
 	 * addLast()	 -> add Element to the queue
@@ -56,68 +58,74 @@ public class RttEventListener implements TextWatcher {
 	private Handler h;
 	private AtomicBoolean isTyping;
 
-	public RttEventListener(Conversation conversation, ConversationActivity activity) {
+	public RttEventListener(ConversationFragment fragment, Conversation conversation, ConversationActivity activity) {
+		this.conversationFragment = fragment;
 		this.conversation = conversation;
 		this.conversationActivity = activity;
 		rttEventQueue = new LinkedList<>();
 		currentMessageMillis = lastMessageMillis = 0;
 		rttStanzaSequence = 0;
-		isTyping.set(false);
+		isTyping = new AtomicBoolean(false);
 		currentIdleTime = 0;
 	}
 
 	@Override
 	public void beforeTextChanged(CharSequence s, int start, int count, int after) {
-		_before = String.valueOf(s.subSequence(start, start + count));
-		length_before = s.length();
+		if (!conversationFragment.ignoreOneEvent.get()) {
+			_before = String.valueOf(s.subSequence(start, start + count));
+			length_before = s.length();
+		}
 	}
 
 	@Override
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
-		int position;
+		if (!conversationFragment.ignoreOneEvent.get()) {
+			int position;
 
-		_after = String.valueOf(s.subSequence(start, start + count));
+			_after = String.valueOf(s.subSequence(start, start + count));
 
-		currentMessageMillis = SystemClock.elapsedRealtime();
-		if (lastMessageMillis == 0) {
-			lastMessageMillis = currentMessageMillis;
-		}
-
-		if (_after.length() > _before.length()) {
-			if (_after.startsWith(_before)) {
-				String changedPart = String.valueOf(_after.subSequence(_before.length(), _after.length()));
-				position = start + _before.length();
-				addTextEvent(changedPart, position == length_before ? null : position);
-			} else if (_after.endsWith(_before)) {
-				String changedPart = String.valueOf(_after.subSequence(0, _after.length() - _before.length()));
-				position = start;
-				addTextEvent(changedPart, position == length_before ? null : position);
-			} else {
-				position = start + before;
-				addEraseEvent(before, position == length_before ? null : position);
-				addTextEvent(_after, start);
+			currentMessageMillis = SystemClock.elapsedRealtime();
+			if (lastMessageMillis == 0) {
+				lastMessageMillis = currentMessageMillis;
 			}
-		} else if (_after.length() == _before.length()) {
-			position = start + before;
-			addEraseEvent(before, position == length_before ? null : position);
-			addTextEvent(_after, start);
-		} else {
-			if (_before.startsWith(_after)) {
-				position = start + _before.length();
-				addEraseEvent(_before.length() - _after.length(), position == length_before ? null : position);
-			} else if (_before.endsWith(_after)) {
-				position = start + _before.length() - _after.length();
-				addEraseEvent(_before.length() - _after.length(), position == length_before ? null : position);
-			} else {
+
+			if (_after.length() > _before.length()) {
+				if (_after.startsWith(_before)) {
+					String changedPart = String.valueOf(_after.subSequence(_before.length(), _after.length()));
+					position = start + _before.length();
+					addTextEvent(changedPart, position == length_before ? null : position);
+				} else if (_after.endsWith(_before)) {
+					String changedPart = String.valueOf(_after.subSequence(0, _after.length() - _before.length()));
+					position = start;
+					addTextEvent(changedPart, position == length_before ? null : position);
+				} else {
+					position = start + before;
+					addEraseEvent(before, position == length_before ? null : position);
+					addTextEvent(_after, start);
+				}
+			} else if (_after.length() == _before.length()) {
 				position = start + before;
 				addEraseEvent(before, position == length_before ? null : position);
 				addTextEvent(_after, start);
+			} else {
+				if (_before.startsWith(_after)) {
+					position = start + _before.length();
+					addEraseEvent(_before.length() - _after.length(), position == length_before ? null : position);
+				} else if (_before.endsWith(_after)) {
+					position = start + _before.length() - _after.length();
+					addEraseEvent(_before.length() - _after.length(), position == length_before ? null : position);
+				} else {
+					position = start + before;
+					addEraseEvent(before, position == length_before ? null : position);
+					addTextEvent(_after, start);
+				}
 			}
 		}
 	}
 
 	@Override
 	public void afterTextChanged(Editable s) {
+		conversationFragment.ignoreOneEvent.compareAndSet(true, false);
 		startSending();
 	}
 
@@ -231,6 +239,8 @@ public class RttEventListener implements TextWatcher {
 	public void stop() {
 		flushQueue();
 		isTyping.set(false);
-		h.removeCallbacksAndMessages(null);
+		if (h != null) {
+			h.removeCallbacksAndMessages(null);
+		}
 	}
 }
