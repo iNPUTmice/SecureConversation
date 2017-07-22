@@ -575,11 +575,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
 		// Fandy Gotama
 		this.mAccountJid.setText("+62818850161@mrspell-test.m.in-app.io");
-		this.mPassword.setText("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjIsImlhdCI6MTQ5MTMxNzAyMDE5M30.EkC47GLwzdMTH6QelEzq3GRQ5Z4i2qKTiSpW3VuHc6U");
+		this.mPassword.setText("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjIyLCJpYXQiOjE0OTg3Mjg3NDgyNTJ9.kDU1x_fWtoD5ImPtKMsJI8YjyEsRPefMTqQPsEDWj-w");
 
 		// Fandy Gulali
 		//this.mAccountJid.setText("+628119466285@mrspell-test.m.in-app.io");
-		//this.mPassword.setText("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjUsImlhdCI6MTQ5MzI2NTEyMjg4N30.iPm7tByAPOccC62TQy9AEfqfj6Rlo3cbA52iM3kmZ08");
+		//this.mPassword.setText("eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjUsImlhdCI6MTQ5NjQwMjU4MTc4NX0.8AKl8yKIP8GcuovE_jnx1R0r0glc_eNB63W0j7ohrWE");
 
 		if (savedInstanceState != null && savedInstanceState.getBoolean("showMoreTable")) {
 			changeMoreTableVisibility(true);
