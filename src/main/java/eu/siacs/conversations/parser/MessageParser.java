@@ -1,6 +1,7 @@
 package eu.siacs.conversations.parser;
 
 import android.os.Build;
+import android.os.Handler;
 import android.text.Html;
 import android.util.Log;
 import android.util.Pair;
@@ -12,10 +13,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -40,6 +43,10 @@ import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
+import eu.siacs.conversations.xmpp.rtt.EraseEvent;
+import eu.siacs.conversations.xmpp.rtt.RttEvent;
+import eu.siacs.conversations.xmpp.rtt.TextEvent;
+import eu.siacs.conversations.xmpp.rtt.WaitEvent;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 
 public class MessageParser extends AbstractParser implements OnMessagePacketReceived {
@@ -632,6 +639,49 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 			}
 		} else if (!packet.hasChild("body")){ //no body
 			final Conversation conversation = mXmppConnectionService.find(account, from.toBareJid());
+
+			// Reception of RTT Events
+			if (packet.hasChild("rtt")) {
+				int seq = -1;
+				AtomicBoolean isSync = new AtomicBoolean(true);
+				Element rtt = packet.findChild("rtt", Namespace.RTT);
+				if (conversation.receivingRTT.compareAndSet(false, true)) {
+					seq = Integer.parseInt(rtt.getAttribute("seq"));
+					isSync.set(true);
+				} else {
+					if (Integer.parseInt(rtt.getAttribute("seq")) == seq + 1) {
+						seq = seq + 1;
+						isSync.set(true);
+					} else {
+						isSync.set(false);
+					}
+				}
+
+				if (isSync.get()) {
+					LinkedList<RttEvent> rttEventsReceived = new LinkedList<>();
+					for (Element event : rtt.getChildren()) {
+						if ("t".equals(event.getName())) {
+							TextEvent t = new TextEvent();
+							t.setText(event.getContent());
+							t.setPosition(Integer.valueOf(event.getAttribute("p")));
+							rttEventsReceived.addLast(t);
+							Log.i(Config.LOGTAG, "Received a RTT Text Event");
+						} else if ("e".equals(event.getName())) {
+							EraseEvent e = new EraseEvent();
+							e.setPosition(Integer.valueOf(event.getAttribute("p")));
+							e.setNumber(Integer.valueOf(event.getAttribute("n")));
+							rttEventsReceived.addLast(e);
+							Log.i(Config.LOGTAG, "Received a RTT Erase Event");
+						} else if ("w".equals(event.getName())) {
+							WaitEvent w = new WaitEvent();
+							w.setWaitInterval(Long.parseLong(event.getAttribute("n")));
+							rttEventsReceived.addLast(w);
+							Log.i(Config.LOGTAG, "Received a RTT Wait Event");
+						}
+					}
+				}
+			}
+
 			if (isTypeGroupChat) {
 				if (packet.hasChild("subject")) {
 					if (conversation != null && conversation.getMode() == Conversation.MODE_MULTI) {

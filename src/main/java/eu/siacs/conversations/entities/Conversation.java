@@ -90,6 +90,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	private Bookmark bookmark;
 
+	public AtomicBoolean receivingRTT = new AtomicBoolean(false);
+
 	private boolean messagesLeftOnServer = true;
 	private ChatState mOutgoingChatState = Config.DEFAULT_CHATSTATE;
 	private ChatState mIncomingChatState = Config.DEFAULT_CHATSTATE;
