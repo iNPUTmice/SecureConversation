@@ -327,6 +327,8 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 		return false;
 	}
 
+	private int rttSequence = -1;
+
 	@Override
 	public void onMessagePacketReceived(Account account, MessagePacket original) {
 		if (handleErrorMessage(account, original)) {
@@ -642,15 +644,15 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
 			// Reception of RTT Events
 			if (packet.hasChild("rtt")) {
-				int seq = -1;
+				Log.i(Config.LOGTAG, "Reveived RTT Stanza");
 				AtomicBoolean isSync = new AtomicBoolean(true);
 				Element rtt = packet.findChild("rtt", Namespace.RTT);
 				if (conversation.receivingRTT.compareAndSet(false, true)) {
-					seq = Integer.parseInt(rtt.getAttribute("seq"));
+					rttSequence = Integer.parseInt(rtt.getAttribute("seq"));
 					isSync.set(true);
 				} else {
-					if (Integer.parseInt(rtt.getAttribute("seq")) == seq + 1) {
-						seq = seq + 1;
+					if (Integer.parseInt(rtt.getAttribute("seq")) == rttSequence + 1) {
+						rttSequence = rttSequence + 1;
 						isSync.set(true);
 					} else {
 						isSync.set(false);
@@ -663,13 +665,19 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 						if ("t".equals(event.getName())) {
 							TextEvent t = new TextEvent();
 							t.setText(event.getContent());
-							t.setPosition(Integer.valueOf(event.getAttribute("p")));
+							if (event.getAttribute("p") != null) {
+								t.setPosition(Integer.valueOf(event.getAttribute("p")));
+							}
 							rttEventsReceived.addLast(t);
 							Log.i(Config.LOGTAG, "Received a RTT Text Event");
 						} else if ("e".equals(event.getName())) {
 							EraseEvent e = new EraseEvent();
-							e.setPosition(Integer.valueOf(event.getAttribute("p")));
-							e.setNumber(Integer.valueOf(event.getAttribute("n")));
+							if (event.getAttribute("p") != null) {
+								e.setPosition(Integer.valueOf(event.getAttribute("p")));
+							}
+							if (event.getAttribute("n") != null) {
+								e.setNumber(Integer.valueOf(event.getAttribute("n")));
+							}
 							rttEventsReceived.addLast(e);
 							Log.i(Config.LOGTAG, "Received a RTT Erase Event");
 						} else if ("w".equals(event.getName())) {
@@ -679,6 +687,14 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 							Log.i(Config.LOGTAG, "Received a RTT Wait Event");
 						}
 					}
+					Message message = new Message(conversation, "", Message.ENCRYPTION_NONE, Message.STATUS_RTT);
+					message.setCounterpart(counterpart);
+					message.setRemoteMsgId(remoteMsgId);
+					message.setServerMsgId(serverMsgId);
+					message.setCarbon(isCarbon);
+					message.setTime(timestamp);
+					conversation.addRttMessage(rttEventsReceived, message);
+					mXmppConnectionService.updateConversationUi();
 				}
 			}
 

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
@@ -31,6 +32,10 @@ import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+import eu.siacs.conversations.xmpp.rtt.EraseEvent;
+import eu.siacs.conversations.xmpp.rtt.RttEvent;
+import eu.siacs.conversations.xmpp.rtt.TextEvent;
+import eu.siacs.conversations.xmpp.rtt.WaitEvent;
 
 
 public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation> {
@@ -965,6 +970,44 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			this.messages.addAll(index, messages);
 		}
 		account.getPgpDecryptionService().decrypt(messages);
+	}
+
+	public void addRttMessage (LinkedList<RttEvent> list, Message message) {
+		Message lastMessage = this.messages.get(messages.size() - 1);
+		StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
+		long waitInterval = 0;
+		for (RttEvent event : list) {
+			if (event.getType() == RttEvent.Type.WAIT) {
+				WaitEvent w = (WaitEvent) event;
+				waitInterval +=  w.getWaitInterval();
+			} else if (event.getType() == RttEvent.Type.ERASE) {
+				EraseEvent e = (EraseEvent) event;
+				if (e.getPosition() != null) {
+					if (e.getNumber() < text.length()) {
+						text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
+					}
+				} else {
+					if (e.getNumber() < text.length()) {
+						text.replace(text.length() - e.getNumber(), text.length(), "");
+					}
+				}
+			} else {
+				TextEvent t = (TextEvent) event;
+				if (t.getPosition() != null && t.getPosition() < text.length()) {
+					text.insert(t.getPosition(), t.getText());
+				} else {
+					text.insert(text.length(), t.getText());
+				}
+			}
+		}
+		synchronized (this.messages) {
+			if (lastMessage.getStatus() == Message.STATUS_RTT) {
+				lastMessage.setBody(text.toString());
+			} else {
+				message.setBody(text.toString());
+				this.messages.add(message);
+			}
+		}
 	}
 
 	public void expireOldMessages(long timestamp) {
