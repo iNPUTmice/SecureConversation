@@ -983,11 +983,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			} else if (event.getType() == RttEvent.Type.ERASE) {
 				EraseEvent e = (EraseEvent) event;
 				if (e.getPosition() != null) {
-					if (e.getNumber() < text.length()) {
+					if (e.getNumber() <= text.length()) {
 						text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
 					}
 				} else {
-					if (e.getNumber() < text.length()) {
+					if (e.getNumber() <= text.length()) {
 						text.replace(text.length() - e.getNumber(), text.length(), "");
 					}
 				}
@@ -1003,6 +1003,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		synchronized (this.messages) {
 			if (lastMessage.getStatus() == Message.STATUS_RTT) {
 				lastMessage.setBody(text.toString());
+				if ("".equals(lastMessage.getBody())) {
+					this.messages.remove(messages.size() - 1);
+				}
 			} else {
 				message.setBody(text.toString());
 				this.messages.add(message);
