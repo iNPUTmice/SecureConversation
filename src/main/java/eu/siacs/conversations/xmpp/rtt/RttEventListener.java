@@ -243,4 +243,25 @@ public class RttEventListener implements TextWatcher {
 			h.removeCallbacksAndMessages(null);
 		}
 	}
+
+	private void sendCancelStanza() {
+		Element rttCancel = new Element("rtt", Namespace.RTT);
+		rttCancel.setAttribute("event", "cancel");
+		MessagePacket messagePacket = new MessagePacket();
+		messagePacket.addChild(rttCancel);
+		conversationActivity.xmppConnectionService.sendRttEvent(conversation, messagePacket);
+	}
+
+	private void sendResetStanza() {
+		Element rttReset = new Element("rtt", Namespace.RTT);
+		rttReset.setAttribute("event", "reset");
+		rttStanzaSequence = 1;
+		rttReset.setAttribute("seq", rttStanzaSequence);
+		TextEvent resetEvent = new TextEvent();
+		resetEvent.setText(conversationFragment.mEditMessage.getText().toString());
+		rttReset.addChild(resetEvent.toElement());
+		MessagePacket messagePacket = new MessagePacket();
+		messagePacket.addChild(rttReset);
+		conversationActivity.xmppConnectionService.sendRttEvent(conversation, messagePacket);
+	}
 }

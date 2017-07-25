@@ -121,7 +121,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	protected ListView messagesView;
 	final protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
-	private EditMessage mEditMessage;
+	public EditMessage mEditMessage;
 	private RttEventListener rttEventListener;
 	private ImageButton mSendButton;
 	protected ImageButton rttStatusButton;
@@ -937,19 +937,16 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			this.mSendButton.setContentDescription(activity.getString(R.string.send_message_to_x,conversation.getName()));
 		}
 
-		this.conversation = conversation;
-		this.mEditMessage.setKeyboardListener(null);
-		ignoreOneEvent.set(true);
-		this.mEditMessage.setText("");
-		if (this.conversation.getNextMessage().length() > 0) {
-			ignoreOneEvent.set(true);
-		}
-		this.mEditMessage.append(this.conversation.getNextMessage());
-		this.mEditMessage.setKeyboardListener(this);
 		if (rttEventListener != null) {
 			rttEventListener.stop();
 			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
 		}
+
+		this.conversation = conversation;
+		this.mEditMessage.setKeyboardListener(null);
+		this.mEditMessage.setText("");
+		this.mEditMessage.append(this.conversation.getNextMessage());
+		this.mEditMessage.setKeyboardListener(this);
 		this.rttEventListener = new RttEventListener(this, conversation, activity);
 		this.mEditMessage.addTextChangedListener(this.rttEventListener);
 		messageListAdapter.updatePreferences();
