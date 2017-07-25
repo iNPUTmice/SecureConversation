@@ -1,7 +1,6 @@
 package eu.siacs.conversations.parser;
 
 import android.os.Build;
-import android.os.Handler;
 import android.text.Html;
 import android.util.Log;
 import android.util.Pair;
@@ -639,14 +638,12 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 					mXmppConnectionService.getNotificationService().push(message);
 				}
 			}
-		} else if (!packet.hasChild("body")){ //no body
+		} else if (packet.hasChild("rtt")) {// Reception of RTT Events
 			final Conversation conversation = mXmppConnectionService.find(account, from.toBareJid());
-
-			// Reception of RTT Events
-			if (packet.hasChild("rtt")) {
-				Log.i(Config.LOGTAG, "Reveived RTT Stanza");
+			Element rtt = packet.findChild("rtt", Namespace.RTT);
+			if (rtt.getAttribute("event") == null) {
+				Log.i(Config.LOGTAG, "Reveived RTT Edit Stanza");
 				AtomicBoolean isSync = new AtomicBoolean(true);
-				Element rtt = packet.findChild("rtt", Namespace.RTT);
 				if (conversation.receivingRTT.compareAndSet(false, true)) {
 					rttSequence = Integer.parseInt(rtt.getAttribute("seq"));
 					isSync.set(true);
@@ -696,7 +693,13 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 					conversation.addRttMessage(rttEventsReceived, message);
 					mXmppConnectionService.updateConversationUi();
 				}
+			} else if ("cancel".equals(rtt.getAttribute("event"))) {
+
+			} else if ("reset".equals(rtt.getAttribute("event"))) {
+
 			}
+		} else if (!packet.hasChild("body")){ //no body
+			final Conversation conversation = mXmppConnectionService.find(account, from.toBareJid());
 
 			if (isTypeGroupChat) {
 				if (packet.hasChild("subject")) {
