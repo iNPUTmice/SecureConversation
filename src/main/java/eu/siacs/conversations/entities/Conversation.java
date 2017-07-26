@@ -955,7 +955,12 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	public void add(Message message) {
 		synchronized (this.messages) {
-			this.messages.add(message);
+			Message lastMessage = this.messages.get(messages.size() - 1);
+			if (lastMessage.getStatus() == Message.STATUS_RTT) {
+				this.messages.add(messages.size() - 1, message);
+			} else {
+				this.messages.add(message);
+			}
 		}
 	}
 
