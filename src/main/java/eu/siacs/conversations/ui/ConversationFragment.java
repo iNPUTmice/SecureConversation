@@ -46,6 +46,7 @@ import net.java.otr4j.session.SessionStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.UUID;
@@ -80,7 +81,11 @@ import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.rtt.EraseEvent;
+import eu.siacs.conversations.xmpp.rtt.RttEvent;
 import eu.siacs.conversations.xmpp.rtt.RttEventListener;
+import eu.siacs.conversations.xmpp.rtt.TextEvent;
+import eu.siacs.conversations.xmpp.rtt.WaitEvent;
 
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
 
@@ -1726,4 +1731,47 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
+	public void showRttEvents(Message message) {
+		if (conversation != null) {
+			Message lastMessage = conversation.getLastMessage();
+			StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
+			long waitInterval = 0;
+			LinkedList<RttEvent> list = conversation.getRttReceivedQueue();
+			if (list != null) {
+				for (RttEvent event : list) {
+					if (event.getType() == RttEvent.Type.WAIT) {
+						WaitEvent w = (WaitEvent) event;
+						waitInterval += w.getWaitInterval();
+					} else if (event.getType() == RttEvent.Type.ERASE) {
+						EraseEvent e = (EraseEvent) event;
+						if (e.getPosition() != null) {
+							if (e.getNumber() <= text.length()) {
+								text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
+							}
+						} else {
+							if (e.getNumber() <= text.length()) {
+								text.replace(text.length() - e.getNumber(), text.length(), "");
+							}
+						}
+					} else {
+						TextEvent t = (TextEvent) event;
+						if (t.getPosition() != null && t.getPosition() < text.length()) {
+							text.insert(t.getPosition(), t.getText());
+						} else {
+							text.insert(text.length(), t.getText());
+						}
+					}
+				}
+			}
+			if (lastMessage.getStatus() == Message.STATUS_RTT) {
+				lastMessage.setBody(text.toString());
+				if ("".equals(lastMessage.getBody())) {
+					conversation.removeLastMessage();
+				}
+			} else {
+				message.setBody(text.toString());
+				conversation.add(message);
+			}
+		}
+	}
 }

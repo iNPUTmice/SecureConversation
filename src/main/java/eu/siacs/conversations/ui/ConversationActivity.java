@@ -70,7 +70,7 @@ import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationActivity extends XmppActivity
-	implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast {
+	implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnRttEventsReceived {
 
 	public static final String ACTION_VIEW_CONVERSATION = "eu.siacs.conversations.action.VIEW";
 	public static final String CONVERSATION = "conversationUuid";
@@ -1825,5 +1825,17 @@ public class ConversationActivity extends XmppActivity
 
 	public boolean highlightSelectedConversations() {
 		return !isConversationsOverviewHideable() || this.conversationWasSelectedByKeyboard;
+	}
+
+	@Override
+	public void OnRttEventsReceived(final Message message) {
+		if (this.mConversationFragment != null) {
+			runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					mConversationFragment.showRttEvents(message);
+				}
+			});
+		}
 	}
 }

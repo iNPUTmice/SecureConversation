@@ -32,10 +32,7 @@ import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
-import eu.siacs.conversations.xmpp.rtt.EraseEvent;
 import eu.siacs.conversations.xmpp.rtt.RttEvent;
-import eu.siacs.conversations.xmpp.rtt.TextEvent;
-import eu.siacs.conversations.xmpp.rtt.WaitEvent;
 
 
 public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation> {
@@ -96,6 +93,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private Bookmark bookmark;
 
 	public AtomicBoolean receivingRTT = new AtomicBoolean(false);
+	private LinkedList<RttEvent> rttEventsReceived = new LinkedList<>();
 
 	private boolean messagesLeftOnServer = true;
 	private ChatState mOutgoingChatState = Config.DEFAULT_CHATSTATE;
@@ -977,44 +975,32 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		account.getPgpDecryptionService().decrypt(messages);
 	}
 
-	public void addRttMessage (LinkedList<RttEvent> list, Message message) {
-		Message lastMessage = this.messages.get(messages.size() - 1);
-		StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
-		long waitInterval = 0;
-		for (RttEvent event : list) {
-			if (event.getType() == RttEvent.Type.WAIT) {
-				WaitEvent w = (WaitEvent) event;
-				waitInterval +=  w.getWaitInterval();
-			} else if (event.getType() == RttEvent.Type.ERASE) {
-				EraseEvent e = (EraseEvent) event;
-				if (e.getPosition() != null) {
-					if (e.getNumber() <= text.length()) {
-						text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
-					}
-				} else {
-					if (e.getNumber() <= text.length()) {
-						text.replace(text.length() - e.getNumber(), text.length(), "");
-					}
-				}
-			} else {
-				TextEvent t = (TextEvent) event;
-				if (t.getPosition() != null && t.getPosition() < text.length()) {
-					text.insert(t.getPosition(), t.getText());
-				} else {
-					text.insert(text.length(), t.getText());
-				}
+	public void setRttReceivedQueue (LinkedList<RttEvent> list) {
+		if (rttEventsReceived != null) {
+			synchronized (rttEventsReceived) {
+				this.rttEventsReceived = list;
 			}
 		}
-		synchronized (this.messages) {
-			if (lastMessage.getStatus() == Message.STATUS_RTT) {
-				lastMessage.setBody(text.toString());
-				if ("".equals(lastMessage.getBody())) {
-					this.messages.remove(messages.size() - 1);
-				}
-			} else {
-				message.setBody(text.toString());
-				this.messages.add(message);
+	}
+
+	public LinkedList<RttEvent> getRttReceivedQueue() {
+		if (rttEventsReceived != null) {
+			synchronized (rttEventsReceived) {
+				return rttEventsReceived;
 			}
+		}
+		return null;
+	}
+
+	public Message getLastMessage() {
+		synchronized (this.messages) {
+			return this.messages.get(messages.size() - 1);
+		}
+	}
+
+	public void removeLastMessage() {
+		synchronized (this.messages) {
+			this.messages.remove(messages.size() - 1);
 		}
 	}
 

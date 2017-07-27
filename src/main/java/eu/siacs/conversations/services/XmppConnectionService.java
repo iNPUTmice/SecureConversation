@@ -272,6 +272,8 @@ public class XmppConnectionService extends Service {
 	private int convChangedListenerCount = 0;
 	private OnShowErrorToast mOnShowErrorToast = null;
 	private int showErrorToastListenerCount = 0;
+	private OnRttEventsReceived mOnRttEventsReceived = null;
+	private int onRttEventReceivedListenerCount = 0;
 	private int unreadCount = -1;
 	private OnAccountUpdate mOnAccountUpdate = null;
 	private OnCaptchaRequested mOnCaptchaRequested = null;
@@ -2023,6 +2025,31 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
+	public void setOnRttEventReceivedListener(OnRttEventsReceived onRttEventReceivedListener) {
+		synchronized (this) {
+			if (checkListeners()) {
+				switchToForeground();
+			}
+			this.mOnRttEventsReceived = onRttEventReceivedListener;
+			if (this.onRttEventReceivedListenerCount < 1) {
+				this.onRttEventReceivedListenerCount++;
+			}
+		}
+	}
+
+	public void removeOnRttEventReceivedListener() {
+		synchronized (this) {
+			this.onRttEventReceivedListenerCount--;
+			if (this.onRttEventReceivedListenerCount <= 0) {
+				this.onRttEventReceivedListenerCount = 0;
+				this.mOnRttEventsReceived = null;
+				if (checkListeners()) {
+					switchToBackground();
+				}
+			}
+		}
+	}
+
 	public void setOnAccountListChangedListener(OnAccountUpdate listener) {
 		synchronized (this) {
 			if (checkListeners()) {
@@ -2180,6 +2207,7 @@ public class XmppConnectionService extends Service {
 				&& this.mOnCaptchaRequested == null
 				&& this.mOnUpdateBlocklist == null
 				&& this.mOnShowErrorToast == null
+				&& this.mOnRttEventsReceived == null
 				&& this.mOnKeyStatusUpdated == null);
 	}
 
@@ -3353,6 +3381,12 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
+	public void showRttInUi(Message message) {
+		if (mOnRttEventsReceived != null) {
+			mOnRttEventsReceived.OnRttEventsReceived(message);
+		}
+	}
+
 	public void updateConversationUi() {
 		if (mOnConversationUpdate != null) {
 			mOnConversationUpdate.onConversationUpdate();
@@ -4091,6 +4125,10 @@ public class XmppConnectionService extends Service {
 
 	public interface OnShowErrorToast {
 		void onShowErrorToast(int resId);
+	}
+
+	public interface OnRttEventsReceived {
+		void OnRttEventsReceived(Message message);
 	}
 
 	public class XmppConnectionBinder extends Binder {
