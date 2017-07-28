@@ -692,7 +692,6 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 					message.setTime(timestamp);
 					conversation.setRttReceivedQueue(rttEventsReceived);
 					mXmppConnectionService.showRttInUi(message);
-					mXmppConnectionService.updateConversationUi();
 				}
 			} else if ("cancel".equals(rtt.getAttribute("event"))) {
 

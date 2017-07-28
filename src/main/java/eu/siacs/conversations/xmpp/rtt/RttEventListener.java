@@ -201,6 +201,7 @@ public class RttEventListener implements TextWatcher {
 
 	private void flushQueue() {
 		synchronized (rttEventQueue) {
+			boolean firstElement = true;
 			if (rttEventQueue.size() > 0) {
 				rttStanzaSequence++;
 				currentIdleTime = 0;
@@ -208,7 +209,13 @@ public class RttEventListener implements TextWatcher {
 				rtt.setAttribute("seq", rttStanzaSequence);
 				while (rttEventQueue.size() > 0) {
 					RttEvent event = rttEventQueue.removeFirst();
-					rtt.addChild(event.toElement());
+					if (firstElement && event.getType() == Type.WAIT) {
+						firstElement = false;
+					} else if (rttEventQueue.size() == 0 && event.getType() == Type.WAIT) {
+						continue;
+					} else {
+						rtt.addChild(event.toElement());
+					}
 				}
 				MessagePacket messagePacket = new MessagePacket();
 				messagePacket.addChild(rtt);

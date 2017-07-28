@@ -1731,47 +1731,65 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
-	public void showRttEvents(Message message) {
+	public void showRttEvents(final Message message) {
 		if (conversation != null) {
-			Message lastMessage = conversation.getLastMessage();
-			StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
 			long waitInterval = 0;
+			Handler h = new Handler();
 			LinkedList<RttEvent> list = conversation.getRttReceivedQueue();
-			if (list != null) {
-				for (RttEvent event : list) {
-					if (event.getType() == RttEvent.Type.WAIT) {
-						WaitEvent w = (WaitEvent) event;
-						waitInterval += w.getWaitInterval();
-					} else if (event.getType() == RttEvent.Type.ERASE) {
-						EraseEvent e = (EraseEvent) event;
-						if (e.getPosition() != null) {
-							if (e.getNumber() <= text.length()) {
-								text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
+			for (final RttEvent event : list) {
+				if (event.getType() == RttEvent.Type.WAIT) {
+					WaitEvent w = (WaitEvent) event;
+					waitInterval += w.getWaitInterval();
+				} else if (event.getType() == RttEvent.Type.ERASE) {
+					h.postDelayed(new Runnable() {
+						@Override
+						public void run() {
+							Message lastMessage = conversation.getLastMessage();
+							StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
+							EraseEvent e = (EraseEvent) event;
+							if (e.getPosition() != null) {
+								if (e.getNumber() <= text.length()) {
+									text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
+								}
+							} else {
+								if (e.getNumber() <= text.length()) {
+									text.replace(text.length() - e.getNumber(), text.length(), "");
+								}
 							}
-						} else {
-							if (e.getNumber() <= text.length()) {
-								text.replace(text.length() - e.getNumber(), text.length(), "");
+							addRttToMessages(message, lastMessage, text);
+						}
+					}, waitInterval);
+				} else {
+					h.postDelayed(new Runnable() {
+						@Override
+						public void run() {
+							Message lastMessage = conversation.getLastMessage();
+							StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
+							TextEvent t = (TextEvent) event;
+							if (t.getPosition() != null && t.getPosition() < text.length()) {
+								text.insert(t.getPosition(), t.getText());
+							} else {
+								text.insert(text.length(), t.getText());
 							}
+							addRttToMessages(message, lastMessage, text);
 						}
-					} else {
-						TextEvent t = (TextEvent) event;
-						if (t.getPosition() != null && t.getPosition() < text.length()) {
-							text.insert(t.getPosition(), t.getText());
-						} else {
-							text.insert(text.length(), t.getText());
-						}
-					}
+					}, waitInterval);
 				}
-			}
-			if (lastMessage.getStatus() == Message.STATUS_RTT) {
-				lastMessage.setBody(text.toString());
-				if ("".equals(lastMessage.getBody())) {
-					conversation.removeLastMessage();
-				}
-			} else {
-				message.setBody(text.toString());
-				conversation.add(message);
 			}
 		}
+	}
+
+	public void addRttToMessages(Message message, Message lastMessage, StringBuffer text) {
+		if (lastMessage.getStatus() == Message.STATUS_RTT) {
+			lastMessage.setBody(text.toString());
+			if ("".equals(lastMessage.getBody())) {
+				conversation.removeLastMessage();
+			}
+		} else {
+			message.setBody(text.toString());
+			conversation.add(message);
+		}
+
+		activity.xmppConnectionService.updateConversationUi();
 	}
 }
