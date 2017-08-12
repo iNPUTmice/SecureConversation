@@ -57,7 +57,8 @@ public class Account extends AbstractEntity {
 	public static final int OPTION_REGISTER = 2;
 	public static final int OPTION_USECOMPRESSION = 3;
 	public static final int OPTION_MAGIC_CREATE = 4;
-	public static final int OPTION_REQURIES_ACCESS_MODE_CHANGE = 5;
+	public static final int OPTION_REQUIRES_ACCESS_MODE_CHANGE = 5;
+	public static final int OPTION_LOGGED_IN_SUCCESSFULLY = 6;
 	public final HashSet<Pair<String, String>> inProgressDiscoFetches = new HashSet<>();
 
 	public boolean httpUploadAvailable(long filesize) {
@@ -132,7 +133,8 @@ public class Account extends AbstractEntity {
 		POLICY_VIOLATION(true),
 		REGISTRATION_PASSWORD_TOO_WEAK(true),
 		PAYMENT_REQUIRED(true),
-		MISSING_INTERNET_PERMISSION(true);
+		MISSING_INTERNET_PERMISSION(true),
+		NETWORK_IS_UNREACHABLE(false);
 
 		private final boolean isError;
 
@@ -200,6 +202,8 @@ public class Account extends AbstractEntity {
 					return R.string.payment_required;
 				case MISSING_INTERNET_PERMISSION:
 					return R.string.missing_internet_permission;
+				case NETWORK_IS_UNREACHABLE:
+					return R.string.network_is_unreachable;
 				default:
 					return R.string.account_status_unknown;
 			}
@@ -292,12 +296,14 @@ public class Account extends AbstractEntity {
 		return ((options & (1 << option)) != 0);
 	}
 
-	public void setOption(final int option, final boolean value) {
+	public boolean setOption(final int option, final boolean value) {
+		final int before = this.options;
 		if (value) {
 			this.options |= 1 << option;
 		} else {
 			this.options &= ~(1 << option);
 		}
+		return before != this.options;
 	}
 
 	public String getUsername() {
@@ -306,8 +312,17 @@ public class Account extends AbstractEntity {
 
 	public boolean setJid(final Jid next) {
 		final Jid prev = this.jid != null ? this.jid.toBareJid() : null;
+		final boolean changed = prev == null || (next != null && !prev.equals(next.toBareJid()));
+		if (changed) {
+			final AxolotlService oldAxolotlService = this.axolotlService;
+			if (oldAxolotlService != null) {
+				oldAxolotlService.destroy();
+				this.jid = next;
+				this.axolotlService = oldAxolotlService.makeNew();
+			}
+		}
 		this.jid = next;
-		return prev == null || (next != null && !prev.equals(next.toBareJid()));
+		return changed;
 	}
 
 	public Jid getServer() {

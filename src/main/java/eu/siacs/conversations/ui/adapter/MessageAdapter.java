@@ -36,6 +36,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.vdurmont.emoji.EmojiManager;
+
 import java.lang.ref.WeakReference;
 import java.net.URL;
 import java.util.List;
@@ -321,7 +323,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		viewHolder.messageBody.setTextIsSelectable(false);
 	}
 
-	private void displayHeartMessage(final ViewHolder viewHolder, final String body) {
+	private void displayEmojiMessage(final ViewHolder viewHolder, final String body) {
 		if (viewHolder.download_button != null) {
 			viewHolder.download_button.setVisibility(View.GONE);
 		}
@@ -329,8 +331,8 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		viewHolder.messageBody.setVisibility(View.VISIBLE);
 		viewHolder.messageBody.setIncludeFontPadding(false);
 		Spannable span = new SpannableString(body);
-		span.setSpan(new RelativeSizeSpan(4.0f), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-		span.setSpan(new ForegroundColorSpan(activity.getWarningTextColor()), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+		float size = EmojiManager.isEmoji(body) ? 3.0f : 2.0f;
+		span.setSpan(new RelativeSizeSpan(size), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 		viewHolder.messageBody.setText(span);
 	}
 
@@ -788,10 +790,10 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 			displayDecryptionFailed(viewHolder,darkBackground);
 		} else {
-			if (GeoHelper.isGeoUri(message.getBody())) {
+			if (message.isGeoUri()) {
 				displayLocationMessage(viewHolder,message);
-			} else if (message.bodyIsHeart()) {
-				displayHeartMessage(viewHolder, message.getBody().trim());
+			} else if (message.bodyIsOnlyEmojis()) {
+				displayEmojiMessage(viewHolder, message.getBody().replaceAll("\\s",""));
 			} else if (message.treatAsDownloadable()) {
 				try {
 					URL url = new URL(message.getBody());

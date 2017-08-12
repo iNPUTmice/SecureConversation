@@ -10,7 +10,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
-import android.util.Pair;
 
 import org.json.JSONObject;
 import org.whispersystems.libsignal.SignalProtocolAddress;
@@ -449,7 +448,8 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		if (oldVersion < 36 && newVersion >= 36) {
 			List<Account> accounts = getAccounts(db);
 			for (Account account : accounts) {
-				account.setOption(Account.OPTION_REQURIES_ACCESS_MODE_CHANGE,true);
+				account.setOption(Account.OPTION_REQUIRES_ACCESS_MODE_CHANGE,true);
+				account.setOption(Account.OPTION_LOGGED_IN_SUCCESSFULLY,false);
 				db.update(Account.TABLENAME, account.getContentValues(), Account.UUID
 						+ "=?", new String[]{account.getUuid()});
 			}
@@ -956,7 +956,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 
 	public List<String> getKnownSignalAddresses(Account account) {
 		List<String> addresses = new ArrayList<>();
-		String[] colums = {SQLiteAxolotlStore.NAME};
+		String[] colums = {"DISTINCT "+SQLiteAxolotlStore.NAME};
 		String[] selectionArgs = {account.getUuid()};
 		Cursor cursor = getReadableDatabase().query(SQLiteAxolotlStore.SESSION_TABLENAME,
 				colums,
@@ -965,7 +965,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				null,null,null
 				);
 		while (cursor.moveToNext()) {
-			addresses.add(cursor.getString(cursor.getColumnIndex(SQLiteAxolotlStore.NAME)));
+			addresses.add(cursor.getString(0));
 		}
 		cursor.close();
 		return addresses;
@@ -1389,7 +1389,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	}
 
 
-	public void recreateAxolotlDb(SQLiteDatabase db) {
+	private void recreateAxolotlDb(SQLiteDatabase db) {
 		Log.d(Config.LOGTAG, AxolotlService.LOGPREFIX + " : " + ">>> (RE)CREATING AXOLOTL DATABASE <<<");
 		db.execSQL("DROP TABLE IF EXISTS " + SQLiteAxolotlStore.SESSION_TABLENAME);
 		db.execSQL(CREATE_SESSIONS_STATEMENT);

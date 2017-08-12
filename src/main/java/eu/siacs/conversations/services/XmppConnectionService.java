@@ -300,6 +300,9 @@ public class XmppConnectionService extends Service {
 					}
 				}
 			}
+			if (account.setOption(Account.OPTION_LOGGED_IN_SUCCESSFULLY,true)) {
+				databaseBackend.updateAccount(account);
+			}
 			account.getRoster().clearPresences();
 			mJingleConnectionManager.cancelInTransmission();
 			fetchRosterFromServer(account);
@@ -358,32 +361,29 @@ public class XmppConnectionService extends Service {
 				}
 				account.pendingConferenceJoins.clear();
 				scheduleWakeUpCall(Config.PING_MAX_INTERVAL, account.getUuid().hashCode());
-			} else {
-				if (account.getStatus() == Account.State.OFFLINE || account.getStatus() == Account.State.DISABLED) {
-					resetSendingToWaiting(account);
-					if (!account.isOptionSet(Account.OPTION_DISABLED)) {
-						synchronized (mLowPingTimeoutMode) {
-							if (mLowPingTimeoutMode.contains(account.getJid().toBareJid())) {
-								Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": went into offline state during low ping mode. reconnecting now");
-								reconnectAccount(account, true, false);
-							} else {
-								int timeToReconnect = mRandom.nextInt(10) + 2;
-								scheduleWakeUpCall(timeToReconnect, account.getUuid().hashCode());
-							}
-						}
-					}
-				} else if (account.getStatus() == Account.State.REGISTRATION_SUCCESSFUL) {
-					databaseBackend.updateAccount(account);
+			} else if (account.getStatus() == Account.State.OFFLINE || account.getStatus() == Account.State.DISABLED) {
+				resetSendingToWaiting(account);
+				if (!account.isOptionSet(Account.OPTION_DISABLED) && isInLowPingTimeoutMode(account)) {
+					Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": went into offline state during low ping mode. reconnecting now");
 					reconnectAccount(account, true, false);
-				} else if ((account.getStatus() != Account.State.CONNECTING)
-						&& (account.getStatus() != Account.State.NO_INTERNET)) {
-					resetSendingToWaiting(account);
-					if (connection != null) {
-						int next = connection.getTimeToNextAttempt();
-						Log.d(Config.LOGTAG, account.getJid().toBareJid()
-								+ ": error connecting account. try again in "
-								+ next + "s for the "
-								+ (connection.getAttempt() + 1) + " time");
+				} else {
+					int timeToReconnect = mRandom.nextInt(10) + 2;
+					scheduleWakeUpCall(timeToReconnect, account.getUuid().hashCode());
+				}
+			} else if (account.getStatus() == Account.State.REGISTRATION_SUCCESSFUL) {
+				databaseBackend.updateAccount(account);
+				reconnectAccount(account, true, false);
+			} else if (account.getStatus() != Account.State.CONNECTING && account.getStatus() != Account.State.NO_INTERNET) {
+				resetSendingToWaiting(account);
+				if (connection != null) {
+					final int next = connection.getTimeToNextAttempt();
+					final boolean lowPingTimeoutMode = isInLowPingTimeoutMode(account);
+					if (next <= 0) {
+						Log.d(Config.LOGTAG, account.getJid().toBareJid()+": error connecting account. reconnecting now. lowPingTimeout="+Boolean.toString(lowPingTimeoutMode));
+						reconnectAccount(account, true, false);
+					} else {
+						final int attempt = connection.getAttempt() + 1;
+						Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": error connecting account. try again in " + next + "s for the " + attempt+ " time. lowPingTimeout="+Boolean.toString(lowPingTimeoutMode));
 						scheduleWakeUpCall(next, account.getUuid().hashCode());
 					}
 				}
@@ -391,6 +391,13 @@ public class XmppConnectionService extends Service {
 			getNotificationService().updateErrorNotification();
 		}
 	};
+
+	private boolean isInLowPingTimeoutMode(Account account) {
+		synchronized (mLowPingTimeoutMode) {
+			return mLowPingTimeoutMode.contains(account.getJid().toBareJid());
+		}
+	}
+
 	private OpenPgpServiceConnection pgpServiceConnection;
 	private PgpEngine mPgpEngine = null;
 	private WakeLock wakeLock;
@@ -529,8 +536,7 @@ public class XmppConnectionService extends Service {
 						if (!progressTracker.contains(p) && p != 100 && p != 0) {
 							progressTracker.add(p);
 							if (informableCallback != null) {
-
-								informableCallback.inform(getString(R.string.transcoding_video_progress, p));
+								informableCallback.inform(getString(R.string.transcoding_video_progress, String.valueOf(p)));
 							}
 						}
 					}
@@ -722,7 +728,7 @@ public class XmppConnectionService extends Service {
 			}
 			if (pingNow) {
 				for (Account account : pingCandidates) {
-					final boolean lowTimeout = mLowPingTimeoutMode.contains(account.getJid().toBareJid());
+					final boolean lowTimeout = isInLowPingTimeoutMode(account);
 					account.getXmppConnection().sendPing();
 					Log.d(Config.LOGTAG, account.getJid().toBareJid() + " send ping (action=" + action + ",lowTimeout=" + Boolean.toString(lowTimeout) + ")");
 					scheduleWakeUpCall(lowTimeout ? Config.LOW_PING_TIMEOUT : Config.PING_TIMEOUT, account.getUuid().hashCode());
@@ -1272,7 +1278,7 @@ public class XmppConnectionService extends Service {
 						if (message.fixCounterpart()) {
 							conversation.startOtrSession(message.getCounterpart().getResourcepart(), true);
 						} else {
-							Log.d(Config.LOGTAG,account.getJid().toBareJid()+": could not fix counterpart for OTR message to contact "+message.getContact().getJid());
+							Log.d(Config.LOGTAG,account.getJid().toBareJid()+": could not fix counterpart for OTR message to contact "+message.getCounterpart());
 							break;
 						}
 					} else {
@@ -1835,6 +1841,10 @@ public class XmppConnectionService extends Service {
 				try {
 					X509Certificate[] chain = KeyChain.getCertificateChain(XmppConnectionService.this, alias);
 					Pair<Jid, String> info = CryptoHelper.extractJidAndName(chain[0]);
+					if (info == null) {
+						callback.informUser(R.string.certificate_does_not_contain_jid);
+						return;
+					}
 					if (findAccountByJid(info.first) == null) {
 						Account account = new Account(info.first, "");
 						account.setPrivateKeyAlias(alias);
@@ -2239,6 +2249,7 @@ public class XmppConnectionService extends Service {
 		account.pendingConferenceJoins.remove(conversation);
 		account.pendingConferenceLeaves.remove(conversation);
 		if (account.getStatus() == Account.State.ONLINE) {
+			sendPresencePacket(account, mPresenceGenerator.leave(conversation.getMucOptions()));
 			conversation.resetMucOptions();
 			if (onConferenceJoined != null) {
 				conversation.getMucOptions().flagNoAutoPushConfiguration();
@@ -2453,15 +2464,10 @@ public class XmppConnectionService extends Service {
 		account.pendingConferenceJoins.remove(conversation);
 		account.pendingConferenceLeaves.remove(conversation);
 		if (account.getStatus() == Account.State.ONLINE || now) {
-			PresencePacket packet = new PresencePacket();
-			packet.setTo(conversation.getMucOptions().getSelf().getFullJid());
-			packet.setFrom(conversation.getAccount().getJid());
-			packet.setAttribute("type", "unavailable");
-			sendPresencePacket(conversation.getAccount(), packet);
+			sendPresencePacket(conversation.getAccount(), mPresenceGenerator.leave(conversation.getMucOptions()));
 			conversation.getMucOptions().setOffline();
 			conversation.deregisterWithBookmark();
-			Log.d(Config.LOGTAG, conversation.getAccount().getJid().toBareJid()
-					+ ": leaving muc " + conversation.getJid());
+			Log.d(Config.LOGTAG, conversation.getAccount().getJid().toBareJid() + ": leaving muc " + conversation.getJid());
 		} else {
 			account.pendingConferenceLeaves.add(conversation);
 		}

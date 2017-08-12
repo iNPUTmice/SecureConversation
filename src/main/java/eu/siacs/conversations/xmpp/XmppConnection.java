@@ -16,7 +16,6 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.net.ConnectException;
 import java.net.IDN;
 import java.net.InetAddress;
@@ -66,6 +65,7 @@ import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.IP;
 import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.Resolver;
@@ -419,6 +419,8 @@ public class XmppConnection implements Runnable {
 			this.changeStatus(Account.State.MISSING_INTERNET_PERMISSION);
 		} catch(final StateChangingException e) {
 			this.changeStatus(e.state);
+		} catch (final Resolver.NetworkIsUnreachableException e) {
+			this.changeStatus(Account.State.NETWORK_IS_UNREACHABLE);
 		} catch (final UnknownHostException | ConnectException e) {
 			this.changeStatus(Account.State.SERVER_NOT_FOUND);
 		} catch (final SocksSocketFactory.SocksProxyNotFoundException e) {
@@ -495,7 +497,13 @@ public class XmppConnection implements Runnable {
 
 	@Override
 	public void run() {
-		forceCloseSocket();
+		synchronized (this) {
+			if (Thread.currentThread().isInterrupted()) {
+				Log.d(Config.LOGTAG,account.getJid().toBareJid()+": aborting connect because thread was interrupted");
+				return;
+			}
+			forceCloseSocket();
+		}
 		connect();
 	}
 
@@ -1316,7 +1324,7 @@ public class XmppConnection implements Runnable {
 	}
 
 	private String nextRandomId() {
-		return new BigInteger(50, mXmppConnectionService.getRNG()).toString(36);
+		return CryptoHelper.random(50,mXmppConnectionService.getRNG());
 	}
 
 	public String sendIqPacket(final IqPacket packet, final OnIqPacketReceived callback) {
