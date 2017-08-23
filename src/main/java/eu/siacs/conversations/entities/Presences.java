@@ -104,6 +104,18 @@ public class Presences {
 		return true;
 	}
 
+	public boolean supports(String namespace) {
+		synchronized (this.presences) {
+			for(Presence presence : this.presences.values()) {
+				ServiceDiscoveryResult disco = presence.getServiceDiscoveryResult();
+				if (disco != null && disco.getFeatures().contains(namespace)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	public Pair<Map<String, String>,Map<String,String>> toTypeAndNameMap() {
 		Map<String,String> typeMap = new HashMap<>();
 		Map<String,String> nameMap = new HashMap<>();

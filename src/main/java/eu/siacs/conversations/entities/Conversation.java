@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
@@ -31,6 +32,7 @@ import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+import eu.siacs.conversations.xmpp.rtt.RttEvent;
 
 
 public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation> {
@@ -54,6 +56,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static final String ATTRIBUTE_MUTED_TILL = "muted_till";
 	public static final String ATTRIBUTE_ALWAYS_NOTIFY = "always_notify";
 	public static final String ATTRIBUTE_LAST_CLEAR_HISTORY = "last_clear_history";
+	public static final String ATTRIBUTE_REAL_TIME_TEXT = "rtt_status";
 
 	private static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
 
@@ -88,6 +91,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private byte[] symmetricKey;
 
 	private Bookmark bookmark;
+
+	public AtomicBoolean receivingRTT = new AtomicBoolean(false);
+	private LinkedList<RttEvent> rttEventsReceived = new LinkedList<>();
 
 	private boolean messagesLeftOnServer = true;
 	private ChatState mOutgoingChatState = Config.DEFAULT_CHATSTATE;
@@ -850,6 +856,10 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		return mode == MODE_SINGLE || getBooleanAttribute(ATTRIBUTE_ALWAYS_NOTIFY, Config.ALWAYS_NOTIFY_BY_DEFAULT || isPnNA());
 	}
 
+	public boolean setAttribute(String key, boolean value) {
+		return setAttribute(key, String.valueOf(value));
+	}
+
 	public boolean setAttribute(String key, String value) {
 		synchronized (this.attributes) {
 			try {
@@ -932,7 +942,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 	}
 
-	private boolean getBooleanAttribute(String key, boolean defaultValue) {
+	public boolean getBooleanAttribute(String key, boolean defaultValue) {
 		String value = this.getAttribute(key);
 		if (value == null) {
 			return defaultValue;
@@ -943,7 +953,16 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	public void add(Message message) {
 		synchronized (this.messages) {
-			this.messages.add(message);
+			if(messages.size() > 0) {
+				Message lastMessage = this.messages.get(messages.size() - 1);
+				if (lastMessage.getStatus() == Message.STATUS_RTT) {
+					this.messages.add(messages.size() - 1, message);
+				} else {
+					this.messages.add(message);
+				}
+			} else {
+				this.messages.add(message);
+			}
 		}
 	}
 
@@ -958,6 +977,35 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			this.messages.addAll(index, messages);
 		}
 		account.getPgpDecryptionService().decrypt(messages);
+	}
+
+	public void setRttReceivedQueue (LinkedList<RttEvent> list) {
+		if (rttEventsReceived != null) {
+			synchronized (rttEventsReceived) {
+				this.rttEventsReceived = list;
+			}
+		}
+	}
+
+	public LinkedList<RttEvent> getRttReceivedQueue() {
+		if (rttEventsReceived != null) {
+			synchronized (rttEventsReceived) {
+				return rttEventsReceived;
+			}
+		}
+		return null;
+	}
+
+	public Message getLastMessage() {
+		synchronized (this.messages) {
+			return this.messages.get(messages.size() - 1);
+		}
+	}
+
+	public void removeLastMessage() {
+		synchronized (this.messages) {
+			this.messages.remove(messages.size() - 1);
+		}
 	}
 
 	public void expireOldMessages(long timestamp) {

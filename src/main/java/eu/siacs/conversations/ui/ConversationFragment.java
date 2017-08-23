@@ -17,6 +17,7 @@ import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
 import android.util.Pair;
+import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -45,6 +46,7 @@ import net.java.otr4j.session.SessionStatus;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.UUID;
@@ -75,9 +77,15 @@ import eu.siacs.conversations.ui.widget.ListSelectionManager;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.NickValidityChecker;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.rtt.EraseEvent;
+import eu.siacs.conversations.xmpp.rtt.RttEvent;
+import eu.siacs.conversations.xmpp.rtt.RttEventListener;
+import eu.siacs.conversations.xmpp.rtt.TextEvent;
+import eu.siacs.conversations.xmpp.rtt.WaitEvent;
 
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
 
@@ -118,12 +126,15 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	protected ListView messagesView;
 	final protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
-	private EditMessage mEditMessage;
+	public EditMessage mEditMessage;
+	private RttEventListener rttEventListener;
 	private ImageButton mSendButton;
+	protected ImageButton rttStatusButton;
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
+	public AtomicBoolean ignoreOneEvent;
 
 	private OnScrollListener mOnScrollListener = new OnScrollListener() {
 
@@ -320,6 +331,23 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			return true;
 		}
 	};
+	private OnClickListener rttStatusCheckListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (conversation != null) {
+				Contact contact = conversation.getContact();
+				if (conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
+					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false);
+					setRttButtonAlpha(false);
+				} else if (contact != null && contact.getPresences().supports(Namespace.RTT)) {
+					conversation.setAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, true);
+					setRttButtonAlpha(true);
+				} else {
+					Toast.makeText(activity, "Other user doesn't support RTT", Toast.LENGTH_LONG).show();
+				}
+			}
+		}
+	};
 	private OnClickListener mSendButtonListener = new OnClickListener() {
 
 		@Override
@@ -465,6 +493,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 		mSendButton = (ImageButton) view.findViewById(R.id.textSendButton);
 		mSendButton.setOnClickListener(this.mSendButtonListener);
+
+		rttStatusButton = (ImageButton) view.findViewById(R.id.rttToggleButton);
+		rttStatusButton.setOnClickListener(this.rttStatusCheckListener);
 
 		snackbar = (RelativeLayout) view.findViewById(R.id.snackbar);
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
@@ -872,6 +903,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			this.conversation.setNextMessage(msg);
 			updateChatState(this.conversation, msg);
 		}
+		if (rttEventListener != null) {
+			rttEventListener.stop();
+		}
 	}
 
 	private void updateChatState(final Conversation conversation, final String msg) {
@@ -888,6 +922,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 		this.activity = (ConversationActivity) getActivity();
 		setupIme();
+		this.ignoreOneEvent = new AtomicBoolean(false);
 		if (this.conversation != null) {
 			final String msg = mEditMessage.getText().toString();
 			this.conversation.setNextMessage(msg);
@@ -895,11 +930,15 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				updateChatState(this.conversation, msg);
 			}
 			this.conversation.trim();
-
 		}
 
 		if (activity != null) {
 			this.mSendButton.setContentDescription(activity.getString(R.string.send_message_to_x,conversation.getName()));
+		}
+
+		if (rttEventListener != null) {
+			rttEventListener.stop();
+			this.mEditMessage.removeTextChangedListener(this.rttEventListener);
 		}
 
 		this.conversation = conversation;
@@ -907,10 +946,13 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mEditMessage.setText("");
 		this.mEditMessage.append(this.conversation.getNextMessage());
 		this.mEditMessage.setKeyboardListener(this);
+		this.rttEventListener = new RttEventListener(this, conversation, activity);
+		this.mEditMessage.addTextChangedListener(this.rttEventListener);
 		messageListAdapter.updatePreferences();
 		this.messagesView.setAdapter(messageListAdapter);
 		updateMessages();
 		this.conversation.messagesLoaded.set(true);
+		checkRttButtonStatus();
 		synchronized (this.messageList) {
 			final Message first = conversation.getFirstUnreadMessage();
 			final int bottom = Math.max(0, this.messageList.size() - 1);
@@ -1116,6 +1158,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 	protected void messageSent() {
 		mSendingPgpMessage.set(false);
+		ignoreOneEvent.set(true);
 		mEditMessage.setText("");
 		if (conversation.setCorrectingMessage(null)) {
 			mEditMessage.append(conversation.getDraftMessage());
@@ -1551,6 +1594,28 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		this.mEditMessage.append(text);
 	}
 
+	public void setRttButtonAlpha(boolean active) {
+		TypedValue typedValue = new TypedValue();
+		if (active) {
+			activity.getTheme().resolveAttribute(R.attr.icon_alpha_active, typedValue, true);
+		} else {
+			activity.getTheme().resolveAttribute(R.attr.icon_alpha_inactive, typedValue, true);
+		}
+		rttStatusButton.setAlpha(typedValue.getFloat());
+	}
+
+	public void checkRttButtonStatus() {
+		if (conversation != null) {
+			Contact contact = conversation.getContact();
+			if (contact != null && contact.getPresences().supports(Namespace.RTT)
+					&& conversation.getBooleanAttribute(Conversation.ATTRIBUTE_REAL_TIME_TEXT, false)) {
+				setRttButtonAlpha(true);
+			} else {
+				setRttButtonAlpha(false);
+			}
+		}
+	}
+
 	@Override
 	public boolean onEnterPressed() {
 		if (activity.enterIsSend()) {
@@ -1660,4 +1725,65 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
+	public void showRttEvents(final Message message) {
+		if (conversation != null) {
+			long waitInterval = 0;
+			Handler h = new Handler();
+			LinkedList<RttEvent> list = conversation.getRttReceivedQueue();
+			for (final RttEvent event : list) {
+				if (event.getType() == RttEvent.Type.WAIT) {
+					WaitEvent w = (WaitEvent) event;
+					waitInterval += w.getWaitInterval();
+				} else if (event.getType() == RttEvent.Type.ERASE) {
+					h.postDelayed(new Runnable() {
+						@Override
+						public void run() {
+							Message lastMessage = conversation.getLastMessage();
+							StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
+							EraseEvent e = (EraseEvent) event;
+							if (e.getPosition() != null) {
+								if (e.getNumber() <= text.length()) {
+									text.replace(e.getPosition() - e.getNumber(), e.getPosition(), "");
+								}
+							} else {
+								if (e.getNumber() <= text.length()) {
+									text.replace(text.length() - e.getNumber(), text.length(), "");
+								}
+							}
+							addRttToMessages(message, lastMessage, text);
+						}
+					}, waitInterval);
+				} else {
+					h.postDelayed(new Runnable() {
+						@Override
+						public void run() {
+							Message lastMessage = conversation.getLastMessage();
+							StringBuffer text = new StringBuffer(lastMessage.getStatus() == Message.STATUS_RTT ? lastMessage.getBody() : "");
+							TextEvent t = (TextEvent) event;
+							if (t.getPosition() != null && t.getPosition() < text.length()) {
+								text.insert(t.getPosition(), t.getText());
+							} else {
+								text.insert(text.length(), t.getText());
+							}
+							addRttToMessages(message, lastMessage, text);
+						}
+					}, waitInterval);
+				}
+			}
+		}
+	}
+
+	public void addRttToMessages(Message message, Message lastMessage, StringBuffer text) {
+		if (lastMessage.getStatus() == Message.STATUS_RTT) {
+			lastMessage.setBody(text.toString());
+			if ("".equals(lastMessage.getBody())) {
+				conversation.removeLastMessage();
+			}
+		} else {
+			message.setBody(text.toString());
+			conversation.add(message);
+		}
+
+		activity.xmppConnectionService.updateConversationUi();
+	}
 }

@@ -324,6 +324,9 @@ public abstract class XmppActivity extends Activity {
 		if (this instanceof XmppConnectionService.OnShowErrorToast) {
 			this.xmppConnectionService.setOnShowErrorToastListener((XmppConnectionService.OnShowErrorToast) this);
 		}
+		if (this instanceof XmppConnectionService.OnRttEventsReceived) {
+			this.xmppConnectionService.setOnRttEventReceivedListener((XmppConnectionService.OnRttEventsReceived) this);
+		}
 		if (this instanceof OnKeyStatusUpdated) {
 			this.xmppConnectionService.setOnKeyStatusUpdatedListener((OnKeyStatusUpdated) this);
 		}
@@ -350,6 +353,9 @@ public abstract class XmppActivity extends Activity {
 		}
 		if (this instanceof XmppConnectionService.OnShowErrorToast) {
 			this.xmppConnectionService.removeOnShowErrorToastListener();
+		}
+		if (this instanceof XmppConnectionService.OnRttEventsReceived) {
+			this.xmppConnectionService.removeOnRttEventReceivedListener();
 		}
 		if (this instanceof OnKeyStatusUpdated) {
 			this.xmppConnectionService.removeOnNewKeysAvailableListener();

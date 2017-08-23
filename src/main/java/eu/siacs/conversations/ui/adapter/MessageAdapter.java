@@ -152,7 +152,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			} else {
 				return STATUS;
 			}
-		} else if (message.getStatus() <= Message.STATUS_RECEIVED) {
+		} else if (message.getStatus() <= Message.STATUS_RECEIVED || message.getStatus() == Message.STATUS_RTT) {
 			return RECEIVED;
 		}
 

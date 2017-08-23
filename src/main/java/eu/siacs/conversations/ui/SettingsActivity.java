@@ -49,6 +49,7 @@ public class SettingsActivity extends XmppActivity implements
 	public static final String BROADCAST_LAST_ACTIVITY = "last_activity";
 	public static final String THEME = "theme";
 	public static final String SHOW_DYNAMIC_TAGS = "show_dynamic_tags";
+	public static final String REAL_TIME_TEXT = "rtt";
 
 	public static final int REQUEST_WRITE_LOGS = 0xbf8701;
 	private SettingsFragment mSettingsFragment;
@@ -338,7 +339,8 @@ public class SettingsActivity extends XmppActivity implements
 				"allow_message_correction",
 				TREAT_VIBRATE_AS_SILENT,
 				MANUALLY_CHANGE_PRESENCE,
-				BROADCAST_LAST_ACTIVITY);
+				BROADCAST_LAST_ACTIVITY,
+				REAL_TIME_TEXT);
 		if (name.equals("resource")) {
 			String resource = preferences.getString("resource", "mobile")
 					.toLowerCase(Locale.US);

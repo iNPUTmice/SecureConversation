@@ -268,7 +268,7 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 
 	public Bitmap get(Message message, int size, boolean cachedOnly) {
 		final Conversation conversation = message.getConversation();
-		if (message.getStatus() == Message.STATUS_RECEIVED) {
+		if (message.getStatus() == Message.STATUS_RECEIVED || message.getStatus() == Message.STATUS_RTT) {
 			Contact c = message.getContact();
 			if (c != null && (c.getProfilePhoto() != null || c.getAvatar() != null)) {
 				return get(c, size, cachedOnly);

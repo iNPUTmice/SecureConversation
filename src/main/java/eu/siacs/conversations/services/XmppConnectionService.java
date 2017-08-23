@@ -272,6 +272,8 @@ public class XmppConnectionService extends Service {
 	private int convChangedListenerCount = 0;
 	private OnShowErrorToast mOnShowErrorToast = null;
 	private int showErrorToastListenerCount = 0;
+	private OnRttEventsReceived mOnRttEventsReceived = null;
+	private int onRttEventReceivedListenerCount = 0;
 	private int unreadCount = -1;
 	private OnAccountUpdate mOnAccountUpdate = null;
 	private OnCaptchaRequested mOnCaptchaRequested = null;
@@ -1395,6 +1397,11 @@ public class XmppConnectionService extends Service {
 		sendMessage(message, true, delay);
 	}
 
+	public void sendRttEvent(Conversation conversation, MessagePacket packet) {
+		packet.setTo(conversation.getJid());
+		sendMessagePacket(conversation.getAccount(), packet);
+	}
+
 	public void fetchRosterFromServer(final Account account) {
 		final IqPacket iqPacket = new IqPacket(IqPacket.TYPE.GET);
 		if (!"".equals(account.getRosterVersion())) {
@@ -2018,6 +2025,31 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
+	public void setOnRttEventReceivedListener(OnRttEventsReceived onRttEventReceivedListener) {
+		synchronized (this) {
+			if (checkListeners()) {
+				switchToForeground();
+			}
+			this.mOnRttEventsReceived = onRttEventReceivedListener;
+			if (this.onRttEventReceivedListenerCount < 1) {
+				this.onRttEventReceivedListenerCount++;
+			}
+		}
+	}
+
+	public void removeOnRttEventReceivedListener() {
+		synchronized (this) {
+			this.onRttEventReceivedListenerCount--;
+			if (this.onRttEventReceivedListenerCount <= 0) {
+				this.onRttEventReceivedListenerCount = 0;
+				this.mOnRttEventsReceived = null;
+				if (checkListeners()) {
+					switchToBackground();
+				}
+			}
+		}
+	}
+
 	public void setOnAccountListChangedListener(OnAccountUpdate listener) {
 		synchronized (this) {
 			if (checkListeners()) {
@@ -2175,6 +2207,7 @@ public class XmppConnectionService extends Service {
 				&& this.mOnCaptchaRequested == null
 				&& this.mOnUpdateBlocklist == null
 				&& this.mOnShowErrorToast == null
+				&& this.mOnRttEventsReceived == null
 				&& this.mOnKeyStatusUpdated == null);
 	}
 
@@ -3329,6 +3362,10 @@ public class XmppConnectionService extends Service {
 		return getBooleanPreference(SettingsActivity.BROADCAST_LAST_ACTIVITY, R.bool.last_activity);
 	}
 
+	public boolean useRealTimeText() {
+		return getPreferences().getBoolean(SettingsActivity.REAL_TIME_TEXT, false);
+	}
+
 	public int unreadCount() {
 		int count = 0;
 		for (Conversation conversation : getConversations()) {
@@ -3341,6 +3378,12 @@ public class XmppConnectionService extends Service {
 	public void showErrorToastInUi(int resId) {
 		if (mOnShowErrorToast != null) {
 			mOnShowErrorToast.onShowErrorToast(resId);
+		}
+	}
+
+	public void showRttInUi(Message message) {
+		if (mOnRttEventsReceived != null) {
+			mOnRttEventsReceived.OnRttEventsReceived(message);
 		}
 	}
 
@@ -4082,6 +4125,10 @@ public class XmppConnectionService extends Service {
 
 	public interface OnShowErrorToast {
 		void onShowErrorToast(int resId);
+	}
+
+	public interface OnRttEventsReceived {
+		void OnRttEventsReceived(Message message);
 	}
 
 	public class XmppConnectionBinder extends Binder {

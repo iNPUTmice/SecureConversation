@@ -762,4 +762,8 @@
 	<string name="pref_validate_hostname_summary">Server certificates that contain the validated hostname are considered verified</string>
 	<string name="network_is_unreachable">Network is unreachable</string>
     <string name="certificate_does_not_contain_jid">Certificate does not contain a Jabber ID</string>
+	<string name="downgrade_attack">Downgrade attack</string>
+	<string name="verify_rtt">Verify RTT Support</string>
+	<string name="pref_broadcast_rtt">Real Time Text</string>
+	<string name="pref_broadcast_rtt_summary">Send and recieve real time text messages</string>
 </resources>
