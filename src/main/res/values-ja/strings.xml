@@ -230,7 +230,6 @@
   <string name="omemo_fingerprint_x509">v\\OMEMO フィンガープリント</string>
   <string name="omemo_fingerprint_selected_message">メッセージの OMEMO フィンガープリント</string>
   <string name="omemo_fingerprint_x509_selected_message">メッセージの v\\OMEMO フィンガープリント</string>
-  <string name="this_device_omemo_fingerprint">自分の OMEMO フィンガープリント</string>
   <string name="other_devices">他のデバイス</string>
   <string name="trust_omemo_fingerprints">OMEMO フィンガープリントを信頼</string>
   <string name="fetching_keys">鍵の取得中…</string>
@@ -401,6 +400,7 @@
   <string name="clear_other_devices">デバイスをクリア</string>
   <string name="clear_other_devices_desc">OMEMO のアナウンスから他のすべてのデバイスをクリアしてもよろしいですか? お使いのデバイスが次回接続したとき、それらは自分自身を再アナウンスしますが、それらはその間に送信されたメッセージを受信できない場合があります。</string>
   <string name="error_no_keys_to_trust_server_error">この連絡先で利用可能な鍵がありません。\nサーバーから新しい鍵の取得に失敗しました。おそらく、お使いの連絡先サーバーに何か問題があります。</string>
+  <string name="error_no_keys_to_trust_presence">この連絡先で利用可能な鍵はありません。\n相互存在サブスクリプションあることを確認してください。</string>
   <string name="error_no_keys_to_trust">この連絡先で利用可能な鍵はありません。あなたがその鍵を消去している場合は、新しいものを生成してもらう必要があります。</string>
   <string name="error_trustkeys_title">エラー</string>
   <string name="fetching_history_from_server">サーバーから履歴を取得中</string>

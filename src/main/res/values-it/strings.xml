@@ -230,7 +230,6 @@
   <string name="omemo_fingerprint_x509">v\\OMEMO impronta</string>
   <string name="omemo_fingerprint_selected_message">Impronta OMEMO del messaggio</string>
   <string name="omemo_fingerprint_x509_selected_message">Impronta v\\OMEMO del messaggio</string>
-  <string name="this_device_omemo_fingerprint">Propria impronta OMEMO</string>
   <string name="other_devices">Altri dispositivi</string>
   <string name="trust_omemo_fingerprints">Fidati delle impronte OMEMO</string>
   <string name="fetching_keys">Ricezione chiavi...</string>
@@ -401,6 +400,7 @@
   <string name="clear_other_devices">Pulisci dispositivi</string>
   <string name="clear_other_devices_desc">Sei sicuro/a di voler rimuovere tutti gli altri dispositivi dall\'annuncio OMEMO? La prossima volta che si connetteranno si riannunceranno, ma potrebbero non ricevere i messaggi inviati nel frattempo.</string>
   <string name="error_no_keys_to_trust_server_error">Non ci sono chiavi utilizzabili per questo contatto.\nLa raccolta di nuove chiavi dal server è fallita. Forse qualcosa non va con il tuo server dei contatti.</string>
+  <string name="error_no_keys_to_trust_presence">Non ci sono chiavi utilizzabili per questo contatto.\nAssicurati di avere reciprocamente la sottoscrizione sulla presenza.</string>
   <string name="error_no_keys_to_trust">Non ci sono chiavi usabili per questo contatto. Se hai cancellato qualsiasi loro chiave, devono generarne di nuove.</string>
   <string name="error_trustkeys_title">Errore</string>
   <string name="fetching_history_from_server">Caricamento della cronologia dal server</string>
@@ -726,4 +726,5 @@
   <string name="pref_validate_hostname">Convalida hostname con DNSSEC</string>
   <string name="pref_validate_hostname_summary">I certificati dei server che contengono l\'hostname convalidato sono considerati verificati</string>
   <string name="network_is_unreachable">Rete non raggiungibile</string>
+  <string name="certificate_does_not_contain_jid">Il certificato non contiene un ID Jabber</string>
 </resources>

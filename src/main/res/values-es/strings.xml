@@ -230,7 +230,6 @@
   <string name="omemo_fingerprint_x509">Huella digital v\\OMEMO</string>
   <string name="omemo_fingerprint_selected_message">Huella digital OMEMO del mensaje</string>
   <string name="omemo_fingerprint_x509_selected_message">huella digital v\\OMEMO del mensaje</string>
-  <string name="this_device_omemo_fingerprint">Tu huella digital OMEMO</string>
   <string name="other_devices">Otros dispositivos</string>
   <string name="trust_omemo_fingerprints">Huellas digitales OMEMO de confianza</string>
   <string name="fetching_keys">Buscando claves...</string>
@@ -400,8 +399,9 @@
   <string name="wipe_omemo_pep">Limpiar otros dispositivos de PEP</string>
   <string name="clear_other_devices">Limpiar dispositivos</string>
   <string name="clear_other_devices_desc">¿Estás seguro de que quieres limpiar todos los otros dispositivos del anuncio OMEMO? La próxima vez que tus dispositivos conecten, tendrán que volver a anunciarse, pero estos podrían no recibir los mensajes enviados durante el proceso.</string>
-  <string name="error_no_keys_to_trust_server_error">No hay claves usables disponibles para este contacto. La búsqueda de nuevas claves al servidor ha fallado. Puede que exista un problema con el servidor de tus contactos.</string>
-  <string name="error_no_keys_to_trust">No hay claves usables disponibles para este contacto. Si has eliminado alguna de sus claves, tus contactos necesitarán generar nuevas claves.</string>
+  <string name="error_no_keys_to_trust_server_error">No hay claves disponibles para este contacto. La búsqueda de nuevas claves al servidor ha fallado. Puede que exista un problema con el servidor de tu contacto.</string>
+  <string name="error_no_keys_to_trust_presence">No hay claves disponibles para este contacto.\n Asegúrate que tenéis suscripción de presencia mutua. </string>
+  <string name="error_no_keys_to_trust">No hay claves disponibles para este contacto. Si has eliminado alguna de sus claves, tus contactos necesitarán generar nuevas claves.</string>
   <string name="error_trustkeys_title">Error</string>
   <string name="fetching_history_from_server">Buscando historial en el servidor</string>
   <string name="no_more_history_on_server">No hay más historial en el servidor</string>

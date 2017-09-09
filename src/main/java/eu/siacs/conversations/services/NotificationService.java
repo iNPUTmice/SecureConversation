@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.net.Uri;
@@ -271,7 +272,7 @@ public class NotificationService {
 				for(Map.Entry<String,ArrayList<Message>> entry : notifications.entrySet()) {
 					Builder singleBuilder = buildSingleConversations(entry.getValue());
 					singleBuilder.setGroup(CONVERSATIONS_GROUP);
-					modifyForSoundVibrationAndLight(singleBuilder,notify,preferences);
+					setNotificationColor(singleBuilder);
 					notificationManager.notify(entry.getKey(), NOTIFICATION_ID ,singleBuilder.build());
 				}
 				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
@@ -281,10 +282,11 @@ public class NotificationService {
 
 
 	private void modifyForSoundVibrationAndLight(Builder mBuilder, boolean notify, SharedPreferences preferences) {
-		final String ringtone = preferences.getString("notification_ringtone", null);
-		final boolean vibrate = preferences.getBoolean("vibrate_on_notification", true);
-		final boolean led = preferences.getBoolean("led", true);
-		final boolean headsup = preferences.getBoolean("notification_headsup", mXmppConnectionService.getResources().getBoolean(R.bool.headsup_notifications));
+		final Resources resources = mXmppConnectionService.getResources();
+		final String ringtone = preferences.getString("notification_ringtone", resources.getString(R.string.notification_ringtone));
+		final boolean vibrate = preferences.getBoolean("vibrate_on_notification", resources.getBoolean(R.bool.vibrate_on_notification));
+		final boolean led = preferences.getBoolean("led", resources.getBoolean(R.bool.led));
+		final boolean headsup = preferences.getBoolean("notification_headsup", resources.getBoolean(R.bool.headsup_notifications));
 		if (notify && !isQuietHours()) {
 			if (vibrate) {
 				final int dat = 70;
@@ -293,13 +295,11 @@ public class NotificationService {
 			} else {
 				mBuilder.setVibrate(new long[]{0});
 			}
-			if (ringtone != null) {
-				Uri uri = Uri.parse(ringtone);
-				try {
-					mBuilder.setSound(fixRingtoneUri(uri));
-				} catch (SecurityException e) {
-					Log.d(Config.LOGTAG,"unable to use custom notification sound "+uri.toString());
-				}
+			Uri uri = Uri.parse(ringtone);
+			try {
+				mBuilder.setSound(fixRingtoneUri(uri));
+			} catch (SecurityException e) {
+				Log.d(Config.LOGTAG,"unable to use custom notification sound "+uri.toString());
 			}
 		}
 		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -388,6 +388,7 @@ public class NotificationService {
 					modifyForTextOnly(mBuilder, mUnreadBuilder, messages);
 				}
 				RemoteInput remoteInput = new RemoteInput.Builder("text_reply").setLabel(UIHelper.getMessageHint(mXmppConnectionService, conversation)).build();
+				NotificationCompat.Action markReadAction = new NotificationCompat.Action.Builder(R.drawable.ic_send_text_offline, "Mark As Read", createReadPendingIntent(conversation)).build();
 				NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(R.drawable.ic_send_text_offline, "Reply", createReplyIntent(conversation, false)).addRemoteInput(remoteInput).build();
 				NotificationCompat.Action wearReplyAction = new NotificationCompat.Action.Builder(R.drawable.ic_wear_reply, "Reply", createReplyIntent(conversation, true)).addRemoteInput(remoteInput).build();
 				mBuilder.extend(new NotificationCompat.WearableExtender().addAction(wearReplyAction));
@@ -395,6 +396,7 @@ public class NotificationService {
 				mUnreadBuilder.setReadPendingIntent(createReadPendingIntent(conversation));
 				mBuilder.extend(new NotificationCompat.CarExtender().setUnreadConversation(mUnreadBuilder.build()));
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+					mBuilder.addAction(markReadAction);
 					mBuilder.addAction(replyAction);
 				}
 				if ((message = getFirstDownloadableMessage(messages)) != null) {
