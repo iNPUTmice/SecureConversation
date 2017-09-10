@@ -193,7 +193,7 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 		for(final String fingerprint : ownKeysToTrust.keySet()) {
 			hasOwnKeys = true;
 			addFingerprintRowWithListeners(ownKeys, mAccount, fingerprint, false,
-					FingerprintStatus.createActive(ownKeysToTrust.get(fingerprint)), false, false,
+					FingerprintStatus.createActive(ownKeysToTrust.get(fingerprint)), false, false, true,
 					new CompoundButton.OnCheckedChangeListener() {
 						@Override
 						public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -222,7 +222,7 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 				final Map<String, Boolean> fingerprints = entry.getValue();
 				for (final String fingerprint : fingerprints.keySet()) {
 					addFingerprintRowWithListeners(keysContainer, mAccount, fingerprint, false,
-							FingerprintStatus.createActive(fingerprints.get(fingerprint)), false, false,
+							FingerprintStatus.createActive(fingerprints.get(fingerprint)), false, false, false,
 							new CompoundButton.OnCheckedChangeListener() {
 								@Override
 								public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {

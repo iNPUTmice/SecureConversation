@@ -1017,7 +1017,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			for(XmppAxolotlSession session : mAccount.getAxolotlService().findOwnSessions()) {
 				if (!session.getTrust().isCompromised()) {
 					boolean highlight = session.getFingerprint().equals(messageFingerprint);
-					addFingerprintRow(keys,session,highlight);
+					addFingerprintRow(keys,session,highlight, true);
 					hasKeys = true;
 				}
 			}

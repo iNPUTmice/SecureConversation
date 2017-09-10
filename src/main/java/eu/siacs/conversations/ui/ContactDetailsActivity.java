@@ -480,7 +480,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 				}
 				if (!trust.isCompromised()) {
 					boolean highlight = session.getFingerprint().equals(messageFingerprint);
-					addFingerprintRow(keys, session, highlight);
+					addFingerprintRow(keys, session, highlight, false);
 				}
 			}
 			if (showsInactive || skippedInactive) {
