@@ -108,7 +108,7 @@ public abstract class OmemoActivity extends XmppActivity {
         }
     }
 
-    protected void addFingerprintRow(LinearLayout keys, final XmppAxolotlSession session, boolean highlight) {
+    protected void addFingerprintRow(LinearLayout keys, final XmppAxolotlSession session, boolean highlight, boolean ownKey) {
         final Account account = session.getAccount();
         final String fingerprint = session.getFingerprint();
         addFingerprintRowWithListeners(keys,
@@ -118,6 +118,7 @@ public abstract class OmemoActivity extends XmppActivity {
                 session.getTrust(),
                 true,
                 true,
+                ownKey,
                 new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -132,6 +133,7 @@ public abstract class OmemoActivity extends XmppActivity {
                                                      FingerprintStatus status,
                                                      boolean showTag,
                                                      boolean undecidedNeedEnablement,
+                                                     boolean ownKey,
                                                      CompoundButton.OnCheckedChangeListener
                                                              onCheckedChangeListener) {
         View view = getLayoutInflater().inflate(R.layout.contact_key, keys, false);
@@ -230,9 +232,18 @@ public abstract class OmemoActivity extends XmppActivity {
         }
         if (highlight) {
             keyType.setTextColor(ContextCompat.getColor(this, R.color.accent));
-            keyType.setText(getString(x509 ? R.string.omemo_fingerprint_x509_selected_message : R.string.omemo_fingerprint_selected_message));
+            if (status.isVerified() || ownKey) {
+                keyType.setText(getString(x509 ? R.string.omemo_fingerprint_x509_selected_message : R.string.omemo_fingerprint_selected_message));
+            } else {
+                keyType.setText(getString(x509 ? R.string.omemo_fingerprint_x509_selected_message_verify : R.string.omemo_fingerprint_selected_message_verify));
+            }
+
         } else {
-            keyType.setText(getString(x509 ? R.string.omemo_fingerprint_x509 : R.string.omemo_fingerprint));
+            if (status.isVerified() || ownKey ) {
+                keyType.setText(getString(x509 ? R.string.omemo_fingerprint_x509 : R.string.omemo_fingerprint));
+            } else {
+                keyType.setText(getString(x509 ? R.string.omemo_fingerprint_x509_verify : R.string.omemo_fingerprint_verify));
+            }
         }
 
         key.setText(CryptoHelper.prettifyFingerprint(fingerprint.substring(2)));
