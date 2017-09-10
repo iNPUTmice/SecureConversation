@@ -478,15 +478,23 @@ public class FileBackend {
 		return Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM)+"/Camera/";
 	}
 
-	public Uri getTakePhotoUri() {
+	private Uri getNewMediaUri(String prefix, String extension) {
 		File file;
 		if (Config.ONLY_INTERNAL_STORAGE) {
-			file = new File(mXmppConnectionService.getCacheDir().getAbsolutePath(), "Camera/IMG_" + this.IMAGE_DATE_FORMAT.format(new Date()) + ".jpg");
+			file = new File(mXmppConnectionService.getCacheDir().getAbsolutePath(), "Camera/" + prefix + "_" + this.IMAGE_DATE_FORMAT.format(new Date()) + "." + extension);
 		} else {
-			file = new File(getTakePhotoPath() + "IMG_" + this.IMAGE_DATE_FORMAT.format(new Date()) + ".jpg");
+			file = new File(getTakePhotoPath() + prefix + "_" + this.IMAGE_DATE_FORMAT.format(new Date()) + "." + extension);
 		}
 		file.getParentFile().mkdirs();
 		return getUriForFile(mXmppConnectionService,file);
+	}
+
+	public Uri getTakePhotoUri() {
+		return getNewMediaUri("IMG", "jpg");
+	}
+
+	public Uri getRecordVideoUri() {
+		return getNewMediaUri("VID", "mp4");
 	}
 
 	public static Uri getUriForFile(Context context, File file) {
