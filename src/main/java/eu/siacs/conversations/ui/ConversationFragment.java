@@ -331,6 +331,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					case TAKE_PHOTO:
 						activity.attachFile(ConversationActivity.ATTACHMENT_CHOICE_TAKE_PHOTO);
 						break;
+					case VIDEOCAM:
+						activity.attachFile(ConversationActivity.ATTACHMENT_CHOICE_RECORD_VIDEO);
+						break;
 					case SEND_LOCATION:
 						activity.attachFile(ConversationActivity.ATTACHMENT_CHOICE_LOCATION);
 						break;
@@ -1152,7 +1155,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		mSendingPgpMessage.set(false);
 	}
 
-	enum SendButtonAction {TEXT, TAKE_PHOTO, SEND_LOCATION, RECORD_VOICE, CANCEL, CHOOSE_PICTURE}
+	enum SendButtonAction {TEXT, TAKE_PHOTO, SEND_LOCATION, RECORD_VOICE, CANCEL, CHOOSE_PICTURE, VIDEOCAM}
 
 	private int getSendButtonImageResource(SendButtonAction action, Presence.Status status) {
 		switch (action) {
@@ -1168,6 +1171,19 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						return R.drawable.ic_send_text_dnd;
 					default:
 						return activity.getThemeResource(R.attr.ic_send_text_offline, R.drawable.ic_send_text_offline);
+				}
+			case VIDEOCAM:
+				switch (status) {
+					case CHAT:
+					case ONLINE:
+						return R.drawable.ic_send_videocam_online;
+					case AWAY:
+						return R.drawable.ic_send_videocam_away;
+					case XA:
+					case DND:
+						return R.drawable.ic_send_videocam_dnd;
+					default:
+						return activity.getThemeResource(R.attr.ic_send_videocam_offline, R.drawable.ic_send_videocam_offline);
 				}
 			case TAKE_PHOTO:
 				switch (status) {
@@ -1273,6 +1289,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						setting = activity.getPreferences().getString("recently_used_quick_action", "text");
 					}
 					switch (setting) {
+						case "videocam":
+							action = SendButtonAction.VIDEOCAM;
+							break;
 						case "photo":
 							action = SendButtonAction.TAKE_PHOTO;
 							break;

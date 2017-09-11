@@ -92,6 +92,7 @@ public class ConversationActivity extends XmppActivity
 	public static final int ATTACHMENT_CHOICE_RECORD_VOICE = 0x0304;
 	public static final int ATTACHMENT_CHOICE_LOCATION = 0x0305;
 	public static final int ATTACHMENT_CHOICE_INVALID = 0x0306;
+	public static final int ATTACHMENT_CHOICE_RECORD_VIDEO = 0x0307;
 	private static final String STATE_OPEN_CONVERSATION = "state_open_conversation";
 	private static final String STATE_PANEL_OPEN = "state_panel_open";
 	private static final String STATE_PENDING_URI = "state_pending_uri";
@@ -500,14 +501,24 @@ public class ConversationActivity extends XmppActivity
 						intent.setType("image/*");
 						chooser = true;
 						break;
+					case ATTACHMENT_CHOICE_RECORD_VIDEO:
 					case ATTACHMENT_CHOICE_TAKE_PHOTO:
-						Uri uri = xmppConnectionService.getFileBackend().getTakePhotoUri();
+						boolean video = attachmentChoice == ATTACHMENT_CHOICE_RECORD_VIDEO;
+						Uri uri;
+						if (video) {
+							uri = xmppConnectionService.getFileBackend().getRecordVideoUri();
+							mPendingFileUris.clear();
+							mPendingFileUris.add(uri);
+						}
+						else {
+							uri = xmppConnectionService.getFileBackend().getTakePhotoUri();
+							mPendingImageUris.clear();
+							mPendingImageUris.add(uri);
+						}
 						intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
 						intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-						intent.setAction(MediaStore.ACTION_IMAGE_CAPTURE);
+						intent.setAction(video ? MediaStore.ACTION_VIDEO_CAPTURE : MediaStore.ACTION_IMAGE_CAPTURE);
 						intent.putExtra(MediaStore.EXTRA_OUTPUT, uri);
-						mPendingImageUris.clear();
-						mPendingImageUris.add(uri);
 						break;
 					case ATTACHMENT_CHOICE_CHOOSE_FILE:
 						chooser = true;
@@ -568,6 +579,9 @@ public class ConversationActivity extends XmppActivity
 				break;
 			case ATTACHMENT_CHOICE_RECORD_VOICE:
 				getPreferences().edit().putString("recently_used_quick_action", "voice").apply();
+				break;
+			case ATTACHMENT_CHOICE_RECORD_VIDEO:
+				getPreferences().edit().putString("recently_used_quick_action", "videocam").apply();
 				break;
 			case ATTACHMENT_CHOICE_TAKE_PHOTO:
 				getPreferences().edit().putString("recently_used_quick_action", "photo").apply();
@@ -804,6 +818,9 @@ public class ConversationActivity extends XmppActivity
 						break;
 					case R.id.attach_take_picture:
 						attachFile(ATTACHMENT_CHOICE_TAKE_PHOTO);
+						break;
+					case R.id.attach_record_video:
+						attachFile(ATTACHMENT_CHOICE_RECORD_VIDEO);
 						break;
 					case R.id.attach_choose_file:
 						attachFile(ATTACHMENT_CHOICE_CHOOSE_FILE);
@@ -1414,7 +1431,7 @@ public class ConversationActivity extends XmppActivity
 						attachImageToConversation(getSelectedConversation(), i.next());
 					}
 				}
-			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE) {
+			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO) {
 				final List<Uri> uris = extractUriFromIntent(data);
 				final Conversation c = getSelectedConversation();
 				final OnPresenceSelected callback = new OnPresenceSelected() {
@@ -1424,7 +1441,7 @@ public class ConversationActivity extends XmppActivity
 						mPendingFileUris.addAll(uris);
 						if (xmppConnectionServiceBound) {
 							for (Iterator<Uri> i = mPendingFileUris.iterator(); i.hasNext(); i.remove()) {
-								Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE");
+								Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE/RECORD_VIDEO");
 								attachFileToConversation(c, i.next());
 							}
 						}
