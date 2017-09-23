@@ -152,6 +152,18 @@ public class FileBackend {
 			return true; //exception to be compatible with HTTP Upload < v0.2
 		}
 		for(Uri uri : uris) {
+			String mime = context.getContentResolver().getType(uri);
+			if (mime != null && mime.startsWith("video/")) {
+				try {
+					Dimensions dimensions = FileBackend.getVideoDimensions(context,uri);
+					if (dimensions.getMin() > 720) {
+						Log.d(Config.LOGTAG,"do not consider video file with min width larger than 720 for size check");
+						continue;
+					}
+				} catch (NotAVideoFile notAVideoFile) {
+					//ignore and fall through
+				}
+			}
 			if (FileBackend.getFileSize(context, uri) > max) {
 				Log.d(Config.LOGTAG,"not all files are under "+max+" bytes. suggesting falling back to jingle");
 				return false;
@@ -765,26 +777,44 @@ public class FileBackend {
 		final String mime = file.getMimeType();
 		boolean image = message.getType() == Message.TYPE_IMAGE || (mime != null && mime.startsWith("image/"));
 		boolean video = mime != null && mime.startsWith("video/");
+		boolean audio = mime != null && mime.startsWith("audio/");
+		final StringBuilder body = new StringBuilder();
+		if (url != null) {
+			body.append(url.toString());
+		}
+		body.append('|').append(file.getSize());
 		if (image || video) {
 			try {
 				Dimensions dimensions = image ? getImageDimensions(file) : getVideoDimensions(file);
-				if (url == null) {
-					message.setBody(Long.toString(file.getSize()) + '|' + dimensions.width + '|' + dimensions.height);
-				} else {
-					message.setBody(url.toString() + "|" + Long.toString(file.getSize()) + '|' + dimensions.width + '|' + dimensions.height);
-				}
-				return;
+				body.append('|').append(dimensions.width).append('|').append(dimensions.height);
 			} catch (NotAVideoFile notAVideoFile) {
 				Log.d(Config.LOGTAG,"file with mime type "+file.getMimeType()+" was not a video file");
 				//fall threw
 			}
+		} else if (audio) {
+			body.append("|0|0|").append(getMediaRuntime(file));
 		}
-		if (url != null) {
-			message.setBody(url.toString()+"|"+Long.toString(file.getSize()));
-		} else {
-			message.setBody(Long.toString(file.getSize()));
-		}
+		message.setBody(body.toString());
+	}
 
+	public int getMediaRuntime(Uri uri) {
+		try {
+			MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+			mediaMetadataRetriever.setDataSource(mXmppConnectionService,uri);
+			return Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+		} catch (IllegalArgumentException e) {
+			return 0;
+		}
+	}
+
+	private int getMediaRuntime(File file) {
+		try {
+			MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+			mediaMetadataRetriever.setDataSource(file.toString());
+			return Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
+		} catch (IllegalArgumentException e) {
+			return 0;
+		}
 	}
 
 	private Dimensions getImageDimensions(File file) {
@@ -805,6 +835,16 @@ public class FileBackend {
 		} catch (Exception e) {
 			throw new NotAVideoFile();
 		}
+		return getVideoDimensions(metadataRetriever);
+	}
+
+	private static Dimensions getVideoDimensions(Context context, Uri uri) throws NotAVideoFile {
+		MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+		mediaMetadataRetriever.setDataSource(context,uri);
+		return getVideoDimensions(mediaMetadataRetriever);
+	}
+
+	private static Dimensions getVideoDimensions(MediaMetadataRetriever metadataRetriever) throws NotAVideoFile {
 		String hasVideo = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_HAS_VIDEO);
 		if (hasVideo == null) {
 			throw new NotAVideoFile();
@@ -830,7 +870,7 @@ public class FileBackend {
 		return rotated ? new Dimensions(width, height) : new Dimensions(height, width);
 	}
 
-	private int extractRotationFromMediaRetriever(MediaMetadataRetriever metadataRetriever) {
+	private static int extractRotationFromMediaRetriever(MediaMetadataRetriever metadataRetriever) {
 		int rotation;
 		if (Build.VERSION.SDK_INT >= 17) {
 			String r = metadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION);
@@ -845,7 +885,7 @@ public class FileBackend {
 		return rotation;
 	}
 
-	private class Dimensions {
+	private static class Dimensions {
 		public final int width;
 		public final int height;
 
@@ -853,9 +893,13 @@ public class FileBackend {
 			this.width = width;
 			this.height = height;
 		}
+
+		public int getMin() {
+			return Math.min(width,height);
+		}
 	}
 
-	private class NotAVideoFile extends Exception {
+	private static class NotAVideoFile extends Exception {
 
 	}
 
