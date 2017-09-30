@@ -70,6 +70,7 @@ import eu.siacs.conversations.ui.XmppActivity.OnValueEdited;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureClicked;
 import eu.siacs.conversations.ui.adapter.MessageAdapter.OnContactPictureLongClicked;
+import eu.siacs.conversations.ui.widget.EditMessage;
 import eu.siacs.conversations.ui.widget.ListSelectionManager;
 import eu.siacs.conversations.utils.NickValidityChecker;
 import eu.siacs.conversations.utils.UIHelper;
@@ -763,10 +764,25 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
-	private void resendMessage(Message message) {
-		if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
+	private void resendMessage(final Message message) {
+		if (message.isFileOrImage()) {
 			DownloadableFile file = activity.xmppConnectionService.getFileBackend().getFile(message);
-			if (!file.exists()) {
+			if (file.exists()) {
+				final Conversation conversation = message.getConversation();
+				final XmppConnection xmppConnection = conversation.getAccount().getXmppConnection();
+				if (!message.hasFileOnRemoteHost()
+						&& xmppConnection != null
+						&& !xmppConnection.getFeatures().httpUpload(message.getFileParams().size)) {
+					activity.selectPresence(conversation, new OnPresenceSelected() {
+						@Override
+						public void onPresenceSelected() {
+							message.setCounterpart(conversation.getNextCounterpart());
+							activity.xmppConnectionService.resendFailedMessages(message);
+						}
+					});
+					return;
+				}
+			} else {
 				Toast.makeText(activity, R.string.file_deleted, Toast.LENGTH_SHORT).show();
 				message.setTransferable(new TransferablePlaceholder(Transferable.STATUS_DELETED));
 				activity.updateConversationList();
@@ -868,6 +884,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	@Override
 	public void onStop() {
 		super.onStop();
+		if (activity == null || !activity.isChangingConfigurations()) {
+			messageListAdapter.stopAudioPlayer();
+		}
 		if (this.conversation != null) {
 			final String msg = mEditMessage.getText().toString();
 			this.conversation.setNextMessage(msg);
@@ -894,6 +913,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			this.conversation.setNextMessage(msg);
 			if (this.conversation != conversation) {
 				updateChatState(this.conversation, msg);
+				messageListAdapter.stopAudioPlayer();
 			}
 			this.conversation.trim();
 
