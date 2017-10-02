@@ -366,8 +366,8 @@
   <string name="copy_omemo_clipboard_description">Skopiuj odcisk klucza OMEMO do schowka</string>
   <string name="regenerate_omemo_key">Wygeneruj ponownie klucz OMEMO</string>
   <string name="clear_other_devices">Wyczyść urządzenia</string>
-  <string name="clear_other_devices_desc">Czy na pewno chcesz usunąć wszystkie inne urządzenia z ogłoszenia OMEMO? Następnym razem gdy połączą się Twoje urdzącenia, ogłoszą się one ponownie, ale mogą nie otrzymać wiadomości wysłanych w międzyczasie.</string>
-  <string name="error_no_keys_to_trust_server_error">Nie ma dostępnych kluczy dl atego kontaktu.\nPobieranie nowych kluczy z serwera nie powiodło się. Byćmoże jest coś nie tak z Twoim serwerem kontaktów?</string>
+  <string name="clear_other_devices_desc">Czy na pewno chcesz usunąć wszystkie inne urządzenia z ogłoszenia OMEMO? Następnym razem gdy połączą się Twoje urządzenia, ogłoszą się one ponownie, ale mogą nie otrzymać wiadomości wysłanych w międzyczasie.</string>
+  <string name="error_no_keys_to_trust_server_error">Nie ma dostępnych kluczy dla tego kontaktu.\nPobieranie nowych kluczy z serwera nie powiodło się. Być może jest coś nie tak z Twoim serwerem kontaktów?</string>
   <string name="error_no_keys_to_trust">Nie ma dostępnych żadnych użytecznych kluczy dla tego kontaktu. Jeśli usunąłeś jakieś jego klucze, kontakt będzie musiał wygenerować nowe.</string>
   <string name="error_trustkeys_title">Błąd</string>
   <string name="fetching_history_from_server">Pobieranie historii z serwera</string>
