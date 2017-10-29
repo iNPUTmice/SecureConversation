@@ -198,9 +198,9 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE || message.getTransferable() != null) {
 			FileParams params = message.getFileParams();
 			if (params.size > (1.5 * 1024 * 1024)) {
-				filesize = params.size / (1024 * 1024)+ " MiB";
+				filesize = Math.round(params.size * 1f/ (1024 * 1024))+ " MiB";
 			} else if (params.size >= 1024) {
-				filesize = params.size / 1024 + " KiB";
+				filesize = Math.round(params.size * 1f/ 1024) + " KiB";
 			} else if (params.size > 0){
 				filesize = params.size + " B";
 			}
@@ -471,6 +471,10 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 					body.setSpan(new StyleSpan(Typeface.BOLD), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 				}
 			}
+			Matcher matcher = Emoticons.generatePattern(body).matcher(body);
+			while(matcher.find()) {
+					body.setSpan(new RelativeSizeSpan(1.2f), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				}
 			Linkify.addLinks(body, XMPP_PATTERN, "xmpp");
 			Linkify.addLinks(body, Patterns.AUTOLINK_WEB_URL, "http", WEBURL_MATCH_FILTER, WEBURL_TRANSFORM_FILTER);
 			Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
@@ -801,8 +805,8 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		} else {
 			if (message.isGeoUri()) {
 				displayLocationMessage(viewHolder,message);
-			} else if (message.bodyIsOnlyEmojis()) {
-				displayEmojiMessage(viewHolder, message.getBody().replaceAll("\\s",""));
+			} else if (message.bodyIsOnlyEmojis() && message.getType() != Message.TYPE_PRIVATE) {
+				displayEmojiMessage(viewHolder, message.getBody().trim());
 			} else if (message.treatAsDownloadable()) {
 				try {
 					URL url = new URL(message.getBody());

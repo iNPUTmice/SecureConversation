@@ -66,7 +66,6 @@ public final class Config {
 	public static final int IMAGE_SIZE = 1920;
 	public static final Bitmap.CompressFormat IMAGE_FORMAT = Bitmap.CompressFormat.JPEG;
 	public static final int IMAGE_QUALITY = 75;
-	public static final int IMAGE_MAX_SIZE = 524288; //512KiB
 
 	public static final int MESSAGE_MERGE_WINDOW = 20;
 
@@ -105,9 +104,6 @@ public final class Config {
 
 	public static final long MAM_MAX_CATCHUP =  MILLISECONDS_IN_DAY * 5;
 	public static final int MAM_MAX_MESSAGES = 750;
-
-	public static final long FREQUENT_RESTARTS_DETECTION_WINDOW = 12 * 60 * 60 * 1000; // 10 hours
-	public static final long FREQUENT_RESTARTS_THRESHOLD = 0; // previous value was 16;
 
 	public static final ChatState DEFAULT_CHATSTATE = ChatState.ACTIVE;
 	public static final int TYPING_TIMEOUT = 8;
