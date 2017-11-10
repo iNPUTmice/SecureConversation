@@ -153,6 +153,7 @@
   <string name="account_status_regis_conflict">Корисничко име је већ у употреби</string>
   <string name="account_status_regis_success">Регистрација завршена</string>
   <string name="account_status_regis_not_sup">Сервер не подржава регистрацију</string>
+  <string name="account_status_tls_error">ТЛС преговарање није успело</string>
   <string name="account_status_policy_violation">Нарушавање полисе</string>
   <string name="account_status_incompatible_server">Некомпатибилан сервер</string>
   <string name="account_status_stream_error">Грешка тока</string>
@@ -164,6 +165,8 @@
   <string name="mgmt_account_disable">Привремено искључи</string>
   <string name="mgmt_account_publish_avatar">Објави аватар</string>
   <string name="mgmt_account_publish_pgp">Објави ОпенПГП јавни кључ</string>
+  <string name="unpublish_pgp">Уклони ОпенПГП кључ</string>
+  <string name="unpublish_pgp_message">Желите ли заиста да уклоните ваш ОпенПГП кључ из ваше објаве присутности?\nВаши контакти више неће моћи да вам шаљу ОпенПГП шифроване поруке.</string>
   <string name="openpgp_has_been_published">ОпенПГП јавни кључ је објављен.</string>
   <string name="republish_pgp_keys">Не заборавите да поново објавите ваше ОпенПГП јавне кључеве!</string>
   <string name="mgmt_account_enable">Укључи налог</string>
@@ -306,7 +309,6 @@
   <string name="check_x_filesize">Провери величину %s</string>
   <string name="check_x_filesize_on_host">Провери величину %1$s na %2$s</string>
   <string name="message_options">Опције поруке</string>
-  <string name="select_text">Изабери текст</string>
   <string name="quote">Цитирај</string>
   <string name="copy_original_url">Копирај изворни УРЛ</string>
   <string name="send_again">Пошаљи поново</string>
@@ -362,7 +364,6 @@
   <string name="regenerate_omemo_key">Поново генериши ОМЕМО кључ</string>
   <string name="clear_other_devices">Очисти уређаје</string>
   <string name="clear_other_devices_desc">Желите ли заиста да уклоните све остале уређаје са ОМЕМО објаве? Када се ваши уређаји следећи пут повежу, објавиће се сами, али у међувремену можда неће примати поруке.</string>
-  <string name="error_no_keys_to_trust_server_error">Нема употребљивих кључева за овај контакт.\nДобављање нових кључева са сервера није било успешно. Можда нешто није у реду са сервером ваших контаката.</string>
   <string name="error_no_keys_to_trust">Нема употребљивих кључева за овај контакт. Ако сте очистили било који од тих кључева, контакт мора да генерише нови.</string>
   <string name="error_trustkeys_title">Грешка</string>
   <string name="fetching_history_from_server">Добављам историјат са сервера</string>
@@ -654,6 +655,7 @@
   <string name="pref_automatically_delete_messages">Аутоматско брисање порука</string>
   <string name="pref_automatically_delete_messages_description">Аутоматско брисање порука са овог уређаја које су старије од постављеног времена.</string>
   <string name="encrypting_message">Шифрујем поруку</string>
+  <string name="transcoding_video">Компресујем видео</string>
   <string name="corresponding_conversations_closed">Одговарајуће преписке затворене.</string>
   <string name="contact_blocked_past_tense">Контакт блокиран.</string>
   <string name="pref_notifications_from_strangers">Обавештења од непознатих</string>
@@ -664,4 +666,11 @@
   <string name="online_right_now">на вези сада</string>
   <string name="retry_decryption">Покушај дешифровање поново</string>
   <string name="session_failure">Неуспех сесије</string>
+  <string name="account_status_regis_web">Сервер захтева регистрацију на сајту</string>
+  <string name="open_website">Отвори сајт</string>
+  <string name="today">Данас</string>
+  <string name="yesterday">Јуче</string>
+  <string name="network_is_unreachable">Мрежа није доступна</string>
+  <string name="certificate_does_not_contain_jid">Сертификат не садржи Џабер ИД</string>
+  <string name="attach_record_video">Сними видео</string>
 </resources>
