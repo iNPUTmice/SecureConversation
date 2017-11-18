@@ -139,6 +139,9 @@ public class ConversationActivity extends XmppActivity
 	}
 
 	public void showConversationsOverview() {
+		if (mConversationFragment != null) {
+			mConversationFragment.stopScrolling();
+		}
 		if (mContentView instanceof SlidingPaneLayout) {
 			SlidingPaneLayout mSlidingPaneLayout = (SlidingPaneLayout) mContentView;
 			mShouldPanelBeOpen.set(true);
@@ -206,9 +209,10 @@ public class ConversationActivity extends XmppActivity
 		transaction.replace(R.id.selected_conversation, this.mConversationFragment, "conversation");
 		transaction.commit();
 
-		listView = (EnhancedListView) findViewById(R.id.list);
+		this.listView = findViewById(R.id.list);
 		this.listAdapter = new ConversationAdapter(this, conversationList);
-		listView.setAdapter(this.listAdapter);
+		this.listView.setAdapter(this.listAdapter);
+		this.listView.setSwipeDirection(EnhancedListView.SwipeDirection.END);
 
 		final ActionBar actionBar = getActionBar();
 		if (actionBar != null) {
@@ -221,6 +225,7 @@ public class ConversationActivity extends XmppActivity
 			public void onItemClick(AdapterView<?> arg0, View clickedView,
 									int position, long arg3) {
 				if (getSelectedConversation() != conversationList.get(position)) {
+					ConversationActivity.this.mConversationFragment.stopScrolling();
 					setSelectedConversation(conversationList.get(position));
 					ConversationActivity.this.mConversationFragment.reInit(getSelectedConversation());
 					conversationWasSelectedByKeyboard = false;
@@ -1109,6 +1114,7 @@ public class ConversationActivity extends XmppActivity
 	private boolean openConversationByIndex(int index) {
 		try {
 			this.conversationWasSelectedByKeyboard = true;
+			this.mConversationFragment.stopScrolling();
 			setSelectedConversation(this.conversationList.get(index));
 			this.mConversationFragment.reInit(getSelectedConversation());
 			if (index > listView.getLastVisiblePosition() - 1 || index < listView.getFirstVisiblePosition() + 1) {
@@ -1327,6 +1333,7 @@ public class ConversationActivity extends XmppActivity
 		final String text = intent.getStringExtra(TEXT);
 		final String nick = intent.getStringExtra(NICK);
 		final boolean pm = intent.getBooleanExtra(PRIVATE_MESSAGE, false);
+		this.mConversationFragment.stopScrolling();
 		if (selectConversationByUuid(uuid)) {
 			this.mConversationFragment.reInit(getSelectedConversation());
 			if (nick != null) {
@@ -1553,8 +1560,7 @@ public class ConversationActivity extends XmppActivity
 
 	private boolean hasAccountWithoutPush() {
 		for(Account account : xmppConnectionService.getAccounts()) {
-			if (account.getStatus() != Account.State.DISABLED
-					&& !xmppConnectionService.getPushManagementService().availableAndUseful(account)) {
+			if (account.getStatus() != Account.State.DISABLED && !xmppConnectionService.getPushManagementService().available(account)) {
 				return true;
 			}
 		}

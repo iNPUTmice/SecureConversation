@@ -155,9 +155,10 @@ public class XmppConnectionService extends Service {
 	private static final String ACTION_MERGE_PHONE_CONTACTS = "merge_phone_contacts";
 	public static final String ACTION_GCM_TOKEN_REFRESH = "gcm_token_refresh";
 	public static final String ACTION_GCM_MESSAGE_RECEIVED = "gcm_message_received";
-	private final SerialSingleThreadExecutor mFileAddingExecutor = new SerialSingleThreadExecutor();
-	private final SerialSingleThreadExecutor mVideoCompressionExecutor = new SerialSingleThreadExecutor();
-	private final SerialSingleThreadExecutor mDatabaseExecutor = new SerialSingleThreadExecutor();
+	private final SerialSingleThreadExecutor mFileAddingExecutor = new SerialSingleThreadExecutor("FileAdding");
+	private final SerialSingleThreadExecutor mVideoCompressionExecutor = new SerialSingleThreadExecutor("VideoCompression");
+	private final SerialSingleThreadExecutor mDatabaseWriterExecutor = new SerialSingleThreadExecutor("DatabaseWriter");
+	private final SerialSingleThreadExecutor mDatabaseReaderExecutor = new SerialSingleThreadExecutor("DatabaseReader");
 	private ReplacingSerialSingleThreadExecutor mContactMergerExecutor = new ReplacingSerialSingleThreadExecutor(true);
 	private final IBinder mBinder = new XmppConnectionBinder();
 	private final List<Conversation> conversations = new CopyOnWriteArrayList<>();
@@ -874,7 +875,7 @@ public class XmppConnectionService extends Service {
 
 	public void expireOldMessages(final boolean resetHasMessagesLeftOnServer) {
 		mLastExpiryRun.set(SystemClock.elapsedRealtime());
-		mDatabaseExecutor.execute(new Runnable() {
+		mDatabaseWriterExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				long timestamp = getAutomaticMessageDeletionDate();
@@ -896,10 +897,14 @@ public class XmppConnectionService extends Service {
 	}
 
 	public boolean hasInternetConnection() {
-		ConnectivityManager cm = (ConnectivityManager) getApplicationContext()
-				.getSystemService(Context.CONNECTIVITY_SERVICE);
-		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-		return activeNetwork != null && activeNetwork.isConnected();
+		final ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+		try {
+			final NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+			return activeNetwork != null && activeNetwork.isConnected();
+		} catch (RuntimeException e) {
+			Log.d(Config.LOGTAG,"unable to check for internet connection",e);
+			return true; //if internet connection can not be checked it is probably best to just try
+		}
 	}
 
 	@SuppressLint("TrulyRandom")
@@ -1055,23 +1060,29 @@ public class XmppConnectionService extends Service {
 
 	public void scheduleWakeUpCall(int seconds, int requestCode) {
 		final long timeToWake = SystemClock.elapsedRealtime() + (seconds < 0 ? 1 : seconds + 1) * 1000;
-		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		final AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 		Intent intent = new Intent(this, EventReceiver.class);
 		intent.setAction("ping");
-		PendingIntent alarmIntent = PendingIntent.getBroadcast(this, requestCode, intent, 0);
-		alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, timeToWake, alarmIntent);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, requestCode, intent, 0);
+		try {
+			alarmManager.set(AlarmManager.ELAPSED_REALTIME_WAKEUP, timeToWake, pendingIntent);
+		} catch (RuntimeException e) {
+			Log.e(Config.LOGTAG, "unable to schedule alarm for ping", e);
+		}
 	}
 
 	@TargetApi(Build.VERSION_CODES.M)
 	private void scheduleNextIdlePing() {
-		Log.d(Config.LOGTAG, "schedule next idle ping");
-		AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+		final long timeToWake = SystemClock.elapsedRealtime() + (Config.IDLE_PING_INTERVAL * 1000);
+		final AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 		Intent intent = new Intent(this, EventReceiver.class);
 		intent.setAction(ACTION_IDLE_PING);
-		alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP,
-				SystemClock.elapsedRealtime() + (Config.IDLE_PING_INTERVAL * 1000),
-				PendingIntent.getBroadcast(this, 0, intent, 0)
-		);
+		PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, 0);
+		try {
+			alarmManager.setAndAllowWhileIdle(AlarmManager.ELAPSED_REALTIME_WAKEUP, timeToWake, pendingIntent);
+		} catch (RuntimeException e) {
+			Log.d(Config.LOGTAG, "unable to schedule alarm for idle ping", e);
+		}
 	}
 
 	public XmppConnection createConnection(final Account account) {
@@ -1440,7 +1451,7 @@ public class XmppConnectionService extends Service {
 					updateConversationUi();
 				}
 			};
-			mDatabaseExecutor.execute(runnable);
+			mDatabaseReaderExecutor.execute(runnable); //will contain one write command (expiry) but that's fine
 		}
 	}
 
@@ -1592,7 +1603,7 @@ public class XmppConnectionService extends Service {
 				}
 			}
 		};
-		mDatabaseExecutor.execute(runnable);
+		mDatabaseReaderExecutor.execute(runnable);
 	}
 
 	public List<Account> getAccounts() {
@@ -1705,7 +1716,7 @@ public class XmppConnectionService extends Service {
 				}
 			};
 			if (async) {
-				mDatabaseExecutor.execute(runnable);
+				mDatabaseReaderExecutor.execute(runnable);
 			} else {
 				runnable.run();
 			}
@@ -1882,7 +1893,7 @@ public class XmppConnectionService extends Service {
 					}
 				}
 			};
-			mDatabaseExecutor.execute(runnable);
+			mDatabaseWriterExecutor.execute(runnable);
 			this.accounts.remove(account);
 			updateAccountUi();
 			getNotificationService().updateErrorNotification();
@@ -3072,7 +3083,7 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void updateConversation(final Conversation conversation) {
-		mDatabaseExecutor.execute(new Runnable() {
+		mDatabaseWriterExecutor.execute(new Runnable() {
 			@Override
 			public void run() {
 				databaseBackend.updateConversation(conversation);
@@ -3354,7 +3365,7 @@ public class XmppConnectionService extends Service {
 					}
 				}
 			};
-			mDatabaseExecutor.execute(runnable);
+			mDatabaseWriterExecutor.execute(runnable);
 			updateUnreadCountBadge();
 			return true;
 		} else {
@@ -3431,7 +3442,7 @@ public class XmppConnectionService extends Service {
 				databaseBackend.writeRoster(account.getRoster());
 			}
 		};
-		mDatabaseExecutor.execute(runnable);
+		mDatabaseWriterExecutor.execute(runnable);
 
 	}
 
@@ -3652,7 +3663,7 @@ public class XmppConnectionService extends Service {
 				databaseBackend.updateConversation(conversation);
 			}
 		};
-		mDatabaseExecutor.execute(runnable);
+		mDatabaseWriterExecutor.execute(runnable);
 	}
 
 	public boolean sendBlockRequest(final Blockable blockable, boolean reportSpam) {

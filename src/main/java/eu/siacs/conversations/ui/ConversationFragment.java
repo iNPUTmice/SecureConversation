@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
@@ -25,6 +26,7 @@ import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -137,8 +139,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 
 		@Override
-		public void onScroll(AbsListView view, int firstVisibleItem,
-							 int visibleItemCount, int totalItemCount) {
+		public void onScroll(final AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 			synchronized (ConversationFragment.this.messageList) {
 				if (firstVisibleItem < 5 && conversation != null && conversation.messagesLoaded.compareAndSet(true,false) && messageList.size() > 0) {
 					long timestamp;
@@ -198,7 +199,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 									if (ConversationFragment.this.conversation != conversation) {
 										return;
 									}
-									messageLoaderToast = Toast.makeText(activity, resId, Toast.LENGTH_LONG);
+									messageLoaderToast = Toast.makeText(view.getContext(), resId, Toast.LENGTH_LONG);
 									messageLoaderToast.show();
 								}
 							});
@@ -1424,6 +1425,12 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 			}
 		}
+	}
+
+	public void stopScrolling() {
+		long now = SystemClock.uptimeMillis();
+		MotionEvent cancel = MotionEvent.obtain(now, now, MotionEvent.ACTION_CANCEL, 0, 0, 0);
+		messagesView.dispatchTouchEvent(cancel);
 	}
 
 	private boolean showLoadMoreMessages(final Conversation c) {

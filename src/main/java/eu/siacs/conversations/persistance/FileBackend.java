@@ -485,7 +485,7 @@ public class FileBackend {
 			frame = metadataRetriever.getFrameAtTime(0);
 			metadataRetriever.release();
 			frame = resize(frame, size);
-		} catch(IllegalArgumentException  | NullPointerException e) {
+		} catch(RuntimeException  e) {
 			frame = Bitmap.createBitmap(size,size, Bitmap.Config.ARGB_8888);
 			frame.eraseColor(0xff000000);
 		}
@@ -809,7 +809,7 @@ public class FileBackend {
 			MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
 			mediaMetadataRetriever.setDataSource(mXmppConnectionService,uri);
 			return Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-		} catch (IllegalArgumentException e) {
+		} catch (RuntimeException  e) {
 			return 0;
 		}
 	}
@@ -819,7 +819,7 @@ public class FileBackend {
 			MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
 			mediaMetadataRetriever.setDataSource(file.toString());
 			return Integer.parseInt(mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION));
-		} catch (IllegalArgumentException e) {
+		} catch (RuntimeException e) {
 			return 0;
 		}
 	}
@@ -839,15 +839,19 @@ public class FileBackend {
 		MediaMetadataRetriever metadataRetriever = new MediaMetadataRetriever();
 		try {
 			metadataRetriever.setDataSource(file.getAbsolutePath());
-		} catch (Exception e) {
-			throw new NotAVideoFile();
+		} catch (RuntimeException e) {
+			throw new NotAVideoFile(e);
 		}
 		return getVideoDimensions(metadataRetriever);
 	}
 
 	private static Dimensions getVideoDimensions(Context context, Uri uri) throws NotAVideoFile {
 		MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
-		mediaMetadataRetriever.setDataSource(context,uri);
+		try {
+			mediaMetadataRetriever.setDataSource(context, uri);
+		} catch (RuntimeException e) {
+			throw new NotAVideoFile(e);
+		}
 		return getVideoDimensions(mediaMetadataRetriever);
 	}
 
@@ -907,7 +911,13 @@ public class FileBackend {
 	}
 
 	private static class NotAVideoFile extends Exception {
+		public NotAVideoFile(Throwable t) {
+			super(t);
+		}
 
+		public NotAVideoFile() {
+			super();
+		}
 	}
 
 	public class FileCopyException extends Exception {
