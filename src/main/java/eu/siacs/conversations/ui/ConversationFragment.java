@@ -123,6 +123,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	protected ListView messagesView;
 	final protected List<Message> messageList = new ArrayList<>();
 	protected MessageAdapter messageListAdapter;
+	protected Message lastHistoryMessage = null;
 	private EditMessage mEditMessage;
 	private ImageButton mSendButton;
 	private RelativeLayout snackbar;
@@ -1763,4 +1764,75 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
+	public Message searchHistory(String query) {
+		return searchHistory(query, null);
+	}
+
+	public Message searchHistory(String query, Boolean ascendingSearch) {
+		return searchHistory(query, lastHistoryMessage, ascendingSearch);
+	}
+
+	/**
+	 * Search through history from message basis either ascending or descending
+	 * @param query search term
+	 * @param basis message to start from. If null, start from last recent message
+	 * @param ascendingSearch do we want to ascend or descend in our search?
+	 *                        If this is null, ascend to first match and return.
+     * @return match or null
+     */
+	public Message searchHistory(String query, Message basis, Boolean ascendingSearch) {
+		int entryIndex;
+		Message message;
+		lastHistoryMessage = basis;
+		if(messageList.size() == 0) {
+			return null;
+		}
+		if(basis == null) {
+			entryIndex = messageList.size()-1;
+		} else {
+			int in = getIndexOf(basis.getUuid(), messageList);
+			entryIndex = (in != -1 ? in : messageList.size()-1);
+		}
+
+		int firstMatchIndex = entryIndex;
+		boolean entryIndexWasMatch = true;
+		do {
+			message = messageList.get(firstMatchIndex);
+			if (message.getType() == Message.TYPE_TEXT && messageContainsQuery(message, query)) {
+				lastHistoryMessage = message;
+				break;
+			}
+			entryIndexWasMatch = false;
+			firstMatchIndex = (messageList.size()+firstMatchIndex-1)%messageList.size();
+		} while (entryIndex != firstMatchIndex);
+
+		if(!entryIndexWasMatch && entryIndex == firstMatchIndex) {
+			//No matches
+			return null;
+		}
+
+		if(ascendingSearch != null) {
+			int direction = ascendingSearch ? -1 : 1;
+			int nextMatchIndex = firstMatchIndex;
+			do {
+				nextMatchIndex = (messageList.size()+nextMatchIndex+direction)%messageList.size();
+				message = messageList.get(nextMatchIndex);
+				if(message.getType() == Message.TYPE_TEXT && messageContainsQuery(message, query)) {
+					lastHistoryMessage = message;
+					break;
+				}
+			} while (nextMatchIndex != entryIndex);
+		}
+
+		if(lastHistoryMessage != null) {
+			int pos = getIndexOf(lastHistoryMessage.getUuid(), messageList);
+			setScrollPosition(new Pair<>(pos, pos));
+			messagesView.setSelection(pos);
+		}
+		return lastHistoryMessage;
+	}
+
+	private boolean messageContainsQuery(Message m, String q) {
+		return m != null && m.getMergedBody().toString().toLowerCase().contains(q.toLowerCase());
+	}
 }

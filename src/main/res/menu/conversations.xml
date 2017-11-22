@@ -1,6 +1,12 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android" >
 
     <item
+        android:id="@+id/action_search_history"
+        android:actionLayout="@layout/actionview_search_history"
+        android:icon="?attr/icon_search"
+        android:showAsAction="collapseActionView|ifRoom"
+        android:title="@string/search"/>
+    <item
         android:id="@+id/action_add"
         android:icon="?attr/icon_new"
         android:orderInCategory="10"
