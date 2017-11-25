@@ -6,11 +6,14 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.support.annotation.ColorInt;
+import android.support.text.emoji.EmojiCompat;
 import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -67,6 +70,7 @@ import eu.siacs.conversations.ui.widget.ClickableMovementMethod;
 import eu.siacs.conversations.ui.widget.CopyTextView;
 import eu.siacs.conversations.ui.widget.ListSelectionManager;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.EmojiWrapper;
 import eu.siacs.conversations.utils.Emoticons;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.Patterns;
@@ -335,7 +339,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		Spannable span = new SpannableString(body);
 		float size = Emoticons.isEmoji(body) ? 3.0f : 2.0f;
 		span.setSpan(new RelativeSizeSpan(size), 0, body.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-		viewHolder.messageBody.setText(span);
+		viewHolder.messageBody.setText(EmojiWrapper.transform(span));
 	}
 
 	private int applyQuoteSpan(SpannableStringBuilder body, int start, int end, boolean darkBackground) {
@@ -464,10 +468,8 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 				} else {
 					body.insert(privateMarkerIndex, " ");
 				}
-				body.setSpan(new ForegroundColorSpan(getMessageTextColor(darkBackground, false)),
-						0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-				body.setSpan(new StyleSpan(Typeface.BOLD),
-						0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				body.setSpan(new ForegroundColorSpan(getMessageTextColor(darkBackground, false)), 0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				body.setSpan(new StyleSpan(Typeface.BOLD), 0, privateMarkerIndex, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
 				if (hasMeCommand) {
 					body.setSpan(new StyleSpan(Typeface.BOLD_ITALIC), privateMarkerIndex + 1,
 							privateMarkerIndex + 1 + nick.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
@@ -482,7 +484,9 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			}
 			Matcher matcher = Emoticons.generatePattern(body).matcher(body);
 			while(matcher.find()) {
-				body.setSpan(new RelativeSizeSpan(1.2f), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				if (matcher.start() < matcher.end()) {
+					body.setSpan(new RelativeSizeSpan(1.2f), matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+				}
 			}
 
 			StylingHelper.format(body, viewHolder.messageBody.getCurrentTextColor());
@@ -492,7 +496,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
 			FixedURLSpan.fix(body);
 			viewHolder.messageBody.setAutoLinkMask(0);
-			viewHolder.messageBody.setText(body);
+			viewHolder.messageBody.setText(EmojiWrapper.transform(body));
 			viewHolder.messageBody.setTextIsSelectable(true);
 			viewHolder.messageBody.setMovementMethod(ClickableMovementMethod.getInstance());
 			listSelectionManager.onUpdate(viewHolder.messageBody, message);
@@ -709,7 +713,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 				if (conversation.getMode() == Conversation.MODE_SINGLE) {
 					showAvatar = true;
 					loadAvatar(message,viewHolder.contact_picture,activity.getPixel(32));
-				} else if (message.getCounterpart() != null ){
+				} else if (message.getCounterpart() != null || message.getTrueCounterpart() != null || (message.getCounterparts() != null && message.getCounterparts().size() > 0)) {
 					showAvatar = true;
 					loadAvatar(message,viewHolder.contact_picture,activity.getPixel(32));
 				} else {
@@ -1052,9 +1056,15 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			if (bm != null) {
 				cancelPotentialWork(message, imageView);
 				imageView.setImageBitmap(bm);
-				imageView.setBackgroundColor(0x00000000);
+				imageView.setBackgroundColor(Color.TRANSPARENT);
 			} else {
-				imageView.setBackgroundColor(UIHelper.getColorForName(UIHelper.getMessageDisplayName(message)));
+				@ColorInt int bg;
+				if (message.getType() == Message.TYPE_STATUS && message.getCounterparts() != null && message.getCounterparts().size() > 1) {
+					bg = Color.TRANSPARENT;
+				} else {
+					bg = UIHelper.getColorForName(UIHelper.getMessageDisplayName(message));
+				}
+				imageView.setBackgroundColor(bg);
 				imageView.setImageDrawable(null);
 				final BitmapWorkerTask task = new BitmapWorkerTask(imageView, size);
 				final AsyncDrawable asyncDrawable = new AsyncDrawable(activity.getResources(), null, task);

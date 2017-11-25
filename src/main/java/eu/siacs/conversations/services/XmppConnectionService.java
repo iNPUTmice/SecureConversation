@@ -1278,10 +1278,15 @@ public class XmppConnectionService extends Service {
 			}
 		}
 
+
+		boolean mucMessage = conversation.getMode() == Conversation.MODE_MULTI && message.getType() != Message.TYPE_PRIVATE;
+		if (mucMessage) {
+			message.setCounterpart(conversation.getMucOptions().getSelf().getFullJid());
+		}
+
 		if (resend) {
 			if (packet != null && addToConversation) {
-				if (account.getXmppConnection().getFeatures().sm()
-						|| (conversation.getMode() == Conversation.MODE_MULTI && message.getCounterpart().isBareJid())) {
+				if (account.getXmppConnection().getFeatures().sm() || mucMessage) {
 					markMessage(message, Message.STATUS_UNSEND);
 				} else {
 					markMessage(message, Message.STATUS_SEND);
@@ -3394,11 +3399,13 @@ public class XmppConnectionService extends Service {
 		if (confirmMessages()
 				&& markable != null
 				&& markable.trusted()
-				&& markable.getRemoteMsgId() != null) {
+				&& markable.getRemoteMsgId() != null
+				&& markable.getType() != Message.TYPE_PRIVATE) {
 			Log.d(Config.LOGTAG, conversation.getAccount().getJid().toBareJid() + ": sending read marker to " + markable.getCounterpart().toString());
 			Account account = conversation.getAccount();
 			final Jid to = markable.getCounterpart();
-			MessagePacket packet = mMessageGenerator.confirm(account, to, markable.getRemoteMsgId());
+			final boolean groupChat = conversation.getMode() == Conversation.MODE_MULTI;
+			MessagePacket packet = mMessageGenerator.confirm(account, to, markable.getRemoteMsgId(), markable.getCounterpart(), groupChat);
 			this.sendMessagePacket(conversation.getAccount(), packet);
 		}
 	}

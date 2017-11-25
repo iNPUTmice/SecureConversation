@@ -289,6 +289,18 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		return null;
 	}
 
+	public Message findMessageWithRemoteId(String id, Jid counterpart) {
+		synchronized (this.messages) {
+			for(Message message : this.messages) {
+				if (counterpart.equals(message.getCounterpart())
+						&& (id.equals(message.getRemoteMsgId()) || id.equals(message.getUuid()))) {
+					return message;
+				}
+			}
+		}
+		return null;
+	}
+
 	public boolean hasMessageWithCounterpart(Jid counterpart) {
 		synchronized (this.messages) {
 			for(Message message : this.messages) {
@@ -827,7 +839,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		synchronized (this.messages) {
 			for(int i = this.messages.size() - 1; i >= 0; --i) {
 				Message message = this.messages.get(i);
-				if (message.getStatus() == Message.STATUS_RECEIVED || message.isCarbon()) {
+				if (message.getStatus() == Message.STATUS_RECEIVED || message.isCarbon() || message.getServerMsgId() != null) {
 					lastReceived = new MamReference(message.getTimeSent(),message.getServerMsgId());
 					break;
 				}
