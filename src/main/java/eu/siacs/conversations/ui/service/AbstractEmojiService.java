@@ -13,9 +13,9 @@ public abstract class AbstractEmojiService {
 
 	protected abstract EmojiCompat.Config buildConfig();
 
-	public void init() {
+	public void init(boolean useBundledEmoji) {
 		final EmojiCompat.Config config = buildConfig();
-		config.setReplaceAll(true);
+		config.setReplaceAll(useBundledEmoji);
 		EmojiCompat.init(config);
 	}
 }

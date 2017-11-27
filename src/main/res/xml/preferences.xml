@@ -34,7 +34,7 @@
             android:key="last_activity"
             android:title="@string/pref_broadcast_last_activity"
             android:summary="@string/pref_broadcast_last_activity_summary"/>
-        </PreferenceCategory>
+    </PreferenceCategory>
     <PreferenceCategory android:title="@string/pref_notification_settings">
         <CheckBoxPreference
             android:defaultValue="@bool/show_notification"
@@ -167,6 +167,11 @@
             android:key="show_dynamic_tags"
             android:summary="@string/pref_show_dynamic_tags_summary"
             android:title="@string/pref_show_dynamic_tags"/>
+        <CheckBoxPreference
+            android:defaultValue="@bool/use_bundled_emoji"
+            android:key="use_bundled_emoji"
+            android:summary="@string/pref_use_bundled_emoji_summary"
+            android:title="@string/pref_use_bundled_emoji"/>
     </PreferenceCategory>
     <PreferenceCategory
         android:key="advanced"
