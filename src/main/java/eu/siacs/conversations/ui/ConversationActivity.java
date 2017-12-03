@@ -182,7 +182,7 @@ public class ConversationActivity extends XmppActivity
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		new EmojiService(this).init();
+		new EmojiService(this).init(useBundledEmoji());
 		if (savedInstanceState != null) {
 			mOpenConversation = savedInstanceState.getString(STATE_OPEN_CONVERSATION, null);
 			mPanelOpen = savedInstanceState.getBoolean(STATE_PANEL_OPEN, true);
@@ -1759,6 +1759,10 @@ public class ConversationActivity extends XmppActivity
 
 	public boolean useGreenBackground() {
 		return getPreferences().getBoolean("use_green_background",getResources().getBoolean(R.bool.use_green_background));
+	}
+
+	public boolean useBundledEmoji() {
+		return getPreferences().getBoolean("use_bundled_emoji",getResources().getBoolean(R.bool.use_bundled_emoji));
 	}
 
 	protected boolean trustKeysIfNeeded(int requestCode) {

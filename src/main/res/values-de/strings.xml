@@ -357,6 +357,8 @@
   <string name="are_you_sure_verify_fingerprint">Bist du sicher, dass du den OTR-Fingerabdruck des Kontakts überprüfen willst?</string>
   <string name="pref_show_dynamic_tags">Dynamische Tags anzeigen</string>
   <string name="pref_show_dynamic_tags_summary">Schreibgeschütze Tags unterhalb der Kontakte anzeigen</string>
+  <string name="pref_use_bundled_emoji">Verwende mitgelieferte Emoji</string>
+  <string name="pref_use_bundled_emoji_summary">Nutze die mitgelieferten Emoji statt die des Systems</string>
   <string name="enable_notifications">Benachrichtigungen aktivieren</string>
   <string name="no_conference_server_found">Keinen Gruppenchatserver gefunden</string>
   <string name="conference_creation_failed">Erstellen des Gruppenchats fehlgeschlagen!</string>

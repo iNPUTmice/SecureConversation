@@ -391,6 +391,8 @@
 	<string name="are_you_sure_verify_fingerprint">Are you sure that you want to verify your contact’s OTR fingerprint?</string>
 	<string name="pref_show_dynamic_tags">Show dynamic tags</string>
 	<string name="pref_show_dynamic_tags_summary">Display read-only tags underneath contacts</string>
+	<string name="pref_use_bundled_emoji">Use bundled emoji</string>
+	<string name="pref_use_bundled_emoji_summary">Use bundled emoji instead of system ones</string>
 	<string name="enable_notifications">Enable notifications</string>
 	<string name="no_conference_server_found">No group chat server found</string>
 	<string name="conference_creation_failed">Group chat creation failed!</string>

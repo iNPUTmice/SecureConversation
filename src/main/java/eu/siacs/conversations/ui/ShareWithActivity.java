@@ -167,7 +167,8 @@ public class ShareWithActivity extends XmppActivity implements XmppConnectionSer
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		new EmojiService(this).init();
+		boolean useBundledEmoji = getPreferences().getBoolean("use_bundled_emoji",getResources().getBoolean(R.bool.use_bundled_emoji));
+		new EmojiService(this).init(useBundledEmoji);
 		if (getActionBar() != null) {
 			getActionBar().setDisplayHomeAsUpEnabled(false);
 			getActionBar().setHomeButtonEnabled(false);
