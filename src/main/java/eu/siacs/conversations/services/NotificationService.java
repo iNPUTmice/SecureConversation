@@ -90,6 +90,10 @@ public class NotificationService {
 		return mXmppConnectionService.getBooleanPreference("show_notification",R.bool.show_notification);
 	}
 
+	public boolean notificationContentVisible() {
+		return mXmppConnectionService.getBooleanPreference("show_notification_content",R.bool.show_notification_content);
+	}
+
 	private boolean notificationsFromStrangers() {
 		return mXmppConnectionService.getBooleanPreference("notifications_from_strangers",R.bool.notifications_from_strangers);
 	}
@@ -336,7 +340,7 @@ public class NotificationService {
 				conversation = messages.get(0).getConversation();
 				final String name = conversation.getName();
 				SpannableString styledString;
-				if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
+				if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION || !notificationContentVisible()) {
 					int count = messages.size();
 					styledString = new SpannableString(name + ": " + mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count));
 					styledString.setSpan(new StyleSpan(Typeface.BOLD), 0, name.length(), 0);
@@ -377,7 +381,7 @@ public class NotificationService {
 			mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
 					.get(conversation, getPixel(64)));
 			mBuilder.setContentTitle(conversation.getName());
-			if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
+			if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION || !notificationContentVisible()) {
 				int count = messages.size();
 				mBuilder.setContentText(mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages,count,count));
 			} else {
