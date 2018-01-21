@@ -96,6 +96,7 @@ public class ConversationActivity extends XmppActivity
 	public static final int ATTACHMENT_CHOICE_LOCATION = 0x0305;
 	public static final int ATTACHMENT_CHOICE_INVALID = 0x0306;
 	public static final int ATTACHMENT_CHOICE_RECORD_VIDEO = 0x0307;
+	public static final int REQUEST_CONFIRM_IMAGE = 0x0308;
 	private static final String STATE_OPEN_CONVERSATION = "state_open_conversation";
 	private static final String STATE_PANEL_OPEN = "state_panel_open";
 	private static final String STATE_PENDING_URI = "state_pending_uri";
@@ -106,7 +107,7 @@ public class ConversationActivity extends XmppActivity
 	private boolean mPanelOpen = true;
 	private AtomicBoolean mShouldPanelBeOpen = new AtomicBoolean(false);
 	private Pair<Integer,Integer> mScrollPosition = null;
-	final private List<Uri> mPendingImageUris = new ArrayList<>();
+	final private List<Uri> mPendingImageUris = new ArrayList<>(), mConfirmImageUris = new ArrayList<>();
 	final private List<Uri> mPendingFileUris = new ArrayList<>();
 	private Uri mPendingGeoUri = null;
 	private boolean forbidProcessingPendings = false;
@@ -1368,6 +1369,14 @@ public class ConversationActivity extends XmppActivity
 		}
 	}
 
+	private void confirmImages(final Intent data){
+		mConfirmImageUris.clear();
+		mConfirmImageUris.addAll(extractUriFromIntent(data));
+		Intent intent = new Intent(this, ImageConfirmationActivity.class);
+		intent.putParcelableArrayListExtra("confirmImageUris", (ArrayList<Uri>)mConfirmImageUris);
+		startActivityForResult(intent, REQUEST_CONFIRM_IMAGE);
+	}
+
 	private boolean selectConversationByUuid(String uuid) {
 		if (uuid == null) {
 			return false;
@@ -1436,14 +1445,7 @@ public class ConversationActivity extends XmppActivity
 					this.mPostponedActivityResult = new Pair<>(requestCode, data);
 				}
 			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
-				mPendingImageUris.clear();
-				mPendingImageUris.addAll(extractUriFromIntent(data));
-				if (xmppConnectionServiceBound) {
-					for (Iterator<Uri> i = mPendingImageUris.iterator(); i.hasNext(); i.remove()) {
-						Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching image to conversations. CHOOSE_IMAGE");
-						attachImageToConversation(getSelectedConversation(), i.next());
-					}
-				}
+				confirmImages(data);
 			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO) {
 				final List<Uri> uris = extractUriFromIntent(data);
 				Log.d(Config.LOGTAG,"uris "+uris.toString());
@@ -1502,6 +1504,16 @@ public class ConversationActivity extends XmppActivity
 					this.mPostponedActivityResult = new Pair<>(requestCode, data);
 				}
 
+			}
+			else if (requestCode == REQUEST_CONFIRM_IMAGE){
+				mPendingImageUris.clear();
+				mPendingImageUris.addAll(data.getParcelableArrayListExtra("pendingImageUris"));
+				if (xmppConnectionServiceBound) {
+					for (Iterator<Uri> i = mPendingImageUris.iterator(); i.hasNext(); i.remove()) {
+						Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching image to conversations. CHOOSE_IMAGE");
+						attachImageToConversation(getSelectedConversation(), i.next());
+					}
+				}
 			}
 		} else {
 			mPendingImageUris.clear();

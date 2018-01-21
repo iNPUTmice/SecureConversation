@@ -35,6 +35,7 @@ ext {
 dependencies {
     implementation project(':libs:MemorizingTrustManager')
     implementation project(':libs:EnhancedListView')
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     playstoreImplementation 'com.google.android.gms:play-services-gcm:11.8.0'
     implementation 'org.sufficientlysecure:openpgp-api:10.0'
     implementation 'com.soundcloud.android:android-crop:1.0.1@aar'
@@ -112,7 +113,7 @@ android {
 
 
 
-    if(new File("signing.properties").exists()) {
+    if (new File("signing.properties").exists()) {
         Properties props = new Properties()
         props.load(new FileInputStream(file("signing.properties")))
 

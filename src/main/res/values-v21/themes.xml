@@ -24,6 +24,7 @@
         <item type="reference" name="infocard_border">@drawable/infocard_border</item>
         <item type="color" name="divider">@color/black12</item>
 
+        <item type="reference" name="ic_send_confirm_offline">@drawable/ic_send_confirm_offline_dark</item>
         <item type="reference" name="ic_send_cancel_offline">@drawable/ic_send_cancel_offline</item>
         <item type="reference" name="ic_send_location_offline">@drawable/ic_send_location_offline</item>
         <item type="reference" name="ic_send_photo_offline">@drawable/ic_send_photo_offline</item>
@@ -104,6 +105,7 @@
         <item type="reference" name="infocard_border">@drawable/infocard_border_dark</item>
         <item type="color" name="divider">@color/white12</item>
 
+        <item type="reference" name="ic_send_confirm_offline">@drawable/ic_send_confirm_offline_white</item>
         <item type="reference" name="ic_send_cancel_offline">@drawable/ic_send_cancel_offline_white</item>
         <item type="reference" name="ic_send_location_offline">@drawable/ic_send_location_offline_white</item>
         <item type="reference" name="ic_send_photo_offline">@drawable/ic_send_photo_offline_white</item>
