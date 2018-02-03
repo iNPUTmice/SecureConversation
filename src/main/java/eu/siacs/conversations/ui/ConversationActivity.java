@@ -1407,6 +1407,50 @@ public class ConversationActivity extends XmppActivity
 		return uris;
 	}
 
+	private void processAttachments(List<Uri> attachmentUris){
+		final List<Uri> uris = attachmentUris;
+		Log.d(Config.LOGTAG,"uris "+uris.toString());
+		final Conversation c = getSelectedConversation();
+		final OnPresenceSelected callback = new OnPresenceSelected() {
+			@Override
+			public void onPresenceSelected() {
+				mPendingFileUris.clear();
+				mPendingFileUris.addAll(uris);
+				if (xmppConnectionServiceBound) {
+					for (Iterator<Uri> i = mPendingFileUris.iterator(); i.hasNext(); i.remove()) {
+						Log.d(Config.LOGTAG,"ConversationsActivity.processAttachments - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE/RECORD_VIDEO");
+						attachFileToConversation(c, i.next());
+					}
+				}
+			}
+		};
+		if (c == null || c.getMode() == Conversation.MODE_MULTI
+				|| FileBackend.allFilesUnderSize(this, uris, getMaxHttpUploadSize(c))
+				|| c.getNextEncryption() == Message.ENCRYPTION_OTR) {
+			callback.onPresenceSelected();
+		} else {
+			selectPresence(c, callback);
+		}
+	}
+
+	protected void attachmentConfirmed(List<Uri> attachmentUris, int requestCode){
+		switch (requestCode){
+			case ATTACHMENT_CHOICE_CHOOSE_IMAGE:
+				mPendingImageUris.clear();
+				mPendingImageUris.addAll(attachmentUris);
+				if (xmppConnectionServiceBound) {
+					for (Iterator<Uri> i = mPendingImageUris.iterator(); i.hasNext(); i.remove()) {
+						Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching image to conversations. CHOOSE_IMAGE");
+						attachImageToConversation(getSelectedConversation(), i.next());
+					}
+				}
+				break;
+			case ATTACHMENT_CHOICE_CHOOSE_FILE:
+				processAttachments(attachmentUris);
+				break;
+		}
+	}
+
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
@@ -1436,38 +1480,11 @@ public class ConversationActivity extends XmppActivity
 					this.mPostponedActivityResult = new Pair<>(requestCode, data);
 				}
 			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_IMAGE) {
-				mPendingImageUris.clear();
-				mPendingImageUris.addAll(extractUriFromIntent(data));
-				if (xmppConnectionServiceBound) {
-					for (Iterator<Uri> i = mPendingImageUris.iterator(); i.hasNext(); i.remove()) {
-						Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching image to conversations. CHOOSE_IMAGE");
-						attachImageToConversation(getSelectedConversation(), i.next());
-					}
-				}
-			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE || requestCode == ATTACHMENT_CHOICE_RECORD_VOICE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO) {
-				final List<Uri> uris = extractUriFromIntent(data);
-				Log.d(Config.LOGTAG,"uris "+uris.toString());
-				final Conversation c = getSelectedConversation();
-				final OnPresenceSelected callback = new OnPresenceSelected() {
-					@Override
-					public void onPresenceSelected() {
-						mPendingFileUris.clear();
-						mPendingFileUris.addAll(uris);
-						if (xmppConnectionServiceBound) {
-							for (Iterator<Uri> i = mPendingFileUris.iterator(); i.hasNext(); i.remove()) {
-								Log.d(Config.LOGTAG,"ConversationsActivity.onActivityResult() - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE/RECORD_VIDEO");
-								attachFileToConversation(c, i.next());
-							}
-						}
-					}
-				};
-				if (c == null || c.getMode() == Conversation.MODE_MULTI
-						|| FileBackend.allFilesUnderSize(this, uris, getMaxHttpUploadSize(c))
-						|| c.getNextEncryption() == Message.ENCRYPTION_OTR) {
-					callback.onPresenceSelected();
-				} else {
-					selectPresence(c, callback);
-				}
+				mConversationFragment.confirmAttachment(extractUriFromIntent(data), requestCode);
+			} else if (requestCode == ATTACHMENT_CHOICE_CHOOSE_FILE) {
+				mConversationFragment.confirmAttachment(extractUriFromIntent(data), requestCode);
+			} else if (requestCode == ATTACHMENT_CHOICE_RECORD_VOICE || requestCode == ATTACHMENT_CHOICE_RECORD_VIDEO) {
+				processAttachments(extractUriFromIntent(data));
 			} else if (requestCode == ATTACHMENT_CHOICE_TAKE_PHOTO) {
 				if (mPendingImageUris.size() == 1) {
 					Uri uri = FileBackend.getIndexableTakePhotoUri(mPendingImageUris.get(0));

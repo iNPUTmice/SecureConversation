@@ -9,9 +9,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.provider.OpenableColumns;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
@@ -35,6 +38,8 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
@@ -48,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -84,6 +90,9 @@ import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
+import static eu.siacs.conversations.ui.ConversationActivity.ATTACHMENT_CHOICE_CHOOSE_FILE;
+import static eu.siacs.conversations.ui.ConversationActivity.ATTACHMENT_CHOICE_CHOOSE_IMAGE;
+
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
 
 	final protected List<Message> messageList = new ArrayList<>();
@@ -96,6 +105,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
+	private LinearLayout attachmentConfirmationLayout;
+	private TextView attachmentConfirmationText;
+	private ImageView attachmentConfirmationView;
 	private OnClickListener clickToMuc = new OnClickListener() {
 
 		@Override
@@ -387,7 +399,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						activity.attachFile(ConversationActivity.ATTACHMENT_CHOICE_RECORD_VOICE);
 						break;
 					case CHOOSE_PICTURE:
-						activity.attachFile(ConversationActivity.ATTACHMENT_CHOICE_CHOOSE_IMAGE);
+						activity.attachFile(ATTACHMENT_CHOICE_CHOOSE_IMAGE);
 						break;
 					case CANCEL:
 						if (conversation != null) {
@@ -457,6 +469,71 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		if (scrollPosition != null) {
 			this.messagesView.setSelectionFromTop(scrollPosition.first, scrollPosition.second);
 		}
+	}
+
+	protected void confirmAttachment(List<Uri> attachmentUris, int requestCode){
+		attachmentConfirmationLayout.setVisibility(View.VISIBLE);
+		updateSendButton();
+
+		switch (requestCode){
+			case ATTACHMENT_CHOICE_CHOOSE_IMAGE:
+				attachmentConfirmationView.setVisibility(View.VISIBLE);
+				attachmentConfirmationView.setImageURI(attachmentUris.get(0));
+				attachmentConfirmationText.setText(getFileName(attachmentUris.get(0)));
+				break;
+			case ATTACHMENT_CHOICE_CHOOSE_FILE:
+				//attachmentConfirmationView.setImageURI(null);
+				attachmentConfirmationView.setVisibility(View.GONE);
+				attachmentConfirmationText.setText(getFileName(attachmentUris.get(0)));
+				break;
+			default:
+				Log.d("confirmAttachment-rCode", Integer.toString(requestCode));
+				attachmentConfirmationLayout.setVisibility(View.GONE);
+				return;
+		}
+
+		attachmentConfirmationLayout.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				attachmentConfirmationLayout.setVisibility(View.GONE);
+				mSendButton.setOnClickListener(mSendButtonListener);
+			}
+		});
+		mSendButton.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View view) {
+				attachmentConfirmed(attachmentUris, requestCode);
+				attachmentConfirmationLayout.setVisibility(View.GONE);
+			}
+		});
+	}
+
+	private String getFileName(Uri uri){
+		String fileName = null;
+		if (uri.getScheme().equals("content")){
+			Cursor cursor = getActivity().getContentResolver().query(uri, null, null, null, null);
+			try{
+				if (cursor != null && cursor.moveToFirst()){
+					fileName = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+				}
+			} finally {
+				cursor.close();
+			}
+		}
+		if (fileName == null){
+			fileName = uri.getPath();
+			int cut = fileName.lastIndexOf('/');
+			if (cut != -1){
+				fileName = fileName.substring(cut + 1);
+			}
+		}
+		return fileName;
+	}
+
+	private void attachmentConfirmed(List<Uri> attachmentUris, int requestCode){
+		mSendButton.setOnClickListener(mSendButtonListener);
+		ConversationActivity conversationActivity = (ConversationActivity) getActivity();
+		conversationActivity.attachmentConfirmed(attachmentUris, requestCode);
 	}
 
 	private void sendMessage() {
@@ -555,6 +632,11 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		snackbar = (RelativeLayout) view.findViewById(R.id.snackbar);
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
 		snackbarAction = (TextView) view.findViewById(R.id.snackbar_action);
+
+		attachmentConfirmationLayout = (LinearLayout) view.findViewById(R.id.attachmentConfirmLayout);
+		attachmentConfirmationText = (TextView) view.findViewById(R.id.attachmentConfirmText);
+		attachmentConfirmationView = (ImageView) view.findViewById(R.id.attachmentConfirmView);
+		attachmentConfirmationLayout.setVisibility(View.INVISIBLE);
 
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
 		messagesView.setOnScrollListener(mOnScrollListener);
@@ -1309,7 +1391,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				action = SendButtonAction.TEXT;
 			}
 		} else {
-			if (empty) {
+			if (empty && attachmentConfirmationLayout.getVisibility() == View.GONE) {
 				if (conference && c.getNextCounterpart() != null) {
 					action = SendButtonAction.CANCEL;
 				} else {
