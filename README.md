@@ -40,7 +40,7 @@
 ## Features
 
 * End-to-end encryption with [OMEMO](http://conversations.im/omemo/), [OTR](https://otr.cypherpunks.ca/), or [OpenPGP](http://openpgp.org/about/)
-* Send and receive images as well as other kind of files
+* Send and receive images as well as other kinds of files
 * Share your location via an external [plug-in](https://play.google.com/store/apps/details?id=eu.siacs.conversations.sharelocation&referrer=utm_source%3Dgithub)
 * Indication when your contact has read your message
 * Intuitive UI that follows Android Design guidelines
@@ -54,7 +54,7 @@
 
 ### XMPP Features
 
-Conversations work with every XMPP server out there. However, XMPP is an
+Conversations works with every XMPP server out there. However, XMPP is an
 extensible protocol. These extensions are standardized as well in so called
 XEP's. Conversations support a couple of these to make the overall user
 experience better. There is a chance that your current XMPP server does not
@@ -75,7 +75,7 @@ run your own XMPP server for you and your friends. These XEP's are:
 * [XEP-0313: Message Archive Management](http://xmpp.org/extensions/xep-0313.html) synchronize message history with the
   server. Catch up with messages that were sent while Conversations was offline.
 * [XEP-0352: Client State Indication](http://xmpp.org/extensions/xep-0352.html) lets the server know whether or not
-  Conversations are in the background. Allows the server to save bandwidth by withholding unimportant packages.
+  Conversations is in the background. Allows the server to save bandwidth by withholding unimportant packages.
 * [XEP-0363: HTTP File Upload](http://xmpp.org/extensions/xep-0363.html) allows you to share files in conferences
   and with offline contacts.
 
@@ -85,7 +85,7 @@ run your own XMPP server for you and your friends. These XEP's are:
 
 #### How do I install Conversations?
 
-Conversations are entirely open source and licensed under GPLv3. So if you are a software developer you can check out the sources from GitHub and use Gradle to build your apk file.
+Conversations is entirely open source and licensed under GPLv3. So if you are a software developer you can check out the sources from GitHub and use Gradle to build your apk file.
 
 The more convenient way — which not only gives you automatic updates but also
 supports the further development of Conversations — is to buy the App in the
@@ -137,7 +137,7 @@ Conversations.
 
 #### I get 'Incompatible Server'
 
-As a regular user you should be picking a different server. The server you selected
+As a regular user, you should be picking a different server. The server you selected
 is probably insecure and/or very old.
 
 If you are a server administrator you should make sure that your server provides
@@ -194,7 +194,7 @@ JID from one app to another.
 
 #### I get 'delivery failed' on my messages
 
-If you get "delivery failed" on images it's probably because the recipient lost network connectivity during a reception. In that case, you can try it again at a
+If you get "delivery failed" on images, it's probably because the recipient lost network connectivity during a reception. In that case, you can try it again at a
 later time.
 
 For text messages, the answer to your question is a little bit more complex.
@@ -294,11 +294,11 @@ Before you continue reading you should note that the OpenPGP support in
 Conversations is experimental. This is not because it will make the app unstable
 but because the fundamental concepts of PGP aren't ready for widespread use.
 The way PGP works is that you trust Key IDs instead of JID's or email addresses.
-So in theory your contact list should consist of Public-Key-IDs instead of
-JID's. But of course no email or XMPP client out there implements these
+So, in theory, your contact list should consist of Public-Key-IDs instead of
+JID's. But of course, no email or XMPP client out there implements these
 concepts. Plus PGP in the context of instant messaging has a couple of
 downsides: It is vulnerable to replay attacks, it is rather verbose, and
-decrypting and encrypting takes longer than OTR. It is however asynchronous and
+decrypting and encrypting takes longer than OTR. It is, however, asynchronous and
 works well with message carbons.
 
 To use OpenPGP you have to install the open source app
@@ -335,7 +335,7 @@ sure that you have every participant's public key in your OpenKeychain.
 Right now there is no check in Conversations to ensure that.
 You have to take care of that yourself. Go to the conference details and
 touch every key id (The hexadecimal number below a contact). This will send you
-to OpenKeychain which will assist you on adding the key.  This works best in
+to OpenKeychain which will assist you in adding the key.  This works best in
 very small conferences with contacts you are already using OpenPGP with. This
 feature is regarded experimental. Conversations is the only client that uses
 XEP-0027 with conferences. (The XEP neither specifically allows nor disallows
@@ -344,7 +344,7 @@ this.)
 #### Why is Conversations not end-to-end encrypted by default
 We briefly had OMEMO as the default E2EE but it turned out to be a usability nightmare and thus we reverted that. You can find more information in [the commit message](https://github.com/siacs/Conversations/commit/035d0c79572d5981c53d1bff7f30b484c6542f17) of that change.
 
-Quick reminder that Conversations **always** uses TLS to connect to your server. It won‘t even connect to a server without TLS.
+A quick reminder that Conversations **always** uses TLS to connect to your server. It won‘t even connect to a server without TLS.
 
 #### What is Blind Trust Before Verification / why are messages marked with a red lock?
 
@@ -353,9 +353,9 @@ Read more about the concept on https://gultsch.de/trust.html
 ### What clients do I use on other platforms
 There are XMPP Clients available for all major platforms.
 #### Windows / Linux
-For your desktop computer we recommend that you use [Gajim](https://gajim.org). You need to install the plugins `OMEMO`, `HTTP Upload` and `URL image preview` to get the best compatibility with Conversations. Plugins can be installed from within the app.
+For your desktop computer, we recommend that you use [Gajim](https://gajim.org). You need to install the plugins `OMEMO`, `HTTP Upload` and `URL image preview` to get the best compatibility with Conversations. Plugins can be installed from within the app.
 #### iOS
-Unfortunately we don‘t have a recommendation for iPhones right now. There are two clients available [ChatSecure](https://chatsecure.org/) and [Monal](https://monal.im/). Both with their own pros and cons.
+Unfortunately, we don‘t have a recommendation for iPhones right now. There are two clients available [ChatSecure](https://chatsecure.org/) and [Monal](https://monal.im/). Both with their own pros and cons.
 
 
 ### Development
