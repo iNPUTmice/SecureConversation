@@ -95,7 +95,7 @@ Buying the App from the Play Store will also give you access to our [beta test](
 
 #### I don't have a Google Account but I would still like to make a contribution
 
-I accept donations from PayPal, bank transfer and various cryptocurrencies. For donations via PayPal you
+I accept donations using PayPal, bank transfer and various cryptocurrencies. For donations via PayPal you
 can use the email address `donate@siacs.eu` or the button below.
 
 [![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CW3SYT3KG5PDL)
@@ -121,7 +121,7 @@ Using your own domain not only gives you a more recognizable Jabber ID, it also 
 Learn more about [conversations.im Jabber/XMPP domain hosting](https://account.conversations.im/domain/). 
 
 ##### Running your own
-If you already have a server somewhere and are willing and able to put the necessary work in, one alternative -in the spirit of the federation- is to run your own. We recommend either [Prosody](https://prosody.im/) or [ejabberd](https://www.ejabberd.im/). Both of which have their own strengths. Ejabberd is slightly more mature nowadays but Prosody is arguably easier to set up.
+If you already have a server somewhere and are willing and able to put the necessary work in, one alternative -in the spirit of federation- is to run your own. We recommend either [Prosody](https://prosody.im/) or [ejabberd](https://www.ejabberd.im/). Both of which have their own strengths. Ejabberd is slightly more mature nowadays but Prosody is arguably easier to set up.
 
 For Prosody, you need a couple of so-called [community modules](https://modules.prosody.im/) most of which are maintained by the same people that develop Prosody.
 
@@ -163,7 +163,7 @@ You need to be running the Play Store version of Conversations and your server n
 
 In summary, Google will never get hold of any personal information besides that *something* happened. (Which doesn’t even have to be a message but can be some automated event as well.) We - as the operator of the App server - will just get hold of your account name (without being able to tie this to your specific device).
 
-If you don’t want this simply pick a server which does not offer Push Notifications or build Conversations yourself without support for push notifications. (This is available via a Gradle build flavour.) Non-play store source of Conversations like the Amazon App store will also offer a version without push notifications. Conversations will just work as before and maintain its own TCP connection in the background.
+If you don’t want this simply pick a server which does not offer Push Notifications or build Conversations yourself without support for push notifications. (This is available via a gradle build flavor.) Non-play store source of Conversations like the Amazon App store will also offer a version without push notifications. Conversations will just work as before and maintain its own TCP connection in the background.
 
  ¹ Your server only needs to support the server side of [XEP-0357: Push Notifications](http://xmpp.org/extensions/xep-0357.html). If you use the Play Store version you do **not** need to run your own app server. The server modules are called *mod_cloud_notify* on Prosody and *mod_push* on ejabberd.
 
@@ -225,7 +225,7 @@ instantly.
 Statuses are a horrible metric. Setting them manually to a proper value rarely
 works because users are either lazy or just forget about them. Setting them
 automatically does not provide quality results either. Keyboard or mouse
-activity acts as an indicator, for example, fails when the user is just looking at
+activity as an indicator, for example, fails when the user is just looking at
 something (reading an article, watching a movie). Furthermore, automatic setting
 of status always implies an impact on your privacy (are you sure you want
 everybody in your contact list to know that you have been using your computer at
@@ -256,7 +256,7 @@ other clients.
 Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/)
 
 #### How do I backup/move Conversations to a new device?
-On the one hand, Conversations supports Message Archive Management to keep a server-side history of your messages so when migrating to a new device that device can display your entire history. However, that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
+On the one hand, Conversations supports Message Archive Management to keep a server-side history of your messages so that when migrating to a new device that device can display your entire history. However, that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
 
 If you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) (needs root access on the device) or ```adb backup``` (no root access needed) from your computer.  It is important that you deactivate your account before backup and activate it only after a successful restore, otherwise, OMEMO might not work afterwards. Also, remember that you can **only** transfer the backup to either the same version of Android or to a newer one (eg. 5.1.1 -> 5.1.1 or 5.1.1 -> 6.0.1).
 
@@ -403,7 +403,7 @@ If something goes wrong Conversations usually exposes very little information in
 the UI (other than the fact that something didn't work). However, with adb
 (android debug bridge) you can squeeze some more information out of Conversations.
 This information is especially useful if you are experiencing trouble with
-your connection or by file transfer.
+your connection or with file transfer.
 
 To use adb you have to connect your mobile phone to your computer with a USB cable
 and install `adb`. Most Linux systems have pre-built packages for that tool. On
