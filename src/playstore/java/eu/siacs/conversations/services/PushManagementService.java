@@ -8,14 +8,11 @@ import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.gcm.GoogleCloudMessaging;
 import com.google.android.gms.iid.InstanceID;
 
-import java.io.IOException;
-
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xmpp.OnIqPacketReceived;
-import eu.siacs.conversations.xmpp.Patches;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.jid.InvalidJidException;
@@ -45,7 +42,7 @@ public class PushManagementService {
 						public void onIqPacketReceived(Account account, IqPacket packet) {
 							Element command = packet.findChild("command","http://jabber.org/protocol/commands");
 							if (packet.getType() == IqPacket.TYPE.RESULT && command != null) {
-								Element x = command.findChild("x","jabber:x:data");
+								Element x = command.findChild("x", Namespace.DATA);
 								if (x != null) {
 									Data data = Data.parse(x);
 									try {
