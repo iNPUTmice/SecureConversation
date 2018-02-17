@@ -66,7 +66,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import de.duenndns.ssl.MemorizingTrustManager;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
@@ -2591,7 +2590,7 @@ public class XmppConnectionService extends Service {
 							}
 						}
 					}
-					Element form = query.findChild("x", "jabber:x:data");
+					Element form = query.findChild("x", Namespace.DATA);
 					if (form != null) {
 						conversation.getMucOptions().updateFormData(Data.parse(form));
 					}
@@ -2621,7 +2620,7 @@ public class XmppConnectionService extends Service {
 				if (packet.getType() == IqPacket.TYPE.RESULT) {
 					Element pubsub = packet.findChild("pubsub", "http://jabber.org/protocol/pubsub#owner");
 					Element configuration = pubsub == null ? null : pubsub.findChild("configure");
-					Element x = configuration == null ? null : configuration.findChild("x", "jabber:x:data");
+					Element x = configuration == null ? null : configuration.findChild("x", Namespace.DATA);
 					if (x != null) {
 						Data data = Data.parse(x);
 						data.submit(options);
@@ -2653,7 +2652,7 @@ public class XmppConnectionService extends Service {
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
 				if (packet.getType() == IqPacket.TYPE.RESULT) {
-					Data data = Data.parse(packet.query().findChild("x", "jabber:x:data"));
+					Data data = Data.parse(packet.query().findChild("x", Namespace.DATA));
 					data.submit(options);
 					IqPacket set = new IqPacket(IqPacket.TYPE.SET);
 					set.setTo(conversation.getJid().toBareJid());
