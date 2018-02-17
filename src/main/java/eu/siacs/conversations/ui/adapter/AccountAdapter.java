@@ -75,7 +75,8 @@ public class AccountAdapter extends ArrayAdapter<Account> {
         }
         final SwitchCompat tglAccountState = (SwitchCompat) view.findViewById(R.id.tgl_account_status);
         final boolean isDisabled = (account.getStatus() == Account.State.DISABLED);
-        tglAccountState.setChecked(!isDisabled);//tglAccountState.setChecked(!isDisabled,false);
+        tglAccountState.setOnCheckedChangeListener(null);
+        tglAccountState.setChecked(!isDisabled);
         if (this.showStateButton) {
             tglAccountState.setVisibility(View.VISIBLE);
         } else {

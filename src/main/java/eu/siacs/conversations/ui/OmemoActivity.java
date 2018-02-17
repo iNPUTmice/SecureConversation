@@ -155,7 +155,8 @@ public abstract class OmemoActivity extends XmppActivity {
         view.setTag(R.id.TAG_FINGERPRINT_STATUS,status);
         boolean x509 = Config.X509_VERIFICATION && status.getTrust() == FingerprintStatus.Trust.VERIFIED_X509;
         final View.OnClickListener toast;
-        trustToggle.setChecked(status.isTrusted()); // trustToggle.setChecked(status.isTrusted(),false);
+        trustToggle.setOnCheckedChangeListener(null);
+        trustToggle.setChecked(status.isTrusted());
 
         if (status.isActive()){
             key.setTextColor(getPrimaryTextColor());
