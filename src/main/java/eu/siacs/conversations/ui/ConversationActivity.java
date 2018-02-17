@@ -1,7 +1,6 @@
 package eu.siacs.conversations.ui;
 
 import android.annotation.SuppressLint;
-import android.support.v7.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -20,6 +19,7 @@ import android.provider.Settings;
 import android.support.v4.widget.SlidingPaneLayout;
 import android.support.v4.widget.SlidingPaneLayout.PanelSlideListener;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.util.Pair;
 import android.view.Gravity;
@@ -194,6 +194,7 @@ public class ConversationActivity extends XmppActivity
 			} else {
 				mScrollPosition = null;
 			}
+			
 			String pending = savedInstanceState.getString(STATE_PENDING_URI, null);
 			if (pending != null) {
 				Log.d(Config.LOGTAG,"ConversationsActivity.onCreate() - restoring pending image uri");

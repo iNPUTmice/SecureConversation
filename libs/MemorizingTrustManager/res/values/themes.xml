@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="ConversationsTheme" parent="@android:style/Theme.Holo.Light.DarkActionBar" />
-    <style name="ConversationsTheme.Dark" parent="@android:style/Theme.Holo" />
+    <style name="ConversationsTheme" parent="Theme.AppCompat.Light.DarkActionBar" />
+    <style name="ConversationsTheme.Dark" parent="Theme.AppCompat" />
 
 </resources>
