@@ -1,7 +1,5 @@
 package eu.siacs.conversations.ui;
 
-import android.support.v7.app.AlertDialog;
-import android.support.v7.app.AlertDialog.Builder;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.DialogInterface;
@@ -15,6 +13,8 @@ import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AlertDialog.Builder;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Menu;
@@ -50,9 +50,9 @@ import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.services.BarcodeProvider;
-import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
+import eu.siacs.conversations.services.XmppConnectionService.OnCaptchaRequested;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.widget.DisabledActionModeCallback;
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -362,8 +362,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
         public void onFocusChange(View view, boolean b) {
             EditText et = (EditText) view;
             if (b) {
-                int resid = R.string.account_settings_example_jabber_id;
-                if (view.getId() == R.id.hostname) {
+				int resid = mUsernameMode ? R.string.username : R.string.account_settings_example_jabber_id;
+				if (view.getId() == R.id.hostname) {
                     resid = mUseTor ? R.string.hostname_or_onion : R.string.hostname_example;
                 }
                 et.setHint(resid);
