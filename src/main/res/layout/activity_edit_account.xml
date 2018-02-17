@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                xmlns:app="http://schemas.android.com/apk/res-auto"
-                xmlns:tools="http://schemas.android.com/tools"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:background="?attr/color_background_secondary">
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/color_background_secondary">
 
     <ScrollView
         android:layout_width="fill_parent"
@@ -37,7 +37,7 @@
                     android:layout_alignParentTop="true"
                     android:layout_marginRight="16dp"
                     android:contentDescription="@string/account_image_description"
-                    app:riv_corner_radius="2dp"/>
+                    app:riv_corner_radius="2dp" />
 
                 <LinearLayout
                     android:layout_width="fill_parent"
@@ -45,51 +45,46 @@
                     android:layout_toRightOf="@+id/avater"
                     android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/account_jid_label"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/account_settings_jabber_id"
-                        android:textColor="?attr/color_text_primary"
-                        android:textSize="?attr/TextSizeBody"/>
-
-                    <AutoCompleteTextView
-                        android:id="@+id/account_jid"
+                    <android.support.design.widget.TextInputLayout
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:hint="@string/account_settings_example_jabber_id"
-                        android:inputType="textEmailAddress"
-                        android:imeOptions="actionNext"
-                        android:textColor="?attr/color_text_primary"
-                        android:textColorHint="?attr/color_text_secondary"
-                        android:textSize="?attr/TextSizeBody"/>
+                        android:layout_height="wrap_content">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/account_settings_password"
-                        android:textColor="?attr/color_text_primary"
-                        android:textSize="?attr/TextSizeBody"/>
+                        <AutoCompleteTextView
+                            android:id="@+id/account_jid"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/account_settings_jabber_id"
+                            android:imeOptions="actionNext"
+                            android:inputType="textEmailAddress"
+                            android:textColor="?attr/color_text_primary"
+                            android:textColorHint="?attr/color_text_secondary"
+                            android:textSize="?attr/TextSizeBody" />
+                    </android.support.design.widget.TextInputLayout>
 
                     <RelativeLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:minHeight="56sp">
 
-                        <com.scottyab.showhidepasswordedittext.ShowHidePasswordEditText
-                            android:id="@+id/account_password"
+                        <android.support.design.widget.TextInputLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_alignParentTop="true"
-                            android:hint="@string/password"
-                            android:inputType="textPassword"
-                            android:textColor="?attr/color_text_primary"
-                            android:textColorHint="?attr/color_text_secondary"
-                            android:textSize="?attr/TextSizeBody"
-                            app:tint_color="?attr/color_text_secondary"/>
-                    </RelativeLayout>
+                            app:passwordToggleDrawable="@drawable/visibility_toggle_drawable"
+                            app:passwordToggleEnabled="true"
+                            app:passwordToggleTint="?colorAccent">
 
+                            <android.support.design.widget.TextInputEditText
+                                android:id="@+id/account_password"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_alignParentTop="true"
+                                android:hint="@string/password"
+                                android:inputType="textPassword"
+                                android:textColor="?attr/color_text_primary"
+                                android:textColorHint="?attr/color_text_secondary"
+                                android:textSize="?attr/TextSizeBody" />
+                        </android.support.design.widget.TextInputLayout>
+                    </RelativeLayout>
 
                     <LinearLayout
                         android:id="@+id/name_port"
@@ -111,7 +106,7 @@
                                 android:layout_height="wrap_content"
                                 android:text="@string/account_settings_hostname"
                                 android:textColor="?attr/color_text_primary"
-                                android:textSize="?attr/TextSizeBody"/>
+                                android:textSize="?attr/TextSizeBody" />
 
                             <EditText
                                 android:id="@+id/hostname"
@@ -121,22 +116,21 @@
                                 android:inputType="textNoSuggestions"
                                 android:textColor="?attr/color_text_primary"
                                 android:textColorHint="?attr/color_text_secondary"
-                                android:textSize="?attr/TextSizeBody"/>
+                                android:textSize="?attr/TextSizeBody" />
                         </LinearLayout>
 
                         <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="match_parent"
                             android:layout_weight="0.2"
-                            android:orientation="vertical"
-                            >
+                            android:orientation="vertical">
 
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/account_settings_port"
                                 android:textColor="?attr/color_text_primary"
-                                android:textSize="?attr/TextSizeBody"/>
+                                android:textSize="?attr/TextSizeBody" />
 
                             <EditText
                                 android:id="@+id/port"
@@ -146,7 +140,7 @@
                                 android:maxLength="5"
                                 android:textColor="?attr/color_text_primary"
                                 android:textColorHint="?attr/color_text_secondary"
-                                android:textSize="?attr/TextSizeBody"/>
+                                android:textSize="?attr/TextSizeBody" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -157,7 +151,7 @@
                         android:layout_marginTop="8dp"
                         android:text="@string/register_account"
                         android:textColor="?attr/color_text_primary"
-                        android:textSize="?attr/TextSizeBody"/>
+                        android:textSize="?attr/TextSizeBody" />
                 </LinearLayout>
             </RelativeLayout>
 
@@ -181,7 +175,7 @@
                     android:text="@string/battery_optimizations_enabled"
                     android:textColor="?attr/color_text_primary"
                     android:textSize="?attr/TextSizeHeadline"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <TextView
                     android:id="@+id/os_optimization_body"
@@ -192,7 +186,7 @@
                     android:layout_marginTop="8dp"
                     android:text="@string/battery_optimizations_enabled_explained"
                     android:textColor="?attr/color_text_primary"
-                    android:textSize="?attr/TextSizeBody"/>
+                    android:textSize="?attr/TextSizeBody" />
 
                 <Button
                     android:id="@+id/os_optimization_disable"
@@ -205,7 +199,7 @@
                     android:layout_below="@+id/os_optimization_body"
                     android:layout_marginRight="-8dp"
                     android:text="@string/disable"
-                    android:textColor="@color/accent"/>
+                    android:textColor="@color/accent" />
             </RelativeLayout>
 
 
@@ -240,7 +234,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_session_established"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/session_est"
@@ -250,7 +244,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                 </TableLayout>
@@ -274,7 +268,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_pep"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_pep"
@@ -284,7 +278,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -298,7 +292,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_blocking"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_blocking"
@@ -308,7 +302,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -322,7 +316,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_stream_management"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_sm"
@@ -332,7 +326,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -346,7 +340,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_roster_version"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_roster_version"
@@ -356,7 +350,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -370,7 +364,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_carbon_messages"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_carbons"
@@ -380,7 +374,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -394,7 +388,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_mam"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_mam"
@@ -404,7 +398,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -418,7 +412,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_csi"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_csi"
@@ -428,7 +422,7 @@
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            tools:ignore="RtlHardcoded"/>
+                            tools:ignore="RtlHardcoded" />
                     </TableRow>
 
                     <TableRow
@@ -443,7 +437,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_push"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_push"
@@ -452,7 +446,7 @@
                             android:layout_gravity="right"
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
                     </TableRow>
 
                     <TableRow
@@ -466,7 +460,7 @@
                             android:singleLine="true"
                             android:text="@string/server_info_http_upload"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
 
                         <TextView
                             android:id="@+id/server_info_http_upload"
@@ -475,7 +469,7 @@
                             android:layout_gravity="right"
                             android:paddingLeft="4dp"
                             android:textColor="?attr/color_text_primary"
-                            android:textSize="?attr/TextSizeBody"/>
+                            android:textSize="?attr/TextSizeBody" />
                     </TableRow>
                 </TableLayout>
 
@@ -500,7 +494,7 @@
                             android:fontFamily="monospace"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            android:typeface="monospace"/>
+                            android:typeface="monospace" />
 
                         <TextView
                             android:id="@+id/pgp_fingerprint_desc"
@@ -508,7 +502,7 @@
                             android:layout_height="wrap_content"
                             android:text="@string/openpgp_key_id"
                             android:textColor="?attr/color_text_secondary"
-                            android:textSize="?attr/TextSizeInfo"/>
+                            android:textSize="?attr/TextSizeInfo" />
                     </LinearLayout>
 
                     <ImageButton
@@ -521,7 +515,7 @@
                         android:background="?android:selectableItemBackground"
                         android:padding="@dimen/image_button_padding"
                         android:src="?attr/icon_remove"
-                        android:visibility="visible"/>
+                        android:visibility="visible" />
                 </RelativeLayout>
 
                 <RelativeLayout
@@ -545,7 +539,7 @@
                             android:fontFamily="monospace"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            android:typeface="monospace"/>
+                            android:typeface="monospace" />
 
                         <TextView
                             android:id="@+id/otr_fingerprint_desc"
@@ -553,7 +547,7 @@
                             android:layout_height="wrap_content"
                             android:text="@string/otr_fingerprint"
                             android:textColor="?attr/color_text_secondary"
-                            android:textSize="?attr/TextSizeInfo"/>
+                            android:textSize="?attr/TextSizeInfo" />
                     </LinearLayout>
 
                     <ImageButton
@@ -562,13 +556,14 @@
                         android:layout_height="wrap_content"
                         android:layout_alignParentRight="true"
                         android:layout_centerVertical="true"
+                        android:alpha="?attr/icon_alpha"
                         android:background="?android:selectableItemBackground"
                         android:contentDescription="@string/copy_otr_clipboard_description"
                         android:padding="@dimen/image_button_padding"
                         android:src="?attr/icon_copy"
-                        android:alpha="?attr/icon_alpha"
-                        android:visibility="visible"/>
+                        android:visibility="visible" />
                 </RelativeLayout>
+
                 <RelativeLayout
                     android:id="@+id/axolotl_fingerprint_box"
                     android:layout_width="wrap_content"
@@ -590,7 +585,7 @@
                             android:fontFamily="monospace"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"
-                            android:typeface="monospace"/>
+                            android:typeface="monospace" />
 
                         <TextView
                             android:id="@+id/own_fingerprint_desc"
@@ -598,7 +593,7 @@
                             android:layout_height="wrap_content"
                             android:text="@string/omemo_fingerprint"
                             android:textColor="?attr/color_text_secondary"
-                            android:textSize="?attr/TextSizeInfo"/>
+                            android:textSize="?attr/TextSizeInfo" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -618,7 +613,7 @@
                             android:contentDescription="@string/copy_omemo_clipboard_description"
                             android:padding="@dimen/image_button_padding"
                             android:src="?attr/icon_copy"
-                            android:visibility="visible"/>
+                            android:visibility="visible" />
 
                         <ImageButton
                             android:id="@+id/action_regenerate_axolotl_key"
@@ -629,7 +624,7 @@
                             android:contentDescription="@string/regenerate_omemo_key"
                             android:padding="@dimen/image_button_padding"
                             android:src="?attr/icon_refresh"
-                            android:visibility="gone"/>
+                            android:visibility="gone" />
 
                     </LinearLayout>
                 </RelativeLayout>
@@ -655,7 +650,7 @@
                     android:text="@string/other_devices"
                     android:textColor="?attr/color_text_primary"
                     android:textSize="?attr/TextSizeHeadline"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold" />
 
                 <LinearLayout
                     android:id="@+id/other_device_keys"
@@ -663,8 +658,7 @@
                     android:layout_height="wrap_content"
                     android:divider="?android:dividerHorizontal"
                     android:orientation="vertical"
-                    android:showDividers="middle">
-                </LinearLayout>
+                    android:showDividers="middle"></LinearLayout>
 
                 <Button
                     android:id="@+id/clear_devices"
@@ -673,7 +667,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:text="@string/clear_other_devices"
-                    android:textColor="@color/accent"/>
+                    android:textColor="@color/accent" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
@@ -695,14 +689,14 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="@string/cancel"
-            android:textColor="?attr/color_text_primary"/>
+            android:textColor="?attr/color_text_primary" />
 
         <View
             android:layout_width="1dp"
             android:layout_height="fill_parent"
             android:layout_marginBottom="7dp"
             android:layout_marginTop="7dp"
-            android:background="?attr/divider"/>
+            android:background="?attr/divider" />
 
         <Button
             android:id="@+id/save_button"
@@ -712,7 +706,7 @@
             android:layout_weight="1"
             android:enabled="false"
             android:text="@string/save"
-            android:textColor="?attr/color_text_secondary"/>
+            android:textColor="?attr/color_text_secondary" />
     </LinearLayout>
 
 </RelativeLayout>

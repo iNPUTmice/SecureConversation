@@ -100,7 +100,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 	private TextView mOwnFingerprintDesc;
 	private TextView mOtrFingerprintDesc;
 	private TextView getmPgpFingerprintDesc;
-	private TextView mAccountJidLabel;
 	private ImageView mAvatar;
 	private RelativeLayout mOtrFingerprintBox;
 	private RelativeLayout mAxolotlFingerprintBox;
@@ -514,7 +513,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		setContentView(R.layout.activity_edit_account);
 		this.mAccountJid = (AutoCompleteTextView) findViewById(R.id.account_jid);
 		this.mAccountJid.addTextChangedListener(this.mTextWatcher);
-		this.mAccountJidLabel = (TextView) findViewById(R.id.account_jid_label);
 		this.mPassword = (EditText) findViewById(R.id.account_password);
 		this.mPassword.addTextChangedListener(this.mTextWatcher);
 		this.mAvatar = (ImageView) findViewById(R.id.avater);
@@ -733,7 +731,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			this.mCancelButton.setTextColor(getSecondaryTextColor());
 		}
 		if (mUsernameMode) {
-			this.mAccountJidLabel.setText(R.string.username);
 			this.mAccountJid.setHint(R.string.username_hint);
 		} else {
 			final KnownHostsAdapter mKnownHostsAdapter = new KnownHostsAdapter(this,
