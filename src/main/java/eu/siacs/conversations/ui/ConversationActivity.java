@@ -2,7 +2,7 @@ package eu.siacs.conversations.ui;
 
 import android.annotation.SuppressLint;
 import android.support.v7.app.AlertDialog;
-import android.app.FragmentTransaction;
+import android.support.v4.app.FragmentTransaction;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
@@ -205,7 +205,7 @@ public class ConversationActivity extends XmppActivity
 		setContentView(R.layout.fragment_conversations_overview);
 
 		this.mConversationFragment = new ConversationFragment();
-		FragmentTransaction transaction = getFragmentManager().beginTransaction();
+		FragmentTransaction transaction = getSupportFragmentManager() .beginTransaction();
 		transaction.replace(R.id.selected_conversation, this.mConversationFragment, "conversation");
 		transaction.commit();
 
@@ -637,7 +637,7 @@ public class ConversationActivity extends XmppActivity
 					}
 					selectPresenceToAttachFile(attachmentChoice, encryption);
 				} else {
-					final ConversationFragment fragment = (ConversationFragment) getFragmentManager()
+					final ConversationFragment fragment = (ConversationFragment) getSupportFragmentManager()
 							.findFragmentByTag("conversation");
 					if (fragment != null) {
 						fragment.showNoPGPKeyDialog(false,
@@ -891,7 +891,7 @@ public class ConversationActivity extends XmppActivity
 			return;
 		}
 		PopupMenu popup = new PopupMenu(this, menuItemView);
-		final ConversationFragment fragment = (ConversationFragment) getFragmentManager()
+		final ConversationFragment fragment = (ConversationFragment) getSupportFragmentManager()
 				.findFragmentByTag("conversation");
 		if (fragment != null) {
 			popup.setOnMenuItemClickListener(new OnMenuItemClickListener() {

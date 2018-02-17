@@ -545,7 +545,7 @@ public class EnhancedListView extends ListView {
 
     /**
      * Discard all stored undos and hide the undo popup dialog.
-     * This method must be called in {@link android.app.Activity#onStop()}. Otherwise
+     * This method must be called in {@link android.support.v7.app.AppCompatActivity #onStop()}. Otherwise
      * {@link EnhancedListView.Undoable#discard()} might not be called for several items, what might
      * break your data consistency.
      */

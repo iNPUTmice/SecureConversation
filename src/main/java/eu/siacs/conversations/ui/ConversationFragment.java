@@ -1,8 +1,8 @@
 package eu.siacs.conversations.ui;
 
-import android.app.Activity;
+import android.support.v7.app.AppCompatActivity ;
 import android.support.v7.app.AlertDialog;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
@@ -1722,7 +1722,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	@Override
 	public void onActivityResult(int requestCode, int resultCode,
 	                             final Intent data) {
-		if (resultCode == Activity.RESULT_OK) {
+		if (resultCode == AppCompatActivity.RESULT_OK) {
 			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP) {
 				activity.getSelectedConversation().getAccount().getPgpDecryptionService().continueDecryption(data);
 			} else if (requestCode == ConversationActivity.REQUEST_TRUST_KEYS_TEXT) {
@@ -1733,7 +1733,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				int choice = data.getIntExtra("choice", ConversationActivity.ATTACHMENT_CHOICE_INVALID);
 				activity.selectPresenceToAttachFile(choice, conversation.getNextEncryption());
 			}
-		} else if (resultCode == Activity.RESULT_CANCELED) {
+		} else if (resultCode == AppCompatActivity.RESULT_CANCELED) {
 			if (requestCode == ConversationActivity.REQUEST_DECRYPT_PGP) {
 				// discard the message to prevent decryption being blocked
 				conversation.getAccount().getPgpDecryptionService().giveUpCurrentDecryption();
