@@ -1,10 +1,11 @@
 package eu.siacs.conversations.ui;
 
-import android.support.v7.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.SwitchCompat;
 import android.view.ContextMenu;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,7 +23,6 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.FingerprintStatus;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.entities.Account;
-import eu.siacs.conversations.ui.widget.Switch;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.utils.zxing.IntentIntegrator;
@@ -146,7 +146,7 @@ public abstract class OmemoActivity extends XmppActivity {
             key.setOnClickListener(listener);
             keyType.setOnClickListener(listener);
         }
-        Switch trustToggle = (Switch) view.findViewById(R.id.tgl_trust);
+        SwitchCompat trustToggle = (SwitchCompat) view.findViewById(R.id.tgl_trust);
         ImageView verifiedFingerprintSymbol = (ImageView) view.findViewById(R.id.verified_fingerprint);
         trustToggle.setVisibility(View.VISIBLE);
         registerForContextMenu(view);
@@ -155,7 +155,7 @@ public abstract class OmemoActivity extends XmppActivity {
         view.setTag(R.id.TAG_FINGERPRINT_STATUS,status);
         boolean x509 = Config.X509_VERIFICATION && status.getTrust() == FingerprintStatus.Trust.VERIFIED_X509;
         final View.OnClickListener toast;
-        trustToggle.setChecked(status.isTrusted(), false);
+        trustToggle.setChecked(status.isTrusted()); // trustToggle.setChecked(status.isTrusted(),false);
 
         if (status.isActive()){
             key.setTextColor(getPrimaryTextColor());

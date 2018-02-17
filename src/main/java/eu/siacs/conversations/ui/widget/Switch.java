@@ -7,6 +7,7 @@ import android.view.ViewConfiguration;
 
 import com.kyleduo.switchbutton.SwitchButton;
 
+@Deprecated
 public class Switch extends SwitchButton {
 
 	private int mTouchSlop;
