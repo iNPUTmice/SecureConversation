@@ -1,12 +1,16 @@
 package eu.siacs.conversations.services;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
+import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
 import android.os.SystemClock;
@@ -267,16 +271,38 @@ public class NotificationService {
 				this.markLastNotification();
 			}
 			final Builder mBuilder;
-			if (notifications.size() == 1 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-				mBuilder = buildSingleConversations(notifications.values().iterator().next());
+			if (notifications.size() == 1 && Build.VERSION.SDK_INT <= Build.VERSION_CODES.N) {
+				mBuilder = buildSingleConversations(notifications.values().iterator().next(), -1);
 				modifyForSoundVibrationAndLight(mBuilder, notify, preferences);
 				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
-			} else {
-				mBuilder = buildMultipleConversation();
+			} else if (notifications.size() == 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+				final Resources resources = mXmppConnectionService.getResources();
+				final String ringtone = preferences.getString("notification_ringtone", resources.getString(R.string.notification_ringtone));
+				final boolean vibrate = preferences.getBoolean("vibrate_on_notification", resources.getBoolean(R.bool.vibrate_on_notification));
+				final boolean led = preferences.getBoolean("led", resources.getBoolean(R.bool.led));
+				final boolean headsup = preferences.getBoolean("notification_headsup", resources.getBoolean(R.bool.headsup_notifications));
+				int importance = (notify ? (headsup ? NotificationManagerCompat.IMPORTANCE_HIGH : NotificationManagerCompat.IMPORTANCE_DEFAULT) : NotificationManagerCompat.IMPORTANCE_LOW);
+				createNotificationChannel(ringtone, vibrate, led, importance);
+				mBuilder = buildSingleConversations(notifications.values().iterator().next(), importance);
+				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+			}
+			else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+				final Resources resources = mXmppConnectionService.getResources();
+				final String ringtone = preferences.getString("notification_ringtone", resources.getString(R.string.notification_ringtone));
+				final boolean vibrate = preferences.getBoolean("vibrate_on_notification", resources.getBoolean(R.bool.vibrate_on_notification));
+				final boolean led = preferences.getBoolean("led", resources.getBoolean(R.bool.led));
+				final boolean headsup = preferences.getBoolean("notification_headsup", resources.getBoolean(R.bool.headsup_notifications));
+				int importance = (notify ? (headsup ? NotificationManagerCompat.IMPORTANCE_HIGH : NotificationManagerCompat.IMPORTANCE_DEFAULT) : NotificationManagerCompat.IMPORTANCE_LOW);
+				createNotificationChannel(ringtone, vibrate, led, importance);
+				mBuilder = buildMultipleConversation(importance);
+				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
+			}
+			else {
+				mBuilder = buildMultipleConversation(-1);
 				modifyForSoundVibrationAndLight(mBuilder, notify, preferences);
 				if (!summaryOnly) {
 					for (Map.Entry<String, ArrayList<Message>> entry : notifications.entrySet()) {
-						Builder singleBuilder = buildSingleConversations(entry.getValue());
+						Builder singleBuilder = buildSingleConversations(entry.getValue(), -1);
 						singleBuilder.setGroup(CONVERSATIONS_GROUP);
 						setNotificationColor(singleBuilder);
 						notificationManager.notify(entry.getKey(), NOTIFICATION_ID, singleBuilder.build());
@@ -287,6 +313,29 @@ public class NotificationService {
 		}
 	}
 
+	private void createNotificationChannel(String ringtone, boolean vibrate, boolean led, int importance){
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			NotificationManager mNotificationManager = (NotificationManager) mXmppConnectionService.getSystemService(Context.NOTIFICATION_SERVICE);
+			final Resources resources = mXmppConnectionService.getResources();
+			final String id = "siacs/conversations" + importance;
+			final CharSequence name = resources.getString(R.string.notification_channel_name);
+			final String description = resources.getString(R.string.notification_channel_description);
+			NotificationChannel mChannel = new NotificationChannel(id, name, importance);
+			mChannel.setDescription(description);
+			Uri uri = Uri.parse(ringtone);
+			mChannel.setSound(fixRingtoneUri(uri), new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION_COMMUNICATION_INSTANT).setFlags(AudioAttributes.FLAG_AUDIBILITY_ENFORCED).build());
+			mChannel.enableLights(led);
+			if (led)
+				mChannel.setLightColor(0xff00FF00);
+			mChannel.enableVibration(vibrate);
+			if (vibrate) {
+				final int dat = 70;
+				final long[] pattern = {0, 3 * dat, dat, dat};
+				mChannel.setVibrationPattern(pattern);
+			}
+			mNotificationManager.createNotificationChannel(mChannel);
+		}
+	}
 
 	private void modifyForSoundVibrationAndLight(Builder mBuilder, boolean notify, SharedPreferences preferences) {
 		final Resources resources = mXmppConnectionService.getResources();
@@ -328,9 +377,14 @@ public class NotificationService {
 		}
 	}
 
-	private Builder buildMultipleConversation() {
-		final Builder mBuilder = new NotificationCompat.Builder(
-				mXmppConnectionService);
+	private Builder buildMultipleConversation(int importance) {
+		final Builder mBuilder;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+			String id = "siacs/conversations" + importance;
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService, id);
+		}
+		else
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
 		final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
 		style.setBigContentTitle(notifications.size()
 				+ " "
@@ -376,8 +430,14 @@ public class NotificationService {
 		return mBuilder;
 	}
 
-	private Builder buildSingleConversations(final ArrayList<Message> messages) {
-		final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+	private Builder buildSingleConversations(final ArrayList<Message> messages, int importance) {
+		final Builder mBuilder;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+			String id = "siacs/conversations" + importance;
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService, id);
+		}
+		else
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
 		if (messages.size() >= 1) {
 			final Conversation conversation = messages.get(0).getConversation();
 			final UnreadConversation.Builder mUnreadBuilder = new UnreadConversation.Builder(conversation.getName());

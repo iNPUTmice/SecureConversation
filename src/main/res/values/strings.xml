@@ -735,4 +735,6 @@
 	<string name="private_messages_are_disabled">Private messages are disabled</string>
 	<string name="huawei_protected_apps">Protected Apps</string>
 	<string name="huawei_protected_apps_summary">To keep receiving notifications, even when the screen is turned off, you need to add Conversations to the list of protected apps.</string>
+	<string name="notification_channel_name">Notification Channel</string>
+	<string name="notification_channel_description">Conversations.im</string>
 </resources>
