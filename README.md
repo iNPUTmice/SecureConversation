@@ -55,8 +55,8 @@
 ### XMPP Features
 
 Conversations works with every XMPP server out there. However, XMPP is an
-extensible protocol. These extensions are standardized as well in so called
-XEP's. Conversations support a couple of these to make the overall user
+extensible protocol. These extensions are standardized as well in so-called
+XEP's. Conversations supports a couple of these to make the overall user
 experience better. There is a chance that your current XMPP server does not
 support these extensions; therefore to get the most out of Conversations you
 should consider either switching to an XMPP server that does or — even better —
@@ -85,7 +85,9 @@ run your own XMPP server for you and your friends. These XEP's are:
 
 #### How do I install Conversations?
 
-Conversations is entirely open source and licensed under GPLv3. So if you are a software developer you can check out the sources from GitHub and use Gradle to build your apk file.
+Conversations is entirely open source and licensed under GPLv3. So if you are a
+software developer you can check out the sources from GitHub and use Gradle to
+build your apk file.
 
 The more convenient way — which not only gives you automatic updates but also
 supports the further development of Conversations — is to buy the App in the
@@ -95,7 +97,7 @@ Buying the App from the Play Store will also give you access to our [beta test](
 
 #### I don't have a Google Account but I would still like to make a contribution
 
-I accept donations using PayPal, bank transfer and various cryptocurrencies. For donations via PayPal you
+I accept donations from PayPal, bank transfer and various cryptocurrencies. For donations via PayPal you
 can use the email address `donate@siacs.eu` or the button below.
 
 [![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CW3SYT3KG5PDL)
@@ -113,7 +115,7 @@ Bitcoin Cash: `16ABkXzYAwWz8Y5DcWFfbBRqL63g3hzEaU`
 Ether: `0x5c4e5239cd9c6f4a909e4e8361526e2e3c8ba9fa`
 
 #### How do I create an account?
-XMPP, like email, is a federated protocol, which means that there is not one company you can create an *official XMPP account* with. Instead, there are hundreds, or even thousands, of providers out there. One of those providers is our very own [conversations.im] https://account.conversations.im). If you don’t like to use *conversations.im* use a web search engine of your choice to find another provider. Or maybe your university has one. Or you can run your own. Or ask a friend to run one. Once you've found one, you can use Conversations to create an account. Just select *register new account* on the server within the create account dialog.
+XMPP, like email, is a federated protocol, which means that there is not one company you can create an *official XMPP account* with. Instead, there are hundreds, or even thousands, of providers out there. One of those providers is our very own [conversations.im](https://account.conversations.im). If you don’t like to use *conversations.im* use a web search engine of your choice to find another provider. Or maybe your university has one. Or you can run your own. Or ask a friend to run one. Once you've found one, you can use Conversations to create an account. Just select *register new account* on server within the create account dialog.
 
 ##### Domain hosting
 Using your own domain not only gives you a more recognizable Jabber ID, it also gives you the flexibility to migrate your account between different XMPP providers. This is a good compromise between the responsibilities of having to operate your own server and the downsides of being dependent on a single provider.
@@ -121,7 +123,7 @@ Using your own domain not only gives you a more recognizable Jabber ID, it also 
 Learn more about [conversations.im Jabber/XMPP domain hosting](https://account.conversations.im/domain/). 
 
 ##### Running your own
-If you already have a server somewhere and are willing and able to put the necessary work in, one alternative -in the spirit of federation- is to run your own. We recommend either [Prosody](https://prosody.im/) or [ejabberd](https://www.ejabberd.im/). Both of which have their own strengths. Ejabberd is slightly more mature nowadays but Prosody is arguably easier to set up.
+If you already have a server somewhere and are willing and able to put the necessary work in, one alternative in the spirit of federation-is to run your own. We recommend either [Prosody](https://prosody.im/) or [ejabberd](https://www.ejabberd.im/). Both of which have their own strengths. Ejabberd is slightly more mature nowadays but Prosody is arguably easier to set up.
 
 For Prosody, you need a couple of so-called [community modules](https://modules.prosody.im/) most of which are maintained by the same people that develop Prosody.
 
@@ -151,7 +153,7 @@ SCRAM-SHA1, PLAIN, EXTERNAL (client certs) and DIGEST-MD5.
 
 Some Bind failures are transient and resolve themselves after a reconnect.
 
-When trying to connect to OpenFire the bind failure can be a permanent problem when the domain part of the Jabber ID entered in Conversations doesn’t match the domain the OpenFire server feels responsible for. For example, OpenFire is configured to use the domain `a.tld` but the Jabber ID entered is `user@b.tld` where `b.tld` also points to the same host. During bind, OpenFire tries to reassign the Jabber to `user@a.tld`. Conversations don’t like that.
+When trying to connect to OpenFire the bind failure can be a permanent problem when the domain part of the Jabber ID entered in Conversations doesn’t match the domain the OpenFire server feels responsible for. For example, OpenFire is configured to use the domain `a.tld` but the Jabber ID entered is `user@b.tld` where `b.tld` also points to the same host. During bind, OpenFire tries to reassign the Jabber to `user@a.tld`. Conversations doesn’t like that.
 This can be fixed by creating a new account in Conversations that uses the Jabber ID `user@a.tld`. 
 
 Note: This is kind of a weird quirk in OpenFire. Most other servers would just throw a 'Server not responsible for domain' error instead of attempting to reassign the Jabber ID.
@@ -159,7 +161,7 @@ Note: This is kind of a weird quirk in OpenFire. Most other servers would just t
 Maybe you attempted to use the Jabber ID `test@b.tld` because `a.tld` doesn’t point to the correct host. In that case, you might have to enable the extended connection settings in the expert settings of Conversations and set a hostname.
 
 #### How do XEP-0357: Push Notifications work?
-You need to be running the Play Store version of Conversations and your server needs to support push notifications.¹ Because *Google Cloud Notifications (GCM)* are tied with an API key to a specific app your server can not initiate the push message directly. Instead, your server will send the push notification to the Conversations App server (operated by us) which then acts as a proxy and initiates the push message for you. The push message sent from our App server through GCM doesn’t contain any personal information. It is just an empty message which will wake up your device and tell Conversations to reconnect to your server. The information sends from your server to our App server depends on the configuration of your server but can be limited to your account name. (In any case, the Conversations App server won't redirect any information through GCM even if your server sends this information.)
+You need to be running the Play Store version of Conversations and your server needs to support push notifications.¹ Because *Google Cloud Notifications (GCM)* are tied with an API key to a specific app your server can not initiate the push message directly. Instead, your server will send the push notification to the Conversations App server (operated by us) which then acts as a proxy and initiates the push message for you. The push message sent from our App server through GCM doesn’t contain any personal information. It is just an empty message which will wake up your device and tell Conversations to reconnect to your server. The information sent from your server to our App server depends on the configuration of your server but can be limited to your account name. (In any case, the Conversations App server won't redirect any information through GCM even if your server sends this information.)
 
 In summary, Google will never get hold of any personal information besides that *something* happened. (Which doesn’t even have to be a message but can be some automated event as well.) We - as the operator of the App server - will just get hold of your account name (without being able to tie this to your specific device).
 
@@ -194,7 +196,8 @@ JID from one app to another.
 
 #### I get 'delivery failed' on my messages
 
-If you get "delivery failed" on images, it's probably because the recipient lost network connectivity during a reception. In that case, you can try it again at a
+If you get a delivery failure on images it's probably because the recipient lost
+network connectivity during the reception. In that case, you can try it again at a
 later time.
 
 For text messages, the answer to your question is a little bit more complex.
@@ -209,7 +212,7 @@ be returned to the sender resulting in a delivery failure.
 Instead of returning a message to the sender both ejabberd and prosody have the
 ability to store messages in offline storage when the disconnecting client is
 the only client. In prosody this is available via an extra module called
-```mod_smacks_offline```. In ejabberd this is available via some configuration
+```mod_smacks_offline```. In ejabberd, this is available via some configuration
 settings.
 
 Other less common reasons are that the message you sent didn't meet some
@@ -225,7 +228,7 @@ instantly.
 Statuses are a horrible metric. Setting them manually to a proper value rarely
 works because users are either lazy or just forget about them. Setting them
 automatically does not provide quality results either. Keyboard or mouse
-activity as an indicator, for example, fails when the user is just looking at
+activity as indicator, for example, fails when the user is just looking at
 something (reading an article, watching a movie). Furthermore, automatic setting
 of status always implies an impact on your privacy (are you sure you want
 everybody in your contact list to know that you have been using your computer at
@@ -248,7 +251,7 @@ instead of making Conversations compatible with the past we should work on
 implementing new, improved technologies and getting them into other XMPP clients
 as well.
 
-Making this status and priority optional isn't a solution either because
+Making these statuses and priorities optional isn't a solution either because
 Conversations is trying to get rid of old behaviours and set an example for
 other clients.
 
@@ -256,7 +259,7 @@ other clients.
 Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/)
 
 #### How do I backup/move Conversations to a new device?
-On the one hand, Conversations supports Message Archive Management to keep a server-side history of your messages so that when migrating to a new device that device can display your entire history. However, that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
+On the one hand, Conversations supports Message Archive Management to keep a server-side history of your messages so when migrating to a new device that device can display your entire history. However, that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
 
 If you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) (needs root access on the device) or ```adb backup``` (no root access needed) from your computer.  It is important that you deactivate your account before backup and activate it only after a successful restore, otherwise, OMEMO might not work afterwards. Also, remember that you can **only** transfer the backup to either the same version of Android or to a newer one (eg. 5.1.1 -> 5.1.1 or 5.1.1 -> 6.0.1).
 
@@ -269,7 +272,7 @@ like it I will leave it open until it's implemented. If I don't like it I will
 close it (usually with a short comment). If I don't comment on a feature
 request that's probably a good sign because this means I agree with you.
 Commenting with +1 on either open or closed issues won't change my mind, nor
-will it accelerate the development?
+will it accelerate the development.
 
 #### You closed my feature request but I want it really really badly
 
@@ -303,14 +306,15 @@ works well with message carbons.
 
 To use OpenPGP you have to install the open source app
 [OpenKeychain](http://www.openkeychain.org) and then long press on the account in
-manage accounts and choose renew PGP announcement from the contextual menu.
+manage accounts and choose to renew PGP announcement from the contextual menu.
 
-#### OMEMO is grayed out. What do I do?
+#### OMEMO is greyed out. What do I do?
 OMEMO has two requirements: Your server and the server of your contact need to support PEP. Both of you can verify that individually by opening your account details and selecting ```Server info``` from the menu. The appearing table should list PEP as available. The second requirement is mutual presence subscription. You can verify that by opening the contact details and see if both checkboxes *Send presence updates* and *Receive presence updates* are checked.
 
 #### How does the encryption for conferences work?
 
-For conferences, only OMEMO and OpenPGP are supported as encryption methods. (OTR does not work with multiple participants).
+For conferences, only OMEMO and OpenPGP are supported as an encryption method. (OTR
+does not work with multiple participants).
 
 ##### OMEMO
 
@@ -324,7 +328,7 @@ The owner of a conference can make a public conference private by going into the
 details and hit the settings button (the one with the gears) and select both *private* and
 *members only*.
 
-If OMEMO is grayed out long pressing the lock icon will reveal some quick hints on why OMEMO
+If OMEMO is greyed out long pressing the lock icon will reveal some quick hints on why OMEMO
 is disabled.
 
 ##### OpenPGP
@@ -348,7 +352,7 @@ A quick reminder that Conversations **always** uses TLS to connect to your serve
 
 #### What is Blind Trust Before Verification / why are messages marked with a red lock?
 
-Read more about the concept on https://gultsch.de/trust.html
+Read more about the concept of https://gultsch.de/trust.html
 
 ### What clients do I use on other platforms
 There are XMPP Clients available for all major platforms.
@@ -401,12 +405,12 @@ To add a new dependency to the `libs/` directory (replacing "name", "branch" and
 
 If something goes wrong Conversations usually exposes very little information in
 the UI (other than the fact that something didn't work). However, with adb
-(android debug bridge) you can squeeze some more information out of Conversations.
+(android debug bridge), you can squeeze some more information out of Conversations.
 This information is especially useful if you are experiencing trouble with
-your connection or with file transfer.
+your connection or by file transfer.
 
 To use adb you have to connect your mobile phone to your computer with a USB cable
-and install `adb`. Most Linux systems have pre-built packages for that tool. On
+and install `adb`. Most Linux systems have prebuilt packages for that tool. On
 Debian/Ubuntu, for example, it is called `android-tools-adb`.
 
 Furthermore, you might have to enable 'USB debugging' in the Developer options of your
