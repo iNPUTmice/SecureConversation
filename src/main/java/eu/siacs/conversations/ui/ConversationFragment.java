@@ -9,11 +9,14 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
@@ -35,6 +38,7 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageButton;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
@@ -53,6 +57,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import eu.siacs.conversations.BuildConfig;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
@@ -68,6 +73,7 @@ import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.entities.TransferablePlaceholder;
 import eu.siacs.conversations.http.HttpDownloadConnection;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.services.ConnectivityReceiver;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.XmppActivity.OnPresenceSelected;
@@ -95,6 +101,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
+	private LinearLayout offlineLayout;
+	private TextView networkStatus;
 	private Toast messageLoaderToast;
 	private OnClickListener clickToMuc = new OnClickListener() {
 
@@ -254,6 +262,45 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	};
 	private Message selectedMessage;
+	private OnClickListener mRefreshNetworkClickListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			networkStatus.setCompoundDrawables(null, null, null, null);
+			networkStatus.setText(getActivity().getResources().getString(R.string.refreshing));
+			if (ConnectivityReceiver.isConnected(getActivity())){
+				final Handler handler = new Handler();
+				handler.postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						reconfigureOfflineText();
+						offlineLayout.setVisibility(View.GONE);
+					}
+				}, 1000);
+			}else{
+				final Handler handler = new Handler();
+				handler.postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						reconfigureOfflineText();
+						offlineLayout.setVisibility(View.VISIBLE);
+					}
+				}, 1000);
+			}
+		}
+	};
+
+	private void reconfigureOfflineText() {
+		networkStatus.setText(getActivity().getResources().getString(R.string.offline));
+		Drawable refreshIcon =
+				ContextCompat.getDrawable(getActivity(), R.drawable.ic_refresh_black_24dp);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){
+			networkStatus.setCompoundDrawablesRelativeWithIntrinsicBounds(refreshIcon, null, null, null);
+		} else{
+			refreshIcon.setBounds(0, 0, refreshIcon.getIntrinsicWidth(), refreshIcon.getIntrinsicHeight());
+			networkStatus.setCompoundDrawables(refreshIcon, null, null, null);
+		}
+	}
+
 	private OnClickListener mEnableAccountListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
@@ -535,6 +582,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		final View view = inflater.inflate(R.layout.fragment_conversation, container, false);
 		view.setOnClickListener(null);
 
+
 		mEditMessage = (EditMessage) view.findViewById(R.id.textinput);
 		mEditMessage.setOnClickListener(new OnClickListener() {
 
@@ -557,6 +605,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		snackbar = (RelativeLayout) view.findViewById(R.id.snackbar);
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
 		snackbarAction = (TextView) view.findViewById(R.id.snackbar_action);
+
+		offlineLayout = (LinearLayout) view.findViewById(R.id.offline_layout);
+		networkStatus = (TextView) view.findViewById(R.id.network_status);
+		offlineLayout.setOnClickListener(mRefreshNetworkClickListener);
 
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
 		messagesView.setOnScrollListener(mOnScrollListener);
@@ -634,8 +686,17 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		messagesView.setAdapter(messageListAdapter);
 
 		registerForContextMenu(messagesView);
+		checkNetworkStatus();
 
 		return view;
+	}
+
+	private void checkNetworkStatus() {
+		if (ConnectivityReceiver.isConnected(getActivity())){
+			onConnected();
+		}else{
+			onDisconnected();
+		}
 	}
 
 	private void quoteText(String text) {
@@ -1636,6 +1697,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			text = " " + text;
 		}
 		this.mEditMessage.append(text);
+	}
+
+	public void onConnected(){
+		offlineLayout.setVisibility(View.GONE);
+	}
+
+	public void onDisconnected(){
+		offlineLayout.setVisibility(View.VISIBLE);
 	}
 
 	@Override

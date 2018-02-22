@@ -21,6 +21,28 @@
         tools:listitem="@layout/message_sent">
     </ListView>
 
+    <LinearLayout
+        android:id="@+id/offline_layout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="4dp"
+        android:background="@color/black12"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/network_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:drawableLeft="@drawable/ic_refresh_black_24dp"
+            android:drawableStart="@drawable/ic_refresh_black_24dp"
+            android:drawablePadding="8dp"
+            android:textSize="16sp"
+            android:text="@string/offline"/>
+    </LinearLayout>
+
     <RelativeLayout
         android:id="@+id/textsend"
         android:layout_width="fill_parent"

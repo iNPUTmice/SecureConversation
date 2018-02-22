@@ -10,8 +10,10 @@ import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.IntentSender.SendIntentException;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -32,6 +34,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.LinearLayout;
 import android.widget.PopupMenu;
 import android.widget.PopupMenu.OnMenuItemClickListener;
 import android.widget.Toast;
@@ -57,6 +60,7 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.services.ConnectivityReceiver;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.services.XmppConnectionService.OnConversationUpdate;
@@ -71,7 +75,7 @@ import eu.siacs.conversations.xmpp.jid.InvalidJidException;
 import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationActivity extends XmppActivity
-	implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast {
+	implements OnAccountUpdate, OnConversationUpdate, OnRosterUpdate, OnUpdateBlocklist, XmppConnectionService.OnShowErrorToast, ConnectivityReceiver.ConnectivityReceiverListener {
 
 	public static final String RECENTLY_USED_QUICK_ACTION = "recently_used_quick_action";
 
@@ -129,6 +133,7 @@ public class ConversationActivity extends XmppActivity
 	private Pair<Integer, Intent> mPostponedActivityResult;
 	private boolean mUnprocessedNewIntent = false;
 	public Uri mPendingEditorContent = null;
+	private ConnectivityReceiver connectivityReceiver;
 
 	public Conversation getSelectedConversation() {
 		return this.mSelectedConversation;
@@ -183,6 +188,7 @@ public class ConversationActivity extends XmppActivity
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		new EmojiService(this).init();
+
 		if (savedInstanceState != null) {
 			mOpenConversation = savedInstanceState.getString(STATE_OPEN_CONVERSATION, null);
 			mPanelOpen = savedInstanceState.getBoolean(STATE_PANEL_OPEN, true);
@@ -340,6 +346,7 @@ public class ConversationActivity extends XmppActivity
 				}
 			});
 		}
+		connectivityReceiver = new ConnectivityReceiver(this);
 	}
 
 	@Override
@@ -1151,6 +1158,7 @@ public class ConversationActivity extends XmppActivity
 		if (conversationList.size() >= 1) {
 			this.onConversationUpdate();
 		}
+		registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 	}
 
 	@Override
@@ -1850,6 +1858,12 @@ public class ConversationActivity extends XmppActivity
 		this.refreshUi();
 	}
 
+	@Override
+	protected void onStop() {
+		super.onStop();
+		unregisterReceiver(connectivityReceiver);
+	}
+
 	public void unblockConversation(final Blockable conversation) {
 		xmppConnectionService.sendUnblockRequest(conversation);
 	}
@@ -1870,5 +1884,14 @@ public class ConversationActivity extends XmppActivity
 
 	public boolean highlightSelectedConversations() {
 		return !isConversationsOverviewHideable() || this.conversationWasSelectedByKeyboard;
+	}
+
+	@Override
+	public void onNetworkConnectionChanged(boolean isConnected) {
+		if (isConnected) {
+			mConversationFragment.onConnected();
+		}else{
+			mConversationFragment.onDisconnected();
+		}
 	}
 }
