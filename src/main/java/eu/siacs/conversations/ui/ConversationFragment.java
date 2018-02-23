@@ -464,48 +464,42 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private void sendMessage() {
 		Message message;
 		final String body = mEditMessage.getText().toString();
-		Pattern replacePatten = Pattern.compile("[s][/]\\S+[/]\\S+");
-		Matcher replaceMatcher = replacePatten.matcher(body);
-		boolean isReplacePattern = replaceMatcher.matches();
-		if (isReplacePattern){
-			message = getUserLastMessage();
-			while (message.mergeable(message.next())) {
-				message = message.next();
-			}
-			if (message != null
-					&& message.getType() == Message.TYPE_TEXT
-					&& message.isLastCorrectableMessage()
-					&& (message.getConversation().getMucOptions().nonanonymous()
-					|| message.getConversation().getMode() == Conversation.MODE_SINGLE)) {
-				String toBeReplaced = body.split("s/")[1].split("/")[0];
-				String replacement = body.split("s/")[1].split("/")[1];
-				if (!toBeReplaced.equals(replacement)) {
-					String previousBody = message.getBody();
-					String newBody = previousBody.replaceFirst
-							(Pattern.quote(toBeReplaced), Pattern.quote(replacement));
-					if (!previousBody.equals(newBody)) {
-						message.setBody(newBody);
-						message.setEdited(message.getUuid());
-						message.setUuid(UUID.randomUUID().toString());
-					}else{
-						mEditMessage.setText("");
+		final Conversation conversation = this.conversation;
+		if (body.length() == 0 || conversation == null) {
+			return;
+		}
+		if (conversation.getCorrectingMessage() == null) {
+			Pattern replacePatten = Pattern.compile("[s][/]\\S+[/]\\S+");
+			Matcher replaceMatcher = replacePatten.matcher(body);
+			boolean isReplacePattern = replaceMatcher.matches();
+			if (isReplacePattern) {
+				message = getUserLastMessage();
+				while (message.mergeable(message.next())) {
+					message = message.next();
+				}
+				if (isMessageCorrectable(message)) {
+					String toBeReplaced = body.split("s/")[1].split("/")[0];
+					String replacement = body.split("s/")[1].split("/")[1];
+					if (!toBeReplaced.equals(replacement)) {
+						String previousBody = message.getBody();
+						String newBody = previousBody.replaceFirst
+								(Pattern.quote(toBeReplaced), Pattern.quote(replacement));
+						if (!previousBody.equals(newBody)) {
+							message.setBody(newBody);
+							message.setEdited(message.getUuid());
+							message.setUuid(UUID.randomUUID().toString());
+						} else {
+							return;
+						}
+					} else {
 						return;
 					}
-				}else{
+				} else {
+					Toast.makeText(getActivity(), "Message can not be corrected!", Toast.LENGTH_SHORT).show();
 					mEditMessage.setText("");
 					return;
 				}
-			} else{
-				Toast.makeText(getActivity(), "Message can not be corrected!", Toast.LENGTH_SHORT).show();
-				mEditMessage.setText("");
-				return;
-			}
-		}else {
-			final Conversation conversation = this.conversation;
-			if (body.length() == 0 || conversation == null) {
-				return;
-			}
-			if (conversation.getCorrectingMessage() == null) {
+			} else {
 				message = new Message(conversation, body, conversation.getNextEncryption());
 				if (conversation.getMode() == Conversation.MODE_MULTI) {
 					final Jid nextCounterpart = conversation.getNextCounterpart();
@@ -515,13 +509,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						message.setType(Message.TYPE_PRIVATE);
 					}
 				}
-			} else {
-				message = conversation.getCorrectingMessage();
-				message.setBody(body);
-				message.setEdited(message.getUuid());
-				message.setUuid(UUID.randomUUID().toString());
 			}
+		}else {
+			message = conversation.getCorrectingMessage();
+			message.setBody(body);
+			message.setEdited(message.getUuid());
+			message.setUuid(UUID.randomUUID().toString());
 		}
+
 		switch (message.getConversation().getNextEncryption()) {
 			case Message.ENCRYPTION_OTR:
 				sendOtrMessage(message);
@@ -537,6 +532,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			default:
 				sendPlainTextMessage(message);
 		}
+	}
+
+	private boolean isMessageCorrectable(Message message) {
+		return message != null
+				&& message.getType() == Message.TYPE_TEXT
+				&& message.isLastCorrectableMessage()
+				&& (message.getConversation().getMucOptions().nonanonymous()
+				|| message.getConversation().getMode() == Conversation.MODE_SINGLE);
 	}
 
 	public void updateChatMsgHint() {
@@ -750,9 +753,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 				retryDecryption.setVisible(true);
 			}
-			if (relevantForCorrection.getType() == Message.TYPE_TEXT
-					&& relevantForCorrection.isLastCorrectableMessage()
-					&& (m.getConversation().getMucOptions().nonanonymous() || m.getConversation().getMode() == Conversation.MODE_SINGLE)) {
+			if (isMessageCorrectable(relevantForCorrection)) {
 				correctMessage.setVisible(true);
 			}
 			if (treatAsFile || (m.getType() == Message.TYPE_TEXT && !m.treatAsDownloadable())) {
