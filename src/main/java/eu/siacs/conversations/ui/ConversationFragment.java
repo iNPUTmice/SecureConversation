@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -460,27 +462,64 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	}
 
 	private void sendMessage() {
+		Message message;
 		final String body = mEditMessage.getText().toString();
-		final Conversation conversation = this.conversation;
-		if (body.length() == 0 || conversation == null) {
-			return;
-		}
-		final Message message;
-		if (conversation.getCorrectingMessage() == null) {
-			message = new Message(conversation, body, conversation.getNextEncryption());
-			if (conversation.getMode() == Conversation.MODE_MULTI) {
-				final Jid nextCounterpart = conversation.getNextCounterpart();
-				if (nextCounterpart != null) {
-					message.setCounterpart(nextCounterpart);
-					message.setTrueCounterpart(conversation.getMucOptions().getTrueCounterpart(nextCounterpart));
-					message.setType(Message.TYPE_PRIVATE);
-				}
+		Pattern replacePatten = Pattern.compile("[s][/]\\S+[/]\\S+");
+		Matcher replaceMatcher = replacePatten.matcher(body);
+		boolean isReplacePattern = replaceMatcher.matches();
+		if (isReplacePattern){
+			message = getUserLastMessage();
+			while (message.mergeable(message.next())) {
+				message = message.next();
 			}
-		} else {
-			message = conversation.getCorrectingMessage();
-			message.setBody(body);
-			message.setEdited(message.getUuid());
-			message.setUuid(UUID.randomUUID().toString());
+			if (message != null
+					&& message.getType() == Message.TYPE_TEXT
+					&& message.isLastCorrectableMessage()
+					&& (message.getConversation().getMucOptions().nonanonymous()
+					|| message.getConversation().getMode() == Conversation.MODE_SINGLE)) {
+				String toBeReplaced = body.split("s/")[1].split("/")[0];
+				String replacement = body.split("s/")[1].split("/")[1];
+				if (!toBeReplaced.equals(replacement)) {
+					String previousBody = message.getBody();
+					String newBody = previousBody.replaceFirst(toBeReplaced, replacement);
+					if (!previousBody.equals(newBody)) {
+						message.setBody(newBody);
+						message.setEdited(message.getUuid());
+						message.setUuid(UUID.randomUUID().toString());
+					}else{
+						mEditMessage.setText("");
+						return;
+					}
+				}else{
+					mEditMessage.setText("");
+					return;
+				}
+			} else{
+				Toast.makeText(getActivity(), "Message can not be corrected!", Toast.LENGTH_SHORT).show();
+				mEditMessage.setText("");
+				return;
+			}
+		}else {
+			final Conversation conversation = this.conversation;
+			if (body.length() == 0 || conversation == null) {
+				return;
+			}
+			if (conversation.getCorrectingMessage() == null) {
+				message = new Message(conversation, body, conversation.getNextEncryption());
+				if (conversation.getMode() == Conversation.MODE_MULTI) {
+					final Jid nextCounterpart = conversation.getNextCounterpart();
+					if (nextCounterpart != null) {
+						message.setCounterpart(nextCounterpart);
+						message.setTrueCounterpart(conversation.getMucOptions().getTrueCounterpart(nextCounterpart));
+						message.setType(Message.TYPE_PRIVATE);
+					}
+				}
+			} else {
+				message = conversation.getCorrectingMessage();
+				message.setBody(body);
+				message.setEdited(message.getUuid());
+				message.setUuid(UUID.randomUUID().toString());
+			}
 		}
 		switch (message.getConversation().getNextEncryption()) {
 			case Message.ENCRYPTION_OTR:
@@ -1739,6 +1778,17 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				conversation.getAccount().getPgpDecryptionService().giveUpCurrentDecryption();
 			}
 		}
+	}
+
+	private Message getUserLastMessage() {
+		Message userLastMessage = null;
+		for (int index = messageList.size() - 1; index >= 0; index--){
+			if (messageList.get(index).getStatus() == Message.STATUS_SEND){
+				userLastMessage = messageList.get(index);
+				break;
+			}
+		}
+		return userLastMessage;
 	}
 
 	enum SendButtonAction {
