@@ -481,7 +481,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				String replacement = body.split("s/")[1].split("/")[1];
 				if (!toBeReplaced.equals(replacement)) {
 					String previousBody = message.getBody();
-					String newBody = previousBody.replaceFirst(toBeReplaced, replacement);
+					String newBody = previousBody.replaceFirst
+							(Pattern.quote(toBeReplaced), Pattern.quote(replacement));
 					if (!previousBody.equals(newBody)) {
 						message.setBody(newBody);
 						message.setEdited(message.getUuid());
