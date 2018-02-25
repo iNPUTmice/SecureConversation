@@ -101,9 +101,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private RelativeLayout snackbar;
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
-	private LinearLayout offlineLayout;
-	private TextView networkStatus;
 	private Toast messageLoaderToast;
+	private boolean isCheckingNetworkStatus = false;
+	private boolean isNetworkAvailabe = true;
+
 	private OnClickListener clickToMuc = new OnClickListener() {
 
 		@Override
@@ -262,45 +263,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	};
 	private Message selectedMessage;
-	private OnClickListener mRefreshNetworkClickListener = new OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			networkStatus.setCompoundDrawables(null, null, null, null);
-			networkStatus.setText(getActivity().getResources().getString(R.string.refreshing));
-			if (ConnectivityReceiver.isConnected(getActivity())){
-				final Handler handler = new Handler();
-				handler.postDelayed(new Runnable() {
-					@Override
-					public void run() {
-						reconfigureOfflineText();
-						offlineLayout.setVisibility(View.GONE);
-					}
-				}, 1000);
-			}else{
-				final Handler handler = new Handler();
-				handler.postDelayed(new Runnable() {
-					@Override
-					public void run() {
-						reconfigureOfflineText();
-						offlineLayout.setVisibility(View.VISIBLE);
-					}
-				}, 1000);
-			}
-		}
-	};
-
-	private void reconfigureOfflineText() {
-		networkStatus.setText(getActivity().getResources().getString(R.string.offline));
-		Drawable refreshIcon =
-				ContextCompat.getDrawable(getActivity(), R.drawable.ic_refresh_black_24dp);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1){
-			networkStatus.setCompoundDrawablesRelativeWithIntrinsicBounds(refreshIcon, null, null, null);
-		} else{
-			refreshIcon.setBounds(0, 0, refreshIcon.getIntrinsicWidth(), refreshIcon.getIntrinsicHeight());
-			networkStatus.setCompoundDrawables(refreshIcon, null, null, null);
-		}
-	}
-
 	private OnClickListener mEnableAccountListener = new OnClickListener() {
 		@Override
 		public void onClick(View v) {
@@ -324,6 +286,24 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				BlockContactDialog.show(activity, conversation);
 			} else {
 				activity.unblockConversation(conversation);
+			}
+		}
+	};
+	private OnClickListener mCheckNetworkListener = new OnClickListener() {
+		@Override
+		public void onClick(View view) {
+			final Account account = conversation == null ? null : conversation.getAccount();
+			if (account != null) {
+				isCheckingNetworkStatus = true;
+				updateSnackBar(conversation);
+				final Handler handler = new Handler();
+				handler.postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						isNetworkAvailabe = ConnectivityReceiver.isConnected(getActivity());
+						updateSnackBar(conversation);
+					}
+				}, 1000);
 			}
 		}
 	};
@@ -606,10 +586,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		snackbarMessage = (TextView) view.findViewById(R.id.snackbar_message);
 		snackbarAction = (TextView) view.findViewById(R.id.snackbar_action);
 
-		offlineLayout = (LinearLayout) view.findViewById(R.id.offline_layout);
-		networkStatus = (TextView) view.findViewById(R.id.network_status);
-		offlineLayout.setOnClickListener(mRefreshNetworkClickListener);
-
 		messagesView = (ListView) view.findViewById(R.id.messages_view);
 		messagesView.setOnScrollListener(mOnScrollListener);
 		messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
@@ -686,17 +662,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		messagesView.setAdapter(messageListAdapter);
 
 		registerForContextMenu(messagesView);
-		checkNetworkStatus();
 
 		return view;
-	}
-
-	private void checkNetworkStatus() {
-		if (ConnectivityReceiver.isConnected(getActivity())){
-			onConnected();
-		}else{
-			onDisconnected();
-		}
 	}
 
 	private void quoteText(String text) {
@@ -1124,7 +1091,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		final XmppConnection connection = account.getXmppConnection();
 		final int mode = conversation.getMode();
 		final Contact contact = mode == Conversation.MODE_SINGLE ? conversation.getContact() : null;
-		if (account.getStatus() == Account.State.DISABLED) {
+		if (isCheckingNetworkStatus) {
+			showSnackbar(R.string.checking_for_connection, 0, null);
+			isCheckingNetworkStatus = false;
+		} else if (account.getStatus() == Account.State.DISABLED) {
 			showSnackbar(R.string.this_account_is_disabled, R.string.enable, this.mEnableAccountListener);
 		} else if (conversation.isBlocked()) {
 			showSnackbar(R.string.contact_blocked, R.string.unblock, this.mUnblockClickListener);
@@ -1132,6 +1102,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			showSnackbar(R.string.contact_added_you, R.string.add_back, this.mAddBackClickListener, this.mLongPressBlockListener);
 		} else if (contact != null && contact.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
 			showSnackbar(R.string.contact_asks_for_presence_subscription, R.string.allow, this.mAllowPresenceSubscription, this.mLongPressBlockListener);
+		} else if (!isNetworkAvailabe) {
+			showSnackbar(R.string.no_connectivity, R.string.retry, this.mCheckNetworkListener);
 		} else if (mode == Conversation.MODE_MULTI
 				&& !conversation.getMucOptions().online()
 				&& account.getStatus() == Account.State.ONLINE) {
@@ -1700,11 +1672,17 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	}
 
 	public void onConnected(){
-		offlineLayout.setVisibility(View.GONE);
+		isNetworkAvailabe = true;
+		if (conversation != null) {
+			updateSnackBar(conversation);
+		}
 	}
 
 	public void onDisconnected(){
-		offlineLayout.setVisibility(View.VISIBLE);
+		isNetworkAvailabe = false;
+		if (conversation != null) {
+			updateSnackBar(conversation);
+		}
 	}
 
 	@Override
