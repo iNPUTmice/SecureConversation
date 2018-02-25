@@ -9,14 +9,11 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
-import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
-import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.InputType;
 import android.util.Log;
@@ -38,7 +35,6 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.RelativeLayout;
@@ -57,7 +53,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import eu.siacs.conversations.BuildConfig;
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
@@ -102,6 +97,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
+	private Handler handler;
 	private boolean isCheckingNetworkStatus = false;
 	private boolean isNetworkAvailabe = true;
 
@@ -296,7 +292,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			if (account != null) {
 				isCheckingNetworkStatus = true;
 				updateSnackBar(conversation);
-				final Handler handler = new Handler();
+				handler = new Handler();
 				handler.postDelayed(new Runnable() {
 					@Override
 					public void run() {
@@ -480,6 +476,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
+	@Override
+	public void onDetach() {
+		super.onDetach();
+		if (handler != null) {
+			handler.removeCallbacksAndMessages(null);
+		}
+	}
+
 	public void setScrollPosition(Pair<Integer, Integer> scrollPosition) {
 		if (scrollPosition != null) {
 			this.messagesView.setSelectionFromTop(scrollPosition.first, scrollPosition.second);
@@ -561,7 +565,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		final View view = inflater.inflate(R.layout.fragment_conversation, container, false);
 		view.setOnClickListener(null);
-
 
 		mEditMessage = (EditMessage) view.findViewById(R.id.textinput);
 		mEditMessage.setOnClickListener(new OnClickListener() {
