@@ -88,6 +88,7 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class ConversationFragment extends Fragment implements EditMessage.KeyboardListener {
 
+	private static final Pattern FIND_REPLACE_PATTERN = Pattern.compile("[s][/]\\S+[/]\\S+");
 	final protected List<Message> messageList = new ArrayList<>();
 	protected Conversation conversation;
 	protected ListView messagesView;
@@ -469,8 +470,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			return;
 		}
 		if (conversation.getCorrectingMessage() == null) {
-			Pattern replacePatten = Pattern.compile("[s][/]\\S+[/]\\S+");
-			Matcher replaceMatcher = replacePatten.matcher(body);
+			Matcher replaceMatcher = FIND_REPLACE_PATTERN.matcher(body);
 			boolean isReplacePattern = replaceMatcher.matches();
 			if (isReplacePattern) {
 				message = getUserLastMessage();
@@ -496,7 +496,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					}
 				} else {
 					Toast.makeText(getActivity(), "Message can not be corrected!", Toast.LENGTH_SHORT).show();
-					mEditMessage.setText("");
 					return;
 				}
 			} else {
