@@ -84,6 +84,7 @@ public class ConversationActivity extends XmppActivity
 
 	public static final int REQUEST_SEND_MESSAGE = 0x0201;
 	public static final int REQUEST_DECRYPT_PGP = 0x0202;
+	public static final int REQUEST_GET_KEY = 0x0206;
 	public static final int REQUEST_ENCRYPT_MESSAGE = 0x0207;
 	public static final int REQUEST_TRUST_KEYS_TEXT = 0x0208;
 	public static final int REQUEST_TRUST_KEYS_MENU = 0x0209;
@@ -1512,6 +1513,8 @@ public class ConversationActivity extends XmppActivity
 					this.mPostponedActivityResult = new Pair<>(requestCode, data);
 				}
 
+			}  else if (requestCode == REQUEST_GET_KEY) {
+				mConversationFragment.sendMessage(data);
 			}
 		} else {
 			mPendingImageUris.clear();
@@ -1728,42 +1731,48 @@ public class ConversationActivity extends XmppActivity
 		}
 	}
 
-	public void encryptTextMessage(Message message) {
-		xmppConnectionService.getPgpEngine().encrypt(message,
-				new UiCallback<Message>() {
+	public void encryptTextMessage(Message message, Long contactPgpKeyId) {
+		UiCallback messageEncryptCallback = new UiCallback<Message>() {
+			@Override
+			public void userInputRequried(PendingIntent pi,Message message) {
+				ConversationActivity.this.runIntent(pi,ConversationActivity.REQUEST_SEND_MESSAGE);
+			}
 
+			@Override
+			public void success(Message message) {
+				message.setEncryption(Message.ENCRYPTION_DECRYPTED);
+				xmppConnectionService.sendMessage(message);
+				runOnUiThread(new Runnable() {
 					@Override
-					public void userInputRequried(PendingIntent pi,Message message) {
-						ConversationActivity.this.runIntent(pi,ConversationActivity.REQUEST_SEND_MESSAGE);
-					}
-
-					@Override
-					public void success(Message message) {
-						message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-						xmppConnectionService.sendMessage(message);
-						runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								mConversationFragment.messageSent();
-							}
-						});
-					}
-
-					@Override
-					public void error(final int error, Message message) {
-						runOnUiThread(new Runnable() {
-							@Override
-							public void run() {
-								mConversationFragment.doneSendingPgpMessage();
-								Toast.makeText(ConversationActivity.this,
-										R.string.unable_to_connect_to_keychain,
-										Toast.LENGTH_SHORT
-								).show();
-							}
-						});
-
+					public void run() {
+						mConversationFragment.messageSent();
 					}
 				});
+			}
+
+			@Override
+			public void error(final int error, Message message) {
+				runOnUiThread(new Runnable() {
+					@Override
+					public void run() {
+						mConversationFragment.doneSendingPgpMessage();
+						Toast.makeText(ConversationActivity.this,
+								R.string.unable_to_connect_to_keychain,
+								Toast.LENGTH_SHORT
+						).show();
+					}
+				});
+
+			}
+		};
+		if (contactPgpKeyId == 0) {
+			xmppConnectionService.getPgpEngine().encrypt(message, messageEncryptCallback);
+		} else {
+			xmppConnectionService.getPgpEngine().encryptWithContactKeyId(
+					message,
+					contactPgpKeyId,
+					messageEncryptCallback);
+		}
 	}
 
 	public boolean useSendButtonToIndicateStatus() {

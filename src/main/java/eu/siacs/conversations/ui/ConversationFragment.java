@@ -359,7 +359,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				if (imm.isFullscreenMode()) {
 					imm.hideSoftInputFromWindow(v.getWindowToken(), 0);
 				}
-				sendMessage();
+				sendMessage(null);
 				return true;
 			} else {
 				return false;
@@ -404,10 +404,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						}
 						break;
 					default:
-						sendMessage();
+						sendMessage(null);
 				}
 			} else {
-				sendMessage();
+				sendMessage(null);
 			}
 		}
 	};
@@ -459,7 +459,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		}
 	}
 
-	private void sendMessage() {
+	public void sendMessage(Intent pgpEncryptionIntent) {
 		final String body = mEditMessage.getText().toString();
 		final Conversation conversation = this.conversation;
 		if (body.length() == 0 || conversation == null) {
@@ -487,7 +487,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				sendOtrMessage(message);
 				break;
 			case Message.ENCRYPTION_PGP:
-				sendPgpMessage(message);
+				sendPgpMessage(message, pgpEncryptionIntent);
 				break;
 			case Message.ENCRYPTION_AXOLOTL:
 				if (!activity.trustKeysIfNeeded(ConversationActivity.REQUEST_TRUST_KEYS_TEXT)) {
@@ -1494,7 +1494,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		messageSent();
 	}
 
-	protected void sendPgpMessage(final Message message) {
+	protected void sendPgpMessage(final Message message, Intent pgpEncryptionIntent) {
 		final ConversationActivity activity = (ConversationActivity) getActivity();
 		final XmppConnectionService xmppService = activity.xmppConnectionService;
 		final Contact contact = message.getConversation().getContact();
@@ -1524,7 +1524,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 							@Override
 							public void success(Contact contact) {
-								activity.encryptTextMessage(message);
+								activity.encryptTextMessage(message, 0L);
 							}
 
 							@Override
@@ -1543,18 +1543,43 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						});
 
 			} else {
-				showNoPGPKeyDialog(false,
-						new DialogInterface.OnClickListener() {
+				pgpEncryptionIntent = pgpEncryptionIntent == null ? new Intent() : pgpEncryptionIntent;
+				xmppService.getPgpEngine().getKeyIds(pgpEncryptionIntent,
+						contact,
+						new UiCallback<Long>() {
+							@Override
+							public void success(Long keyId) {
+								activity.encryptTextMessage(message, keyId);
+							}
 
 							@Override
-							public void onClick(DialogInterface dialog,
-							                    int which) {
-								conversation
-										.setNextEncryption(Message.ENCRYPTION_NONE);
-								xmppService.updateConversation(conversation);
-								message.setEncryption(Message.ENCRYPTION_NONE);
-								xmppService.sendMessage(message);
-								messageSent();
+							public void error(int errorCode, Long keyId) {
+								activity.runOnUiThread(new Runnable() {
+									@Override
+									public void run() {
+										showNoPGPKeyDialog(false,
+												new DialogInterface.OnClickListener() {
+
+													@Override
+													public void onClick(DialogInterface dialog,
+																		int which) {
+														conversation
+																.setNextEncryption(Message.ENCRYPTION_NONE);
+														xmppService.updateConversation(conversation);
+														message.setEncryption(Message.ENCRYPTION_NONE);
+														xmppService.sendMessage(message);
+														messageSent();
+													}
+												});
+									}
+								});
+							}
+
+							@Override
+							public void userInputRequried(PendingIntent pi, Long keyId) {
+								activity.runIntent(
+										pi,
+										ConversationActivity.REQUEST_GET_KEY);
 							}
 						});
 			}
@@ -1568,7 +1593,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					warning.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
 					warning.show();
 				}
-				activity.encryptTextMessage(message);
+				activity.encryptTextMessage(message, 0L);
 			} else {
 				showNoPGPKeyDialog(true,
 						new DialogInterface.OnClickListener() {
@@ -1641,7 +1666,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	@Override
 	public boolean onEnterPressed() {
 		if (activity.enterIsSend()) {
-			sendMessage();
+			sendMessage(null);
 			return true;
 		} else {
 			return false;
