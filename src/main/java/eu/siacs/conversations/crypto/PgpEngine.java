@@ -50,26 +50,6 @@ public class PgpEngine {
 		} else {
 			params.putExtra(OpenPgpApi.EXTRA_KEY_IDS, conversation.getMucOptions().getPgpKeyIds());
 		}
-		encryptMessage(message, params, conversation, callback);
-	}
-
-	public void encryptWithContactKeyId(final Message message, final Long contactPgpKeyId, final UiCallback<Message> callback) {
-		Intent params = new Intent();
-		params.setAction(OpenPgpApi.ACTION_ENCRYPT);
-		final Conversation conversation = message.getConversation();
-		if (conversation.getMode() == Conversation.MODE_SINGLE) {
-			long[] keys = {
-					contactPgpKeyId,
-					conversation.getAccount().getPgpId()
-			};
-			params.putExtra(OpenPgpApi.EXTRA_KEY_IDS, keys);
-		} else {
-			params.putExtra(OpenPgpApi.EXTRA_KEY_IDS, conversation.getMucOptions().getPgpKeyIds());
-		}
-		encryptMessage(message, params, conversation, callback);
-	}
-
-	private void encryptMessage(Message message, Intent params, Conversation conversation, UiCallback<Message> callback) {
 		if (!message.needsUploading()) {
 			params.putExtra(OpenPgpApi.EXTRA_REQUEST_ASCII_ARMOR, true);
 			String body;
@@ -316,7 +296,6 @@ public class PgpEngine {
 
 	public void getKeyIds(Intent params, final Contact contact, final UiCallback<Long> callback) {
 		params.setAction(OpenPgpApi.ACTION_GET_KEY_IDS);
-		params.putExtra(OpenPgpApi.EXTRA_USER_IDS, new String[]{contact.getDisplayJid()});
 		api.executeApiAsync(params, null, null, new IOpenPgpCallback() {
 
 			@Override

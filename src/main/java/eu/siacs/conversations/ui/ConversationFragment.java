@@ -1524,7 +1524,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 
 							@Override
 							public void success(Contact contact) {
-								activity.encryptTextMessage(message, 0L);
+								activity.encryptTextMessage(message);
 							}
 
 							@Override
@@ -1549,7 +1549,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 						new UiCallback<Long>() {
 							@Override
 							public void success(Long keyId) {
-								activity.encryptTextMessage(message, keyId);
+								contact.setPgpKeyId(keyId);
+								activity.encryptTextMessage(message);
 							}
 
 							@Override
@@ -1563,8 +1564,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 													@Override
 													public void onClick(DialogInterface dialog,
 																		int which) {
-														conversation
-																.setNextEncryption(Message.ENCRYPTION_NONE);
+														conversation.setNextEncryption(Message.ENCRYPTION_NONE);
 														xmppService.updateConversation(conversation);
 														message.setEncryption(Message.ENCRYPTION_NONE);
 														xmppService.sendMessage(message);
@@ -1593,7 +1593,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					warning.setGravity(Gravity.CENTER_VERTICAL, 0, 0);
 					warning.show();
 				}
-				activity.encryptTextMessage(message, 0L);
+				activity.encryptTextMessage(message);
 			} else {
 				showNoPGPKeyDialog(true,
 						new DialogInterface.OnClickListener() {

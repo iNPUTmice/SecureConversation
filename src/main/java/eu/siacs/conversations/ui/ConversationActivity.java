@@ -1731,8 +1731,8 @@ public class ConversationActivity extends XmppActivity
 		}
 	}
 
-	public void encryptTextMessage(Message message, Long contactPgpKeyId) {
-		UiCallback messageEncryptCallback = new UiCallback<Message>() {
+	public void encryptTextMessage(Message message) {
+		xmppConnectionService.getPgpEngine().encrypt(message, new UiCallback<Message>() {
 			@Override
 			public void userInputRequried(PendingIntent pi,Message message) {
 				ConversationActivity.this.runIntent(pi,ConversationActivity.REQUEST_SEND_MESSAGE);
@@ -1764,15 +1764,7 @@ public class ConversationActivity extends XmppActivity
 				});
 
 			}
-		};
-		if (contactPgpKeyId == 0) {
-			xmppConnectionService.getPgpEngine().encrypt(message, messageEncryptCallback);
-		} else {
-			xmppConnectionService.getPgpEngine().encryptWithContactKeyId(
-					message,
-					contactPgpKeyId,
-					messageEncryptCallback);
-		}
+		});
 	}
 
 	public boolean useSendButtonToIndicateStatus() {
