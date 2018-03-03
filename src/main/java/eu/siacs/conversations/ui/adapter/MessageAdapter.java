@@ -13,7 +13,6 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.support.annotation.ColorInt;
-import android.support.text.emoji.EmojiCompat;
 import android.support.v4.content.ContextCompat;
 import android.text.Spannable;
 import android.text.SpannableString;
@@ -33,6 +32,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -76,6 +76,7 @@ import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.StylingHelper;
 import eu.siacs.conversations.utils.UIHelper;
+import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.mam.MamReference;
 
 public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextView.CopyHandler {
@@ -114,6 +115,14 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		}
 	};
 
+	private static final Linkify.MatchFilter XMPPURI_MATCH_FILTER = new Linkify.MatchFilter() {
+		@Override
+		public boolean acceptMatch(CharSequence s, int start, int end) {
+			XmppUri uri = new XmppUri(s.subSequence(start,end).toString());
+			return uri.isJidValid();
+		}
+	};
+
 	private final ConversationActivity activity;
 
 	private DisplayMetrics metrics;
@@ -136,6 +145,14 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		this.activity = activity;
 		metrics = getContext().getResources().getDisplayMetrics();
 		updatePreferences();
+	}
+
+	public void flagScreenOn() {
+		activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+	}
+
+	public void flagScreenOff() {
+		activity.getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 	}
 
 	public void setOnContactPictureClicked(OnContactPictureClicked listener) {
@@ -491,7 +508,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 
 			StylingHelper.format(body, viewHolder.messageBody.getCurrentTextColor());
 
-			Linkify.addLinks(body, XMPP_PATTERN, "xmpp");
+			Linkify.addLinks(body, XMPP_PATTERN, "xmpp", XMPPURI_MATCH_FILTER, null);
 			Linkify.addLinks(body, Patterns.AUTOLINK_WEB_URL, "http", WEBURL_MATCH_FILTER, WEBURL_TRANSFORM_FILTER);
 			Linkify.addLinks(body, GeoHelper.GEO_URI, "geo");
 			FixedURLSpan.fix(body);

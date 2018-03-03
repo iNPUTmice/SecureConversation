@@ -173,8 +173,6 @@
   <string name="account_settings_example_jabber_id">username@example.com</string>
   <string name="account_settings_confirm_password">パスワードを確認</string>
   <string name="password">パスワード</string>
-  <string name="confirm_password">パスワードを確認</string>
-  <string name="passwords_do_not_match">パスワードが一致しません</string>
   <string name="invalid_jid">これは有効な Jabber ID ではありません</string>
   <string name="error_out_of_memory">メモリ不足です。画像が大きすぎます</string>
   <string name="add_phone_book_text">%s をお使いのアドレス帳に追加しますか?</string>
@@ -234,7 +232,6 @@
   <string name="contact_has_read_up_to_this_point">%s はここまで読みました</string>
   <string name="publish">公開</string>
   <string name="touch_to_choose_picture">アバターをタッチしてギャラリーから画像を選択します</string>
-  <string name="publish_avatar_explanation">ご注意ください: あなたの参加アップデートを登録している人は、誰でもこの絵を見ることができます。</string>
   <string name="publishing">公開中…</string>
   <string name="error_publish_avatar_server_reject">サーバーがあなたの公開を拒否しました</string>
   <string name="error_publish_avatar_converting">写真の変換中に、何か問題が発生しました</string>

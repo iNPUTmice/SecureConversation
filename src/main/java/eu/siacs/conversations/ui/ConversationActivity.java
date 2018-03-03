@@ -913,7 +913,7 @@ public class ConversationActivity extends XmppActivity
 									conversation.setNextEncryption(Message.ENCRYPTION_PGP);
 									item.setChecked(true);
 								} else {
-									announcePgp(conversation.getAccount(), conversation, onOpenPGPKeyPublished);
+									announcePgp(conversation.getAccount(), conversation,null, onOpenPGPKeyPublished);
 								}
 							} else {
 								showInstallPgpDialog();
@@ -1207,16 +1207,22 @@ public class ConversationActivity extends XmppActivity
 		mPostponedActivityResult = null;
 	}
 
-	private void redirectToStartConversationActivity() {
+	private void redirectToStartConversationActivity(boolean noAnimation) {
 		Account pendingAccount = xmppConnectionService.getPendingAccount();
 		if (pendingAccount == null) {
 			Intent startConversationActivity = new Intent(this, StartConversationActivity.class);
+			startConversationActivity.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+			if (noAnimation) {
+				startConversationActivity.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+			}
 			startConversationActivity.putExtra("init", true);
 			startActivity(startConversationActivity);
+			if (noAnimation) {
+				overridePendingTransition(0,0);
+			}
 		} else {
 			switchToAccount(pendingAccount, true);
 		}
-		finish();
 	}
 
 	@Override
@@ -1237,19 +1243,23 @@ public class ConversationActivity extends XmppActivity
 		if (xmppConnectionService.getAccounts().size() == 0) {
 			if (mRedirected.compareAndSet(false, true)) {
 				if (Config.X509_VERIFICATION) {
-					startActivity(new Intent(this, ManageAccountActivity.class));
+					Intent redirectionIntent = new Intent(this, ManageAccountActivity.class);
+					redirectionIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+					startActivity(redirectionIntent);
+					overridePendingTransition(0,0);
 				} else if (Config.MAGIC_CREATE_DOMAIN != null) {
-					startActivity(new Intent(this, WelcomeActivity.class));
+					WelcomeActivity.launch(this);
 				} else {
 					Intent editAccount = new Intent(this, EditAccountActivity.class);
 					editAccount.putExtra("init",true);
+					editAccount.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
 					startActivity(editAccount);
+					overridePendingTransition(0,0);
 				}
-				finish();
 			}
 		} else if (conversationList.size() <= 0) {
 			if (mRedirected.compareAndSet(false, true)) {
-				redirectToStartConversationActivity();
+				redirectToStartConversationActivity(true);
 			}
 		} else if (selectConversationByUuid(mOpenConversation)) {
 			if (mPanelOpen) {
@@ -1420,7 +1430,7 @@ public class ConversationActivity extends XmppActivity
 						// associate selected PGP keyId with the account
 						mSelectedConversation.getAccount().setPgpSignId(data.getExtras().getLong(OpenPgpApi.EXTRA_SIGN_KEY_ID));
 						// we need to announce the key as described in XEP-027
-						announcePgp(mSelectedConversation.getAccount(), null, onOpenPGPKeyPublished);
+						announcePgp(mSelectedConversation.getAccount(), null, null, onOpenPGPKeyPublished);
 					} else {
 						choosePgpSignId(mSelectedConversation.getAccount());
 					}
@@ -1430,7 +1440,7 @@ public class ConversationActivity extends XmppActivity
 				}
 			} else if (requestCode == REQUEST_ANNOUNCE_PGP) {
 				if (xmppConnectionServiceBound) {
-					announcePgp(mSelectedConversation.getAccount(), mSelectedConversation, onOpenPGPKeyPublished);
+					announcePgp(mSelectedConversation.getAccount(), mSelectedConversation,data, onOpenPGPKeyPublished);
 					this.mPostponedActivityResult = null;
 				} else {
 					this.mPostponedActivityResult = new Pair<>(requestCode, data);
@@ -1520,14 +1530,19 @@ public class ConversationActivity extends XmppActivity
 		return connection == null ? -1 : connection.getFeatures().getMaxHttpUploadSize();
 	}
 
+	private String getBatteryOptimizationPreferenceKey() {
+		@SuppressLint("HardwareIds") String device = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
+		return "show_battery_optimization"+(device == null ? "" : device);
+	}
+
 	private void setNeverAskForBatteryOptimizationsAgain() {
-		getPreferences().edit().putBoolean("show_battery_optimization", false).apply();
+		getPreferences().edit().putBoolean(getBatteryOptimizationPreferenceKey(), false).apply();
 	}
 
 	private void openBatteryOptimizationDialogIfNeeded() {
 		if (hasAccountWithoutPush()
 				&& isOptimizingBattery()
-				&& getPreferences().getBoolean("show_battery_optimization", true)) {
+				&& getPreferences().getBoolean(getBatteryOptimizationPreferenceKey(), true)) {
 			AlertDialog.Builder builder = new AlertDialog.Builder(this);
 			builder.setTitle(R.string.battery_optimizations_enabled);
 			builder.setMessage(R.string.battery_optimizations_enabled_dialog);
@@ -1560,7 +1575,7 @@ public class ConversationActivity extends XmppActivity
 
 	private boolean hasAccountWithoutPush() {
 		for(Account account : xmppConnectionService.getAccounts()) {
-			if (account.getStatus() != Account.State.DISABLED && !xmppConnectionService.getPushManagementService().available(account)) {
+			if (account.getStatus() == Account.State.ONLINE && !xmppConnectionService.getPushManagementService().available(account)) {
 				return true;
 			}
 		}
@@ -1596,6 +1611,7 @@ public class ConversationActivity extends XmppActivity
 		}
 		final Toast prepareFileToast = Toast.makeText(getApplicationContext(),getText(R.string.preparing_file), Toast.LENGTH_LONG);
 		prepareFileToast.show();
+		delegateUriPermissionsToService(uri);
 		xmppConnectionService.attachFileToConversation(conversation, uri, new UiInformableCallback<Message>() {
 			@Override
 			public void inform(final String text) {
@@ -1649,6 +1665,7 @@ public class ConversationActivity extends XmppActivity
 		}
 		final Toast prepareFileToast = Toast.makeText(getApplicationContext(),getText(R.string.preparing_image), Toast.LENGTH_LONG);
 		prepareFileToast.show();
+		delegateUriPermissionsToService(uri);
 		xmppConnectionService.attachImageToConversation(conversation, uri,
 				new UiCallback<Message>() {
 
@@ -1807,7 +1824,7 @@ public class ConversationActivity extends XmppActivity
 			}
 		} else {
 			if (!isStopping() && mRedirected.compareAndSet(false, true)) {
-				redirectToStartConversationActivity();
+				redirectToStartConversationActivity(false);
 			}
 			Log.d(Config.LOGTAG,"not updating conversations fragment because conversations list size was 0");
 		}

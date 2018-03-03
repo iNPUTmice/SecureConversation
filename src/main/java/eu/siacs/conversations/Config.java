@@ -43,6 +43,8 @@ public final class Config {
 	public static final String MAGIC_CREATE_DOMAIN = "conversations.im";
 	public static final boolean DISALLOW_REGISTRATION_IN_UI = false; //hide the register checkbox
 
+	public static final boolean USE_RANDOM_RESOURCE_ON_EVERY_BIND = false;
+
 	public static final boolean ALLOW_NON_TLS_CONNECTIONS = false; //very dangerous. you should have a good reason to set this to true
 	public static final boolean FORCE_ORBOT = false; // always use TOR
 	public static final boolean HIDE_MESSAGE_TEXT_IN_NOTIFICATION = false;
@@ -61,7 +63,8 @@ public final class Config {
 	public static final int MINI_GRACE_PERIOD = 750;
 
 	public static final int AVATAR_SIZE = 192;
-	public static final Bitmap.CompressFormat AVATAR_FORMAT = Bitmap.CompressFormat.WEBP;
+	public static final Bitmap.CompressFormat AVATAR_FORMAT = Bitmap.CompressFormat.JPEG;
+	public static final int AVATAR_CHAR_LIMIT = 9400;
 
 	public static final int IMAGE_SIZE = 1920;
 	public static final Bitmap.CompressFormat IMAGE_FORMAT = Bitmap.CompressFormat.JPEG;
@@ -99,8 +102,6 @@ public final class Config {
 	public static final boolean ONLY_INTERNAL_STORAGE = false; //use internal storage instead of sdcard to save attachments
 
 	public static final boolean IGNORE_ID_REWRITE_IN_MUC = true;
-
-	public static final boolean PARSE_REAL_JID_FROM_MUC_MAM = false; //dangerous if server doesn’t filter
 
 	public static final long MAM_MAX_CATCHUP =  MILLISECONDS_IN_DAY * 5;
 	public static final int MAM_MAX_MESSAGES = 750;

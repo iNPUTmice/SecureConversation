@@ -1,18 +1,21 @@
 package eu.siacs.conversations.ui;
 
 import android.app.ActionBar;
+import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 
 import java.util.List;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.utils.XmppUri;
 
 public class WelcomeActivity extends XmppActivity {
+
+	public static final String EXTRA_INVITE_URI = "eu.siacs.conversations.invite_uri";
 
 	@Override
 	protected void refreshUiReal() {
@@ -34,6 +37,13 @@ public class WelcomeActivity extends XmppActivity {
 	}
 
 	@Override
+	public void onNewIntent(Intent intent) {
+		if (intent != null) {
+			setIntent(intent);
+		}
+	}
+
+	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		if (getResources().getBoolean(R.bool.portrait_only)) {
 			setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
@@ -45,31 +55,50 @@ public class WelcomeActivity extends XmppActivity {
 			ab.setDisplayShowHomeEnabled(false);
 			ab.setDisplayHomeAsUpEnabled(false);
 		}
-		final Button createAccount = (Button) findViewById(R.id.create_account);
-		createAccount.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				Intent intent = new Intent(WelcomeActivity.this, MagicCreateActivity.class);
-				intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-				startActivity(intent);
-			}
+		final Button createAccount = findViewById(R.id.create_account);
+		createAccount.setOnClickListener(v -> {
+			final Intent intent = new Intent(WelcomeActivity.this, MagicCreateActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+			addInviteUri(intent);
+			startActivity(intent);
 		});
-		final Button useOwnProvider = (Button) findViewById(R.id.use_own_provider);
-		useOwnProvider.setOnClickListener(new View.OnClickListener() {
-			@Override
-			public void onClick(View v) {
-				List<Account> accounts = xmppConnectionService.getAccounts();
-				Intent intent = new Intent(WelcomeActivity.this, EditAccountActivity.class);
-				if (accounts.size() == 1) {
-					intent.putExtra("jid",accounts.get(0).getJid().toBareJid().toString());
-					intent.putExtra("init",true);
-				} else if (accounts.size() >= 1) {
-					intent = new Intent(WelcomeActivity.this, ManageAccountActivity.class);
-				}
-				startActivity(intent);
+		final Button useOwnProvider = findViewById(R.id.use_own_provider);
+		useOwnProvider.setOnClickListener(v -> {
+			List<Account> accounts = xmppConnectionService.getAccounts();
+			Intent intent = new Intent(WelcomeActivity.this, EditAccountActivity.class);
+			if (accounts.size() == 1) {
+				intent.putExtra("jid", accounts.get(0).getJid().toBareJid().toString());
+				intent.putExtra("init", true);
+			} else if (accounts.size() >= 1) {
+				intent = new Intent(WelcomeActivity.this, ManageAccountActivity.class);
 			}
+			addInviteUri(intent);
+			startActivity(intent);
 		});
 
+	}
+
+	public void addInviteUri(Intent intent) {
+		addInviteUri(intent, getIntent());
+	}
+
+	public static void addInviteUri(Intent intent, XmppUri uri) {
+		if (uri.isJidValid()) {
+			intent.putExtra(EXTRA_INVITE_URI, uri.toString());
+		}
+	}
+
+	public static void addInviteUri(Intent to, Intent from) {
+		if (from != null && from.hasExtra(EXTRA_INVITE_URI)) {
+			to.putExtra(EXTRA_INVITE_URI, from.getStringExtra(EXTRA_INVITE_URI));
+		}
+	}
+
+	public static void launch(Activity activity) {
+		Intent intent = new Intent(activity, WelcomeActivity.class);
+		intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NO_ANIMATION);
+		activity.startActivity(intent);
+		activity.overridePendingTransition(0,0);
 	}
 
 }

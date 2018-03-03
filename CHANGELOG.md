@@ -1,5 +1,34 @@
 # Changelog
 
+### Version 1.23.7
+* Improved MAM support + bug fixes
+
+### Version 1.23.6
+* Fixed crash on receiving invalid HTTP slot response
+
+### Version 1.23.5
+* improved self chat
+
+### Version 1.23.4
+* keep screen on while playing audio
+* send delivery receipts after MAM catch-up
+* reduce number of wake locks
+
+### Version 1.23.3
+* Fixed OMEMO device list not being announced
+
+### Version 1.23.2
+* Removed NFC support
+* upload Avatars as JPEG
+* reduce APK size
+
+### Version 1.23.1
+* Show icon instead of image preview in conversation overview
+* fixed loop when trying to decrypt with YubiKey
+
+### Version 1.23.0
+* Support for read markers in private, non-anonymous group chats
+
 ### Version 1.22.1
 * Disable swipe to left to end conversation
 * Fixed 'No permission to access …' when opening files shared from the SD card

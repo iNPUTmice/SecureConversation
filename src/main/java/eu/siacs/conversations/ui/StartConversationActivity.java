@@ -2,7 +2,6 @@ package eu.siacs.conversations.ui;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.ActionBar.Tab;
 import android.app.ActionBar.TabListener;
@@ -20,12 +19,8 @@ import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
-import android.nfc.NfcAdapter;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.text.Editable;
@@ -55,9 +50,6 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -75,6 +67,7 @@ import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.services.XmppConnectionService.OnRosterUpdate;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.adapter.ListItemAdapter;
+import eu.siacs.conversations.ui.service.EmojiService;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -107,15 +100,10 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 
         @Override
         public boolean onMenuItemActionExpand(MenuItem item) {
-            mSearchEditText.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    mSearchEditText.requestFocus();
-                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-                    imm.showSoftInput(mSearchEditText,
-                            InputMethodManager.SHOW_IMPLICIT);
-                }
+            mSearchEditText.post(() -> {
+                mSearchEditText.requestFocus();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(mSearchEditText, InputMethodManager.SHOW_IMPLICIT);
             });
 
             return true;
@@ -211,23 +199,15 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
     private UiCallback<Conversation> mAdhocConferenceCallback = new UiCallback<Conversation>() {
         @Override
         public void success(final Conversation conversation) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    hideToast();
-                    switchToConversation(conversation);
-                }
+            runOnUiThread(() -> {
+                hideToast();
+                switchToConversation(conversation);
             });
         }
 
         @Override
         public void error(final int errorCode, Conversation object) {
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    replaceToast(getString(errorCode));
-                }
-            });
+            runOnUiThread(() -> replaceToast(getString(errorCode)));
         }
 
         @Override
@@ -257,8 +237,9 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        new EmojiService(this).init();
         setContentView(R.layout.activity_start_conversation);
-        mViewPager = (ViewPager) findViewById(R.id.start_conversation_view_pager);
+        mViewPager = findViewById(R.id.start_conversation_view_pager);
         ActionBar actionBar = getActionBar();
         actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_TABS);
 
@@ -275,7 +256,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 
         mConferenceAdapter = new ListItemAdapter(this, conferences);
         mContactsAdapter = new ListItemAdapter(this, contacts);
-        ((ListItemAdapter) mContactsAdapter).setOnTagClickedListener(this.mOnTagClickedListener);
+        mContactsAdapter.setOnTagClickedListener(this.mOnTagClickedListener);
         this.mHideOfflineContacts = getPreferences().getBoolean("hide_offline", false);
 
     }
@@ -287,7 +268,10 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
         if (this.mTheme != theme) {
             recreate();
         } else {
-            askForContactsPermissions();
+            Intent i = getIntent();
+            if (i == null || !i.hasExtra(WelcomeActivity.EXTRA_INVITE_URI)) {
+                askForContactsPermissions();
+            }
         }
         mConferenceAdapter.refreshSettings();
         mContactsAdapter.refreshSettings();
@@ -316,9 +300,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
     }
 
     protected void openConversationForContact(Contact contact) {
-        Conversation conversation = xmppConnectionService
-                .findOrCreateConversation(contact.getAccount(),
-                        contact.getJid(), false, true);
+        Conversation conversation = xmppConnectionService.findOrCreateConversation(contact.getAccount(), contact.getJid(), false, true);
         switchToConversation(conversation);
     }
 
@@ -360,7 +342,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
             return;
         }
         Conversation conversation = xmppConnectionService.findOrCreateConversation(bookmark.getAccount(), jid, true, true, true);
-        conversation.setBookmark(bookmark);
+        bookmark.setConversation(conversation);
         if (!bookmark.autojoin() && getPreferences().getBoolean("autojoin", getResources().getBoolean(R.bool.autojoin))) {
             bookmark.setAutojoin(true);
             xmppConnectionService.pushBookmarks(bookmark.getAccount());
@@ -411,7 +393,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                bookmark.unregisterConversation();
+                bookmark.setConversation(null);
                 Account account = bookmark.getAccount();
                 account.getBookmarks().remove(bookmark);
                 xmppConnectionService.pushBookmarks(account);
@@ -430,29 +412,32 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
                 prefilledJid, null, invite == null || !invite.hasFingerprints()
         );
 
-        dialog.setOnEnterJidDialogPositiveListener(new EnterJidDialog.OnEnterJidDialogPositiveListener() {
-            @Override
-            public boolean onEnterJidDialogPositive(Jid accountJid, Jid contactJid) throws EnterJidDialog.JidError {
-                if (!xmppConnectionServiceBound) {
-                    return false;
-                }
+        dialog.setOnEnterJidDialogPositiveListener((accountJid, contactJid) -> {
+            if (!xmppConnectionServiceBound) {
+                return false;
+            }
 
-                final Account account = xmppConnectionService.findAccountByJid(accountJid);
-                if (account == null) {
-                    return true;
-                }
+            final Account account = xmppConnectionService.findAccountByJid(accountJid);
+            if (account == null) {
+                return true;
+            }
 
-                final Contact contact = account.getRoster().getContact(contactJid);
-                if (contact.showInRoster()) {
-                    throw new EnterJidDialog.JidError(getString(R.string.contact_already_exists));
-                } else {
-                    xmppConnectionService.createContact(contact);
-                    if (invite != null && invite.hasFingerprints()) {
-                        xmppConnectionService.verifyFingerprints(contact,invite.getFingerprints());
-                    }
-                    switchToConversation(contact, invite == null ? null : invite.getBody());
-                    return true;
+            final Contact contact = account.getRoster().getContact(contactJid);
+            if (invite != null && invite.getName() != null) {
+                contact.setServerName(invite.getName());
+            }
+            if (contact.isSelf()) {
+                switchToConversation(contact,null);
+                return true;
+            } else if (contact.showInRoster()) {
+                throw new EnterJidDialog.JidError(getString(R.string.contact_already_exists));
+            } else {
+                xmppConnectionService.createContact(contact);
+                if (invite != null && invite.hasFingerprints()) {
+                    xmppConnectionService.verifyFingerprints(contact,invite.getFingerprints());
                 }
+                switchToConversation(contact, invite == null ? null : invite.getBody());
+                return true;
             }
         });
 
@@ -516,7 +501,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
                                 xmppConnectionService.pushBookmarks(account);
                                 final Conversation conversation = xmppConnectionService
                                         .findOrCreateConversation(account, conferenceJid, true, true, true);
-                                conversation.setBookmark(bookmark);
+                                bookmark.setConversation(conversation);
                                 dialog.dismiss();
                                 mCurrentDialog = null;
                                 switchToConversation(conversation);
@@ -597,7 +582,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
         } else {
             ArrayAdapter<String> adapter = new ArrayAdapter<>(context,
                     R.layout.simple_list_item,
-                    Arrays.asList(new String[]{context.getString(R.string.no_accounts)}));
+                    Arrays.asList(context.getString(R.string.no_accounts)));
             adapter.setDropDownViewResource(R.layout.simple_list_item);
             spinner.setAdapter(adapter);
             spinner.setEnabled(false);
@@ -644,7 +629,10 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
                 showCreateConferenceDialog();
                 return true;
             case R.id.action_scan_qr_code:
-                new IntentIntegrator(this).initiateScan(Arrays.asList("AZTEC","QR_CODE"));
+                Intent intent = new Intent(this, UriHandlerActivity.class);
+                intent.setAction(UriHandlerActivity.ACTION_SCAN_QR_CODE);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+                startActivity(intent);
                 return true;
             case R.id.action_hide_offline:
                 mHideOfflineContacts = !item.isChecked();
@@ -682,20 +670,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if ((requestCode & 0xFFFF) == IntentIntegrator.REQUEST_CODE) {
-            IntentResult scanResult = IntentIntegrator.parseActivityResult(requestCode, resultCode, intent);
-            if (scanResult != null && scanResult.getFormatName() != null) {
-                String data = scanResult.getContents();
-                Invite invite = new Invite(data);
-                if (xmppConnectionServiceBound) {
-                    invite.invite();
-                } else if (invite.getJid() != null) {
-                    this.mPendingInvite = invite;
-                } else {
-                    this.mPendingInvite = null;
-                }
-            }
-        } else if (resultCode == RESULT_OK) {
+        if (resultCode == RESULT_OK) {
             if (xmppConnectionServiceBound) {
                 this.mPostponedActivityResult = null;
                 if (requestCode == REQUEST_CREATE_CONFERENCE) {
@@ -820,13 +795,18 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
         setIntent(null);
     }
 
-    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
-    Invite getInviteJellyBean(NdefRecord record) {
-        return new Invite(record.toUri());
-    }
-
     protected boolean handleIntent(Intent intent) {
-        if (intent == null || intent.getAction() == null) {
+        if (intent == null) {
+            return false;
+        }
+        final String inviteUri = intent.getStringExtra(WelcomeActivity.EXTRA_INVITE_URI);
+        if (inviteUri != null) {
+            Invite invite = new Invite(inviteUri);
+            if (invite.isJidValid()) {
+                return invite.invite();
+            }
+        }
+        if (intent.getAction() == null) {
             return false;
         }
         switch (intent.getAction()) {
@@ -840,43 +820,13 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
                 } else {
                     return false;
                 }
-            case NfcAdapter.ACTION_NDEF_DISCOVERED:
-                for (Parcelable message : getIntent().getParcelableArrayExtra(NfcAdapter.EXTRA_NDEF_MESSAGES)) {
-                    if (message instanceof NdefMessage) {
-                        for (NdefRecord record : ((NdefMessage) message).getRecords()) {
-                            switch (record.getTnf()) {
-                                case NdefRecord.TNF_WELL_KNOWN:
-                                    if (Arrays.equals(record.getType(), NdefRecord.RTD_URI)) {
-                                        if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                                            return getInviteJellyBean(record).invite();
-                                        } else {
-                                            byte[] payload = record.getPayload();
-                                            if (payload[0] == 0) {
-                                                return new Invite(Uri.parse(new String(Arrays.copyOfRange(
-                                                        payload, 1, payload.length)))).invite();
-                                            }
-                                        }
-                                    }
-                            }
-                        }
-                    }
-                }
         }
         return false;
     }
 
     private boolean handleJid(Invite invite) {
-        Account account = xmppConnectionService.findAccountByJid(invite.getJid());
-        if (account != null && account.isEnabled()) {
-            if (invite.hasFingerprints() && xmppConnectionService.verifyFingerprints(account,invite.getFingerprints())) {
-                Toast.makeText(this,R.string.verified_fingerprints,Toast.LENGTH_SHORT).show();
-            }
-            switchToAccount(account);
-            finish();
-            return true;
-        }
         List<Contact> contacts = xmppConnectionService.findContacts(invite.getJid(),invite.account);
-        if (invite.isMuc()) {
+        if (invite.isAction(XmppUri.ACTION_JOIN)) {
             Conversation muc = xmppConnectionService.findFirstMuc(invite.getJid());
             if (muc != null) {
                 switchToConversation(muc,invite.getBody(),false);
@@ -931,29 +881,16 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
         }
         warning.setText(spannable);
         builder.setView(view);
-        builder.setPositiveButton(R.string.confirm, new OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                if (isTrustedSource.isChecked() && invite.hasFingerprints()) {
-                    xmppConnectionService.verifyFingerprints(contact, invite.getFingerprints());
-                }
-                switchToConversation(contact, invite.getBody());
+        builder.setPositiveButton(R.string.confirm, (dialog, which) -> {
+            if (isTrustedSource.isChecked() && invite.hasFingerprints()) {
+                xmppConnectionService.verifyFingerprints(contact, invite.getFingerprints());
             }
+            switchToConversation(contact, invite.getBody());
         });
-        builder.setNegativeButton(R.string.cancel, new OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                StartConversationActivity.this.finish();
-            }
-        });
+        builder.setNegativeButton(R.string.cancel, (dialog, which) -> StartConversationActivity.this.finish());
         AlertDialog dialog = builder.create();
         dialog.setCanceledOnTouchOutside(false);
-        dialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
-            @Override
-            public void onCancel(DialogInterface dialog) {
-                StartConversationActivity.this.finish();
-            }
-        });
+        dialog.setOnCancelListener(dialog1 -> StartConversationActivity.this.finish());
         dialog.show();
     }
 
@@ -1193,14 +1130,14 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
         public String account;
 
         boolean invite() {
+            if (!isJidValid()) {
+                Toast.makeText(StartConversationActivity.this,R.string.invalid_jid,Toast.LENGTH_SHORT).show();
+                return false;
+            }
             if (getJid() != null) {
                 return handleJid(this);
             }
             return false;
-        }
-
-        public boolean isMuc() {
-            return muc;
         }
     }
 }

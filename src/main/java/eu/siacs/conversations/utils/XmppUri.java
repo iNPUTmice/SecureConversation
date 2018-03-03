@@ -13,14 +13,19 @@ import eu.siacs.conversations.xmpp.jid.Jid;
 
 public class XmppUri {
 
+	protected Uri uri;
 	protected String jid;
-	protected boolean muc;
 	protected List<Fingerprint> fingerprints = new ArrayList<>();
 	private String body;
+	private String name;
+	private String action;
 	protected boolean safeSource = true;
 
 	public static final String OMEMO_URI_PARAM = "omemo-sid-";
 	public static final String OTR_URI_PARAM = "otr-fingerprint";
+
+	public static final String ACTION_JOIN = "join";
+	public static final String ACTION_MESSAGE = "message";
 
 	public XmppUri(String uri) {
 		try {
@@ -48,6 +53,7 @@ public class XmppUri {
 	}
 
 	protected void parse(Uri uri) {
+		this.uri = uri;
 		String scheme = uri.getScheme();
 		String host = uri.getHost();
 		List<String> segments = uri.getPathSegments();
@@ -63,18 +69,34 @@ public class XmppUri {
 				// sample : https://conversations.im/i/foo/bar.com
 				jid = segments.get(1) + "@" + segments.get(2);
 			}
-			muc = segments.size() > 1 && "j".equalsIgnoreCase(segments.get(0));
+			if (segments.size() > 1 && "j".equalsIgnoreCase(segments.get(0))) {
+				action = ACTION_JOIN;
+			}
 			fingerprints = parseFingerprints(uri.getQuery(),'&');
 		} else if ("xmpp".equalsIgnoreCase(scheme)) {
 			// sample: xmpp:foo@bar.com
-			muc = isMuc(uri.getQuery());
+
+			final String query = uri.getQuery();
+
+			if (hasAction(query, ACTION_JOIN)) {
+				this.action = ACTION_JOIN;
+			} else if (hasAction(query, ACTION_MESSAGE)) {
+				this.action = ACTION_MESSAGE;
+			}
+
 			if (uri.getAuthority() != null) {
 				jid = uri.getAuthority();
 			} else {
-				jid = uri.getSchemeSpecificPart().split("\\?")[0];
+				String[] parts = uri.getSchemeSpecificPart().split("\\?");
+				if (parts.length > 0) {
+					jid = parts[0];
+				} else {
+					return;
+				}
 			}
 			this.fingerprints = parseFingerprints(uri.getQuery());
-			this.body = parseBody(uri.getQuery());
+			this.body = parseParameter("body", uri.getQuery());
+			this.name = parseParameter("name", uri.getQuery());
 		} else if ("imto".equalsIgnoreCase(scheme)) {
 			// sample: imto://xmpp/foo@bar.com
 			try {
@@ -89,6 +111,13 @@ public class XmppUri {
 				jid = null;
 			}
 		}
+	}
+
+	public String toString() {
+		if (uri != null) {
+			return uri.toString();
+		}
+		return "";
 	}
 
 	protected List<Fingerprint> parseFingerprints(String query) {
@@ -119,10 +148,10 @@ public class XmppUri {
 		return fingerprints;
 	}
 
-	protected String parseBody(String query) {
+	protected String parseParameter(String key, String query) {
 		for(String pair : query == null ? new String[0] : query.split(";")) {
 			final String[] parts = pair.split("=",2);
-			if (parts.length == 2 && "body".equals(parts[0].toLowerCase(Locale.US))) {
+			if (parts.length == 2 && key.equals(parts[0].toLowerCase(Locale.US))) {
 				try {
 					return URLDecoder.decode(parts[1],"UTF-8");
 				} catch (UnsupportedEncodingException e) {
@@ -133,14 +162,22 @@ public class XmppUri {
 		return null;
 	}
 
-	protected boolean isMuc(String query) {
+	private boolean hasAction(String query, String action) {
 		for(String pair : query == null ? new String[0] : query.split(";")) {
 			final String[] parts = pair.split("=",2);
-			if (parts.length == 1 && "join".equals(parts[0])) {
+			if (parts.length == 1 && parts[0].equals(action)) {
 				return true;
 			}
 		}
 		return false;
+	}
+
+	public boolean isAction(final String action) {
+		if (this.action == null) {
+			return false;
+		}
+
+		return this.action.equals(action);
 	}
 
 	public Jid getJid() {
@@ -151,8 +188,21 @@ public class XmppUri {
 		}
 	}
 
+	public boolean isJidValid() {
+		try {
+			Jid.fromString(jid);
+			return true;
+		} catch (InvalidJidException e) {
+			return false;
+		}
+	}
+
 	public String getBody() {
 		return body;
+	}
+
+	public String getName() {
+		return name;
 	}
 
 	public List<Fingerprint> getFingerprints() {

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -95,6 +96,17 @@ public class SettingsActivity extends XmppActivity implements
 			PreferenceScreen expert = (PreferenceScreen) mSettingsFragment.findPreference("expert");
 			if (connectionOptions != null) {
 				expert.removePreference(connectionOptions);
+			}
+		}
+
+		//this feature is only available on Huawei Android 6.
+		PreferenceScreen huaweiPreferenceScreen = (PreferenceScreen) mSettingsFragment.findPreference("huawei");
+		if (huaweiPreferenceScreen != null) {
+			Intent intent = huaweiPreferenceScreen.getIntent();
+			//remove when Api version is above M (Version 6.0) or if the intent is not callable
+			if (Build.VERSION.SDK_INT > Build.VERSION_CODES.M || !isCallable(intent)) {
+				PreferenceCategory generalCategory = (PreferenceCategory) mSettingsFragment.findPreference("general");
+				generalCategory.removePreference(huaweiPreferenceScreen);
 			}
 		}
 
@@ -221,6 +233,11 @@ public class SettingsActivity extends XmppActivity implements
 			}
 		});
 	}
+
+	private boolean isCallable(final Intent i) {
+		return i != null && getPackageManager().queryIntentActivities(i, PackageManager.MATCH_DEFAULT_ONLY).size() > 0;
+	}
+
 
 	private void cleanCache() {
 		Intent intent = new Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS);

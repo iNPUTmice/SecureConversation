@@ -133,9 +133,9 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			activity.quickPasswordEdit(password, new OnValueEdited() {
 
 				@Override
-				public void onValueEdited(String value) {
-					activity.xmppConnectionService.providePasswordForMuc(
-							conversation, value);
+				public String onValueEdited(String value) {
+					activity.xmppConnectionService.providePasswordForMuc(conversation, value);
+					return null;
 				}
 			});
 		}
@@ -469,8 +469,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		if (conversation.getCorrectingMessage() == null) {
 			message = new Message(conversation, body, conversation.getNextEncryption());
 			if (conversation.getMode() == Conversation.MODE_MULTI) {
-				if (conversation.getNextCounterpart() != null) {
-					message.setCounterpart(conversation.getNextCounterpart());
+				final Jid nextCounterpart = conversation.getNextCounterpart();
+				if (nextCounterpart != null) {
+					message.setCounterpart(nextCounterpart);
+					message.setTrueCounterpart(conversation.getMucOptions().getTrueCounterpart(nextCounterpart));
 					message.setType(Message.TYPE_PRIVATE);
 				}
 			}
@@ -560,83 +562,75 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		messagesView.setOnScrollListener(mOnScrollListener);
 		messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
 		messageListAdapter = new MessageAdapter((ConversationActivity) getActivity(), this.messageList);
-		messageListAdapter.setOnContactPictureClicked(new OnContactPictureClicked() {
-
-			@Override
-			public void onContactPictureClicked(Message message) {
-				if (message.getStatus() <= Message.STATUS_RECEIVED) {
-					if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-						Jid user = message.getCounterpart();
-						if (user != null && !user.isBareJid()) {
-							if (!message.getConversation().getMucOptions().isUserInRoom(user)) {
-								Toast.makeText(activity, activity.getString(R.string.user_has_left_conference, user.getResourcepart()), Toast.LENGTH_SHORT).show();
-							}
-							highlightInConference(user.getResourcepart());
+		messageListAdapter.setOnContactPictureClicked(message -> {
+			final boolean received = message.getStatus() <= Message.STATUS_RECEIVED;
+			if (received) {
+				if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
+					Jid user = message.getCounterpart();
+					if (user != null && !user.isBareJid()) {
+						if (!message.getConversation().getMucOptions().isUserInRoom(user)) {
+							Toast.makeText(activity, activity.getString(R.string.user_has_left_conference, user.getResourcepart()), Toast.LENGTH_SHORT).show();
 						}
-					} else {
-						if (!message.getContact().isSelf()) {
-							String fingerprint;
-							if (message.getEncryption() == Message.ENCRYPTION_PGP
-									|| message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
-								fingerprint = "pgp";
-							} else {
-								fingerprint = message.getFingerprint();
-							}
-							activity.switchToContactDetails(message.getContact(), fingerprint);
-						}
+						highlightInConference(user.getResourcepart());
 					}
+					return;
 				} else {
-					Account account = message.getConversation().getAccount();
-					Intent intent;
-					if (activity.manuallyChangePresence()) {
-						intent = new Intent(activity, SetPresenceActivity.class);
-						intent.putExtra(SetPresenceActivity.EXTRA_ACCOUNT, account.getJid().toBareJid().toString());
-					} else {
-						intent = new Intent(activity, EditAccountActivity.class);
-						intent.putExtra("jid", account.getJid().toBareJid().toString());
+					if (!message.getContact().isSelf()) {
 						String fingerprint;
 						if (message.getEncryption() == Message.ENCRYPTION_PGP
 								|| message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
 							fingerprint = "pgp";
-						} else if (message.getEncryption() == Message.ENCRYPTION_OTR) {
-							fingerprint = "otr";
 						} else {
 							fingerprint = message.getFingerprint();
 						}
-						intent.putExtra("fingerprint", fingerprint);
+						activity.switchToContactDetails(message.getContact(), fingerprint);
+						return;
 					}
-					startActivity(intent);
 				}
 			}
+			Account account = message.getConversation().getAccount();
+			Intent intent;
+			if (activity.manuallyChangePresence() && !received) {
+				intent = new Intent(activity, SetPresenceActivity.class);
+				intent.putExtra(SetPresenceActivity.EXTRA_ACCOUNT, account.getJid().toBareJid().toString());
+			} else {
+				intent = new Intent(activity, EditAccountActivity.class);
+				intent.putExtra("jid", account.getJid().toBareJid().toString());
+				String fingerprint;
+				if (message.getEncryption() == Message.ENCRYPTION_PGP
+						|| message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
+					fingerprint = "pgp";
+				} else if (message.getEncryption() == Message.ENCRYPTION_OTR) {
+					fingerprint = "otr";
+				} else {
+					fingerprint = message.getFingerprint();
+				}
+				intent.putExtra("fingerprint", fingerprint);
+			}
+			startActivity(intent);
 		});
-		messageListAdapter
-				.setOnContactPictureLongClicked(new OnContactPictureLongClicked() {
-
-					@Override
-					public void onContactPictureLongClicked(Message message) {
-						if (message.getStatus() <= Message.STATUS_RECEIVED) {
-							if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
-								Jid user = message.getCounterpart();
-								if (user != null && !user.isBareJid()) {
-									if (message.getConversation().getMucOptions().isUserInRoom(user)) {
-										privateMessageWith(user);
-									} else {
-										Toast.makeText(activity, activity.getString(R.string.user_has_left_conference, user.getResourcepart()), Toast.LENGTH_SHORT).show();
-									}
-								}
-							}
+		messageListAdapter.setOnContactPictureLongClicked(message -> {
+			if (message.getStatus() <= Message.STATUS_RECEIVED) {
+				if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
+					final MucOptions mucOptions = conversation.getMucOptions();
+					if (!mucOptions.allowPm()) {
+						Toast.makeText(activity, R.string.private_messages_are_disabled, Toast.LENGTH_SHORT).show();
+						return;
+					}
+					Jid user = message.getCounterpart();
+					if (user != null && !user.isBareJid()) {
+						if (mucOptions.isUserInRoom(user)) {
+							privateMessageWith(user);
 						} else {
-							activity.showQrCode();
+							Toast.makeText(activity, activity.getString(R.string.user_has_left_conference, user.getResourcepart()), Toast.LENGTH_SHORT).show();
 						}
 					}
-				});
-		messageListAdapter.setOnQuoteListener(new MessageAdapter.OnQuoteListener() {
-
-			@Override
-			public void onQuote(String text) {
-				quoteText(text);
+				}
+			} else {
+				activity.showQrCode();
 			}
 		});
+		messageListAdapter.setOnQuoteListener(this::quoteText);
 		messagesView.setAdapter(messageListAdapter);
 
 		registerForContextMenu(messagesView);
@@ -822,7 +816,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 				Toast.makeText(activity, activity.getString(R.string.no_permission_to_access_x, file.getAbsolutePath()), Toast.LENGTH_SHORT).show();
 				return;
 			}
-			shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+			shareIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 			String mime = message.getMimeType();
 			if (mime == null) {
 				mime = "*/*";
@@ -1107,10 +1101,12 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					showSnackbar(R.string.conference_kicked, R.string.join, joinMuc);
 					break;
 				case UNKNOWN:
-					showSnackbar(R.string.conference_unknown_error, R.string.join, joinMuc);
+					showSnackbar(R.string.conference_unknown_error, R.string.try_again, joinMuc);
 					break;
+				case INVALID_NICK:
+					showSnackbar(R.string.invalid_muc_nick, R.string.edit, clickToMuc);
 				case SHUTDOWN:
-					showSnackbar(R.string.conference_shutdown, R.string.join, joinMuc);
+					showSnackbar(R.string.conference_shutdown, R.string.try_again, joinMuc);
 					break;
 				default:
 					hideSnackbar();
@@ -1389,9 +1385,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 					state = ChatState.PAUSED;
 					users = conversation.getMucOptions().getUsersWithChatState(state, 5);
 				}
-				int markersAdded = 0;
-				if (mucOptions.membersOnly() && mucOptions.nonanonymous()) {
-					//addedMarkers.addAll(ReadByMarker.from(users));
+				if (mucOptions.isPrivateAndNonAnonymous()) {
 					for (int i = this.messageList.size() - 1; i >= 0; --i) {
 						final Set<ReadByMarker> markersForMessage = messageList.get(i).getReadByMarkers();
 						final List<MucOptions.User> shownMarkers = new ArrayList<>();
@@ -1424,7 +1418,6 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 							statusMessage = null;
 						}
 						if (statusMessage != null) {
-							++markersAdded;
 							this.messageList.add(i + 1, statusMessage);
 						}
 						addedMarkers.add(markerForSender);
@@ -1460,7 +1453,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	}
 
 	private boolean showLoadMoreMessages(final Conversation c) {
-		final boolean mam = hasMamSupport(c);
+		final boolean mam = hasMamSupport(c) && !c.getContact().isBlocked();
 		final MessageArchiveService service = activity.xmppConnectionService.getMessageArchiveService();
 		return mam && (c.getLastClearHistory().getTimestamp() != 0 || (c.countMessages() == 0 && c.messagesLoaded.get() && c.hasMessagesLeftOnServer() && !service.queryInProgress(c)));
 	}
@@ -1510,7 +1503,7 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			return;
 		}
 		if (conversation.getAccount().getPgpSignature() == null) {
-			activity.announcePgp(conversation.getAccount(), conversation, activity.onOpenPGPKeyPublished);
+			activity.announcePgp(conversation.getAccount(), conversation, null, activity.onOpenPGPKeyPublished);
 			return;
 		}
 		if (!mSendingPgpMessage.compareAndSet(false, true)) {

@@ -21,6 +21,7 @@
 	<string name="title_activity_sharewith">Share with Conversation</string>
 	<string name="title_activity_start_conversation">Start Conversation</string>
 	<string name="title_activity_choose_contact">Choose Contact</string>
+	<string name="title_activity_share_via_account">Share via account</string>
 	<string name="title_activity_block_list">Block list</string>
 	<string name="just_now">just now</string>
 	<string name="minute_ago">1 min ago</string>
@@ -30,6 +31,7 @@
 	<string name="message_decrypting">Decrypting message. Please wait…</string>
 	<string name="pgp_message">OpenPGP encrypted message</string>
 	<string name="nick_in_use">Nickname is already in use</string>
+	<string name="invalid_muc_nick">Invalid nickname</string>
 	<string name="admin">Admin</string>
 	<string name="owner">Owner</string>
 	<string name="moderator">Moderator</string>
@@ -178,8 +180,6 @@
 	<string name="account_settings_example_jabber_id">username@example.com</string>
 	<string name="account_settings_confirm_password">Confirm password</string>
 	<string name="password">Password</string>
-	<string name="confirm_password">Confirm password</string>
-	<string name="passwords_do_not_match">Passwords do not match</string>
 	<string name="invalid_jid">This is not a valid Jabber ID</string>
 	<string name="error_out_of_memory">Out of memory. Image is too large</string>
 	<string name="add_phone_book_text">Do you want to add %s to your address book?</string>
@@ -248,10 +248,9 @@
 	<string name="add_back">Add back</string>
 	<string name="contact_has_read_up_to_this_point">%s has read up to this point</string>
 	<string name="contacts_have_read_up_to_this_point">%s have read up to this point</string>
-	<string name="contacts_and_n_more_have_read_up_to_this_point">%1$s +%2$d% more have read up to this point</string>
+	<string name="contacts_and_n_more_have_read_up_to_this_point">%1$s +%2$d more have read up to this point</string>
 	<string name="publish">Publish</string>
 	<string name="touch_to_choose_picture">Touch avatar to select picture from gallery</string>
-	<string name="publish_avatar_explanation">Please note: Everyone subscribed to your presence updates will be allowed to see this picture.</string>
 	<string name="publishing">Publishing…</string>
 	<string name="error_publish_avatar_server_reject">The server rejected your publication</string>
 	<string name="error_publish_avatar_converting">Something went wrong while converting your picture</string>
@@ -286,7 +285,7 @@
 	<string name="pref_about_conversations_summary">Build and licensing information</string>
 	<string name="pref_about_message" translatable="false">
 			Conversations • the very last word in instant messaging.
-			\n\nCopyright © 2014-2017 Daniel Gultsch
+			\n\nCopyright © 2014-2018 Daniel Gultsch
 			\n\nThis program is free software: you can redistribute it and/or modify
 			it under the terms of the GNU General Public License as published by
 			the Free Software Foundation, either version 3 of the License, or
@@ -453,6 +452,9 @@
 	<string name="two_hours">2 hours</string>
 	<string name="eight_hours">8 hours</string>
 	<string name="until_further_notice">Until further notice</string>
+	<string name="snooze">Snooze</string>
+	<string name="reply">Reply</string>
+	<string name="mark_as_read">Mark as read</string>
 	<string name="pref_input_options">Input</string>
 	<string name="pref_enter_is_send">Enter is send</string>
 	<string name="pref_enter_is_send_summary">Use enter key to send message</string>
@@ -597,7 +599,7 @@
 	<string name="no_application_to_share_uri">No application found to share URI</string>
 	<string name="share_uri_with">Share URI with…</string>
 	<string translatable="false" name="welcome_header">Join the Conversation</string>
-	<string name="welcome_text">XMPP is a provider independent protocol. You can use this client with what ever XMPP server you choose.\nHowever for your convenience we made it easy to create an account on conversations.im¹; a provider specially suited for the use with Conversations.</string>
+	<string name="welcome_text">Jabber is a provider independent instant messaging network. You can use this client with what ever Jabber server you choose.\nHowever for your convenience we made it easy to create an account on conversations.im¹; a provider specially suited for the use with Conversations.</string>
 	<string name="magic_create_text">We will guide you through the process of creating an account on conversations.im.¹\nWhen picking conversations.im as a provider you will be able to communicate with users of other providers by giving them your full Jabber ID.</string>
 	<string name="your_full_jid_will_be">Your full Jabber ID will be: %s</string>
 	<string name="create_account">Create Account</string>
@@ -730,4 +732,7 @@
 	<string name="copy_to_clipboard">Copy to clipboard</string>
 	<string name="message_copied_to_clipboard">Message copied to clipboard</string>
 	<string name="message">Message</string>
+	<string name="private_messages_are_disabled">Private messages are disabled</string>
+	<string name="huawei_protected_apps">Protected Apps</string>
+	<string name="huawei_protected_apps_summary">To keep receiving notifications, even when the screen is turned off, you need to add Conversations to the list of protected apps.</string>
 </resources>
