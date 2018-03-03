@@ -13,7 +13,7 @@ public class NickValidityChecker {
     private static boolean check(final Conversation conversation, final String nick) {
         Jid room = conversation.getJid();
         try {
-            Jid full = eu.siacs.conversations.xmpp.jid.JidHelper.fromParts(room.getLocal(), room.getDomain(), nick);
+            Jid full = JidHelper.fromParts(room.getLocal(), room.getDomain(), nick);
             return conversation.hasMessageWithCounterpart(full)
                     || conversation.getMucOptions().findUserByFullJid(full) != null;
         } catch (IllegalArgumentException e) {

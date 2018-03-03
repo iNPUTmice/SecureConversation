@@ -32,7 +32,7 @@ public class XmppUri {
 			parse(Uri.parse(uri));
 		} catch (IllegalArgumentException e) {
 			try {
-				jid = eu.siacs.conversations.xmpp.jid.JidHelper.fromString(uri).asBareJid().toString();
+				jid = JidHelper.fromString(uri).asBareJid().toString();
 			} catch (IllegalArgumentException e2) {
 				jid = null;
 			}
@@ -61,7 +61,7 @@ public class XmppUri {
 			if (segments.size() >= 2 && segments.get(1).contains("@")) {
 				// sample : https://conversations.im/i/foo@bar.com
 				try {
-					jid = eu.siacs.conversations.xmpp.jid.JidHelper.fromString(segments.get(1)).toString();
+					jid = JidHelper.fromString(segments.get(1)).toString();
 				} catch (Exception e) {
 					jid = null;
 				}
@@ -187,7 +187,7 @@ public class XmppUri {
 
 	public boolean isJidValid() {
 		try {
-			eu.siacs.conversations.xmpp.jid.JidHelper.fromString(jid);
+			JidHelper.fromString(jid);
 			return true;
 		} catch (IllegalArgumentException e) {
 			return false;

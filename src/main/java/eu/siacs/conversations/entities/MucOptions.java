@@ -9,7 +9,7 @@ import java.util.Set;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.utils.JidHelper;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;

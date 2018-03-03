@@ -33,7 +33,6 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.AesGcmURLStreamHandler;
 import eu.siacs.conversations.xmpp.jid.*;
-import eu.siacs.conversations.xmpp.jid.JidHelper;
 import rocks.xmpp.addr.Jid;
 
 public final class CryptoHelper {
@@ -167,10 +166,10 @@ public final class CryptoHelper {
 		}
 		String name = x500name.getRDNs(BCStyle.CN).length > 0 ? IETFUtils.valueToString(x500name.getRDNs(BCStyle.CN)[0].getFirst().getValue()) : null;
 		if (emails.size() >= 1) {
-			return new Pair<>(eu.siacs.conversations.xmpp.jid.JidHelper.fromString(emails.get(0)), name);
+			return new Pair<>(JidHelper.fromString(emails.get(0)), name);
 		} else if (name != null){
 			try {
-				Jid jid = eu.siacs.conversations.xmpp.jid.JidHelper.fromString(name);
+				Jid jid = JidHelper.fromString(name);
 				if (jid.isBareJid() && !JidHelper.isDomainJid(jid)) {
 					return new Pair<>(jid,null);
 				}
