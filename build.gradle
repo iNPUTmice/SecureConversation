@@ -45,13 +45,12 @@ dependencies {
     implementation "com.android.support:design:$supportLibVersion"
     freeImplementation "com.android.support:support-emoji-bundled:$supportLibVersion"
     implementation 'org.bouncycastle:bcmail-jdk15on:1.58'
-    implementation 'org.gnu.inet:libidn:1.15'
     implementation 'com.google.zxing:core:3.3.0'
     implementation 'de.measite.minidns:minidns-hla:0.2.4'
     implementation 'me.leolin:ShortcutBadger:1.1.21@aar'
     implementation 'org.whispersystems:signal-protocol-java:2.6.2'
     implementation 'com.makeramen:roundedimageview:2.3.0'
-    implementation "com.wefika:flowlayout:0.4.1"
+    implementation 'com.wefika:flowlayout:0.4.1'
     implementation 'net.ypresto.androidtranscoder:android-transcoder:0.2.0'
     implementation 'com.github.scottyab:showhidepasswordedittext:0.8'
     implementation 'rocks.xmpp:xmpp-addr:0.7.5'
