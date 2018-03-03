@@ -28,13 +28,13 @@ import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
-import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.OnMessagePacketReceived;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
-import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
+import rocks.xmpp.addr.Jid;
 
 public class MessageParser extends AbstractParser implements OnMessagePacketReceived {
 

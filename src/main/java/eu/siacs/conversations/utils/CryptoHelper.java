@@ -24,7 +24,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.regex.Pattern;
 
 import eu.siacs.conversations.Config;
@@ -32,7 +31,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.AesGcmURLStreamHandler;
-import eu.siacs.conversations.xmpp.jid.*;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 import rocks.xmpp.addr.Jid;
 
 public final class CryptoHelper {
@@ -170,7 +169,7 @@ public final class CryptoHelper {
 		} else if (name != null){
 			try {
 				Jid jid = JidHelper.fromString(name);
-				if (jid.isBareJid() && !JidHelper.isDomainJid(jid)) {
+				if (jid.isBareJid() && !(jid.getLocal() == null)) {
 					return new Pair<>(jid,null);
 				}
 			} catch (IllegalArgumentException e) {

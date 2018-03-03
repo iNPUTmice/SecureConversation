@@ -10,9 +10,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.content.Intent;
 import android.net.Uri;
 import android.widget.Toast;
-
 import java.util.List;
-
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.utils.XmppUri;

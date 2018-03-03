@@ -38,10 +38,6 @@ public final class JidHelper {
         }
     }
 
-    public static boolean hasLocalpart(Jid jid) {
-        return jid.getLocal() != null;
-    }
-
     public static boolean isDomainJid(Jid jid) {
         return jid.getLocal() == null;
     }

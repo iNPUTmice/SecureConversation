@@ -27,10 +27,10 @@ import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.AbstractConnectionManager;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
-import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Element;
-import rocks.xmpp.addr.Jid;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
+import rocks.xmpp.addr.Jid;
 
 public class HttpUploadConnection implements Transferable {
 

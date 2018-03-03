@@ -32,7 +32,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
-import rocks.xmpp.addr.Jid;
 
 public class BarcodeProvider extends ContentProvider implements ServiceConnection {
 

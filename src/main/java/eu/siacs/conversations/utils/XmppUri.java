@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import eu.siacs.conversations.xmpp.jid.*;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 import rocks.xmpp.addr.Jid;
 
 public class XmppUri {
@@ -106,7 +106,7 @@ public class XmppUri {
 			}
 		} else {
 			try {
-				jid = eu.siacs.conversations.xmpp.jid.JidHelper.fromString(uri.toString()).asBareJid().toString();
+				jid = JidHelper.fromString(uri.toString()).asBareJid().toString();
 			} catch (final IllegalArgumentException ignored) {
 				jid = null;
 			}
@@ -179,7 +179,7 @@ public class XmppUri {
 
 	public Jid getJid() {
 		try {
-			return this.jid == null ? null : eu.siacs.conversations.xmpp.jid.JidHelper.fromString(this.jid.toLowerCase());
+			return this.jid == null ? null : JidHelper.fromString(this.jid.toLowerCase());
 		} catch (IllegalArgumentException e) {
 			return null;
 		}

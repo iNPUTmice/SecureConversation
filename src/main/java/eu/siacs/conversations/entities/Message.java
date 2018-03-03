@@ -651,7 +651,7 @@ public class Message extends AbstractEntity {
 			return true;
 		} else if (presences.size() >= 1) {
 			try {
-				counterpart = JidHelper.fromParts(conversation.getJid().getLocal(),
+				counterpart = Jid.of(conversation.getJid().getLocal(),
 						conversation.getJid().getDomain(),
 						presences.toResourceArray()[0]);
 				return true;

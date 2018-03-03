@@ -76,14 +76,13 @@ import eu.siacs.conversations.utils.Resolver;
 import eu.siacs.conversations.utils.SSLSocketHelper;
 import eu.siacs.conversations.utils.SocksSocketFactory;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xml.Tag;
 import eu.siacs.conversations.xml.TagWriter;
 import eu.siacs.conversations.xml.XmlReader;
-import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.forms.Field;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
-import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.jingle.OnJinglePacketReceived;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
 import eu.siacs.conversations.xmpp.stanzas.AbstractAcknowledgeableStanza;
@@ -97,6 +96,7 @@ import eu.siacs.conversations.xmpp.stanzas.streammgmt.AckPacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.EnablePacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.RequestPacket;
 import eu.siacs.conversations.xmpp.stanzas.streammgmt.ResumePacket;
+import rocks.xmpp.addr.Jid;
 
 public class XmppConnection implements Runnable {
 

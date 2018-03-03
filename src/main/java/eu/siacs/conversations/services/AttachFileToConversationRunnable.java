@@ -14,7 +14,6 @@ import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;

@@ -85,8 +85,8 @@ import eu.siacs.conversations.generator.AbstractGenerator;
 import eu.siacs.conversations.generator.IqGenerator;
 import eu.siacs.conversations.generator.MessageGenerator;
 import eu.siacs.conversations.generator.PresenceGenerator;
-import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.http.AesGcmURLStreamHandlerFactory;
+import eu.siacs.conversations.http.HttpConnectionManager;
 import eu.siacs.conversations.parser.AbstractParser;
 import eu.siacs.conversations.parser.IqParser;
 import eu.siacs.conversations.parser.MessageParser;
@@ -105,9 +105,9 @@ import eu.siacs.conversations.utils.PhoneHelper;
 import eu.siacs.conversations.utils.ReplacingSerialSingleThreadExecutor;
 import eu.siacs.conversations.utils.Resolver;
 import eu.siacs.conversations.utils.SerialSingleThreadExecutor;
-import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
+import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.OnBindListener;
 import eu.siacs.conversations.xmpp.OnContactStatusChanged;
 import eu.siacs.conversations.xmpp.OnIqPacketReceived;
@@ -122,7 +122,6 @@ import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
-import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
 import eu.siacs.conversations.xmpp.jingle.OnJinglePacketReceived;
 import eu.siacs.conversations.xmpp.jingle.stanzas.JinglePacket;
@@ -132,6 +131,7 @@ import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 import me.leolin.shortcutbadger.ShortcutBadger;
+import rocks.xmpp.addr.Jid;
 
 public class XmppConnectionService extends Service {
 
@@ -2461,7 +2461,7 @@ public class XmppConnectionService extends Service {
 					}
 					return false;
 				}
-				final Jid jid = JidHelper.fromParts(new BigInteger(64, getRNG()).toString(Character.MAX_RADIX), server, null);
+				final Jid jid = Jid.of(new BigInteger(64, getRNG()).toString(Character.MAX_RADIX), server, null);
 				final Conversation conversation = findOrCreateConversation(account, jid, true, false, true);
 				joinMuc(conversation, new OnConferenceJoined() {
 					@Override
@@ -3642,7 +3642,7 @@ public class XmppConnectionService extends Service {
 	public boolean removeBlockedConversations(final Account account, final Jid blockedJid) {
 		boolean removed = false;
 		synchronized (this.conversations) {
-			boolean domainJid = JidHelper.isDomainJid(blockedJid);
+			boolean domainJid = blockedJid.getLocal() == null;
 			for (Conversation conversation : this.conversations) {
 				boolean jidMatches = (domainJid && blockedJid.getDomain().equals(conversation.getJid().getDomain()))
 						|| blockedJid.equals(conversation.getJid().asBareJid());

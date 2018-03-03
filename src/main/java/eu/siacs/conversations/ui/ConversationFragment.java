@@ -1822,7 +1822,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
 	private boolean showBlockSubmenu(View view) {
 		final Jid jid = conversation.getJid();
-		if (JidHelper.isDomainJid(jid)) {
+		if (jid.getLocal() == null) {
 			BlockContactDialog.show(activity, conversation);
 		} else {
 			PopupMenu popupMenu = new PopupMenu(getActivity(), view);

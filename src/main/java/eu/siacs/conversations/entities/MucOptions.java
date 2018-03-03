@@ -9,13 +9,13 @@ import java.util.Set;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
-import eu.siacs.conversations.xmpp.jid.JidHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.forms.Field;
 import rocks.xmpp.addr.Jid;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 
 @SuppressLint("DefaultLocale")
@@ -755,7 +755,7 @@ public class MucOptions {
 
 	public Jid createJoinJid(String nick) {
 		try {
-			return eu.siacs.conversations.xmpp.jid.JidHelper.fromString(this.conversation.getJid().asBareJid().toString() + "/" + nick);
+			return JidHelper.fromString(this.conversation.getJid().asBareJid().toString() + "/" + nick);
 		} catch (final IllegalArgumentException e) {
 			return null;
 		}

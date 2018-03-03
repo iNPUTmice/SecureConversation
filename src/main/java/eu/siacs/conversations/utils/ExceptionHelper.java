@@ -28,6 +28,7 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 
 public class ExceptionHelper {
 
@@ -105,7 +106,7 @@ public class ExceptionHelper {
 							Conversation conversation = null;
 							try {
 								conversation = service.findOrCreateConversation(finalAccount,
-										eu.siacs.conversations.xmpp.jid.JidHelper.fromString(Config.BUG_REPORTS), false, true);
+										JidHelper.fromString(Config.BUG_REPORTS), false, true);
 							} catch (final IllegalArgumentException ignored) {
 							}
 							Message message = new Message(conversation, report

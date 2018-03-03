@@ -19,6 +19,8 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.openintents.openpgp.util.OpenPgpApi;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,8 +34,6 @@ import eu.siacs.conversations.ui.adapter.AccountAdapter;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
 import rocks.xmpp.addr.Jid;
-
-import org.openintents.openpgp.util.OpenPgpApi;
 
 public class ManageAccountActivity extends XmppActivity implements OnAccountUpdate, KeyChainAliasCallback, XmppConnectionService.OnAccountCreated {
 

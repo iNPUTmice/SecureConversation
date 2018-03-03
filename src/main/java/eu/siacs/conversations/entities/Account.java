@@ -23,7 +23,6 @@ import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.XmppConnection;
-import eu.siacs.conversations.xmpp.jid.JidHelper;
 import rocks.xmpp.addr.Jid;
 
 public class Account extends AbstractEntity {
@@ -415,7 +414,7 @@ public class Account extends AbstractEntity {
 		final String oldResource = jid.getResource();
 		if (oldResource == null || !oldResource.equals(resource)) {
 			try {
-				jid = JidHelper.fromParts(jid.getLocal(), jid.getDomain(), resource);
+				jid = Jid.of(jid.getLocal(), jid.getDomain(), resource);
 				return true;
 			} catch (final IllegalArgumentException ignored) {
 				return true;
@@ -657,7 +656,7 @@ public class Account extends AbstractEntity {
 
 	public boolean isBlocked(final ListItem contact) {
 		final Jid jid = contact.getJid();
-		return jid != null && (blocklist.contains(jid.asBareJid()) || blocklist.contains(jid.getDomain()));
+		return jid != null && (blocklist.contains(jid.asBareJid()) || blocklist.contains(Jid.ofDomain(jid.getDomain())));
 	}
 
 	public boolean isBlocked(final Jid jid) {

@@ -10,11 +10,12 @@ import android.os.Environment;
 import android.util.Base64;
 import android.util.Log;
 
+import org.json.JSONException;
 import org.json.JSONObject;
-import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.IdentityKey;
 import org.whispersystems.libsignal.IdentityKeyPair;
 import org.whispersystems.libsignal.InvalidKeyException;
+import org.whispersystems.libsignal.SignalProtocolAddress;
 import org.whispersystems.libsignal.state.PreKeyRecord;
 import org.whispersystems.libsignal.state.SessionRecord;
 import org.whispersystems.libsignal.state.SignedPreKeyRecord;
@@ -34,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
-import org.json.JSONException;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
@@ -52,8 +52,8 @@ import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.utils.Resolver;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
-import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+import rocks.xmpp.addr.Jid;
 
 public class DatabaseBackend extends SQLiteOpenHelper {
 
@@ -547,7 +547,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		while (cursor.moveToNext()) {
 			String newServer;
 			try {
-				newServer = JidHelper.fromParts(
+				newServer = Jid.of(
 						cursor.getString(cursor.getColumnIndex(Account.USERNAME)),
 						cursor.getString(cursor.getColumnIndex(Account.SERVER)),
 						"mobile"
@@ -788,7 +788,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		Cursor cursor = db.query(Account.TABLENAME,columns,null,null,null,null,null);
 		try {
 			while(cursor.moveToNext()) {
-				jids.add(JidHelper.fromParts(cursor.getString(0),cursor.getString(1),null));
+				jids.add(Jid.of(cursor.getString(0),cursor.getString(1),null));
 			}
 			return jids;
 		} catch (Exception e) {

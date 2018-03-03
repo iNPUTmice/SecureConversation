@@ -120,7 +120,7 @@ public class Contact implements ListItem, Blockable {
 			return this.serverName;
 		} else if (this.presenceName != null && !this.presenceName.isEmpty() && mutualPresenceSubscription() ) {
 			return this.presenceName;
-		} else if (JidHelper.hasLocalpart(jid)) {
+		} else if (jid.getLocal() != null) {
 			return JidHelper.localPartOrFallback(jid);
 		} else {
 			return jid.getDomain();

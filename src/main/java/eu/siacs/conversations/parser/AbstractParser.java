@@ -2,7 +2,6 @@ package eu.siacs.conversations.parser;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-
 import java.util.Locale;
 
 import eu.siacs.conversations.entities.Account;

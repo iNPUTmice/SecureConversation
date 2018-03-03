@@ -471,7 +471,7 @@ public class UIHelper {
 				return conversation.getMucOptions().getSelf().getName();
 			} else {
 				final Jid jid = conversation.getAccount().getJid();
-				return JidHelper.hasLocalpart(jid) ? jid.getLocal() : Jid.ofDomain(jid.getDomain()).toString();
+				return jid.getLocal() !=  null ? jid.getLocal() : Jid.ofDomain(jid.getDomain()).toString();
 			}
 		}
 	}

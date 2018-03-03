@@ -21,8 +21,8 @@ import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
-import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+import rocks.xmpp.addr.Jid;
 
 
 public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation> {

@@ -71,8 +71,8 @@ import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.XmppConnection.Features;
 import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.jid.JidHelper;
-import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
+import rocks.xmpp.addr.Jid;
 
 public class EditAccountActivity extends OmemoActivity implements OnAccountUpdate, OnUpdateBlocklist,
 		OnKeyStatusUpdated, OnCaptchaRequested, KeyChainAliasCallback, XmppConnectionService.OnShowErrorToast, XmppConnectionService.OnMamPreferencesFetched {
@@ -213,7 +213,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				}
 			}
 
-			if (JidHelper.isDomainJid(jid)) {
+			if (jid.getLocal() == null) {
 				if (mUsernameMode) {
 					mAccountJidLayout.setError(getString(R.string.invalid_username));
 				} else {
