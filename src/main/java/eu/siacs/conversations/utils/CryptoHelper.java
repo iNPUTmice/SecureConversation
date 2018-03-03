@@ -32,8 +32,9 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.AesGcmURLStreamHandler;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.*;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 
 public final class CryptoHelper {
 	public static final String FILETRANSFER = "?FILETRANSFERv1:";
@@ -149,7 +150,7 @@ public final class CryptoHelper {
 		}
 	}
 
-	public static Pair<Jid,String> extractJidAndName(X509Certificate certificate) throws CertificateEncodingException, InvalidJidException, CertificateParsingException {
+	public static Pair<Jid,String> extractJidAndName(X509Certificate certificate) throws CertificateEncodingException, IllegalArgumentException, CertificateParsingException {
 		Collection<List<?>> alternativeNames = certificate.getSubjectAlternativeNames();
 		List<String> emails = new ArrayList<>();
 		if (alternativeNames != null) {
@@ -166,14 +167,14 @@ public final class CryptoHelper {
 		}
 		String name = x500name.getRDNs(BCStyle.CN).length > 0 ? IETFUtils.valueToString(x500name.getRDNs(BCStyle.CN)[0].getFirst().getValue()) : null;
 		if (emails.size() >= 1) {
-			return new Pair<>(Jid.fromString(emails.get(0)), name);
+			return new Pair<>(eu.siacs.conversations.xmpp.jid.JidHelper.fromString(emails.get(0)), name);
 		} else if (name != null){
 			try {
-				Jid jid = Jid.fromString(name);
-				if (jid.isBareJid() && !jid.isDomainJid()) {
+				Jid jid = eu.siacs.conversations.xmpp.jid.JidHelper.fromString(name);
+				if (jid.isBareJid() && !JidHelper.isDomainJid(jid)) {
 					return new Pair<>(jid,null);
 				}
-			} catch (InvalidJidException e) {
+			} catch (IllegalArgumentException e) {
 				return null;
 			}
 		}
@@ -225,7 +226,7 @@ public final class CryptoHelper {
 	}
 
 	public static String getAccountFingerprint(Account account) {
-		return getFingerprint(account.getJid().toBareJid().toString());
+		return getFingerprint(account.getJid().asBareJid().toString());
 	}
 
 	public static String getFingerprint(String value) {

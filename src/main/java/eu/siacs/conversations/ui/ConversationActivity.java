@@ -71,6 +71,8 @@ import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 
 import static eu.siacs.conversations.ui.ConversationFragment.REQUEST_DECRYPT_PGP;
 
@@ -172,7 +174,7 @@ public class ConversationActivity extends XmppActivity implements OnConversation
 		Intent intent;
 		if (pendingAccount != null) {
 			intent = new Intent(this, EditAccountActivity.class);
-			intent.putExtra("jid", pendingAccount.getJid().toBareJid().toString());
+			intent.putExtra("jid", pendingAccount.getJid().asBareJid().toString());
 		} else {
 			if (xmppConnectionService.getAccounts().size() == 0) {
 				if (Config.X509_VERIFICATION) {

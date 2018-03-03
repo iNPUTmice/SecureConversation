@@ -5,18 +5,18 @@ import java.util.List;
 import java.util.Set;
 
 import eu.siacs.conversations.entities.Conversation;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.*;
+import rocks.xmpp.addr.Jid;
 
 public class NickValidityChecker {
 
     private static boolean check(final Conversation conversation, final String nick) {
         Jid room = conversation.getJid();
         try {
-            Jid full = Jid.fromParts(room.getLocalpart(), room.getDomainpart(), nick);
+            Jid full = eu.siacs.conversations.xmpp.jid.JidHelper.fromParts(room.getLocal(), room.getDomain(), nick);
             return conversation.hasMessageWithCounterpart(full)
                     || conversation.getMucOptions().findUserByFullJid(full) != null;
-        } catch (InvalidJidException e) {
+        } catch (IllegalArgumentException e) {
             return false;
         }
     }

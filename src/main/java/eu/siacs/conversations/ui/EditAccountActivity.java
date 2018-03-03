@@ -2,7 +2,6 @@ package eu.siacs.conversations.ui;
 
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
@@ -15,7 +14,6 @@ import android.provider.Settings;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
 import android.support.design.widget.TextInputLayout;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
@@ -26,8 +24,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.AdapterView;
-import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -74,8 +70,8 @@ import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.XmppConnection.Features;
 import eu.siacs.conversations.xmpp.forms.Data;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 
 public class EditAccountActivity extends OmemoActivity implements OnAccountUpdate, OnUpdateBlocklist,
@@ -175,11 +171,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			final Jid jid;
 			try {
 				if (mUsernameMode) {
-					jid = Jid.fromParts(binding.accountJid.getText().toString(), getUserModeDomain(), null);
+					jid = JidHelper.fromParts(binding.accountJid.getText().toString(), getUserModeDomain(), null);
 				} else {
-					jid = Jid.fromString(binding.accountJid.getText().toString());
+					jid = JidHelper.fromString(binding.accountJid.getText().toString());
 				}
-			} catch (final InvalidJidException e) {
+			} catch (final IllegalArgumentException e) {
 				if (mUsernameMode) {
 					mAccountJidLayout.setError(getString(R.string.invalid_username));
 				} else {
@@ -217,7 +213,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				}
 			}
 
-			if (jid.isDomainJid()) {
+			if (JidHelper.isDomainJid(jid)) {
 				if (mUsernameMode) {
 					mAccountJidLayout.setError(getString(R.string.invalid_username));
 				} else {
@@ -248,7 +244,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 					binding.accountJid.requestFocus();
 					return;
 				}
-				mAccount = new Account(jid.toBareJid(), password);
+				mAccount = new Account(jid.asBareJid(), password);
 				mAccount.setPort(numericPort);
 				mAccount.setHostname(hostname);
 				mAccount.setOption(Account.OPTION_USETLS, true);
@@ -392,7 +388,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		public void onClick(final View view) {
 			if (mAccount != null) {
 				final Intent intent = new Intent(getApplicationContext(), PublishProfilePictureActivity.class);
-				intent.putExtra(EXTRA_ACCOUNT, mAccount.getJid().toBareJid().toString());
+				intent.putExtra(EXTRA_ACCOUNT, mAccount.getJid().asBareJid().toString());
 				startActivity(intent);
 			}
 		}
@@ -411,7 +407,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				}
 			} else {
 				intent = new Intent(getApplicationContext(), PublishProfilePictureActivity.class);
-				intent.putExtra(EXTRA_ACCOUNT, mAccount.getJid().toBareJid().toString());
+				intent.putExtra(EXTRA_ACCOUNT, mAccount.getJid().asBareJid().toString());
 				intent.putExtra("setup", true);
 			}
 			if (wasFirstAccount) {
@@ -438,7 +434,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
 
 	protected void processFingerprintVerification(XmppUri uri, boolean showWarningToast) {
-		if (mAccount != null && mAccount.getJid().toBareJid().equals(uri.getJid()) && uri.hasFingerprints()) {
+		if (mAccount != null && mAccount.getJid().asBareJid().equals(uri.getJid()) && uri.hasFingerprints()) {
 			if (xmppConnectionService.verifyFingerprints(mAccount, uri.getFingerprints())) {
 				Toast.makeText(this, R.string.verified_fingerprints, Toast.LENGTH_SHORT).show();
 			}
@@ -505,9 +501,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 	protected boolean jidEdited() {
 		final String unmodified;
 		if (mUsernameMode) {
-			unmodified = this.mAccount.getJid().getLocalpart();
+			unmodified = this.mAccount.getJid().getLocal();
 		} else {
-			unmodified = this.mAccount.getJid().toBareJid().toString();
+			unmodified = this.mAccount.getJid().asBareJid().toString();
 		}
 		return !unmodified.equals(this.binding.accountJid.getText().toString());
 	}
@@ -656,8 +652,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			recreate();
 		} else if (getIntent() != null) {
 			try {
-				this.jidToEdit = Jid.fromString(getIntent().getStringExtra("jid"));
-			} catch (final InvalidJidException | NullPointerException ignored) {
+				this.jidToEdit = JidHelper.fromString(getIntent().getStringExtra("jid"));
+			} catch (final IllegalArgumentException | NullPointerException ignored) {
 				this.jidToEdit = null;
 			}
 			if (jidToEdit != null && getIntent().getData() != null) {
@@ -709,7 +705,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 	@Override
 	public void onSaveInstanceState(final Bundle savedInstanceState) {
 		if (mAccount != null) {
-			savedInstanceState.putString("account", mAccount.getJid().toBareJid().toString());
+			savedInstanceState.putString("account", mAccount.getJid().asBareJid().toString());
 			savedInstanceState.putBoolean("initMode", mInitMode);
 			savedInstanceState.putBoolean("showMoreTable", mMoreTable.getVisibility() == View.VISIBLE);
 		}
@@ -720,10 +716,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		boolean init = true;
 		if (mSavedInstanceAccount != null) {
 			try {
-				this.mAccount = xmppConnectionService.findAccountByJid(Jid.fromString(mSavedInstanceAccount));
+				this.mAccount = xmppConnectionService.findAccountByJid(JidHelper.fromString(mSavedInstanceAccount));
 				this.mInitMode = mSavedInstanceInit;
 				init = false;
-			} catch (InvalidJidException e) {
+			} catch (IllegalArgumentException e) {
 				this.mAccount = null;
 			}
 
@@ -771,7 +767,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
 	private String getUserModeDomain() {
 		if (mAccount != null) {
-			return mAccount.getJid().getDomainpart();
+			return mAccount.getJid().getDomain();
 		} else {
 			return Config.DOMAIN_LOCK;
 		}
@@ -869,9 +865,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		if (init) {
 			this.binding.accountJid.getEditableText().clear();
 			if (mUsernameMode) {
-				this.binding.accountJid.getEditableText().append(this.mAccount.getJid().getLocalpart());
+				this.binding.accountJid.getEditableText().append(this.mAccount.getJid().getLocal());
 			} else {
-				this.binding.accountJid.getEditableText().append(this.mAccount.getJid().toBareJid().toString());
+				this.binding.accountJid.getEditableText().append(this.mAccount.getJid().asBareJid().toString());
 			}
 			this.mPassword.getEditableText().clear();
 			this.mPassword.getEditableText().append(this.mAccount.getPassword());

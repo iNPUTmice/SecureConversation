@@ -10,16 +10,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.whispersystems.libsignal.IdentityKey;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,8 +33,8 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.OnKeyStatusUpdated;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 
 
 public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdated {
@@ -85,8 +81,8 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 		this.contactJids = new ArrayList<>();
 		for(String jid : getIntent().getStringArrayExtra("contacts")) {
 			try {
-				this.contactJids.add(Jid.fromString(jid));
-			} catch (InvalidJidException e) {
+				this.contactJids.add(JidHelper.fromString(jid));
+			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
 			}
 		}
@@ -232,7 +228,7 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 			showCameraToast();
 		}
 
-		binding.ownKeysTitle.setText(mAccount.getJid().toBareJid().toString());
+		binding.ownKeysTitle.setText(mAccount.getJid().asBareJid().toString());
 		binding.ownKeysCard.setVisibility(hasOwnKeys ? View.VISIBLE : View.GONE);
 		binding.foreignKeys.setVisibility(hasForeignKeys ? View.VISIBLE : View.GONE);
 		if(hasPendingKeyFetches()) {

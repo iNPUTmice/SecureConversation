@@ -30,8 +30,8 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.services.XmppConnectionService.OnAccountUpdate;
 import eu.siacs.conversations.ui.adapter.AccountAdapter;
 import eu.siacs.conversations.xmpp.XmppConnection;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 
 import org.openintents.openpgp.util.OpenPgpApi;
 
@@ -80,8 +80,8 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 			String jid = savedInstanceState.getString(STATE_SELECTED_ACCOUNT);
 			if (jid != null) {
 				try {
-					this.selectedAccountJid = Jid.fromString(jid);
-				} catch (InvalidJidException e) {
+					this.selectedAccountJid = JidHelper.fromString(jid);
+				} catch (IllegalArgumentException e) {
 					this.selectedAccountJid = null;
 				}
 			}
@@ -113,7 +113,7 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 	@Override
 	public void onSaveInstanceState(final Bundle savedInstanceState) {
 		if (selectedAccount != null) {
-			savedInstanceState.putString(STATE_SELECTED_ACCOUNT, selectedAccount.getJid().toBareJid().toString());
+			savedInstanceState.putString(STATE_SELECTED_ACCOUNT, selectedAccount.getJid().asBareJid().toString());
 		}
 		super.onSaveInstanceState(savedInstanceState);
 	}
@@ -133,7 +133,7 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 			menu.findItem(R.id.mgmt_account_announce_pgp).setVisible(false);
 			menu.findItem(R.id.mgmt_account_publish_avatar).setVisible(false);
 		}
-		menu.setHeaderTitle(this.selectedAccount.getJid().toBareJid().toString());
+		menu.setHeaderTitle(this.selectedAccount.getJid().asBareJid().toString());
 	}
 
 	@Override
@@ -238,6 +238,12 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 		} else {
 			return super.onNavigateUp();
 		}
+	}
+
+	private void changePresence(Account account) {
+		Intent intent = new Intent(this, SetPresenceActivity.class);
+		intent.putExtra(SetPresenceActivity.EXTRA_ACCOUNT,account.getJid().asBareJid().toString());
+		startActivity(intent);
 	}
 
 	public void onClickTglAccountState(Account account, boolean enable) {
@@ -388,7 +394,7 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 	@Override
 	public void onAccountCreated(Account account) {
 		Intent intent = new Intent(this, EditAccountActivity.class);
-		intent.putExtra("jid", account.getJid().toBareJid().toString());
+		intent.putExtra("jid", account.getJid().asBareJid().toString());
 		intent.putExtra("init", true);
 		startActivity(intent);
 	}

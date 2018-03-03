@@ -8,7 +8,6 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import java.util.List;
 
@@ -16,8 +15,8 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
 import eu.siacs.conversations.ui.util.DelayedHintHelper;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 
 public class EnterJidDialog {
 	public interface OnEnterJidDialogPositiveListener {
@@ -86,17 +85,17 @@ public class EnterJidDialog {
 			}
 			try {
 				if (Config.DOMAIN_LOCK != null) {
-					accountJid = Jid.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
+					accountJid = JidHelper.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
 				} else {
-					accountJid = Jid.fromString((String) spinner.getSelectedItem());
+					accountJid = JidHelper.fromString((String) spinner.getSelectedItem());
 				}
-			} catch (final InvalidJidException e) {
+			} catch (final IllegalArgumentException e) {
 				return;
 			}
 			final Jid contactJid;
 			try {
-				contactJid = Jid.fromString(jid.getText().toString());
-			} catch (final InvalidJidException e) {
+				contactJid = JidHelper.fromString(jid.getText().toString());
+			} catch (final IllegalArgumentException e) {
 				jid.setError(context.getString(R.string.invalid_jid));
 				return;
 			}
