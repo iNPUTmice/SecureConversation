@@ -85,7 +85,7 @@ public class EnterJidDialog {
 			}
 			try {
 				if (Config.DOMAIN_LOCK != null) {
-					accountJid = JidHelper.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
+					accountJid = Jid.of((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
 				} else {
 					accountJid = JidHelper.fromString((String) spinner.getSelectedItem());
 				}

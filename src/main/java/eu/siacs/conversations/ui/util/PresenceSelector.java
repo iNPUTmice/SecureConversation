@@ -89,7 +89,7 @@ public class PresenceSelector {
 		builder.setNegativeButton(R.string.cancel, null);
 		builder.setPositiveButton(R.string.ok, (dialog, which) -> {
 			try {
-				Jid next = JidHelper.fromParts(contact.getJid().getLocal(), contact.getJid().getDomain(), resourceArray[selectedResource.get()]);
+				Jid next = Jid.of(contact.getJid().getLocal(), contact.getJid().getDomain(), resourceArray[selectedResource.get()]);
 				conversation.setNextCounterpart(next);
 			} catch (IllegalArgumentException e) {
 				conversation.setNextCounterpart(null);

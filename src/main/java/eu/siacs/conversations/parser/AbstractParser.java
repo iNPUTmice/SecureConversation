@@ -10,7 +10,6 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.MucOptions;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.xml.Element;
-import eu.siacs.conversations.xmpp.jid.JidHelper;
 import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.stanzas.AbstractStanza;
 
@@ -108,7 +107,7 @@ public abstract class AbstractParser {
 		String nick = item.getAttribute("nick");
 		if (nick != null && fullJid == null) {
 			try {
-				fullJid = JidHelper.fromParts(local, domain, nick);
+				fullJid = Jid.of(local, domain, nick);
 			} catch (IllegalArgumentException e) {
 				fullJid = null;
 			}

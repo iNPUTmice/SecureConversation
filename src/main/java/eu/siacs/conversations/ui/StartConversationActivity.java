@@ -267,7 +267,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 				if (searchString != null && !searchString.trim().isEmpty()) {
 					try {
 						Jid jid = JidHelper.fromString(searchString);
-						if (!JidHelper.isDomainJid(jid) && jid.isBareJid() && jid.getDomain().contains(".")) {
+						if (!(jid.getLocal() == null) && jid.isBareJid() && jid.getDomain().contains(".")) {
 							showCreateContactDialog(jid.toString(),null);
 							return;
 						}
@@ -587,7 +587,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		Jid jid;
 		try {
 			if (Config.DOMAIN_LOCK != null) {
-				jid = JidHelper.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
+				jid = Jid.of((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
 			} else {
 				jid = JidHelper.fromString((String) spinner.getSelectedItem());
 			}

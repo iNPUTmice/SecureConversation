@@ -1803,7 +1803,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			if (pm) {
 				Jid jid = conversation.getJid();
 				try {
-					Jid next = JidHelper.fromParts(jid.getLocal(), jid.getDomain(), nick);
+					Jid next = Jid.of(jid.getLocal(), jid.getDomain(), nick);
 					privateMessageWith(next);
 				} catch (final IllegalArgumentException ignored) {
 					//do nothing

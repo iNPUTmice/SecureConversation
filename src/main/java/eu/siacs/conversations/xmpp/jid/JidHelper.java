@@ -27,18 +27,4 @@ public final class JidHelper {
     public static Jid fromString(final String jid, final boolean safe) throws IllegalArgumentException {
         return fromString(jid);
     }
-
-    public static Jid fromParts(final String localpart,
-                                                final String domainpart,
-                                                final String resourcepart) throws IllegalArgumentException {
-        try {
-            return Jid.of(localpart, domainpart, resourcepart);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    public static boolean isDomainJid(Jid jid) {
-        return jid.getLocal() == null;
-    }
 }

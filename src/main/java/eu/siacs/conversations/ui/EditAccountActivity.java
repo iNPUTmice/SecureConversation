@@ -171,7 +171,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			final Jid jid;
 			try {
 				if (mUsernameMode) {
-					jid = JidHelper.fromParts(binding.accountJid.getText().toString(), getUserModeDomain(), null);
+					jid = Jid.of(binding.accountJid.getText().toString(), getUserModeDomain(), null);
 				} else {
 					jid = JidHelper.fromString(binding.accountJid.getText().toString());
 				}

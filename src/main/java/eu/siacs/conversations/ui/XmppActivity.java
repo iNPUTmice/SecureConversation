@@ -393,7 +393,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 			} else if (presences.size() == 1) {
 				String presence = presences.toResourceArray()[0];
 				try {
-					conversation.setNextCounterpart(JidHelper.fromParts(contact.getJid().getLocal(), contact.getJid().getDomain(), presence));
+					conversation.setNextCounterpart(Jid.of(contact.getJid().getLocal(), contact.getJid().getDomain(), presence));
 				} catch (IllegalArgumentException e) {
 					conversation.setNextCounterpart(null);
 				}
