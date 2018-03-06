@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <RelativeLayout
-        xmlns:tools="http://schemas.android.com/tools"
+    <RelativeLayout xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="?attr/color_background_secondary">
@@ -20,8 +19,7 @@
             android:listSelector="@android:color/transparent"
             android:stackFromBottom="true"
             android:transcriptMode="normal"
-            tools:listitem="@layout/message_sent">
-        </ListView>
+            tools:listitem="@layout/message_sent"></ListView>
 
         <RelativeLayout
             android:id="@+id/textsend"
@@ -31,12 +29,21 @@
             android:layout_alignParentLeft="true"
             android:background="?attr/color_background_primary">
 
+            <ImageButton
+                android:id="@+id/emojiSendButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_centerVertical="true"
+                android:background="?attr/color_background_primary"
+                android:src="@drawable/ic_insert_emoticon_black_36dp"
+                android:contentDescription="@string/send_emoji" />
+
             <eu.siacs.conversations.ui.widget.EditMessage
                 android:id="@+id/textinput"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
                 android:layout_toLeftOf="@+id/textSendButton"
+                android:layout_toRightOf="@+id/emojiSendButton"
                 android:background="?attr/color_background_primary"
                 android:ems="10"
                 android:imeOptions="flagNoExtractUi|actionSend"
@@ -49,7 +56,7 @@
                 android:paddingRight="8dp"
                 android:paddingTop="12dp">
 
-                <requestFocus/>
+                <requestFocus />
             </eu.siacs.conversations.ui.widget.EditMessage>
 
             <ImageButton
@@ -60,7 +67,7 @@
                 android:layout_centerVertical="true"
                 android:background="?attr/color_background_primary"
                 android:contentDescription="@string/send_message"
-                android:src="?attr/ic_send_text_offline"/>
+                android:src="?attr/ic_send_text_offline" />
         </RelativeLayout>
 
         <RelativeLayout
@@ -83,7 +90,7 @@
                 android:layout_centerVertical="true"
                 android:layout_toLeftOf="@+id/snackbar_action"
                 android:paddingLeft="24dp"
-                android:textAppearance="@style/TextAppearance.Conversations.Body1.OnDark"/>
+                android:textAppearance="@style/TextAppearance.Conversations.Body1.OnDark" />
 
             <TextView
                 android:id="@+id/snackbar_action"
@@ -97,7 +104,7 @@
                 android:paddingTop="16dp"
                 android:textAllCaps="true"
                 android:textAppearance="@style/TextAppearance.Conversations.Body1.OnDark"
-                android:textStyle="bold"/>
+                android:textStyle="bold" />
         </RelativeLayout>
 
     </RelativeLayout>

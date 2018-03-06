@@ -87,6 +87,7 @@
 	<string name="send_pgp_message">Send OpenPGP encrypted message</string>
 	<string name="your_nick_has_been_changed">Your nickname has been changed</string>
 	<string name="send_unencrypted">Send unencrypted</string>
+	<string name="send_emoji">Send emoji</string>
 	<string name="decryption_failed">Decryption failed. Maybe you don’t have the proper private key.</string>
 	<string name="openkeychain_required">OpenKeychain</string>
 	<string name="openkeychain_required_long">Conversations utilizes a third party app called <b>OpenKeychain</b> to encrypt and decrypt messages and to manage your public keys.\n\nOpenKeychain is licensed under GPLv3 and available on F-Droid and Google Play.\n\n<small>(Please restart Conversations afterwards.)</small></string>

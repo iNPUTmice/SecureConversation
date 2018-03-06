@@ -3,17 +3,6 @@ package eu.siacs.conversations.ui;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.databinding.DataBindingUtil;
-import android.net.Uri;
-import android.os.Build;
-import android.preference.PreferenceManager;
-import android.provider.MediaStore;
-import android.support.annotation.IdRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.support.v7.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -21,14 +10,30 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.databinding.DataBindingUtil;
+import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.support.annotation.IdRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
+import android.support.design.widget.TabLayout;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
+import android.support.v4.widget.PopupWindowCompat;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
 import android.util.Log;
-import android.util.Pair;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
@@ -49,6 +54,7 @@ import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.CheckBox;
 import android.widget.ListView;
 import android.widget.PopupMenu;
+import android.widget.PopupWindow;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
@@ -82,6 +88,7 @@ import eu.siacs.conversations.http.HttpDownloadConnection;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.ui.adapter.EmojiAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.AttachmentTool;
@@ -92,6 +99,7 @@ import eu.siacs.conversations.ui.util.ScrollState;
 import eu.siacs.conversations.ui.util.SendButtonAction;
 import eu.siacs.conversations.ui.util.SendButtonTool;
 import eu.siacs.conversations.ui.widget.EditMessage;
+import eu.siacs.conversations.utils.Emoticons;
 import eu.siacs.conversations.utils.MessageUtils;
 import eu.siacs.conversations.utils.NickValidityChecker;
 import eu.siacs.conversations.utils.StylingHelper;
@@ -402,6 +410,32 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			}
 		}
 	};
+	private OnClickListener mEmojiButtonListener = new OnClickListener() {
+
+		@Override
+		public void onClick(View view) {
+			if(popupWindow.isShowing()){
+				new Handler().postDelayed(() -> popupWindow.dismiss(),200);
+			}else {
+				Rect rect = new Rect();
+				binding.getRoot().getWindowVisibleDisplayFrame(rect);
+				int textinputHeight = binding.textinput.getHeight();
+				int actionbarHeight = (int) getResources().getDimension(R.dimen.action_bar_height);
+				int height = rect.height() - textinputHeight - actionbarHeight;
+				popupWindow.setHeight(height);
+				PopupWindowCompat.showAsDropDown(popupWindow, binding.emojiSendButton, 0, 0, Gravity.BOTTOM);
+			}
+		}
+	};
+
+	private EmojiAdapter.OnEmojiClickListener onEmojiClickListener = new EmojiAdapter.OnEmojiClickListener() {
+		@Override
+		public void onEmojiClick(String emoji) {
+			binding.textinput.append(emoji);
+			popupWindow.dismiss();
+		}
+	};
+
 	private int completionIndex = 0;
 	private int lastCompletionLength = 0;
 	private String incomplete;
@@ -409,6 +443,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	private boolean firstWord = false;
 	private Message mPendingDownloadableMessage;
 	private final PendingItem<Message> pendingMessage = new PendingItem<>();
+	private PopupWindow popupWindow;
 
 
 	private static ConversationFragment findConversationFragment(Activity activity) {
@@ -855,7 +890,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		binding.textinput.setRichContentListener(new String[]{"image/*"}, mEditorContentListener);
 
 		binding.textSendButton.setOnClickListener(this.mSendButtonListener);
-
+		binding.emojiSendButton.setOnClickListener(this.mEmojiButtonListener);
+		initEmojiView();
 		binding.messagesView.setOnScrollListener(mOnScrollListener);
 		binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
 		messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
@@ -925,6 +961,38 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		registerForContextMenu(binding.messagesView);
 
 		return binding.getRoot();
+	}
+
+	private void initEmojiView() {
+		View contentView = LayoutInflater.from(getActivity()).inflate(R.layout.ppw_emoji, null);
+		RecyclerView emojiView = contentView.findViewById(R.id.emoji_view);
+		emojiView.setLayoutManager(new GridLayoutManager(getActivity(),7));
+		Emoticons.EmojiSet emojiSet = new Emoticons.EmojiSet();
+
+		emojiView.setAdapter(new EmojiAdapter(emojiSet,onEmojiClickListener));
+		TabLayout anchorView = contentView.findViewById(R.id.anchor_view);
+		final List<Integer> anchors = emojiSet.getAnchors();
+		for (Integer anchor : anchors) {
+			anchorView.addTab(anchorView.newTab().setText(emojiSet.get(anchor)));
+		}
+		anchorView.addOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+			@Override
+			public void onTabSelected(TabLayout.Tab tab) {
+				int position = tab.getPosition();
+				Integer i = anchors.get(position);
+				emojiView.scrollToPosition(i);
+			}
+
+			@Override
+			public void onTabUnselected(TabLayout.Tab tab) { }
+
+			@Override
+			public void onTabReselected(TabLayout.Tab tab) { }
+		});
+		popupWindow = new PopupWindow(contentView,
+				ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, true);
+		popupWindow.setBackgroundDrawable(new BitmapDrawable());
+		popupWindow.setOutsideTouchable(true);
 	}
 
 	private void quoteText(String text) {

@@ -29,6 +29,9 @@
 
 package eu.siacs.conversations.utils;
 
+import android.graphics.Paint;
+import android.support.v4.graphics.PaintCompat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -278,6 +281,75 @@ public class Emoticons {
 
 		public boolean contains(int codePoint) {
 			return codePoint >= lower && codePoint <= upper;
+		}
+	}
+
+	public static class EmojiSet{
+
+		private List<String> emojis;
+		private Paint paint;
+		private List<Integer> anchors;
+		private UnicodeBlocks unicodeBlocks = new UnicodeBlocks(
+				EMOTICONS,
+				MISC_SYMBOLS_AND_PICTOGRAPHS,
+				SUPPLEMENTAL_SYMBOLS,
+				TRANSPORT_SYMBOLS,
+				MISC_SYMBOLS,
+				DINGBATS,
+				ENCLOSED_ALPHANUMERIC_SUPPLEMENT,
+				ENCLOSED_IDEOGRAPHIC_SUPPLEMENT,
+				MISC_TECHNICAL);
+		public EmojiSet(){
+			paint = new Paint();
+			emojis = new ArrayList<>();
+			anchors = new ArrayList<>(unicodeBlocks.unicodeSets.length);
+			for (UnicodeSet unicodeSet : unicodeBlocks.unicodeSets) {
+				anchors.add(emojis.size());
+				if(unicodeSet instanceof UnicodeList){
+					addUnicodeList((UnicodeList) unicodeSet);
+				}else if(unicodeSet instanceof UnicodeRange){
+					addUnicodeRange((UnicodeRange) unicodeSet);
+				}
+			}
+		}
+
+		private void addUnicodeList(UnicodeList unicodeList) {
+
+			for (Integer integer : unicodeList.list) {
+				add(integer);
+			}
+		}
+
+		private void addUnicodeRange(UnicodeRange unicodeRange) {
+			int lower = unicodeRange.lower;
+			int upper = unicodeRange.upper;
+			for (int i = lower; i < upper+1; i++) {
+				add(i);
+			}
+		}
+
+		private void add(int codePoint){
+			char[] chars = Character.toChars(codePoint);
+			String emoji = String.valueOf(chars);
+			if(checkHasGlyph(emoji)){
+				emojis.add(emoji);
+			}
+		}
+
+		private boolean checkHasGlyph(String emoji){
+			return PaintCompat.hasGlyph(paint,emoji);
+		}
+
+		public String get(int position) {
+			return emojis.get(position);
+		}
+
+		public int size(){
+			return emojis.size();
+		}
+
+		public List<Integer> getAnchors() {
+			return anchors;
 		}
 	}
 }
