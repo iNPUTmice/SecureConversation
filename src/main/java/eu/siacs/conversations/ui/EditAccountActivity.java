@@ -868,13 +868,18 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		} else {
 			this.mAvatar.setVisibility(View.GONE);
 		}
+		this.mRegisterNew.setChecked(this.mAccount.isOptionSet(Account.OPTION_REGISTER));
 		if (this.mAccount.isOptionSet(Account.OPTION_REGISTER)) {
-			this.mRegisterNew.setVisibility(View.VISIBLE);
-			this.mRegisterNew.setChecked(true);
-		} else {
-			this.mRegisterNew.setVisibility(View.GONE);
-			this.mRegisterNew.setChecked(false);
+			if (this.mAccount.isOptionSet(Account.OPTION_MAGIC_CREATE)) {
+				this.mRegisterNew.setVisibility(View.GONE);
+				if (getActionBar() != null) {
+					getActionBar().setTitle(R.string.create_account);
+				}
+			} else {
+				this.mRegisterNew.setVisibility(View.VISIBLE);
+			}
 		}
+
 		if (this.mAccount.isOnlineAndConnected() && !this.mFetchingAvatar) {
 			Features features = this.mAccount.getXmppConnection().getFeatures();
 			this.mStats.setVisibility(View.VISIBLE);
