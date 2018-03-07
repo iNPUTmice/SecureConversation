@@ -14,8 +14,8 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.BigPictureStyle;
 import android.support.v4.app.NotificationCompat.Builder;
-import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.NotificationCompat.CarExtender.UnreadConversation;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.app.RemoteInput;
 import android.support.v4.content.ContextCompat;
 import android.text.SpannableString;
@@ -46,7 +46,6 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
-import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.TimePreference;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
@@ -157,7 +156,7 @@ public class NotificationService {
 				}
 			}
 		}
-		Log.d(Config.LOGTAG,account.getJid().toBareJid()+": backlog message count="+count);
+		Log.d(Config.LOGTAG,account.getJid().asBareJid()+": backlog message count="+count);
 		return count;
 	}
 
@@ -191,12 +190,12 @@ public class NotificationService {
 	private void pushNow(final Message message) {
 		mXmppConnectionService.updateUnreadCountBadge();
 		if (!notify(message)) {
-			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().toBareJid()+": suppressing notification because turned off");
+			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().asBareJid()+": suppressing notification because turned off");
 			return;
 		}
 		final boolean isScreenOn = mXmppConnectionService.isInteractive();
 		if (this.mIsInForeground && isScreenOn && this.mOpenConversation == message.getConversation()) {
-			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().toBareJid()+": suppressing notification because conversation is open");
+			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().asBareJid()+": suppressing notification because conversation is open");
 			return;
 		}
 		synchronized (notifications) {
@@ -618,7 +617,7 @@ public class NotificationService {
 	private PendingIntent createContentIntent(final String conversationUuid, final String downloadMessageUuid) {
 		final Intent viewConversationIntent = new Intent(mXmppConnectionService,ConversationActivity.class);
 		viewConversationIntent.setAction(ConversationActivity.ACTION_VIEW_CONVERSATION);
-		viewConversationIntent.putExtra(ConversationActivity.CONVERSATION, conversationUuid);
+		viewConversationIntent.putExtra(ConversationActivity.EXTRA_CONVERSATION, conversationUuid);
 		if (downloadMessageUuid != null) {
 			viewConversationIntent.putExtra(ConversationActivity.EXTRA_DOWNLOAD_UUID, downloadMessageUuid);
 			return PendingIntent.getActivity(mXmppConnectionService,
@@ -788,7 +787,7 @@ public class NotificationService {
 			return;
 		} else if (errors.size() == 1) {
 			mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.problem_connecting_to_account));
-			mBuilder.setContentText(errors.get(0).getJid().toBareJid().toString());
+			mBuilder.setContentText(errors.get(0).getJid().asBareJid().toString());
 		} else {
 			mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.problem_connecting_to_accounts));
 			mBuilder.setContentText(mXmppConnectionService.getString(R.string.touch_to_fix));

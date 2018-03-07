@@ -4,33 +4,25 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.support.annotation.NonNull;
 
-import net.java.otr4j.OtrException;
-import net.java.otr4j.crypto.OtrCryptoException;
-import net.java.otr4j.session.SessionID;
-import net.java.otr4j.session.SessionImpl;
-import net.java.otr4j.session.SessionStatus;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.security.interfaces.DSAPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 import eu.siacs.conversations.xmpp.mam.MamReference;
+import rocks.xmpp.addr.Jid;
 
 
 public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation> {
@@ -77,11 +69,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	protected final ArrayList<Message> messages = new ArrayList<>();
 	protected Account account = null;
 
-	private transient SessionImpl otrSession;
-
-	private transient String otrFingerprint = null;
-	private Smp mSmp = new Smp();
-
 	private transient MucOptions mucOptions = null;
 
 	private byte[] symmetricKey;
@@ -89,7 +76,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private boolean messagesLeftOnServer = true;
 	private ChatState mOutgoingChatState = Config.DEFAULT_CHATSTATE;
 	private ChatState mIncomingChatState = Config.DEFAULT_CHATSTATE;
-	private String mLastReceivedOtrMessageId = null;
 	private String mFirstMamReference = null;
 	private Message correctingMessage;
 	public AtomicBoolean messagesLoaded = new AtomicBoolean(true);
@@ -335,14 +321,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		return getContact().getBlockedJid();
 	}
 
-	public String getLastReceivedOtrMessageId() {
-		return this.mLastReceivedOtrMessageId;
-	}
-
-	public void setLastReceivedOtrMessageId(String id) {
-		this.mLastReceivedOtrMessageId = id;
-	}
-
 	public int countMessages() {
 		synchronized (this.messages) {
 			return this.messages.size();
@@ -371,7 +349,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	public List<Jid> getAcceptedCryptoTargets() {
 		if (mode == MODE_SINGLE) {
-			return Collections.singletonList(getJid().toBareJid());
+			return Collections.singletonList(getJid().asBareJid());
 		} else {
 			return getJidListAttribute(ATTRIBUTE_CRYPTO_TARGETS);
 		}
@@ -503,11 +481,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				if (generatedName != null) {
 					return generatedName;
 				} else {
-					return getJid().getUnescapedLocalpart();
+					return getJid().getLocal();
 				}
 			}
 		} else if (isWithStranger()) {
-			return contactJid.toBareJid().toString();
+			return contactJid.asBareJid().toString();
 		} else {
 			return this.getContact().getDisplayName();
 		}
@@ -548,7 +526,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		values.put(NAME, name);
 		values.put(CONTACT, contactUuid);
 		values.put(ACCOUNT, accountUuid);
-		values.put(CONTACTJID, contactJid.toPreppedString());
+		values.put(CONTACTJID, contactJid.toString());
 		values.put(CREATED, created);
 		values.put(STATUS, status);
 		values.put(MODE, mode);
@@ -559,8 +537,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static Conversation fromCursor(Cursor cursor) {
 		Jid jid;
 		try {
-			jid = Jid.fromString(cursor.getString(cursor.getColumnIndex(CONTACTJID)), true);
-		} catch (final InvalidJidException e) {
+			jid = JidHelper.fromString(cursor.getString(cursor.getColumnIndex(CONTACTJID)), true);
+		} catch (final IllegalArgumentException e) {
 			// Borked DB..
 			jid = null;
 		}
@@ -585,110 +563,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	public void setMode(int mode) {
 		this.mode = mode;
-	}
-
-	public SessionImpl startOtrSession(String presence, boolean sendStart) {
-		if (this.otrSession != null) {
-			return this.otrSession;
-		} else {
-			final SessionID sessionId = new SessionID(this.getJid().toBareJid().toString(),
-					presence,
-					"xmpp");
-			this.otrSession = new SessionImpl(sessionId, getAccount().getOtrService());
-			try {
-				if (sendStart) {
-					this.otrSession.startSession();
-					return this.otrSession;
-				}
-				return this.otrSession;
-			} catch (OtrException e) {
-				return null;
-			}
-		}
-
-	}
-
-	public SessionImpl getOtrSession() {
-		return this.otrSession;
-	}
-
-	public void resetOtrSession() {
-		this.otrFingerprint = null;
-		this.otrSession = null;
-		this.mSmp.hint = null;
-		this.mSmp.secret = null;
-		this.mSmp.status = Smp.STATUS_NONE;
-	}
-
-	public Smp smp() {
-		return mSmp;
-	}
-
-	public boolean startOtrIfNeeded() {
-		if (this.otrSession != null && this.otrSession.getSessionStatus() != SessionStatus.ENCRYPTED) {
-			try {
-				this.otrSession.startSession();
-				return true;
-			} catch (OtrException e) {
-				this.resetOtrSession();
-				return false;
-			}
-		} else {
-			return true;
-		}
-	}
-
-	public boolean endOtrIfNeeded() {
-		if (this.otrSession != null) {
-			if (this.otrSession.getSessionStatus() == SessionStatus.ENCRYPTED) {
-				try {
-					this.otrSession.endSession();
-					this.resetOtrSession();
-					return true;
-				} catch (OtrException e) {
-					this.resetOtrSession();
-					return false;
-				}
-			} else {
-				this.resetOtrSession();
-				return false;
-			}
-		} else {
-			return false;
-		}
-	}
-
-	public boolean hasValidOtrSession() {
-		return this.otrSession != null;
-	}
-
-	public synchronized String getOtrFingerprint() {
-		if (this.otrFingerprint == null) {
-			try {
-				if (getOtrSession() == null || getOtrSession().getSessionStatus() != SessionStatus.ENCRYPTED) {
-					return null;
-				}
-				DSAPublicKey remotePubKey = (DSAPublicKey) getOtrSession().getRemotePublicKey();
-				this.otrFingerprint = getAccount().getOtrService().getFingerprint(remotePubKey).toLowerCase(Locale.US);
-			} catch (final OtrCryptoException | UnsupportedOperationException ignored) {
-				return null;
-			}
-		}
-		return this.otrFingerprint;
-	}
-
-	public boolean verifyOtrFingerprint() {
-		final String fingerprint = getOtrFingerprint();
-		if (fingerprint != null) {
-			getContact().addOtrFingerprint(fingerprint);
-			return true;
-		} else {
-			return false;
-		}
-	}
-
-	public boolean isOtrFingerprintVerified() {
-		return getContact().getOtrFingerprints().contains(getOtrFingerprint());
 	}
 
 	/**
@@ -735,8 +609,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				return Config.supportUnencrypted() ? selectedEncryption : getDefaultEncryption();
 			case Message.ENCRYPTION_AXOLOTL:
 				return Config.supportOmemo() ? selectedEncryption : getDefaultEncryption();
-			case Message.ENCRYPTION_OTR:
-				return Config.supportOtr() ? selectedEncryption : getDefaultEncryption();
 			case Message.ENCRYPTION_PGP:
 			case Message.ENCRYPTION_DECRYPTED:
 			case Message.ENCRYPTION_DECRYPTION_FAILED:
@@ -753,8 +625,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		} else if (Config.supportOmemo()
 				&& (axolotlService != null && axolotlService.isConversationAxolotlCapable(this) || !Config.multipleEncryptionChoices())) {
 			return Message.ENCRYPTION_AXOLOTL;
-		} else if (Config.supportOtr() && mode == MODE_SINGLE) {
-			return Message.ENCRYPTION_OTR;
 		} else if (Config.supportOpenPgp()) {
 			return Message.ENCRYPTION_PGP;
 		} else {
@@ -769,10 +639,6 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public String getNextMessage() {
 		final String nextMessage = getAttribute(ATTRIBUTE_NEXT_MESSAGE);
 		return nextMessage == null ? "" : nextMessage;
-	}
-
-	public boolean smpRequested() {
-		return smp().status == Smp.STATUS_CONTACT_REQUESTED;
 	}
 
 	public boolean setNextMessage(String message) {
@@ -872,7 +738,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public boolean setAttribute(String key, List<Jid> jids) {
 		JSONArray array = new JSONArray();
 		for(Jid jid : jids) {
-			array.put(jid.toBareJid().toString());
+			array.put(jid.asBareJid().toString());
 		}
 		synchronized (this.attributes) {
 			try {
@@ -902,8 +768,8 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				JSONArray array = this.attributes.getJSONArray(key);
 				for (int i = 0; i < array.length(); ++i) {
 					try {
-						list.add(Jid.fromString(array.getString(i)));
-					} catch (InvalidJidException e) {
+						list.add(JidHelper.fromString(array.getString(i)));
+					} catch (IllegalArgumentException e) {
 						//ignored
 					}
 				}
@@ -1042,7 +908,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	public boolean isWithStranger() {
 		return mode == MODE_SINGLE
-				&& !getJid().equals(account.getJid().toDomainJid())
+				&& !getJid().equals(Jid.ofDomain(account.getJid().getDomain()))
 				&& !getContact().showInRoster()
 				&& sentMessagesCount() == 0;
 	}

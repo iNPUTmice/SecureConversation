@@ -1,6 +1,6 @@
 package eu.siacs.conversations.utils;
 
-import android.app.AlertDialog;
+import android.support.v7.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnClickListener;
@@ -27,9 +27,8 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
-import eu.siacs.conversations.ui.ConversationActivity;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
 
 public class ExceptionHelper {
 
@@ -43,10 +42,13 @@ public class ExceptionHelper {
 		}
 	}
 
-	public static boolean checkForCrash(ConversationActivity activity, final XmppConnectionService service) {
+	public static boolean checkForCrash(XmppActivity activity) {
 		try {
-			final SharedPreferences preferences = PreferenceManager
-					.getDefaultSharedPreferences(activity);
+			final XmppConnectionService service = activity == null ? null : activity.xmppConnectionService;
+			if (service == null) {
+				return false;
+			}
+			final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
 			boolean neverSend = preferences.getBoolean("never_send", false);
 			if (neverSend || Config.BUG_REPORTS == null) {
 				return false;
@@ -99,13 +101,13 @@ public class ExceptionHelper {
 						public void onClick(DialogInterface dialog, int which) {
 
 							Log.d(Config.LOGTAG, "using account="
-									+ finalAccount.getJid().toBareJid()
+									+ finalAccount.getJid().asBareJid()
 									+ " to send in stack trace");
 							Conversation conversation = null;
 							try {
 								conversation = service.findOrCreateConversation(finalAccount,
-										Jid.fromString(Config.BUG_REPORTS), false, true);
-							} catch (final InvalidJidException ignored) {
+										JidHelper.fromString(Config.BUG_REPORTS), false, true);
+							} catch (final IllegalArgumentException ignored) {
 							}
 							Message message = new Message(conversation, report
 									.toString(), Message.ENCRYPTION_NONE);

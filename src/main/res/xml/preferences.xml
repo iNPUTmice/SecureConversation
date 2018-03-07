@@ -1,22 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+<PreferenceScreen
+    android:key="main_screen"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:background="?attr/color_background_secondary">
 
     <PreferenceCategory android:title="@string/pref_general"
         android:key="general">
-        <CheckBoxPreference
-            android:defaultValue="@bool/grant_new_contacts"
-            android:key="grant_new_contacts"
-            android:summary="@string/pref_grant_presence_updates_summary"
-            android:title="@string/pref_grant_presence_updates"/>
-
-        <ListPreference
-            android:defaultValue="@string/default_resource"
-            android:entries="@array/resources"
-            android:entryValues="@array/resources"
-            android:key="resource"
-            android:summary="@string/pref_xmpp_resource_summary"
-            android:title="@string/pref_xmpp_resource"/>
         <PreferenceScreen
             android:key="huawei"
             android:title="@string/huawei_protected_apps"
@@ -87,6 +76,12 @@
             android:key="quiet_hours"
             android:summary="@string/pref_quiet_hours_summary"
             android:title="@string/title_pref_quiet_hours">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="@string/applicationId"
+                android:targetClass="eu.siacs.conversations.ui.SettingsActivity" >
+                <extra android:name="page" android:value="quiet_hours" />
+            </intent>
             <CheckBoxPreference
                 android:defaultValue="@bool/enable_quiet_hours"
                 android:key="enable_quiet_hours"
@@ -155,11 +150,6 @@
             android:summary="@string/pref_use_green_background_summary"
             android:title="@string/pref_use_green_background"/>
         <CheckBoxPreference
-            android:defaultValue="@bool/use_larger_font"
-            android:key="use_larger_font"
-            android:summary="@string/pref_use_larger_font_summary"
-            android:title="@string/pref_use_larger_font"/>
-        <CheckBoxPreference
             android:defaultValue="@bool/send_button_status"
             android:key="send_button_status"
             android:summary="@string/pref_use_send_button_to_indicate_status_summary"
@@ -185,6 +175,12 @@
             android:key="expert"
             android:summary="@string/pref_expert_options_summary"
             android:title="@string/pref_expert_options">
+            <intent
+                android:action="android.intent.action.VIEW"
+                android:targetPackage="@string/applicationId"
+                android:targetClass="eu.siacs.conversations.ui.SettingsActivity" >
+                <extra android:name="page" android:value="expert" />
+            </intent>
             <PreferenceCategory android:title="@string/pref_security_settings"
                 android:key="security_options">
                 <CheckBoxPreference
@@ -256,6 +252,11 @@
                     android:key="display_enter_key"
                     android:summary="@string/pref_display_enter_key_summary"
                     android:title="@string/pref_display_enter_key"/>
+                <CheckBoxPreference
+                    android:defaultValue="@bool/scroll_to_bottom"
+                    android:key="scroll_to_bottom"
+                    android:title="@string/pref_scroll_to_bottom"
+                    android:summary="@string/pref_scroll_to_bottom_summary"/>
             </PreferenceCategory>
             <PreferenceCategory android:title="@string/pref_presence_settings">
                 <CheckBoxPreference

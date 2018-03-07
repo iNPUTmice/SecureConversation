@@ -7,6 +7,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,12 +20,14 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Transferable;
-import eu.siacs.conversations.ui.ConversationActivity;
+import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.ui.util.Color;
 import eu.siacs.conversations.ui.widget.UnreadCountCustomView;
 import eu.siacs.conversations.utils.EmojiWrapper;
 import eu.siacs.conversations.utils.UIHelper;
@@ -32,6 +35,7 @@ import eu.siacs.conversations.utils.UIHelper;
 public class ConversationAdapter extends ArrayAdapter<Conversation> {
 
 	private XmppActivity activity;
+	private Conversation selectedConversation = null;
 
 	public ConversationAdapter(XmppActivity activity, List<Conversation> conversations) {
 		super(activity, 0, conversations);
@@ -44,18 +48,16 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 			LayoutInflater inflater = (LayoutInflater) activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 			view = inflater.inflate(R.layout.conversation_list_row,parent, false);
 		}
-		Conversation conversation = getItem(position);
-		if (this.activity instanceof ConversationActivity) {
-			View swipeableItem = view.findViewById(R.id.swipeable_item);
-			ConversationActivity a = (ConversationActivity) this.activity;
-			int c = a.highlightSelectedConversations() && conversation == a.getSelectedConversation() ? a.getSecondaryBackgroundColor() : a.getPrimaryBackgroundColor();
-			swipeableItem.setBackgroundColor(c);
-		}
 		ViewHolder viewHolder = ViewHolder.get(view);
+		Conversation conversation = getItem(position);
+		if (this.activity instanceof XmppActivity) {
+			int c = Color.get(activity, conversation == selectedConversation ? R.attr.color_background_secondary: R.attr.color_background_primary);
+			viewHolder.swipeableItem.setBackgroundColor(c);
+		}
 		if (conversation.getMode() == Conversation.MODE_SINGLE || activity.useSubjectToIdentifyConference()) {
 			viewHolder.name.setText(EmojiWrapper.transform(conversation.getName()));
 		} else {
-			viewHolder.name.setText(conversation.getJid().toBareJid().toString());
+			viewHolder.name.setText(conversation.getJid().asBareJid().toString());
 		}
 
 		Message message = conversation.getLatestMessage();
@@ -168,7 +170,14 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 		return view;
 	}
 
+	@Override
+	public void notifyDataSetChanged() {
+		this.selectedConversation = ConversationFragment.getConversation(activity);
+		super.notifyDataSetChanged();
+	}
+
 	public static class ViewHolder {
+		private View swipeableItem;
 		private TextView name;
 		private TextView lastMessage;
 		private ImageView lastMessageIcon;
@@ -186,6 +195,7 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 			ViewHolder viewHolder = (ViewHolder) layout.getTag();
 			if (viewHolder == null) {
 				viewHolder = new ViewHolder();
+				viewHolder.swipeableItem = layout.findViewById(R.id.swipeable_item);
 				viewHolder.name = layout.findViewById(R.id.conversation_name);
 				viewHolder.lastMessage = layout.findViewById(R.id.conversation_lastmsg);
 				viewHolder.lastMessageIcon = layout.findViewById(R.id.conversation_lastmsg_img);
@@ -210,7 +220,8 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 
 		@Override
 		protected Bitmap doInBackground(Conversation... params) {
-			return activity.avatarService().get(params[0], activity.getPixel(56), isCancelled());
+			this.conversation = params[0];
+			return activity.avatarService().get(this.conversation, activity.getPixel(56), isCancelled());
 		}
 
 		@Override

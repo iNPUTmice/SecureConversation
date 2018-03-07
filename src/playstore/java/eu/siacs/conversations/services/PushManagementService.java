@@ -15,8 +15,7 @@ import eu.siacs.conversations.xml.Element;
 import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.forms.Data;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 
 public class PushManagementService {
@@ -30,11 +29,11 @@ public class PushManagementService {
 	}
 
 	public void registerPushTokenOnServer(final Account account) {
-		Log.d(Config.LOGTAG, account.getJid().toBareJid() + ": has push support");
+		Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": has push support");
 		retrieveGcmInstanceToken(token -> {
 			try {
 				final String deviceId = Settings.Secure.getString(mXmppConnectionService.getContentResolver(), Settings.Secure.ANDROID_ID);
-				IqPacket packet = mXmppConnectionService.getIqGenerator().pushTokenToAppServer(Jid.fromString(APP_SERVER), token, deviceId);
+				IqPacket packet = mXmppConnectionService.getIqGenerator().pushTokenToAppServer(JidHelper.fromString(APP_SERVER), token, deviceId);
 				mXmppConnectionService.sendIqPacket(account, packet, (a, p) -> {
 					Element command = p.findChild("command","http://jabber.org/protocol/commands");
 					if (p.getType() == IqPacket.TYPE.RESULT && command != null) {
@@ -44,19 +43,19 @@ public class PushManagementService {
 							try {
 								String node = data.getValue("node");
 								String secret = data.getValue("secret");
-								Jid jid = Jid.fromString(data.getValue("jid"));
+								Jid jid = JidHelper.fromString(data.getValue("jid"));
 								if (node != null && secret != null) {
 									enablePushOnServer(a, jid, node, secret);
 								}
-							} catch (InvalidJidException e) {
+							} catch (IllegalArgumentException e) {
 								e.printStackTrace();
 							}
 						}
 					} else {
-						Log.d(Config.LOGTAG, a.getJid().toBareJid()+": invalid response from app server");
+						Log.d(Config.LOGTAG, a.getJid().asBareJid()+": invalid response from app server");
 					}
 				});
-			} catch (InvalidJidException ignored) {
+			} catch (IllegalArgumentException ignored) {
 
 			}
 		});
@@ -66,9 +65,9 @@ public class PushManagementService {
 		IqPacket enable = mXmppConnectionService.getIqGenerator().enablePush(jid, node, secret);
 		mXmppConnectionService.sendIqPacket(account, enable, (a, p) -> {
 			if (p.getType() == IqPacket.TYPE.RESULT) {
-				Log.d(Config.LOGTAG, a.getJid().toBareJid() + ": successfully enabled push on server");
+				Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": successfully enabled push on server");
 			} else if (p.getType() == IqPacket.TYPE.ERROR) {
-				Log.d(Config.LOGTAG, a.getJid().toBareJid() + ": enabling push on server failed");
+				Log.d(Config.LOGTAG, a.getJid().asBareJid() + ": enabling push on server failed");
 			}
 		});
 	}

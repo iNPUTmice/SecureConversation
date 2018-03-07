@@ -3,7 +3,7 @@ package eu.siacs.conversations.xmpp.jingle.stanzas;
 import android.util.Base64;
 
 import eu.siacs.conversations.xml.Element;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import rocks.xmpp.addr.Jid;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 
 public class JinglePacket extends IqPacket {

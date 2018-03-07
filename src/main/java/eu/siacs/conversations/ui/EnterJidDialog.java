@@ -1,6 +1,6 @@
 package eu.siacs.conversations.ui;
 
-import android.app.AlertDialog;
+import android.support.v7.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,15 +8,15 @@ import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Spinner;
-import android.widget.TextView;
 
 import java.util.List;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.adapter.KnownHostsAdapter;
-import eu.siacs.conversations.xmpp.jid.InvalidJidException;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.ui.util.DelayedHintHelper;
+import eu.siacs.conversations.xmpp.jid.JidHelper;
+import rocks.xmpp.addr.Jid;
 
 public class EnterJidDialog {
 	public interface OnEnterJidDialogPositiveListener {
@@ -47,10 +47,8 @@ public class EnterJidDialog {
 		AlertDialog.Builder builder = new AlertDialog.Builder(context);
 		builder.setTitle(title);
 		View dialogView = LayoutInflater.from(context).inflate(R.layout.enter_jid_dialog, null);
-		final TextView jabberIdDesc = (TextView) dialogView.findViewById(R.id.jabber_id);
-		jabberIdDesc.setText(R.string.account_settings_jabber_id);
-		final Spinner spinner = (Spinner) dialogView.findViewById(R.id.account);
-		final AutoCompleteTextView jid = (AutoCompleteTextView) dialogView.findViewById(R.id.jid);
+		final Spinner spinner = dialogView.findViewById(R.id.account);
+		final AutoCompleteTextView jid = dialogView.findViewById(R.id.jid);
 		jid.setAdapter(new KnownHostsAdapter(context, R.layout.simple_list_item, knownHosts));
 		if (prefilledJid != null) {
 			jid.append(prefilledJid);
@@ -62,7 +60,7 @@ public class EnterJidDialog {
 			}
 		}
 
-		jid.setHint(R.string.account_settings_example_jabber_id);
+		DelayedHintHelper.setHint(R.string.account_settings_example_jabber_id,jid);
 
 		if (account == null) {
 			StartConversationActivity.populateAccountSpinner(context, activatedAccounts, spinner);
@@ -80,38 +78,35 @@ public class EnterJidDialog {
 		builder.setPositiveButton(positiveButton, null);
 		this.dialog = builder.create();
 
-		this.dialogOnClick = new View.OnClickListener() {
-			@Override
-			public void onClick(final View v) {
-				final Jid accountJid;
-				if (!spinner.isEnabled() && account == null) {
-					return;
+		this.dialogOnClick = v -> {
+			final Jid accountJid;
+			if (!spinner.isEnabled() && account == null) {
+				return;
+			}
+			try {
+				if (Config.DOMAIN_LOCK != null) {
+					accountJid = Jid.of((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
+				} else {
+					accountJid = JidHelper.fromString((String) spinner.getSelectedItem());
 				}
-				try {
-					if (Config.DOMAIN_LOCK != null) {
-						accountJid = Jid.fromParts((String) spinner.getSelectedItem(), Config.DOMAIN_LOCK, null);
-					} else {
-						accountJid = Jid.fromString((String) spinner.getSelectedItem());
-					}
-				} catch (final InvalidJidException e) {
-					return;
-				}
-				final Jid contactJid;
-				try {
-					contactJid = Jid.fromString(jid.getText().toString());
-				} catch (final InvalidJidException e) {
-					jid.setError(context.getString(R.string.invalid_jid));
-					return;
-				}
+			} catch (final IllegalArgumentException e) {
+				return;
+			}
+			final Jid contactJid;
+			try {
+				contactJid = JidHelper.fromString(jid.getText().toString());
+			} catch (final IllegalArgumentException e) {
+				jid.setError(context.getString(R.string.invalid_jid));
+				return;
+			}
 
-				if(listener != null) {
-					try {
-						if(listener.onEnterJidDialogPositive(accountJid, contactJid)) {
-							dialog.dismiss();
-						}
-					} catch(JidError error) {
-						jid.setError(error.toString());
+			if(listener != null) {
+				try {
+					if(listener.onEnterJidDialogPositive(accountJid, contactJid)) {
+						dialog.dismiss();
 					}
+				} catch(JidError error) {
+					jid.setError(error.toString());
 				}
 			}
 		};

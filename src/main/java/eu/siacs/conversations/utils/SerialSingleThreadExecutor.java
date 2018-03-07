@@ -4,12 +4,10 @@ import android.os.Looper;
 import android.util.Log;
 
 import java.util.ArrayDeque;
-import java.util.Queue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import eu.siacs.conversations.Config;
-import eu.siacs.conversations.services.AttachFileToConversationRunnable;
 
 public class SerialSingleThreadExecutor implements Executor {
 

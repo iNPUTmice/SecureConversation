@@ -1,10 +1,11 @@
 package eu.siacs.conversations.ui;
 
-import android.app.ActionBar;
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.StringRes;
+import android.support.v7.app.ActionBar;
 import android.view.ActionMode;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -25,8 +26,10 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.ListItem;
-import eu.siacs.conversations.xmpp.jid.Jid;
+import eu.siacs.conversations.entities.MucOptions;
+import rocks.xmpp.addr.Jid;
 
 public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 	private List<String> mActivatedAccounts = new ArrayList<>();
@@ -120,7 +123,7 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 				data.putExtra("contact", mListItem.getJid().toString());
 				String account = request.getStringExtra(EXTRA_ACCOUNT);
 				if (account == null && mListItem instanceof Contact) {
-					account = ((Contact) mListItem).getAccount().getJid().toBareJid().toString();
+					account = ((Contact) mListItem).getAccount().getJid().asBareJid().toString();
 				}
 				data.putExtra(EXTRA_ACCOUNT, account);
 				data.putExtra("conversation",
@@ -140,7 +143,7 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 		Intent intent = getIntent();
 		@StringRes
 		int res = intent != null ? intent.getIntExtra(EXTRA_TITLE_RES_ID,R.string.title_activity_choose_contact) : R.string.title_activity_choose_contact;
-		ActionBar bar = getActionBar();
+		ActionBar bar = getSupportActionBar();
 		if (bar != null) {
 			try {
 				bar.setTitle(res);
@@ -169,7 +172,7 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 			if (account.getStatus() != Account.State.DISABLED) {
 				for (final Contact contact : account.getRoster().getContacts()) {
 					if (contact.showInRoster() &&
-							!filterContacts.contains(contact.getJid().toBareJid().toString())
+							!filterContacts.contains(contact.getJid().asBareJid().toString())
 							&& contact.match(this, needle)) {
 						getListItems().add(contact);
 					}
@@ -238,12 +241,33 @@ public class ChooseContactActivity extends AbstractSearchableListItemActivity {
 		for (Account account : xmppConnectionService.getAccounts()) {
 			if (account.getStatus() != Account.State.DISABLED) {
 				if (Config.DOMAIN_LOCK != null) {
-					this.mActivatedAccounts.add(account.getJid().getLocalpart());
+					this.mActivatedAccounts.add(account.getJid().getLocal());
 				} else {
-					this.mActivatedAccounts.add(account.getJid().toBareJid().toString());
+					this.mActivatedAccounts.add(account.getJid().asBareJid().toString());
 				}
 			}
 		}
 		this.mKnownHosts = xmppConnectionService.getKnownHosts();
+	}
+
+	public static Intent create(Activity activity, Conversation conversation) {
+		final Intent intent = new Intent(activity, ChooseContactActivity.class);
+		List<String> contacts = new ArrayList<>();
+		if (conversation.getMode() == Conversation.MODE_MULTI) {
+			for (MucOptions.User user : conversation.getMucOptions().getUsers(false)) {
+				Jid jid = user.getRealJid();
+				if (jid != null) {
+					contacts.add(jid.asBareJid().toString());
+				}
+			}
+		} else {
+			contacts.add(conversation.getJid().asBareJid().toString());
+		}
+		intent.putExtra("filter_contacts", contacts.toArray(new String[contacts.size()]));
+		intent.putExtra("conversation", conversation.getUuid());
+		intent.putExtra("multiple", true);
+		intent.putExtra("show_enter_jid", true);
+		intent.putExtra(EXTRA_ACCOUNT, conversation.getAccount().getJid().asBareJid().toString());
+		return intent;
 	}
 }
