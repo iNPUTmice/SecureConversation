@@ -47,6 +47,7 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
+import android.support.v7.widget.Toolbar;
 
 import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
@@ -91,6 +92,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 	protected int mColorGreen;
 	protected int mPrimaryColor;
 
+	protected boolean isStartConversationActivity = false;
 	protected boolean mUseSubject = true;
 	protected int mTheme;
 	protected boolean mUsingEnterKey = false;
@@ -416,7 +418,6 @@ public abstract class XmppActivity extends AppCompatActivity {
 		mPrimaryColor = ContextCompat.getColor(this, R.color.primary500);
 		mPrimaryBackgroundColor = ContextCompat.getColor(this, R.color.grey50);
 		mSecondaryBackgroundColor = ContextCompat.getColor(this, R.color.grey200);
-
 		this.mTheme = findTheme();
 		if (isDarkTheme()) {
 			mPrimaryBackgroundColor = ContextCompat.getColor(this, R.color.grey800);
@@ -430,6 +431,10 @@ public abstract class XmppActivity extends AppCompatActivity {
 		if (ab != null) {
 			ab.setDisplayHomeAsUpEnabled(true);
 		}
+	}
+
+	public void setActivitySupportActionBar(Toolbar toolbar){
+		setSupportActionBar(toolbar);
 	}
 
 	public boolean isDarkTheme() {
@@ -842,11 +847,19 @@ public abstract class XmppActivity extends AppCompatActivity {
 
 	protected int findTheme() {
 		Boolean dark = getPreferences().getString(SettingsActivity.THEME, getResources().getString(R.string.theme)).equals("dark");
-
-		if (dark) {
-			return R.style.ConversationsTheme_Dark;
+		if (!isStartConversationActivity) {
+			if (dark) {
+				return R.style.ConversationsTheme_Dark;
+			} else {
+				return R.style.ConversationsTheme;
+			}
 		} else {
-			return R.style.ConversationsTheme;
+			isStartConversationActivity = false;
+			if (dark) {
+				return R.style.StartConversationsTheme_Dark;
+			} else {
+				return R.style.StartConversationsTheme;
+			}
 		}
 	}
 
