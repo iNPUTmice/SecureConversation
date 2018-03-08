@@ -68,6 +68,7 @@ import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.entities.TransferablePlaceholder;
 import eu.siacs.conversations.http.HttpDownloadConnection;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.services.ConnectivityReceiver;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.XmppActivity.OnPresenceSelected;
@@ -96,6 +97,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 	private TextView snackbarMessage;
 	private TextView snackbarAction;
 	private Toast messageLoaderToast;
+	private Handler handler;
+	private boolean isCheckingNetworkStatus = false;
+	private boolean isNetworkAvailabe = true;
+
 	private OnClickListener clickToMuc = new OnClickListener() {
 
 		@Override
@@ -280,6 +285,24 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			}
 		}
 	};
+	private OnClickListener mCheckNetworkListener = new OnClickListener() {
+		@Override
+		public void onClick(View view) {
+			final Account account = conversation == null ? null : conversation.getAccount();
+			if (account != null) {
+				isCheckingNetworkStatus = true;
+				updateSnackBar(conversation);
+				handler = new Handler();
+				handler.postDelayed(new Runnable() {
+					@Override
+					public void run() {
+						isNetworkAvailabe = ConnectivityReceiver.isConnected(getActivity());
+						updateSnackBar(conversation);
+					}
+				}, 1000);
+			}
+		}
+	};
 	private OnClickListener mBlockClickListener = new OnClickListener() {
 		@Override
 		public void onClick(final View view) {
@@ -450,6 +473,14 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			} else {
 				return new Pair<>(pos, view.getTop());
 			}
+		}
+	}
+
+	@Override
+	public void onDetach() {
+		super.onDetach();
+		if (handler != null) {
+			handler.removeCallbacksAndMessages(null);
 		}
 	}
 
@@ -1063,7 +1094,10 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 		final XmppConnection connection = account.getXmppConnection();
 		final int mode = conversation.getMode();
 		final Contact contact = mode == Conversation.MODE_SINGLE ? conversation.getContact() : null;
-		if (account.getStatus() == Account.State.DISABLED) {
+		if (isCheckingNetworkStatus) {
+			showSnackbar(R.string.checking_for_connection, 0, null);
+			isCheckingNetworkStatus = false;
+		} else if (account.getStatus() == Account.State.DISABLED) {
 			showSnackbar(R.string.this_account_is_disabled, R.string.enable, this.mEnableAccountListener);
 		} else if (conversation.isBlocked()) {
 			showSnackbar(R.string.contact_blocked, R.string.unblock, this.mUnblockClickListener);
@@ -1071,6 +1105,8 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			showSnackbar(R.string.contact_added_you, R.string.add_back, this.mAddBackClickListener, this.mLongPressBlockListener);
 		} else if (contact != null && contact.getOption(Contact.Options.PENDING_SUBSCRIPTION_REQUEST)) {
 			showSnackbar(R.string.contact_asks_for_presence_subscription, R.string.allow, this.mAllowPresenceSubscription, this.mLongPressBlockListener);
+		} else if (!isNetworkAvailabe) {
+			showSnackbar(R.string.no_connectivity, R.string.retry, this.mCheckNetworkListener);
 		} else if (mode == Conversation.MODE_MULTI
 				&& !conversation.getMucOptions().online()
 				&& account.getStatus() == Account.State.ONLINE) {
@@ -1636,6 +1672,20 @@ public class ConversationFragment extends Fragment implements EditMessage.Keyboa
 			text = " " + text;
 		}
 		this.mEditMessage.append(text);
+	}
+
+	public void onConnected(){
+		isNetworkAvailabe = true;
+		if (conversation != null) {
+			updateSnackBar(conversation);
+		}
+	}
+
+	public void onDisconnected(){
+		isNetworkAvailabe = false;
+		if (conversation != null) {
+			updateSnackBar(conversation);
+		}
 	}
 
 	@Override

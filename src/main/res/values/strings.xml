@@ -242,6 +242,9 @@
 	<string name="bookmark_already_exists">This bookmark already exists</string>
 	<string name="action_edit_subject">Edit group chat subject</string>
 	<string name="edit_subject_hint">The subject of this group chat</string>
+	<string name="no_connectivity">No connectivity detected</string>
+	<string name="retry">Retry</string>
+	<string name="checking_for_connection">Checking for connection…</string>
 	<string name="joining_conference">Joining group chat…</string>
 	<string name="leave">Leave</string>
 	<string name="contact_added_you">Contact added you to contact list</string>
