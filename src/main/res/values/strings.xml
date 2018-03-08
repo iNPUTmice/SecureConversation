@@ -370,7 +370,7 @@
 	<string name="pref_keep_foreground_service_summary">Prevents the operating system from killing your connection</string>
 	<string name="pref_export_logs">Export history</string>
 	<string name="pref_export_logs_summary">Write conversations history logs to SD card</string>
-	<string name="notification_export_logs_title">Writing logs to SD card</string>
+	<string name="notification_export_logs_title">Writing conversations to SD card</string>
 	<string name="choose_file">Choose file</string>
 	<string name="receiving_x_file">Receiving %1$s (%2$d%% completed)</string>
 	<string name="download_x_file">Download %s</string>
