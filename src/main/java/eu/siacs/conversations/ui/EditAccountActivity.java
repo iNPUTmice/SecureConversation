@@ -967,7 +967,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			}
 			this.binding.accountRegisterNew.setVisibility(View.GONE);
 		} else {
-			this.binding.accountRegisterNew.setVisibility(mInitMode ? View.VISIBLE : View.GONE);
+			this.binding.accountRegisterNew.setVisibility(mInitMode && !Config.DISALLOW_REGISTRATION_IN_UI ? View.VISIBLE : View.GONE);
 		}
 		if (this.mAccount.isOnlineAndConnected() && !this.mFetchingAvatar) {
 			Features features = this.mAccount.getXmppConnection().getFeatures();
