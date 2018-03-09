@@ -81,7 +81,6 @@
 	<string name="send_unencrypted_message">Send unencrypted message</string>
 	<string name="send_message">Send message</string>
 	<string name="send_message_to_x">Send message to %s</string>
-	<string name="send_otr_message">Send OTR encrypted message</string>
 	<string name="send_omemo_message">Send OMEMO encrypted message</string>
 	<string name="send_omemo_x509_message">Send v\\OMEMO encrypted message</string>
 	<string name="send_pgp_message">Send OpenPGP encrypted message</string>
@@ -154,7 +153,6 @@
 	<string name="account_status_incompatible_server">Incompatible server</string>
 	<string name="account_status_stream_error">Stream error</string>
 	<string name="encryption_choice_unencrypted">Unencrypted</string>
-	<string name="encryption_choice_otr">OTR</string>
 	<string name="encryption_choice_pgp">OpenPGP</string>
 	<string name="encryption_choice_omemo">OMEMO</string>
 	<string name="mgmt_account_delete">Delete account</string>
@@ -198,11 +196,8 @@
 	<string name="last_seen_day">last seen 1 day ago</string>
 	<string name="last_seen_days">last seen %d days ago</string>
 	<string name="install_openkeychain">Encrypted message. Please install OpenKeychain to decrypt.</string>
-	<string name="unknown_otr_fingerprint">Unknown OTR fingerprint</string>
 	<string name="openpgp_messages_found">OpenPGP encrypted messages found</string>
 	<string name="your_fingerprint">Your fingerprint</string>
-	<string name="otr_fingerprint">OTR fingerprint</string>
-	<string name="otr_fingerprint_selected_message">OTR fingerprint of message</string>
 	<string name="openpgp_key_id">OpenPGP Key ID</string>
 	<string name="omemo_fingerprint">OMEMO fingerprint</string>
 	<string name="omemo_fingerprint_x509">v\\OMEMO fingerprint</string>
@@ -291,7 +286,6 @@
 	<string name="pref_conference_name_summary">Use subject instead of JID to identify group chats</string>
 	<string name="pref_autojoin">Automatically join group chats</string>
 	<string name="pref_autojoin_summary">Respect the autojoin flag in group chat bookmarks</string>
-	<string name="toast_message_otr_fingerprint">OTR fingerprint copied to clipboard!</string>
 	<string name="toast_message_omemo_fingerprint">OMEMO fingerprint copied to clipboard!</string>
 	<string name="conference_banned">You are banned from this group chat</string>
 	<string name="conference_members_only">This group chat is members only</string>
@@ -313,19 +307,15 @@
 	<string name="show_qr_code">Show 2D Barcode</string>
 	<string name="show_block_list">Show block list</string>
 	<string name="account_details">Account details</string>
-	<string name="verify_otr">Verify OTR</string>
 	<string name="remote_fingerprint">Remote Fingerprint</string>
 	<string name="shared_secret_hint">Hint or Question</string>
-	<string name="shared_secret_secret">Shared Secret</string>
 	<string name="confirm">Confirm</string>
 	<string name="in_progress">In progress</string>
 	<string name="respond">Respond</string>
-	<string name="secrets_do_not_match">Secrets do not match</string>
 	<string name="try_again">Try again</string>
 	<string name="finish">Finish</string>
 	<string name="verified">Verified!</string>
 	<string name="smp_requested">Contact requested SMP verification</string>
-	<string name="no_otr_session_found">No valid OTR session has been found!</string>
 	<string name="conversations_foreground_service">Conversations</string>
 	<string name="pref_keep_foreground_service">Keep service in foreground</string>
 	<string name="pref_keep_foreground_service_summary">Prevents the operating system from killing your connection</string>
@@ -355,7 +345,6 @@
 	<string name="no_conference_server_found">No group chat server found</string>
 	<string name="conference_creation_failed">Group chat creation failed!</string>
 	<string name="account_image_description">Account avatar</string>
-	<string name="copy_otr_clipboard_description">Copy OTR fingerprint to clipboard</string>
 	<string name="copy_omemo_clipboard_description">Copy OMEMO fingerprint to clipboard</string>
 	<string name="regenerate_omemo_key">Regenerate OMEMO key</string>
 	<string name="clear_other_devices">Clear devices</string>
@@ -369,12 +358,8 @@
 	<string name="updating">Updating…</string>
 	<string name="password_changed">Password changed!</string>
 	<string name="could_not_change_password">Could not change password</string>
-	<string name="otr_session_not_started">Send a message to start an encrypted chat</string>
 	<string name="ask_question">Ask question</string>
-	<string name="smp_explain_question">If you and your contact have a secret in common that no one else knows (like an inside joke or simply what you had for lunch the last time you met) you can use that secret to verify each other’s fingerprints.\n\nYou provide a hint or a question for your contact who will respond with a case-sensitive answer.</string>
-	<string name="smp_explain_answer">Your contact would like to verify your fingerprint by challenging you with a shared secret. Your contact provided the following hint or question for that secret.</string>
 	<string name="shared_secret_hint_should_not_be_empty">Your hint should not be empty</string>
-	<string name="shared_secret_can_not_be_empty">Your shared secret can not be empty</string>
 	<string name="manual_verification_explanation">Carefully compare the fingerprint shown below with the fingerprint of your contact.\nYou can use any trusted form of communication like an encrypted e-mail or a telephone call to exchange those.</string>
 	<string name="change_password">Change password</string>
 	<string name="current_password">Current password</string>

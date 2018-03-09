@@ -75,7 +75,6 @@
   <string name="send_unencrypted_message">Відправити незашифроване повідомлення</string>
   <string name="send_message">Відправити повідомленн</string>
   <string name="send_message_to_x">Відправити повідомлення до %s</string>
-  <string name="send_otr_message">Відправити повідомлення, зашифроване OTR</string>
   <string name="send_omemo_message">Відправити повідомлення, зашифроване OMEMO</string>
   <string name="send_omemo_x509_message">Відправити повідомлення, зашифроване v\\OMEMO</string>
   <string name="send_pgp_message">Відправити повідомлення, зашифроване OpenPGP</string>
@@ -148,7 +147,6 @@
   <string name="account_status_incompatible_server">Несумісний сервер</string>
   <string name="account_status_stream_error">Помилка потоку</string>
   <string name="encryption_choice_unencrypted">Незашифровано</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">Видалити обліковий запис</string>
@@ -192,11 +190,8 @@
   <string name="last_seen_day">востаннє бачили 1 день тому</string>
   <string name="last_seen_days">востаннє бачили %d днів тому</string>
   <string name="install_openkeychain">Зашифроване повідомлення. Будь ласка, встановіть OpenKeychain, щоб розшифрувати.</string>
-  <string name="unknown_otr_fingerprint">Незнайомий відбиток OTR</string>
   <string name="openpgp_messages_found">Знайдено повідомлення, зашифроване OpenPGP</string>
   <string name="your_fingerprint">Ваш відбиток</string>
-  <string name="otr_fingerprint">Відбиток OTR</string>
-  <string name="otr_fingerprint_selected_message">OTR-відбиток повідомлення</string>
   <string name="openpgp_key_id">Ідентифікатор ключа OpenPGP</string>
   <string name="omemo_fingerprint">Відбиток OMEMO</string>
   <string name="omemo_fingerprint_x509">Відбиток v\\OMEMO</string>
@@ -268,7 +263,6 @@
   <string name="pref_use_indicate_received_summary">Отримані повідомлення будуть позначені зеленою галочкою, якщо ця функція підтримується</string>
   <string name="pref_use_send_button_to_indicate_status_summary">Змінювати колір кнопки відправлення на позначення статусу контакта</string>
   <string name="pref_expert_options_other">Інше</string>
-  <string name="toast_message_otr_fingerprint">Відбиток OTR скопійовано до комірки обміну!</string>
   <string name="toast_message_omemo_fingerprint">Відбиток OMEMO скопійовано до комірки обміну!</string>
   <string name="using_account">використовується обліковий запис %s</string>
   <string name="checking_x">Перевіряю %s на хості HTTP</string>
@@ -285,19 +279,15 @@
   <string name="show_qr_code">Показати QR-код</string>
   <string name="show_block_list">Показати список блокування</string>
   <string name="account_details">Деталі облікового запису</string>
-  <string name="verify_otr">Перевірити OTR</string>
   <string name="remote_fingerprint">Віддалені відбитки</string>
   <string name="shared_secret_hint">Підказка або запитання</string>
-  <string name="shared_secret_secret">Спільний секрет</string>
   <string name="confirm">Підтвердити</string>
   <string name="in_progress">У процесі</string>
   <string name="respond">Відповісти</string>
-  <string name="secrets_do_not_match">Секрети не збігаються</string>
   <string name="try_again">Спробуйте ще</string>
   <string name="finish">Завершити</string>
   <string name="verified">Перевірено!</string>
   <string name="smp_requested">Контакт запитує верифікацію за протоколом соціалістичного мільйонера</string>
-  <string name="no_otr_session_found">Не знайдено дійсної OTR сесії!</string>
   <string name="conversations_foreground_service">Розмови</string>
   <string name="pref_keep_foreground_service">Підтримувати сервіс на першому плані</string>
   <string name="pref_keep_foreground_service_summary">Не дає операційній системі припиняти Ваш зв\'язок</string>
@@ -324,7 +314,6 @@
   <string name="pref_show_dynamic_tags_summary">Показувати мітки \"лише для читання\" під контактами</string>
   <string name="enable_notifications">Увікнути сповіщення</string>
   <string name="account_image_description">Аватар облікового запису</string>
-  <string name="copy_otr_clipboard_description">Скопіювати OTR відбиток до комірки обміну</string>
   <string name="copy_omemo_clipboard_description">Скопіювати OMEMO відбиток до комірки обліку</string>
   <string name="regenerate_omemo_key">Згенерувати ключ OMEMO</string>
   <string name="clear_other_devices">Стерти пристрої</string>
@@ -337,12 +326,8 @@
   <string name="updating">Оновлюю…</string>
   <string name="password_changed">Пароль змінено!</string>
   <string name="could_not_change_password">Не зміг змінити пароль</string>
-  <string name="otr_session_not_started">Відправте повідомлення, щоб розпочати зашифрований чат</string>
   <string name="ask_question">Задати запитання</string>
-  <string name="smp_explain_question">Якщо Ви та Ваш контакт маєте спільний секрет, який ніхто більше не знає (наприклад, приватний жарт або просто, що Ви мали на обід останнього разу, коли зустрічалися), Ви можете використати цей секрет, щоб перевірити відбиток одне одного.\n\nВи даєте підказку або запитання Вашому контакту, а він відповідає; регістр враховується.</string>
-  <string name="smp_explain_answer">Ваш контакт хоче перевірити Ваш відбиток, перевіривши Ваш спільний секрет. Ваш контакт надав наступну підказку або запитання щодо секрету. </string>
   <string name="shared_secret_hint_should_not_be_empty">Ваша підказка не може бути порожньою</string>
-  <string name="shared_secret_can_not_be_empty">Ваш спільний секрет не може бути порожнім</string>
   <string name="manual_verification_explanation">Обережно порівняльте відбиток, показаний нижче, з відбитком Вашого контакта.\nВи можете використати будь-яку форму комунікації, таку як зашифрований лист або телефонний дзвінок, щоб обмінятися відбитками.</string>
   <string name="change_password">Змінити пароль</string>
   <string name="current_password">Поточний пароль</string>

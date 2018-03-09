@@ -79,7 +79,6 @@
   <string name="send_unencrypted_message">Envia un missatge no xifrat</string>
   <string name="send_message">Envia un missatge</string>
   <string name="send_message_to_x">Envia un missatge a %s</string>
-  <string name="send_otr_message">Enviar missatge xifrat amb OTR</string>
   <string name="send_omemo_message">Envia un missatge amb encriptació OMEMO</string>
   <string name="send_omemo_x509_message">Envia un missatge encriptat amb v\\OMEMO</string>
   <string name="send_pgp_message">Enviar missatge xifrat amb OpenPGP</string>
@@ -152,7 +151,6 @@
   <string name="account_status_incompatible_server">Servidor incompatible</string>
   <string name="account_status_stream_error">Error de transmissió</string>
   <string name="encryption_choice_unencrypted">Sense xifrar</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">Eliminar compte</string>
@@ -196,11 +194,8 @@
   <string name="last_seen_day">Vist per última vegada 1 dia avans</string>
   <string name="last_seen_days">Vist per última vegada %d dies avans</string>
   <string name="install_openkeychain">Missatge xifrat. Si us plau instal.la OpenKeychain per desxifrar-lo</string>
-  <string name="unknown_otr_fingerprint">Empremta dactilar OTR desconeguda</string>
   <string name="openpgp_messages_found">Missatges xifrats OpenPGP trobats</string>
   <string name="your_fingerprint">La teva empremta digital</string>
-  <string name="otr_fingerprint">Empremta digital OTR</string>
-  <string name="otr_fingerprint_selected_message">Empremta digital OTR de missatge</string>
   <string name="openpgp_key_id">Identificador de clau OpenPGP</string>
   <string name="omemo_fingerprint">Empremta digital OMEMO</string>
   <string name="omemo_fingerprint_x509">Empremta digital v\\OMEMO</string>
@@ -287,7 +282,6 @@
   <string name="pref_conference_name_summary">Utilitzeu el tema en comptes de JID per identificar els xats del grup</string>
   <string name="pref_autojoin">Uniu-vos automàticament als xats de grup</string>
   <string name="pref_autojoin_summary">Respecta l\'indicador d\'autoentrada als marcadors de xat de grup</string>
-  <string name="toast_message_otr_fingerprint">Empremta digital OTR copiada al portapapers</string>
   <string name="toast_message_omemo_fingerprint">S\'ha copiat l\'empremta digital d\'OMEMO al porta-retalls.</string>
   <string name="conference_banned">Estàs prohibit en aquest xat de grup</string>
   <string name="conference_members_only">Aquest xat en grup només és de membres</string>
@@ -309,19 +303,15 @@
   <string name="show_qr_code">Mostra el codi de barres 2D</string>
   <string name="show_block_list">Mostra la llista de bloqueig</string>
   <string name="account_details">Detalls del compte</string>
-  <string name="verify_otr">Verificar OTR</string>
   <string name="remote_fingerprint">Empremta digital remota</string>
   <string name="shared_secret_hint">Pista o pregunta</string>
-  <string name="shared_secret_secret">Secret compartit</string>
   <string name="confirm">Confirmar</string>
   <string name="in_progress">En progrés</string>
   <string name="respond">Respondre</string>
-  <string name="secrets_do_not_match">Els secrets no coincideixen</string>
   <string name="try_again">Intenta una altra vegada</string>
   <string name="finish">Acabat</string>
   <string name="verified">Verificat</string>
   <string name="smp_requested">Sol.licitar una verificació per SMP del contacte</string>
-  <string name="no_otr_session_found">Cap sessió OTR ha estat trobada!</string>
   <string name="conversations_foreground_service">Converses</string>
   <string name="pref_keep_foreground_service">Mantenir el servei en primer pla</string>
   <string name="pref_keep_foreground_service_summary">Evitar que el sistema operatiu desconnecti la connexió</string>
@@ -351,7 +341,6 @@
   <string name="no_conference_server_found">No s\'ha trobat cap servidor de xat de grup</string>
   <string name="conference_creation_failed">No s\'ha pogut crear el xat de grup</string>
   <string name="account_image_description">Avatar del compte</string>
-  <string name="copy_otr_clipboard_description">Copiar l\'empremta digital OTR al portapapers</string>
   <string name="copy_omemo_clipboard_description">Copieu l\'empremta digital OMEMO al porta-retalls</string>
   <string name="regenerate_omemo_key">Regenerar la clau OMEMO</string>
   <string name="clear_other_devices">Esborra els dispositius</string>
@@ -368,12 +357,8 @@ mentrestant.</string>
   <string name="updating">Actualitzant</string>
   <string name="password_changed">Contrasenya canviada</string>
   <string name="could_not_change_password">No s\'ha pogut canviar la contrasenya</string>
-  <string name="otr_session_not_started">Començar a enviar un missatge de conversació xifrat</string>
   <string name="ask_question">Fer una pregunta</string>
-  <string name="smp_explain_question">Si vosté i el seu contacte tenen un secret en comú que ningú més sap (com una broma o simplement el que vau dinar l\'última vegada que es van trobar) pot utilitzar aquest secret per comprovar les empremtes de cadascú.\n\nProporcionaràs una pista o una pregunta a la que el seu contacte donarà una resposta, que distingeix entre majúscules i minúscules.</string>
-  <string name="smp_explain_answer">El seu contacte l\'hi agradaria verificar la seva empremta digital per un repte amb un secret compartit.El seu contacte proporciona el següent suggeriment o pregunta per aquest secret.</string>
   <string name="shared_secret_hint_should_not_be_empty">El seu suggeriment no pot estar buit</string>
-  <string name="shared_secret_can_not_be_empty">El teu secret compartit no pot estar buit</string>
   <string name="manual_verification_explanation">Compari acuradament l\'empremta digital que és mostra a continuació amb la empremta digital del seu contacte.\n\ També pots utilitzar alguna forma de confiança d la comunicació com a correu electrònic xifrat o alguna trucada telefònica per intercanviar-lo</string>
   <string name="change_password">Cambiar contrasenya</string>
   <string name="current_password">Contrasenya actual</string>

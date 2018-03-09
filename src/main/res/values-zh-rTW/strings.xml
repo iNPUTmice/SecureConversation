@@ -75,7 +75,6 @@
   <string name="send_unencrypted_message">發送未加密的資訊</string>
   <string name="send_message">送訊息</string>
   <string name="send_message_to_x">發信息給 %s</string>
-  <string name="send_otr_message">發送 OTR 加密資訊</string>
   <string name="send_omemo_message">發送 OMEMO 加密資訊</string>
   <string name="send_omemo_x509_message">發送 v\\OMEMO 加密資訊</string>
   <string name="send_pgp_message">發送 OpenPGP 加密資訊</string>
@@ -147,7 +146,6 @@
   <string name="account_status_incompatible_server">伺服器不相容</string>
   <string name="account_status_stream_error">流錯誤</string>
   <string name="encryption_choice_unencrypted">未加密</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">刪除帳號</string>
@@ -191,11 +189,8 @@
   <string name="last_seen_day">1 天前查看過</string>
   <string name="last_seen_days">%d 天前查看過</string>
   <string name="install_openkeychain">加密信息. 請安裝 OpenKeychain 以解密。</string>
-  <string name="unknown_otr_fingerprint">未知 OTR 指紋</string>
   <string name="openpgp_messages_found">發現 OpenPGP 加密資訊</string>
   <string name="your_fingerprint">你的指紋</string>
-  <string name="otr_fingerprint">OTR 指紋</string>
-  <string name="otr_fingerprint_selected_message">消息的 OTR 指紋</string>
   <string name="openpgp_key_id">OpenPGP 金鑰 ID</string>
   <string name="omemo_fingerprint">OMEMO 指紋</string>
   <string name="omemo_fingerprint_x509">v\\OMEMO 指紋</string>
@@ -267,7 +262,6 @@
   <string name="pref_use_indicate_received_summary">如果支援消息將會以綠色對勾標識</string>
   <string name="pref_use_send_button_to_indicate_status_summary">發送按鈕採用其他顏色以示發送狀態的區別</string>
   <string name="pref_expert_options_other">其他</string>
-  <string name="toast_message_otr_fingerprint">OTR 指紋已拷貝到剪貼板！</string>
   <string name="toast_message_omemo_fingerprint">OMEMO 指紋已拷貝到剪貼板！</string>
   <string name="using_account">用帳戶  %s</string>
   <string name="checking_x">正在 HTTP 伺服器中檢查 %s</string>
@@ -284,19 +278,15 @@
   <string name="show_qr_code">顯示二維條碼</string>
   <string name="show_block_list">顯示封鎖清單</string>
   <string name="account_details">帳戶詳情</string>
-  <string name="verify_otr">驗證 OTR</string>
   <string name="remote_fingerprint">遠程指紋</string>
   <string name="shared_secret_hint">提示或問題</string>
-  <string name="shared_secret_secret">共知的秘密</string>
   <string name="confirm">確認</string>
   <string name="in_progress">處理中</string>
   <string name="respond">回應</string>
-  <string name="secrets_do_not_match">秘密不符</string>
   <string name="try_again">再試一遍</string>
   <string name="finish">完成</string>
   <string name="verified">驗證通過！</string>
   <string name="smp_requested">連絡人請求 SMP 驗證</string>
-  <string name="no_otr_session_found">找不到有效的 OTR 通訊對話！</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">保持前臺服務</string>
   <string name="pref_keep_foreground_service_summary">防止作業系統中斷你的連接</string>
@@ -323,7 +313,6 @@
   <string name="pref_show_dynamic_tags_summary">在連絡人下方顯示唯讀標籤</string>
   <string name="enable_notifications">啟用通知</string>
   <string name="account_image_description">帳戶頭像</string>
-  <string name="copy_otr_clipboard_description">拷貝 OTR 指紋到剪貼板</string>
   <string name="copy_omemo_clipboard_description">拷貝 OMEMO 指紋到剪貼板</string>
   <string name="regenerate_omemo_key">重新生成 OMEMO 金鑰</string>
   <string name="clear_other_devices">清除設備</string>
@@ -335,12 +324,8 @@
   <string name="updating">更新中…</string>
   <string name="password_changed">密碼已修改！</string>
   <string name="could_not_change_password">不能修改密碼</string>
-  <string name="otr_session_not_started">發送消息來開始加密聊天</string>
   <string name="ask_question">提出問題</string>
-  <string name="smp_explain_question">如果你和你的連絡人有一個共知的秘密(比如一個內部笑話或者僅僅只是上次見面時吃的午餐) 你可以使用這個秘密來驗證彼此的指紋。\n\n你的連絡人將以大小寫敏感的方式給出答案，你可以給出提示或問題。</string>
-  <string name="smp_explain_answer">你的連絡人可以通過一個你們共知的秘密來驗證指紋。你的連絡人給出了如下的提示或問題。</string>
   <string name="shared_secret_hint_should_not_be_empty">你的提示不能為空</string>
-  <string name="shared_secret_can_not_be_empty">你共知的秘密不能為空</string>
   <string name="manual_verification_explanation">請仔細核對下面顯示出來的你的連絡人的指紋。\n你可以使用任何可信賴的聯繫方式，比如加密郵件或電話，來交換這些指紋資訊。</string>
   <string name="change_password">修改密碼</string>
   <string name="current_password">當前密碼</string>

@@ -81,7 +81,6 @@
   <string name="send_unencrypted_message">Enviar mensagem não criptografada</string>
   <string name="send_message">Enviar mensagem</string>
   <string name="send_message_to_x">Enviar mensagem para %s</string>
-  <string name="send_otr_message">Enviar mensagem criptografada via OTR</string>
   <string name="send_omemo_message">Enviar mensagem criptografada via OMEMO</string>
   <string name="send_omemo_x509_message">Enviar mensagem criptografada via v\\OMEMO</string>
   <string name="send_pgp_message">Enviar mensagem criptografada via OpenPGP</string>
@@ -154,7 +153,6 @@
   <string name="account_status_incompatible_server">Servidor incompatível</string>
   <string name="account_status_stream_error">Erro de fluxo</string>
   <string name="encryption_choice_unencrypted">Descriptografada</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">Excluir a conta</string>
@@ -198,11 +196,8 @@
   <string name="last_seen_day">visto há 1 dia atrás</string>
   <string name="last_seen_days">visto há %d dias atrás</string>
   <string name="install_openkeychain">Mensagem criptografada. Por favor instale o OpenKeychain para descriptografar.</string>
-  <string name="unknown_otr_fingerprint">Impressão digital OTR desconhecida</string>
   <string name="openpgp_messages_found">Foram encontradas mensagens criptografadas com OpenPGP</string>
   <string name="your_fingerprint">Sua impressão digital</string>
-  <string name="otr_fingerprint">Impressão digital OTR</string>
-  <string name="otr_fingerprint_selected_message">Impressão digital OTR da mensagem</string>
   <string name="openpgp_key_id">ID da chave OpenPGP</string>
   <string name="omemo_fingerprint">Impressão digital OMEMO</string>
   <string name="omemo_fingerprint_x509">Impressão digital v\\OMEMO</string>
@@ -291,7 +286,6 @@
   <string name="pref_conference_name_summary">Use o assunto ao invés do JID para identificar as conversas em grupo</string>
   <string name="pref_autojoin">Entrar automaticamente nas conversas em grupo</string>
   <string name="pref_autojoin_summary">Respeita a sinalização de entrada automática dos favoritos de conversa em grupo</string>
-  <string name="toast_message_otr_fingerprint">Impressão digital OTR copiada para a área de transferência!</string>
   <string name="toast_message_omemo_fingerprint">Impressão digital OMEMO copiada para a área de transferência!</string>
   <string name="conference_banned">Você foi banido desta conversa em grupo</string>
   <string name="conference_members_only">Somente membros podem entrar nessa conversa em grupo</string>
@@ -313,19 +307,15 @@
   <string name="show_qr_code">Exibir código de barras 2D</string>
   <string name="show_block_list">Exibir a lista de bloqueios</string>
   <string name="account_details">Detalhes da conta</string>
-  <string name="verify_otr">Verificar OTR</string>
   <string name="remote_fingerprint">Impressão digital remota</string>
   <string name="shared_secret_hint">Dica ou pergunta</string>
-  <string name="shared_secret_secret">Segredo compartilhado</string>
   <string name="confirm">Confirmar</string>
   <string name="in_progress">Em progresso</string>
   <string name="respond">Responder</string>
-  <string name="secrets_do_not_match">Os segredos não correspondem</string>
   <string name="try_again">Tentar novamente</string>
   <string name="finish">Finalizar</string>
   <string name="verified">Verificado!</string>
   <string name="smp_requested">O contato solicitou uma verificação SMP</string>
-  <string name="no_otr_session_found">Não foi encontrada nenhuma sessão OTR válida!</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Manter o serviço em segundo plano</string>
   <string name="pref_keep_foreground_service_summary">Impede que o sistema operacional encerre sua conexão.</string>
@@ -355,7 +345,6 @@
   <string name="no_conference_server_found">Não foi encontrado nenhum servidor de conversas em grupo</string>
   <string name="conference_creation_failed">Não foi possível criar a conversa em grupo!</string>
   <string name="account_image_description">Avatar da conta</string>
-  <string name="copy_otr_clipboard_description">Copiar a impressão digital OTR para a área de transferência</string>
   <string name="copy_omemo_clipboard_description">Copiar a impressão digital OMEMO para a área de transferência</string>
   <string name="regenerate_omemo_key">Regerar a chave OMEMO</string>
   <string name="clear_other_devices">Remover dispositivos</string>
@@ -369,12 +358,8 @@
   <string name="updating">Atualizando...</string>
   <string name="password_changed">A senha foi alterada!</string>
   <string name="could_not_change_password">Não foi possível alterar a senha</string>
-  <string name="otr_session_not_started">Envie uma mensagem para iniciar uma conversa criptografada</string>
   <string name="ask_question">Faça uma pergunta</string>
-  <string name="smp_explain_question">Caso você e o seu contato tenham um segredo em comum que ninguém mais saiba (como, por exemplo, uma piada interna ou o que vocês comeram na última vez que se encontraram) vocês podem usar isso para verificar a impressão digital um do outro.\n\nVocê fornece uma dica ou pergunta para o seu contato responder. Atenção! A resposta diferencia maiúsculas de minúsculas.</string>
-  <string name="smp_explain_answer">O seu contato gostaria de verificar sua impressão digital através de um segredo compartilhado. O seu contato enviou a seguinte dica/questão para esse segredo.</string>
   <string name="shared_secret_hint_should_not_be_empty">Sua dica não pode estar em branco</string>
-  <string name="shared_secret_can_not_be_empty">O seu segredo compartilhado não pode estar em branco</string>
   <string name="manual_verification_explanation">Compare cuidadosamente a impressão digital abaixo com aquela do seu contato.\nVocê pode usar qualquer forma de comunicação segura, como um e-mail criptografado ou uma ligação telefônica para efetuar a troca.</string>
   <string name="change_password">Alterar a senha</string>
   <string name="current_password">Senha atual</string>

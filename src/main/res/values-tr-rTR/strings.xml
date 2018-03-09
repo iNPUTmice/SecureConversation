@@ -74,7 +74,6 @@
   <string name="choose_presence">Aygıt seç</string>
   <string name="send_unencrypted_message">Şifrelenmemiş ileti gönder</string>
   <string name="send_message_to_x">%s kişisine ileti gönder</string>
-  <string name="send_otr_message">OTR ile şifrelenmiş ileti gönder</string>
   <string name="send_omemo_message">OMEMO ile şifrelenmiş ileti gönder</string>
   <string name="send_omemo_x509_message">v\\OMEMO ile şifrelenmiş ileti gönder</string>
   <string name="send_pgp_message">OpenPGP ile şifrelenmiş ileti gönder</string>
@@ -146,7 +145,6 @@
   <string name="account_status_incompatible_server">Sunucu uyuşmazlığı</string>
   <string name="account_status_stream_error">Akış hatası</string>
   <string name="encryption_choice_unencrypted">Şifrelenmemiş</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">Hesabı sil</string>
@@ -187,11 +185,8 @@
   <string name="last_seen_day">en son 1 gün önce görüldü</string>
   <string name="last_seen_days">en son %d gün önce görüldü</string>
   <string name="install_openkeychain">Şifreli ileti. Deşifre etmek için lütfen OpenKeychain kurun.</string>
-  <string name="unknown_otr_fingerprint">Bilinmeyen OTR parmak izi</string>
   <string name="openpgp_messages_found">OpenPGP ile şifrelenmiş iletiler bulundu</string>
   <string name="your_fingerprint">Parmak iziniz</string>
-  <string name="otr_fingerprint">OTR parmak izi</string>
-  <string name="otr_fingerprint_selected_message">İletinin OTR parmak izi</string>
   <string name="openpgp_key_id">OpenPGP Anahtar ID</string>
   <string name="omemo_fingerprint">OMEMO parmak izi</string>
   <string name="omemo_fingerprint_x509">v\\OMEMO parmak izi</string>
@@ -263,7 +258,6 @@
   <string name="pref_use_indicate_received_summary">Alınan iletiler, eğer destekleniyorsa, yeşil bir tikle işaretlenecektir.</string>
   <string name="pref_use_send_button_to_indicate_status_summary">Gönder butonunu kişinin durumuna göre renklendir</string>
   <string name="pref_expert_options_other">Diğer</string>
-  <string name="toast_message_otr_fingerprint">OTR parmak izi panoya kopyalandı!</string>
   <string name="toast_message_omemo_fingerprint">OMEMO parmak izi panoya kopyalandı!</string>
   <string name="using_account">%s hesabını kullanarak</string>
   <string name="checking_x">HTTP sunucusundaki %s denetleniyor</string>
@@ -280,19 +274,15 @@
   <string name="show_qr_code">2B Barkod Göster</string>
   <string name="show_block_list">Engellenenler listesini göster</string>
   <string name="account_details">Hesap bilgileri</string>
-  <string name="verify_otr">OTR doğrula</string>
   <string name="remote_fingerprint">Uzak parmak izi</string>
   <string name="shared_secret_hint">İpucu ya da Soru</string>
-  <string name="shared_secret_secret">Paylaşılan Gizli Bilgi</string>
   <string name="confirm">Doğrula</string>
   <string name="in_progress">İşleniyor</string>
   <string name="respond">Yanıt</string>
-  <string name="secrets_do_not_match">Gizli bilgiler eşleşmiyor</string>
   <string name="try_again">Yeniden deneyin</string>
   <string name="finish">Bitti</string>
   <string name="verified">Doğrulandı!</string>
   <string name="smp_requested">Kişi SMP doğrulaması istedi</string>
-  <string name="no_otr_session_found">Geçerli bir OTR oturumu bulunamadı!</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Ön planda çalışmaya devam etsin</string>
   <string name="pref_keep_foreground_service_summary">İşletim sisteminin bağlantınızı koparmasına engel olur</string>
@@ -319,7 +309,6 @@
   <string name="pref_show_dynamic_tags_summary">Kişilerin görünmeyen salt okunur etiketlerini göster</string>
   <string name="enable_notifications">Bildirimleri etkinleştir</string>
   <string name="account_image_description">Hesap avatarı</string>
-  <string name="copy_otr_clipboard_description">OTR parmak izini panoya kopyala</string>
   <string name="copy_omemo_clipboard_description">OMEMO parmak izini panoya kopyala</string>
   <string name="regenerate_omemo_key">OMEMO anahtarını yeniden oluştur</string>
   <string name="clear_other_devices">Aygıtları sil</string>
@@ -331,12 +320,8 @@
   <string name="updating">Güncelleniyor…</string>
   <string name="password_changed">Parola değişti!</string>
   <string name="could_not_change_password">Parola değiştirilemedi</string>
-  <string name="otr_session_not_started">Şifreli bir konuşma başlatmak için ileti gönder</string>
   <string name="ask_question">Soru sor</string>
-  <string name="smp_explain_question">Karşınızdaki kişiyle, ikinizden başka kimsenin bilmediği ortak bir sırrınız varsa (aranızdaki bir şaka ya da yalnızca en son buluştuğunuzda ne yediğiniz gibi) bunu birbirinizin parmak izlerini doğrulamak için kullanabilirsiniz. \n\n Karşınızdaki kişiye bir ipucu veya soru sorabilirsiniz. Yanıtın harf duyarlı olması gerekmektedir.</string>
-  <string name="smp_explain_answer">Kişi parmak izinizi onaylamak için yalnızca ikinizin bildiği bir şeyi sormak istiyor. Kişi sırrınız hakkında aşağıdaki ipucu veya soruyu gönderdi.</string>
   <string name="shared_secret_hint_should_not_be_empty">İpucunuz boş kalamaz</string>
-  <string name="shared_secret_can_not_be_empty">Sırrınız boş kalamaz</string>
   <string name="manual_verification_explanation">Aşağıdaki parmak izini, karşınızdaki kişinin parmak iziyle dikkatlice karşılaştırın. \n\nŞifreli eposta veya telefon gibi güvenilir bir iletişim kanalı üzerinden bilgi alışverişi yapabilirsiniz.</string>
   <string name="change_password">Parolayı değiştirin</string>
   <string name="current_password">Mevcut parola</string>

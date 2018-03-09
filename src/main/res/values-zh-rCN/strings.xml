@@ -81,7 +81,6 @@
   <string name="send_unencrypted_message">发送未加密的信息</string>
   <string name="send_message">发送信息</string>
   <string name="send_message_to_x">发信息给 %s</string>
-  <string name="send_otr_message">发送 OTR 加密信息</string>
   <string name="send_omemo_message">发送 OMEMO 加密信息</string>
   <string name="send_omemo_x509_message">发送 v\\OMEMO 加密信息</string>
   <string name="send_pgp_message">发送 OpenPGP 加密信息</string>
@@ -154,7 +153,6 @@
   <string name="account_status_incompatible_server">服务器不兼容</string>
   <string name="account_status_stream_error">流错误</string>
   <string name="encryption_choice_unencrypted">未加密</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">删除账号</string>
@@ -198,11 +196,8 @@
   <string name="last_seen_day">1 天前查看过</string>
   <string name="last_seen_days">%d 天前查看过</string>
   <string name="install_openkeychain">加密信息. 请安装 OpenKeychain 以解密。</string>
-  <string name="unknown_otr_fingerprint">未知 OTR 指纹</string>
   <string name="openpgp_messages_found">发现 OpenPGP 加密信息</string>
   <string name="your_fingerprint">你的指纹</string>
-  <string name="otr_fingerprint">OTR 指纹</string>
-  <string name="otr_fingerprint_selected_message">消息的 OTR 指纹</string>
   <string name="openpgp_key_id">OpenPGP 密钥 ID</string>
   <string name="omemo_fingerprint">OMEMO 指纹</string>
   <string name="omemo_fingerprint_x509">v\\OMEMO 指纹</string>
@@ -291,7 +286,6 @@
   <string name="pref_conference_name_summary">显示群聊主题</string>
   <string name="pref_autojoin">自动加入群聊</string>
   <string name="pref_autojoin_summary">允许群组的自动加入标志生效</string>
-  <string name="toast_message_otr_fingerprint">OTR 指纹已拷贝到剪贴板！</string>
   <string name="toast_message_omemo_fingerprint">OMEMO 指纹已拷贝到剪贴板！</string>
   <string name="conference_banned">你已经被禁言了</string>
   <string name="conference_members_only">这个群组只允许群组成员聊天</string>
@@ -313,19 +307,15 @@
   <string name="show_qr_code">显示二维码</string>
   <string name="show_block_list">显示屏蔽列表</string>
   <string name="account_details">账户详情</string>
-  <string name="verify_otr">验证 OTR</string>
   <string name="remote_fingerprint">远程指纹</string>
   <string name="shared_secret_hint">提示或问题</string>
-  <string name="shared_secret_secret">共享的密钥</string>
   <string name="confirm">确认</string>
   <string name="in_progress">处理中</string>
   <string name="respond">回应</string>
-  <string name="secrets_do_not_match">秘密不符</string>
   <string name="try_again">再试一遍</string>
   <string name="finish">完成</string>
   <string name="verified">验证通过！</string>
   <string name="smp_requested">联系人请求 SMP 验证</string>
-  <string name="no_otr_session_found">没有找到 OTR 会话</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">保持前台服务</string>
   <string name="pref_keep_foreground_service_summary">防止操作系统中断你的连接</string>
@@ -355,7 +345,6 @@
   <string name="no_conference_server_found">未找到该群聊的服务器</string>
   <string name="conference_creation_failed">群聊创建失败</string>
   <string name="account_image_description">账户头像</string>
-  <string name="copy_otr_clipboard_description">拷贝 OTR 指纹到剪贴板</string>
   <string name="copy_omemo_clipboard_description">拷贝 OMEMO 指纹到剪贴板</string>
   <string name="regenerate_omemo_key">重新生成 OMEMO 密钥</string>
   <string name="clear_other_devices">清除设备</string>
@@ -369,12 +358,8 @@
   <string name="updating">更新中…</string>
   <string name="password_changed">密码已修改！</string>
   <string name="could_not_change_password">不能修改密码</string>
-  <string name="otr_session_not_started">发送消息来开始加密聊天</string>
   <string name="ask_question">提出问题</string>
-  <string name="smp_explain_question">如果你和你的联系人有一个共知的秘密(比如一个内部笑话或者仅仅只是上次见面时吃的午餐) 你可以使用这个秘密来验证彼此的指纹。\n\n你的联系人将以大小写敏感的方式给出答案，你可以给出提示或问题。</string>
-  <string name="smp_explain_answer">你的联系人可以通过一个你们共知的秘密来验证指纹。你的联系人给出了如下的提示或问题。</string>
   <string name="shared_secret_hint_should_not_be_empty">你的提示不能为空</string>
-  <string name="shared_secret_can_not_be_empty">你共知的秘密不能为空</string>
   <string name="manual_verification_explanation">请仔细核对下面显示出来的你的联系人的指纹。\n你可以使用任何可信赖的联系方式，比如加密邮件或电话，来交换这些指纹信息。</string>
   <string name="change_password">修改密码</string>
   <string name="current_password">当前密码</string>

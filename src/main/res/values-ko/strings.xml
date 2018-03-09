@@ -74,7 +74,6 @@
   <string name="choose_presence">기기 선택</string>
   <string name="send_unencrypted_message">암호화하지 않은 메세지 전송</string>
   <string name="send_message_to_x">%s 에게 매세지 보내기 </string>
-  <string name="send_otr_message">OTR 암호화된 메세지 전송 </string>
   <string name="send_omemo_message">OMEMO로 암호화된 메세지</string>
   <string name="send_omemo_x509_message">v\\OMEMO로 암호화된 메세지 전송</string>
   <string name="send_pgp_message">OpenPGP 암호화된 메세지 전송 </string>
@@ -145,7 +144,6 @@
   <string name="account_status_incompatible_server">호환되지 않는 서버 </string>
   <string name="account_status_stream_error">스트림 오류</string>
   <string name="encryption_choice_unencrypted">암호화되지 않음</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP </string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">계정 삭제 </string>
@@ -186,11 +184,8 @@
   <string name="last_seen_day">1일 전까지 접속했었음 </string>
   <string name="last_seen_days">%d 일 전까지 접속했었음  </string>
   <string name="install_openkeychain">암호화된 메세지. 복호화하기 위해 OpenKeychain을 설치하세요. </string>
-  <string name="unknown_otr_fingerprint">알 수 없는 OTR 핑거프린트</string>
   <string name="openpgp_messages_found">OpenPGP 암호화 메세지 발견 </string>
   <string name="your_fingerprint">당신의 핑거프린트</string>
-  <string name="otr_fingerprint">OTR 핑거프린트</string>
-  <string name="otr_fingerprint_selected_message">메시지 OTR 지문</string>
   <string name="openpgp_key_id">OpenPGP 키ID</string>
   <string name="omemo_fingerprint">OMEMO 핑거프린트</string>
   <string name="omemo_fingerprint_x509">v\\OMEMO 핑거프린트</string>
@@ -262,7 +257,6 @@
   <string name="pref_use_indicate_received_summary">만약 지원될 경우, 수신된 메세지는 초록색 기호로 표시됩니다. </string>
   <string name="pref_use_send_button_to_indicate_status_summary">연락처 상태를 표시하기 위해 전송 버튼을 색칠함 </string>
   <string name="pref_expert_options_other">기타 </string>
-  <string name="toast_message_otr_fingerprint">OTR 핑거프린트가 클립보드에 복사되었습니다 </string>
   <string name="toast_message_omemo_fingerprint">OMEMO 핑거프린트가 클립보드에 복사되었습니다</string>
   <string name="using_account">using account %s</string>
   <string name="checking_x">HTTP 호스트에서 %s 확인 중</string>
@@ -279,19 +273,15 @@
   <string name="show_qr_code">2D 바코드를 보여주세요</string>
   <string name="show_block_list">차단 목록 보기 </string>
   <string name="account_details">계정 정보 </string>
-  <string name="verify_otr">OTR 검증 </string>
   <string name="remote_fingerprint">원격 핑거프린트</string>
   <string name="shared_secret_hint">힌트 혹은 질문 </string>
-  <string name="shared_secret_secret">공유된 비밀 </string>
   <string name="confirm">확인 </string>
   <string name="in_progress">진행중 </string>
   <string name="respond">응답 </string>
-  <string name="secrets_do_not_match">비밀이 일치하지 않습니다 </string>
   <string name="try_again">다시 시도하세요 </string>
   <string name="finish">완료 </string>
   <string name="verified">검증 완료 </string>
   <string name="smp_requested">연락처가 SMP 검증을 요구했습니다 </string>
-  <string name="no_otr_session_found">올바른 OTR 세션이 발견되지 않았습니다 </string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">포어그라운드에서 서비스 유지 </string>
   <string name="pref_keep_foreground_service_summary">운영체제가 접속을 해제하지 못하도록 예방합니다 </string>
@@ -318,7 +308,6 @@
   <string name="pref_show_dynamic_tags_summary">연락처 밑에 읽기 전용 태그 표시 </string>
   <string name="enable_notifications">알림 사용 </string>
   <string name="account_image_description">계정 아바타 </string>
-  <string name="copy_otr_clipboard_description">OTR 핑거프린트를 클립보드에 복사 </string>
   <string name="copy_omemo_clipboard_description">OMEMO 핑거프린트를 클립보드에 복사</string>
   <string name="regenerate_omemo_key">OMEMO 키 다시 생성</string>
   <string name="clear_other_devices">기기 제거</string>
@@ -330,12 +319,8 @@
   <string name="updating">업데이트중...</string>
   <string name="password_changed">암호 변경됨 </string>
   <string name="could_not_change_password">암호를 변경할 수 없습니다 </string>
-  <string name="otr_session_not_started">암호화된 대화를 시작하기 위해 메세지 보내기 </string>
   <string name="ask_question">질문하기 </string>
-  <string name="smp_explain_question">만약 당신과 당신의 연락처가 다른 사람은 모르는 비밀을 공유하고 있다면, 그 비밀을 서로의 핑거프린트를 검증하는 데 사용할 수 있습니다. 대소문자가 구분된 대답을 할 연락처에게 힌트나 질문을 주세요. </string>
-  <string name="smp_explain_answer">당신의 연락처는 당신의 핑거프린트를 검증하고자 공유된 비밀을 확인하려고 합니다. 당신의 연락처는 그 비밀에 관한 다음과 같은 힌트 혹은 질문을 제공했습니다. </string>
   <string name="shared_secret_hint_should_not_be_empty">힌트를 반드시 입력해야 합니다 </string>
-  <string name="shared_secret_can_not_be_empty">공유된 비밀을 반드시 입력해야 합니다 </string>
   <string name="manual_verification_explanation">아래에 보이는 핑거프린트를 당신의 연락처의 핑거프린트와 세심하게 비교하세요. 당신은 암호화된 이메일이나 전화와 같은 믿을만한 통신수단으로 이것을 주고 받을 수 있습니다. </string>
   <string name="change_password">암호 변경 </string>
   <string name="current_password">현재 암호 </string>

@@ -81,7 +81,6 @@
   <string name="send_unencrypted_message">Wyślij wiadomość bez szyfrowania</string>
   <string name="send_message">Wyślij wiadomość</string>
   <string name="send_message_to_x">Wyślij wiadomość do %s</string>
-  <string name="send_otr_message">Wyślij zaszyfrowaną wiadomość (OTR)</string>
   <string name="send_omemo_message">Wyślij wiadomość zaszyfrowaną OMEMO</string>
   <string name="send_omemo_x509_message">Wyślij wiadomość zaszyfrowaną v\\OMEMO</string>
   <string name="send_pgp_message">Wyślij zaszyfrowaną wiadomość (OpenPGP)</string>
@@ -154,7 +153,6 @@
   <string name="account_status_incompatible_server">Serwer niekompatybilny</string>
   <string name="account_status_stream_error">Błąd strumienia</string>
   <string name="encryption_choice_unencrypted">Bez szyfrowania</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">Usuń konto</string>
@@ -198,11 +196,8 @@
   <string name="last_seen_day">widziany wczoraj</string>
   <string name="last_seen_days">widziany %d dni temu</string>
   <string name="install_openkeychain">Wiadomość zaszyfrowana. Zainstaluj OpenKeychain, żeby odszyfrować.</string>
-  <string name="unknown_otr_fingerprint">Nieznany odcisk klucza OTR</string>
   <string name="openpgp_messages_found">Znaleziono wiadomości zaszyfrowane przez OpenPGP</string>
   <string name="your_fingerprint">Twój odcisk klucza</string>
-  <string name="otr_fingerprint">Odcisk klucza OTR</string>
-  <string name="otr_fingerprint_selected_message">Odcisk palca wiadomości OTR</string>
   <string name="openpgp_key_id">ID klucza OpenPGP</string>
   <string name="omemo_fingerprint">Odcisk OMEMO</string>
   <string name="omemo_fingerprint_x509">Odcisk v\\OMEMO</string>
@@ -291,7 +286,6 @@
   <string name="pref_conference_name_summary">Użyj tytułu zamiast JID do identyfikowania tej konferencji</string>
   <string name="pref_autojoin">Autodołączanie</string>
   <string name="pref_autojoin_summary">Respektuj flagę autodołączenia w tej konferencji</string>
-  <string name="toast_message_otr_fingerprint">Odcisk klucza OTR został skopiowany do schowka</string>
   <string name="toast_message_omemo_fingerprint">Odcisk klucza OMEMO został skopiowany do schowka!</string>
   <string name="conference_banned">Zbanowany</string>
   <string name="conference_members_only">Tylko dla użytkowników</string>
@@ -313,19 +307,15 @@
   <string name="show_qr_code">Pokaż kod QR</string>
   <string name="show_block_list">Wyświetl listę banów</string>
   <string name="account_details">Szczegóły konta</string>
-  <string name="verify_otr">Weryfikuj OTR</string>
   <string name="remote_fingerprint">Zdalny odcisk klucza</string>
   <string name="shared_secret_hint">Podpowiedź lub pytanie</string>
-  <string name="shared_secret_secret">Wspólny sekret</string>
   <string name="confirm">Potwierdź</string>
   <string name="in_progress">W toku</string>
   <string name="respond">Odpowiedz</string>
-  <string name="secrets_do_not_match">Sekrety są niezgodne</string>
   <string name="try_again">Spróbuj ponownie</string>
   <string name="finish">Zakończ</string>
   <string name="verified">Weryfikacja udana!</string>
   <string name="smp_requested">Kontakt zażądał weryfikacji SMP</string>
-  <string name="no_otr_session_found">Brak ważnej sesji OTR!</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Usługa na pierwszym planie</string>
   <string name="pref_keep_foreground_service_summary">Uniemożliwia systemowi przerwanie połączenia</string>
@@ -356,7 +346,6 @@
   <string name="no_conference_server_found">Nie znaleziono serwera konferencji</string>
   <string name="conference_creation_failed">Błąd utworzenia konferencji</string>
   <string name="account_image_description">Awatar konta</string>
-  <string name="copy_otr_clipboard_description">Skopiuj odcisk klucza OTR do schowka</string>
   <string name="copy_omemo_clipboard_description">Skopiuj odcisk klucza OMEMO do schowka</string>
   <string name="regenerate_omemo_key">Wygeneruj ponownie klucz OMEMO</string>
   <string name="clear_other_devices">Wyczyść urządzenia</string>
@@ -370,12 +359,8 @@
   <string name="updating">Aktualizowanie...</string>
   <string name="password_changed">Hasło zostało zmienione!</string>
   <string name="could_not_change_password">Nie udało się zmienić hasła</string>
-  <string name="otr_session_not_started">Wyślij wiadomość, żeby rozpocząć szyfrowaną rozmowę</string>
   <string name="ask_question">Zadaj pytanie</string>
-  <string name="smp_explain_question">Jeśli ty i twój kontakt macie jakiś wspólny sekret, którego nie zna nikt inny (żart znany tylko wam lub po prostu co jedliście ostatnim razem, gdy się widzieliście) możecie użyć tego sekretu by zweryfikować wzajemnie odciski swoich kluczy.\n\nPodasz podpowiedź lub pytanie dla twojego kontaktu i otrzymasz odpowiedź (wielkość liter ma znaczenie).</string>
-  <string name="smp_explain_answer">Twój kontakt chciałby zweryfikować odcisk Twojego klucza poprzez sprawdzenie znajomości wspólnego sekretu. Twój znajomy przedstawił następującą podpowiedź lub pytanie dotyczącego tego sekretu.</string>
   <string name="shared_secret_hint_should_not_be_empty">Wskazówka nie powinna być pusta</string>
-  <string name="shared_secret_can_not_be_empty">Sekret nie może być pusty</string>
   <string name="manual_verification_explanation">Ostrożnie porównaj odcisk klucza pokazany poniżej z odciskiem klucza twojego kontaktu.\nMożesz użyć bezpiecznego kanału komunikacji takiego, jak szyfrowany e-mail lub rozmowa telefoniczna, by wymienić odciski klucza.</string>
   <string name="change_password">Zmień hasło</string>
   <string name="current_password">Obecne hasło</string>

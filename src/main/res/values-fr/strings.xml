@@ -81,7 +81,6 @@
   <string name="send_unencrypted_message">Envoyer un message en clair</string>
   <string name="send_message">Envoyer le message</string>
   <string name="send_message_to_x">Envoyer un message à %s</string>
-  <string name="send_otr_message">Envoyer un message chiffré avec OTR</string>
   <string name="send_omemo_message">Envoyer un message chiffré avec OMEMO</string>
   <string name="send_omemo_x509_message">Envoyer un message chiffré avec \\OMEMO</string>
   <string name="send_pgp_message">Envoyer un message chiffré avec OpenPGP</string>
@@ -154,7 +153,6 @@
   <string name="account_status_incompatible_server">Serveur incompatible</string>
   <string name="account_status_stream_error">Erreur de flux</string>
   <string name="encryption_choice_unencrypted">Non chiffré</string>
-  <string name="encryption_choice_otr">OTR</string>
   <string name="encryption_choice_pgp">OpenPGP</string>
   <string name="encryption_choice_omemo">OMEMO</string>
   <string name="mgmt_account_delete">Supprimer</string>
@@ -198,11 +196,8 @@
   <string name="last_seen_day">en ligne hier</string>
   <string name="last_seen_days">en ligne il y a %d jours</string>
   <string name="install_openkeychain">Message chiffré. Veuillez installer OpenKeychain pour le déchiffrer.</string>
-  <string name="unknown_otr_fingerprint">Empreinte OTR inconnue.</string>
   <string name="openpgp_messages_found">Messages chiffrés avec OpenPGP détectés.</string>
   <string name="your_fingerprint">Votre empreinte</string>
-  <string name="otr_fingerprint">Empreinte OTR</string>
-  <string name="otr_fingerprint_selected_message">Empreinte OTR du message</string>
   <string name="openpgp_key_id">ID Clef OpenPGP</string>
   <string name="omemo_fingerprint">Empreinte OMEMO</string>
   <string name="omemo_fingerprint_x509">v\\Empreinte OMEMO</string>
@@ -291,7 +286,6 @@
   <string name="pref_conference_name_summary">Utiliser le sujet au lieu de JID pour identifier les groupes de discussions</string>
   <string name="pref_autojoin">Joindre les conversations de groupe automatiquement</string>
   <string name="pref_autojoin_summary">Respectez l\'indicateur de jointure automatique dans les signets des groupes de discussion</string>
-  <string name="toast_message_otr_fingerprint">Empreinte OTR copiée dans le presse-papier !</string>
   <string name="toast_message_omemo_fingerprint">Empreinte OMEMO copiée dans le presse-papier !</string>
   <string name="conference_banned">Vous êtes bannis de cette conversation de groupe</string>
   <string name="conference_members_only">Cette conversation de groupe est réservée aux membres</string>
@@ -313,19 +307,15 @@
   <string name="show_qr_code">Montrer le code-barres 2D</string>
   <string name="show_block_list">Afficher la liste des contacts bloqués</string>
   <string name="account_details">Détails du compte</string>
-  <string name="verify_otr">Vérifier l\'OTR</string>
   <string name="remote_fingerprint">Supprimer l\'empreinte</string>
   <string name="shared_secret_hint">Indice ou question</string>
-  <string name="shared_secret_secret">Secret partagé</string>
   <string name="confirm">Confirmer</string>
   <string name="in_progress">En cours</string>
   <string name="respond">Répondre</string>
-  <string name="secrets_do_not_match">Les secrets ne correspondent pas</string>
   <string name="try_again">Réessayer</string>
   <string name="finish">Terminé</string>
   <string name="verified">Vérifié !</string>
   <string name="smp_requested">Le contact requiert la vérification du SMP</string>
-  <string name="no_otr_session_found">Aucune session OTR valide n\'a été trouvée !</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Garder le service au 1er plan</string>
   <string name="pref_keep_foreground_service_summary">Évite que le système ne ferme votre connexion.</string>
@@ -355,7 +345,6 @@
   <string name="no_conference_server_found">Serveur de conversation de groupe non trouvé</string>
   <string name="conference_creation_failed">La création d\'un groupe de discussion a échoué!</string>
   <string name="account_image_description">Avatar du compte</string>
-  <string name="copy_otr_clipboard_description">Copier l\'empreinte OTR dans le presse-papier</string>
   <string name="copy_omemo_clipboard_description">Copier l\'empreinte OMEMO dans le presse-papier</string>
   <string name="regenerate_omemo_key">Régénérer l\'empreinte OMEMO</string>
   <string name="clear_other_devices">Supprimer les appareils</string>
@@ -369,12 +358,8 @@
   <string name="updating">Mise à jour…</string>
   <string name="password_changed">Mot de passe modifié !</string>
   <string name="could_not_change_password">Impossible de changer le mot de passe</string>
-  <string name="otr_session_not_started">Envoyez un message pour commencer la conversation chiffrée</string>
   <string name="ask_question">Poser une question</string>
-  <string name="smp_explain_question">Si vous et votre contact avez en commun un secret que personne d\'autre ne connaît (comme une blague ou ce que vous avez mangé lors de votre dernière rencontre), vous pouvez utiliser ce secret pour vérifier vos empreintes respectives.\n\nVous donnez un indice ou posez votre question à votre contact, qui répondra en faisant attention à la casse.</string>
-  <string name="smp_explain_answer">Votre contact souhaite confirmer votre identité grâce à un secret partagé. Il vous a envoyé le message/indice suivant concernant ce secret.</string>
   <string name="shared_secret_hint_should_not_be_empty">Votre indice ne doit pas être vide</string>
-  <string name="shared_secret_can_not_be_empty">Votre secret partagé ne doit pas être vide</string>
   <string name="manual_verification_explanation">Comparez avec soin l\'empreinte ci-dessous avec celle de votre contact.\nPour ce faire, vous pouvez utiliser n\'importe quel moyen de communication auquel vous avez confiance : appel téléphonique, e-mail encrypté...</string>
   <string name="change_password">Changer de mot de passe</string>
   <string name="current_password">Mot de passe actuel</string>

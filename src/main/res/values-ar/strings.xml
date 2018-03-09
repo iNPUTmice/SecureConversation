@@ -81,7 +81,6 @@
   <string name="send_unencrypted_message">إرسال رسالة غير مشفرة</string>
   <string name="send_message">إبعث رسالة</string>
   <string name="send_message_to_x">إبعث رسالة إلى %s</string>
-  <string name="send_otr_message">إرسال رسالة مشفرة عبر OTR</string>
   <string name="send_omemo_message">إرسال رسالة مشفرة عبر OMEMO</string>
   <string name="send_omemo_x509_message">إبعث رسالة مشفَّرة بـ أومي مو OMEMO</string>
   <string name="send_pgp_message">إرسال رسالة مشفرة عبر OpenPGP</string>
@@ -147,7 +146,6 @@
   <string name="account_status_policy_violation">خرق للقواعد</string>
   <string name="account_status_incompatible_server">لا يتوافق مع السيرفر</string>
   <string name="encryption_choice_unencrypted">غير مشفر</string>
-  <string name="encryption_choice_otr">رسالة مشفرة عبر OTR</string>
   <string name="encryption_choice_pgp">رسالة مشفرة عبر OpenPGP</string>
   <string name="encryption_choice_omemo">أوميمو OMEMO</string>
   <string name="mgmt_account_delete">إحذف الحساب</string>
@@ -189,11 +187,8 @@
   <string name="last_seen_day">آخر ظهور منذ 1 يوم</string>
   <string name="last_seen_days">آخر ظهور منذ %d يوم</string>
   <string name="install_openkeychain">هذه الرسالة مشفرة. قم بتثبيت OpenKeychain لفك الشيفرة.</string>
-  <string name="unknown_otr_fingerprint">بصمة OTR مجهولة</string>
   <string name="openpgp_messages_found">تم العثور على رسائل مشفرة بال OpenPGP</string>
   <string name="your_fingerprint">بصمتك</string>
-  <string name="otr_fingerprint">بصمة OTR</string>
-  <string name="otr_fingerprint_selected_message">بصمة OTR للرسالة</string>
   <string name="openpgp_key_id">معرف ID مفتاح ال OpenPGP</string>
   <string name="omemo_fingerprint">بصمة OMEMO</string>
   <string name="omemo_fingerprint_x509">بصمة v\\OMEMO</string>
@@ -270,7 +265,6 @@
   <string name="pref_expert_options_other">أخرى</string>
   <string name="pref_conference_name">إسم مجموعة المحادثة</string>
   <string name="pref_autojoin">إنضمام تلقائي إلى فِرَق المحادثة</string>
-  <string name="toast_message_otr_fingerprint">تم نسخ بصمة OTR إلى الحافظة</string>
   <string name="toast_message_omemo_fingerprint">تم نسخ بصمة OMEMO إلى الحافظة !</string>
   <string name="conference_banned">حسابك محظور للإلتحاق بمجموعة المحادثة هذه</string>
   <string name="conference_members_only">هذه المجموعة متاحة للأعضاء المنتمين إليها فقط</string>
@@ -290,13 +284,10 @@
   <string name="show_qr_code">أظهر شفرة التّعرّف 2D</string>
   <string name="show_block_list">إعرض قائمة المحبوسين</string>
   <string name="account_details">تفاصيل الحساب</string>
-  <string name="verify_otr">التحقق من OTR</string>
   <string name="remote_fingerprint">بصمة عن بعد</string>
   <string name="shared_secret_hint">دلالة أو سؤال</string>
-  <string name="shared_secret_secret">السر المشترك</string>
   <string name="confirm">تأكيد</string>
   <string name="in_progress">جاري الاتصال</string>
-  <string name="secrets_do_not_match">الأسرار غير متطابقة</string>
   <string name="try_again">حاول مرة أخرى</string>
   <string name="finish">انهاء</string>
   <string name="verified">تأكيد!</string>
@@ -327,7 +318,6 @@
   <string name="enable_notifications">تفعيل الإشعارات</string>
   <string name="conference_creation_failed">فشلت عملية إنشاء مجموعة المحادثة !</string>
   <string name="account_image_description">الصورة الرمزية للحساب</string>
-  <string name="copy_otr_clipboard_description">نسخ OTR بصمات الأصابع إلى الحافظة</string>
   <string name="copy_omemo_clipboard_description">انسخ بصمة OMEMO إلى الحافظة</string>
   <string name="regenerate_omemo_key">إعادة إنشاء مفتاح أوميمو OMEMO</string>
   <string name="clear_other_devices">حذف أجهزة</string>
@@ -337,11 +327,8 @@
   <string name="updating">جاري التحديث..</string>
   <string name="password_changed">تم تغيير كلمة السر!</string>
   <string name="could_not_change_password">لايمكن تغيير كلمة السر</string>
-  <string name="otr_session_not_started">ارسل رساله لبدأ محادثة مشفّرة</string>
   <string name="ask_question">أسال سؤال</string>
-  <string name="smp_explain_answer">سترغب جهة الإتصال بتأكيد بصمتك عبر السر المشترك بينكما لذلك أخبره تلميحا أو إسأله سؤالا يذكره بالسر ليكتبه برده</string>
   <string name="shared_secret_hint_should_not_be_empty">التلميح الذي يراه صديقك لا يمكن ان يكون فارغ</string>
-  <string name="shared_secret_can_not_be_empty">السر المشترك بينكما لا يمكن ان يترك فارغا !!</string>
   <string name="manual_verification_explanation">بعناية قارن بين بصمتك المعروضة أدناه وبصمة جهات اتصالك\n يمكنك استخدام أي شكل موثوق به للاتصال مثل بريد إلكتروني مشفر أو مكالمة هاتفية لتبادلها.</string>
   <string name="change_password">تغيير كلمة المرور</string>
   <string name="current_password">كلمة المرور الحالية</string>
