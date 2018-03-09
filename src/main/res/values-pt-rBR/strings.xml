@@ -307,15 +307,12 @@
   <string name="show_qr_code">Exibir código de barras 2D</string>
   <string name="show_block_list">Exibir a lista de bloqueios</string>
   <string name="account_details">Detalhes da conta</string>
-  <string name="remote_fingerprint">Impressão digital remota</string>
-  <string name="shared_secret_hint">Dica ou pergunta</string>
   <string name="confirm">Confirmar</string>
   <string name="in_progress">Em progresso</string>
   <string name="respond">Responder</string>
   <string name="try_again">Tentar novamente</string>
   <string name="finish">Finalizar</string>
   <string name="verified">Verificado!</string>
-  <string name="smp_requested">O contato solicitou uma verificação SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Manter o serviço em segundo plano</string>
   <string name="pref_keep_foreground_service_summary">Impede que o sistema operacional encerre sua conexão.</string>
@@ -358,9 +355,6 @@
   <string name="updating">Atualizando...</string>
   <string name="password_changed">A senha foi alterada!</string>
   <string name="could_not_change_password">Não foi possível alterar a senha</string>
-  <string name="ask_question">Faça uma pergunta</string>
-  <string name="shared_secret_hint_should_not_be_empty">Sua dica não pode estar em branco</string>
-  <string name="manual_verification_explanation">Compare cuidadosamente a impressão digital abaixo com aquela do seu contato.\nVocê pode usar qualquer forma de comunicação segura, como um e-mail criptografado ou uma ligação telefônica para efetuar a troca.</string>
   <string name="change_password">Alterar a senha</string>
   <string name="current_password">Senha atual</string>
   <string name="new_password">Nova senha</string>

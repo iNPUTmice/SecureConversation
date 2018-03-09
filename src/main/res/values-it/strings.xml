@@ -307,15 +307,12 @@
   <string name="show_qr_code">Mostra codice a barre 2D</string>
   <string name="show_block_list">Mostra la lista nera</string>
   <string name="account_details">Dettagli account</string>
-  <string name="remote_fingerprint">Impronta remota</string>
-  <string name="shared_secret_hint">Suggerimento o domanda</string>
   <string name="confirm">Conferma</string>
   <string name="in_progress">In corso</string>
   <string name="respond">Rispondi</string>
   <string name="try_again">Prova di nuovo</string>
   <string name="finish">Fine</string>
   <string name="verified">Verificato!</string>
-  <string name="smp_requested">Il contatto ha richiesto la verifica SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Mantieni il servizio in primo piano</string>
   <string name="pref_keep_foreground_service_summary">Evita che il sistema operativo chiuda la connessione</string>
@@ -358,9 +355,6 @@
   <string name="updating">Caricamento…</string>
   <string name="password_changed">Password cambiata!</string>
   <string name="could_not_change_password">Impossibile cambiare la password</string>
-  <string name="ask_question">Fai una domanda</string>
-  <string name="shared_secret_hint_should_not_be_empty">Il suggerimento non dovrebbe essere vuoto</string>
-  <string name="manual_verification_explanation">Confronta attentamente l’impronta mostrata sotto con l’impronta del tuo contatto.\nPuoi usare qualsiasi forma di comunicazione fidata come una e-mail cifrata o una chiamata telefonica per confrontare le impronte.</string>
   <string name="change_password">Cambia password</string>
   <string name="current_password">Password attuale</string>
   <string name="new_password">Nuova password</string>

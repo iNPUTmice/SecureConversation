@@ -278,15 +278,12 @@
   <string name="show_qr_code">Visa 2D-streckkod</string>
   <string name="show_block_list">Visa blockeringslista</string>
   <string name="account_details">Kontodetaljer</string>
-  <string name="remote_fingerprint">Fjärr-fingeravtryck</string>
-  <string name="shared_secret_hint">Ledtråd eller fråga</string>
   <string name="confirm">Bekräfta</string>
   <string name="in_progress">Pågående</string>
   <string name="respond">Svara</string>
   <string name="try_again">Försök igen</string>
   <string name="finish">Klar</string>
   <string name="verified">Verifierad</string>
-  <string name="smp_requested">Kontakt begärde SMP-verifikation</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Håll tjänst i förgrunden</string>
   <string name="pref_keep_foreground_service_summary">Förehindrar operativsystemet att ta ner uppkopplingen</string>
@@ -324,9 +321,6 @@
   <string name="updating">Uppdaterar…</string>
   <string name="password_changed">Lösenord bytt!</string>
   <string name="could_not_change_password">Kunde inte byta lösenord</string>
-  <string name="ask_question">Ställ fråga</string>
-  <string name="shared_secret_hint_should_not_be_empty">Din ledtråd ska inte vara tom</string>
-  <string name="manual_verification_explanation">Jämför noggrant fingeravtrycket nedan med din kontakts fingeravtryck.\nDu kan använda valfri typ av betrodd kommunikation som ett krypterat e-mail eller ett telefonsamtal för att utbyta dessa.</string>
   <string name="change_password">Byt lösenord</string>
   <string name="current_password">Nuvarande lösenord</string>
   <string name="new_password">Nytt lösenord</string>

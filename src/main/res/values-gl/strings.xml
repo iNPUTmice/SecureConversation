@@ -307,15 +307,12 @@
   <string name="show_qr_code">Mostar código de barras 2D</string>
   <string name="show_block_list">Mostrar lista de bloqueo</string>
   <string name="account_details">Detalles da conta</string>
-  <string name="remote_fingerprint">Pegada dixital remota</string>
-  <string name="shared_secret_hint">Consulta ou cuestión</string>
   <string name="confirm">Confirmar</string>
   <string name="in_progress">En progreso</string>
   <string name="respond">Responder</string>
   <string name="try_again">Inténteo de novo</string>
   <string name="finish">Rematar</string>
   <string name="verified">Comprobado!</string>
-  <string name="smp_requested">O contacto solicitou a comprobación SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Manter servizo en primeiro plano</string>
   <string name="pref_keep_foreground_service_summary">Evita que o sistema operativo corte a súa conexión</string>
@@ -358,9 +355,6 @@
   <string name="updating">Actualizando....</string>
   <string name="password_changed">Mudou o contrasinal!</string>
   <string name="could_not_change_password">Non puido mudar o contrasinal</string>
-  <string name="ask_question">Faga unha pregunta</string>
-  <string name="shared_secret_hint_should_not_be_empty">A súa pregunta ou pé non pode estar baldeiro</string>
-  <string name="manual_verification_explanation">Comprobe coidadosamente a pegada dixital mostrada embaixo coa pegada dixital do seu contacto.\nVostede pode utilizar calquera forma de comunicación confiable como un correo electrónico cifrado ou unha chamada de teléfono para intercambiar as chaves.</string>
   <string name="change_password">Cambiar contrasinal</string>
   <string name="current_password">Contrasinal actual</string>
   <string name="new_password">Novo contrasinal</string>

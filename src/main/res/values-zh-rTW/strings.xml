@@ -278,15 +278,12 @@
   <string name="show_qr_code">顯示二維條碼</string>
   <string name="show_block_list">顯示封鎖清單</string>
   <string name="account_details">帳戶詳情</string>
-  <string name="remote_fingerprint">遠程指紋</string>
-  <string name="shared_secret_hint">提示或問題</string>
   <string name="confirm">確認</string>
   <string name="in_progress">處理中</string>
   <string name="respond">回應</string>
   <string name="try_again">再試一遍</string>
   <string name="finish">完成</string>
   <string name="verified">驗證通過！</string>
-  <string name="smp_requested">連絡人請求 SMP 驗證</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">保持前臺服務</string>
   <string name="pref_keep_foreground_service_summary">防止作業系統中斷你的連接</string>
@@ -324,9 +321,6 @@
   <string name="updating">更新中…</string>
   <string name="password_changed">密碼已修改！</string>
   <string name="could_not_change_password">不能修改密碼</string>
-  <string name="ask_question">提出問題</string>
-  <string name="shared_secret_hint_should_not_be_empty">你的提示不能為空</string>
-  <string name="manual_verification_explanation">請仔細核對下面顯示出來的你的連絡人的指紋。\n你可以使用任何可信賴的聯繫方式，比如加密郵件或電話，來交換這些指紋資訊。</string>
   <string name="change_password">修改密碼</string>
   <string name="current_password">當前密碼</string>
   <string name="new_password">新密碼</string>

@@ -264,15 +264,12 @@
   <string name="url_copied_to_clipboard">Đã chép URL vào clipboard</string>
   <string name="show_block_list">Quét danh sách chặn</string>
   <string name="account_details">Chi tiết tài khoản</string>
-  <string name="remote_fingerprint">Dấu vân tay từ xa</string>
-  <string name="shared_secret_hint">Gợi ý hoặc Câu hỏi</string>
   <string name="confirm">Xác nhận</string>
   <string name="in_progress">Đang diễn ra</string>
   <string name="respond">Hồi đáp</string>
   <string name="try_again">Thử lại</string>
   <string name="finish">Kết thúc</string>
   <string name="verified">Đã xác minh!</string>
-  <string name="smp_requested">Liên hệ đã yêu cầu xác minh SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Giữ dịch vụ luôn chạy</string>
   <string name="pref_keep_foreground_service_summary">Ngăn hệ điều hành ngắt kết nối của bạn</string>
@@ -306,9 +303,6 @@
   <string name="updating">Đang cập nhật...</string>
   <string name="password_changed">Đã đổi mật khẩu!</string>
   <string name="could_not_change_password">Không thể đổi mật khẩu</string>
-  <string name="ask_question">Đưa câu hỏi</string>
-  <string name="shared_secret_hint_should_not_be_empty">Không được để trống gợi ý</string>
-  <string name="manual_verification_explanation">So sánh cẩn thận dấu vân tay dưới đây với dấu của liên hệ.\nBạn có thể dùng bất kỳ phương tiện giao tiếp đáng tin cậy nào như email được mã hoá hoặc điện thoại để trao đổi vân tay.</string>
   <string name="change_password">Đổi mật khẩu</string>
   <string name="current_password">Mật khẩu hiện tại</string>
   <string name="new_password">Mật khẩu mới</string>

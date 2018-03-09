@@ -284,8 +284,6 @@
   <string name="show_qr_code">أظهر شفرة التّعرّف 2D</string>
   <string name="show_block_list">إعرض قائمة المحبوسين</string>
   <string name="account_details">تفاصيل الحساب</string>
-  <string name="remote_fingerprint">بصمة عن بعد</string>
-  <string name="shared_secret_hint">دلالة أو سؤال</string>
   <string name="confirm">تأكيد</string>
   <string name="in_progress">جاري الاتصال</string>
   <string name="try_again">حاول مرة أخرى</string>
@@ -327,9 +325,6 @@
   <string name="updating">جاري التحديث..</string>
   <string name="password_changed">تم تغيير كلمة السر!</string>
   <string name="could_not_change_password">لايمكن تغيير كلمة السر</string>
-  <string name="ask_question">أسال سؤال</string>
-  <string name="shared_secret_hint_should_not_be_empty">التلميح الذي يراه صديقك لا يمكن ان يكون فارغ</string>
-  <string name="manual_verification_explanation">بعناية قارن بين بصمتك المعروضة أدناه وبصمة جهات اتصالك\n يمكنك استخدام أي شكل موثوق به للاتصال مثل بريد إلكتروني مشفر أو مكالمة هاتفية لتبادلها.</string>
   <string name="change_password">تغيير كلمة المرور</string>
   <string name="current_password">كلمة المرور الحالية</string>
   <string name="new_password">كلمة المرور الجديدة</string>

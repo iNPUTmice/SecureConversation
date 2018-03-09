@@ -307,15 +307,12 @@
   <string name="show_qr_code">Barcode anzeigen</string>
   <string name="show_block_list">Sperrliste anzeigen</string>
   <string name="account_details">Kontodetails</string>
-  <string name="remote_fingerprint">Fingerabdruck der Gegenseite</string>
-  <string name="shared_secret_hint">Hinweis oder Frage</string>
   <string name="confirm">Bestätigen</string>
   <string name="in_progress">In Bearbeitung</string>
   <string name="respond">Antworten</string>
   <string name="try_again">Erneut versuchen</string>
   <string name="finish">Fertig</string>
   <string name="verified">Überprüft!</string>
-  <string name="smp_requested">Kontakt fordert eine Überprüfung an</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Dienst im Vordergrund ausführen</string>
   <string name="pref_keep_foreground_service_summary">Verhindert, dass Android Conversations beendet und die Verbindung unterbricht</string>
@@ -358,9 +355,6 @@
   <string name="updating">Aktualisieren…</string>
   <string name="password_changed">Passwort geändert.</string>
   <string name="could_not_change_password">Passwort kann nicht geändert werden.</string>
-  <string name="ask_question">Frage stellen</string>
-  <string name="shared_secret_hint_should_not_be_empty">Deine Frage darf nicht leer sein.</string>
-  <string name="manual_verification_explanation">Vergleiche den angezeigten Fingerabdruck sorgfältig mit dem deines Kontakts.\nDu kannst dazu einen sicheren Kommunikationsweg (z.B. verschlüsselte E-Mail oder Telefonanruf) zum Austausch nutzen.</string>
   <string name="change_password">Passwort ändern</string>
   <string name="current_password">Aktuelles Passwort</string>
   <string name="new_password">Neues Passwort</string>

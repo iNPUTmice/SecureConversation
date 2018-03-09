@@ -307,15 +307,12 @@
   <string name="show_qr_code">2D barra kodea erakutsi</string>
   <string name="show_block_list">Blokeatutakoen zerrenda ikusi</string>
   <string name="account_details">Kontuaren xehetasunak</string>
-  <string name="remote_fingerprint">Urruneko hatz-marka</string>
-  <string name="shared_secret_hint">Iradokizuna edo galdera</string>
   <string name="confirm">Baieztatu</string>
   <string name="in_progress">Lanean</string>
   <string name="respond">Erantzun</string>
   <string name="try_again">Saiatu berriz</string>
   <string name="finish">Amaitu</string>
   <string name="verified">Egiaztatuta!</string>
-  <string name="smp_requested">Kontaktuak SMP egiaztapena eskatu du</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Zerbitzua atzeko planoan mantendu</string>
   <string name="pref_keep_foreground_service_summary">Sistema eragileak zure konexioa hiltzea galarazten du</string>
@@ -358,9 +355,6 @@
   <string name="updating">Eguneratzen...</string>
   <string name="password_changed">Pasahitza aldatu da</string>
   <string name="could_not_change_password">Pasahitza ezin izan da aldatu</string>
-  <string name="ask_question">Galdetu</string>
-  <string name="shared_secret_hint_should_not_be_empty">Zure iradokizuna ez luke hutsik egon behar</string>
-  <string name="manual_verification_explanation">Kontu handiz konpara ezazu beheko hatz-marka zure kontaktuaren hatz-markarekin.\nEnkriptatutako email bat edota telefono dei bat bezalako edozein komunikabide fidagarriren bat erabili dezakezu horiek trukatzeko.</string>
   <string name="change_password">Pasahitza aldatu</string>
   <string name="current_password">Oraingo pasahitza</string>
   <string name="new_password">Pasahitz berria</string>

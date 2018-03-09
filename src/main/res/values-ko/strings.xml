@@ -273,15 +273,12 @@
   <string name="show_qr_code">2D 바코드를 보여주세요</string>
   <string name="show_block_list">차단 목록 보기 </string>
   <string name="account_details">계정 정보 </string>
-  <string name="remote_fingerprint">원격 핑거프린트</string>
-  <string name="shared_secret_hint">힌트 혹은 질문 </string>
   <string name="confirm">확인 </string>
   <string name="in_progress">진행중 </string>
   <string name="respond">응답 </string>
   <string name="try_again">다시 시도하세요 </string>
   <string name="finish">완료 </string>
   <string name="verified">검증 완료 </string>
-  <string name="smp_requested">연락처가 SMP 검증을 요구했습니다 </string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">포어그라운드에서 서비스 유지 </string>
   <string name="pref_keep_foreground_service_summary">운영체제가 접속을 해제하지 못하도록 예방합니다 </string>
@@ -319,9 +316,6 @@
   <string name="updating">업데이트중...</string>
   <string name="password_changed">암호 변경됨 </string>
   <string name="could_not_change_password">암호를 변경할 수 없습니다 </string>
-  <string name="ask_question">질문하기 </string>
-  <string name="shared_secret_hint_should_not_be_empty">힌트를 반드시 입력해야 합니다 </string>
-  <string name="manual_verification_explanation">아래에 보이는 핑거프린트를 당신의 연락처의 핑거프린트와 세심하게 비교하세요. 당신은 암호화된 이메일이나 전화와 같은 믿을만한 통신수단으로 이것을 주고 받을 수 있습니다. </string>
   <string name="change_password">암호 변경 </string>
   <string name="current_password">현재 암호 </string>
   <string name="new_password">새 암호 </string>

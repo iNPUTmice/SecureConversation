@@ -279,15 +279,12 @@
   <string name="show_qr_code">Показати QR-код</string>
   <string name="show_block_list">Показати список блокування</string>
   <string name="account_details">Деталі облікового запису</string>
-  <string name="remote_fingerprint">Віддалені відбитки</string>
-  <string name="shared_secret_hint">Підказка або запитання</string>
   <string name="confirm">Підтвердити</string>
   <string name="in_progress">У процесі</string>
   <string name="respond">Відповісти</string>
   <string name="try_again">Спробуйте ще</string>
   <string name="finish">Завершити</string>
   <string name="verified">Перевірено!</string>
-  <string name="smp_requested">Контакт запитує верифікацію за протоколом соціалістичного мільйонера</string>
   <string name="conversations_foreground_service">Розмови</string>
   <string name="pref_keep_foreground_service">Підтримувати сервіс на першому плані</string>
   <string name="pref_keep_foreground_service_summary">Не дає операційній системі припиняти Ваш зв\'язок</string>
@@ -326,9 +323,6 @@
   <string name="updating">Оновлюю…</string>
   <string name="password_changed">Пароль змінено!</string>
   <string name="could_not_change_password">Не зміг змінити пароль</string>
-  <string name="ask_question">Задати запитання</string>
-  <string name="shared_secret_hint_should_not_be_empty">Ваша підказка не може бути порожньою</string>
-  <string name="manual_verification_explanation">Обережно порівняльте відбиток, показаний нижче, з відбитком Вашого контакта.\nВи можете використати будь-яку форму комунікації, таку як зашифрований лист або телефонний дзвінок, щоб обмінятися відбитками.</string>
   <string name="change_password">Змінити пароль</string>
   <string name="current_password">Поточний пароль</string>
   <string name="new_password">Новий пароль</string>

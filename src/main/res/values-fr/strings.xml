@@ -307,15 +307,12 @@
   <string name="show_qr_code">Montrer le code-barres 2D</string>
   <string name="show_block_list">Afficher la liste des contacts bloqués</string>
   <string name="account_details">Détails du compte</string>
-  <string name="remote_fingerprint">Supprimer l\'empreinte</string>
-  <string name="shared_secret_hint">Indice ou question</string>
   <string name="confirm">Confirmer</string>
   <string name="in_progress">En cours</string>
   <string name="respond">Répondre</string>
   <string name="try_again">Réessayer</string>
   <string name="finish">Terminé</string>
   <string name="verified">Vérifié !</string>
-  <string name="smp_requested">Le contact requiert la vérification du SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Garder le service au 1er plan</string>
   <string name="pref_keep_foreground_service_summary">Évite que le système ne ferme votre connexion.</string>
@@ -358,9 +355,6 @@
   <string name="updating">Mise à jour…</string>
   <string name="password_changed">Mot de passe modifié !</string>
   <string name="could_not_change_password">Impossible de changer le mot de passe</string>
-  <string name="ask_question">Poser une question</string>
-  <string name="shared_secret_hint_should_not_be_empty">Votre indice ne doit pas être vide</string>
-  <string name="manual_verification_explanation">Comparez avec soin l\'empreinte ci-dessous avec celle de votre contact.\nPour ce faire, vous pouvez utiliser n\'importe quel moyen de communication auquel vous avez confiance : appel téléphonique, e-mail encrypté...</string>
   <string name="change_password">Changer de mot de passe</string>
   <string name="current_password">Mot de passe actuel</string>
   <string name="new_password">Nouveau mot de passe</string>

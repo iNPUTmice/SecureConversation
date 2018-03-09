@@ -274,15 +274,12 @@
   <string name="show_qr_code">2B Barkod Göster</string>
   <string name="show_block_list">Engellenenler listesini göster</string>
   <string name="account_details">Hesap bilgileri</string>
-  <string name="remote_fingerprint">Uzak parmak izi</string>
-  <string name="shared_secret_hint">İpucu ya da Soru</string>
   <string name="confirm">Doğrula</string>
   <string name="in_progress">İşleniyor</string>
   <string name="respond">Yanıt</string>
   <string name="try_again">Yeniden deneyin</string>
   <string name="finish">Bitti</string>
   <string name="verified">Doğrulandı!</string>
-  <string name="smp_requested">Kişi SMP doğrulaması istedi</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Ön planda çalışmaya devam etsin</string>
   <string name="pref_keep_foreground_service_summary">İşletim sisteminin bağlantınızı koparmasına engel olur</string>
@@ -320,9 +317,6 @@
   <string name="updating">Güncelleniyor…</string>
   <string name="password_changed">Parola değişti!</string>
   <string name="could_not_change_password">Parola değiştirilemedi</string>
-  <string name="ask_question">Soru sor</string>
-  <string name="shared_secret_hint_should_not_be_empty">İpucunuz boş kalamaz</string>
-  <string name="manual_verification_explanation">Aşağıdaki parmak izini, karşınızdaki kişinin parmak iziyle dikkatlice karşılaştırın. \n\nŞifreli eposta veya telefon gibi güvenilir bir iletişim kanalı üzerinden bilgi alışverişi yapabilirsiniz.</string>
   <string name="change_password">Parolayı değiştirin</string>
   <string name="current_password">Mevcut parola</string>
   <string name="new_password">Yeni parola</string>

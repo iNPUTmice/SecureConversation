@@ -303,15 +303,12 @@
   <string name="show_qr_code">Mostra el codi de barres 2D</string>
   <string name="show_block_list">Mostra la llista de bloqueig</string>
   <string name="account_details">Detalls del compte</string>
-  <string name="remote_fingerprint">Empremta digital remota</string>
-  <string name="shared_secret_hint">Pista o pregunta</string>
   <string name="confirm">Confirmar</string>
   <string name="in_progress">En progrés</string>
   <string name="respond">Respondre</string>
   <string name="try_again">Intenta una altra vegada</string>
   <string name="finish">Acabat</string>
   <string name="verified">Verificat</string>
-  <string name="smp_requested">Sol.licitar una verificació per SMP del contacte</string>
   <string name="conversations_foreground_service">Converses</string>
   <string name="pref_keep_foreground_service">Mantenir el servei en primer pla</string>
   <string name="pref_keep_foreground_service_summary">Evitar que el sistema operatiu desconnecti la connexió</string>
@@ -357,9 +354,6 @@ mentrestant.</string>
   <string name="updating">Actualitzant</string>
   <string name="password_changed">Contrasenya canviada</string>
   <string name="could_not_change_password">No s\'ha pogut canviar la contrasenya</string>
-  <string name="ask_question">Fer una pregunta</string>
-  <string name="shared_secret_hint_should_not_be_empty">El seu suggeriment no pot estar buit</string>
-  <string name="manual_verification_explanation">Compari acuradament l\'empremta digital que és mostra a continuació amb la empremta digital del seu contacte.\n\ També pots utilitzar alguna forma de confiança d la comunicació com a correu electrònic xifrat o alguna trucada telefònica per intercanviar-lo</string>
   <string name="change_password">Cambiar contrasenya</string>
   <string name="current_password">Contrasenya actual</string>
   <string name="new_password">Nova contrasenya</string>

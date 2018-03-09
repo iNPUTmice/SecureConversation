@@ -279,15 +279,12 @@
   <string name="show_qr_code">2D バーコードを表示</string>
   <string name="show_block_list">ブロックリストを表示</string>
   <string name="account_details">アカウントの詳細</string>
-  <string name="remote_fingerprint">リモート フィンガープリント</string>
-  <string name="shared_secret_hint">ヒントまたは質問</string>
   <string name="confirm">確認</string>
   <string name="in_progress">実行中</string>
   <string name="respond">応答</string>
   <string name="try_again">再度実行してください</string>
   <string name="finish">完了</string>
   <string name="verified">検証しました!</string>
-  <string name="smp_requested">連絡先が SMP 検証を要求しました</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">サービスをフォアグラウンドに保持</string>
   <string name="pref_keep_foreground_service_summary">オペレーティングシステムが接続を切断するのを防止します</string>
@@ -327,9 +324,6 @@
   <string name="updating">アップデート中…</string>
   <string name="password_changed">パスワードを変更しました!</string>
   <string name="could_not_change_password">パスワードを変更できません</string>
-  <string name="ask_question">質問をたずねる</string>
-  <string name="shared_secret_hint_should_not_be_empty">あなたのヒントは空にできません。</string>
-  <string name="manual_verification_explanation">慎重に、連絡先のフィンガープリントと、以下に表示されるフィンガープリントを比較してください。\nこれを交換するためには、暗号化されたメールや、電話のような信頼できる形式の通信を使用することができます。</string>
   <string name="change_password">パスワードの変更</string>
   <string name="current_password">現在のパスワード</string>
   <string name="new_password">新しいパスワード</string>

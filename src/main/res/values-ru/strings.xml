@@ -307,15 +307,12 @@
   <string name="show_qr_code">Показать 2D штрихкод</string>
   <string name="show_block_list">Показать чёрный список</string>
   <string name="account_details">Сведения об учётной записи</string>
-  <string name="remote_fingerprint">Удалённый отпечаток</string>
-  <string name="shared_secret_hint">Подсказка или вопрос</string>
   <string name="confirm">Подтвердить</string>
   <string name="in_progress">В ходе выполнения</string>
   <string name="respond">Ответ</string>
   <string name="try_again">Повторить</string>
   <string name="finish">Завершить</string>
   <string name="verified">Подтверждён!</string>
-  <string name="smp_requested">Контакт запросил подтверждение SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Оставить службу на переднем плане</string>
   <string name="pref_keep_foreground_service_summary">Не позволяет операционной системе закрыть ваше соединение</string>
@@ -358,9 +355,6 @@
   <string name="updating">Обновление…</string>
   <string name="password_changed">Пароль изменён!</string>
   <string name="could_not_change_password">Не удалось изменить пароль</string>
-  <string name="ask_question">Задать вопрос</string>
-  <string name="shared_secret_hint_should_not_be_empty">Ваша подсказка не может быть пустой</string>
-  <string name="manual_verification_explanation">Внимательно сверьте отпечаток, показанный ниже с отпечатком вашего собеседника.\nДля обмена ими вы можете использовать любое доверенное средство связи, например, зашифрованное электронное письмо или телефонный звонок.</string>
   <string name="change_password">Изменить пароль</string>
   <string name="current_password">Текущий пароль</string>
   <string name="new_password">Новый пароль</string>

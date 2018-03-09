@@ -307,15 +307,12 @@
   <string name="show_qr_code">Показване на 2-измерен баркод</string>
   <string name="show_block_list">Показване на списъка с блокирани</string>
   <string name="account_details">Подробности за профила</string>
-  <string name="remote_fingerprint">Отдалечен отпечатък</string>
-  <string name="shared_secret_hint">Подсказка или въпрос</string>
   <string name="confirm">Потвърждаване</string>
   <string name="in_progress">В процес</string>
   <string name="respond">Отговаряне</string>
   <string name="try_again">Повторен опит</string>
   <string name="finish">Край</string>
   <string name="verified">Проверено!</string>
-  <string name="smp_requested">Контактът изиска SMP проверка</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Услугата да е на преден план</string>
   <string name="pref_keep_foreground_service_summary">Предотвратява прекъсването на връзката Ви от операционната система</string>
@@ -358,9 +355,6 @@
   <string name="updating">Актуализиране…</string>
   <string name="password_changed">Паролата е променена!</string>
   <string name="could_not_change_password">Неуспешна промяна на паролата</string>
-  <string name="ask_question">Задаване на въпрос</string>
-  <string name="shared_secret_hint_should_not_be_empty">Подсказката Ви не трябва да е празна</string>
-  <string name="manual_verification_explanation">Внимателно сравнете отпечатъка по-долу с този на Вашия контакт.\nМожете да използвате всякакъв начин на сигурна комуникация, като шифрована е-поща или телефонен разговор, за да размените отпечатъците.</string>
   <string name="change_password">Промяна на паролата</string>
   <string name="current_password">Текуща парола</string>
   <string name="new_password">Нова парола</string>

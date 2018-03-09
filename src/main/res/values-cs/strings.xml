@@ -269,15 +269,12 @@
   <string name="url_copied_to_clipboard">URL zkopírováno do schránky</string>
   <string name="show_block_list">Zobrazit seznam blokovaných</string>
   <string name="account_details">Detaily účtu</string>
-  <string name="remote_fingerprint">Vzdálený otisk</string>
-  <string name="shared_secret_hint">Nápověda nebo Otázka</string>
   <string name="confirm">Potvrdit</string>
   <string name="in_progress">Probíhá</string>
   <string name="respond">Odpovědět</string>
   <string name="try_again">Zkusit znovu</string>
   <string name="finish">Dokončit</string>
   <string name="verified">Ověřeno!</string>
-  <string name="smp_requested">Kontakt zažádal o ověření SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Ponechat službu v popředí</string>
   <string name="pref_keep_foreground_service_summary">Zamezit operačnímu systému v ukončení připojení</string>
@@ -314,9 +311,6 @@
   <string name="updating">Aktualizuji...</string>
   <string name="password_changed">Heslo změněno!</string>
   <string name="could_not_change_password">Nelze změnit heslo</string>
-  <string name="ask_question">Položit otázku</string>
-  <string name="shared_secret_hint_should_not_be_empty">Nápověda by měla být vyplněna</string>
-  <string name="manual_verification_explanation">Opatrně porovnejte otisk zobrazený níže s otiskem vašeho kontatku.\nMůžete využít jakoukoliv bezpečnou formu komunikace pro jejich výměnu, jako třeba šifrovaný email nebo telefonát.</string>
   <string name="change_password">Změnit heslo</string>
   <string name="current_password">Současné heslo</string>
   <string name="new_password">Nové heslo</string>

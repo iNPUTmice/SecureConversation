@@ -307,15 +307,12 @@
   <string name="show_qr_code">Vis 2D-strekkode</string>
   <string name="show_block_list">Vis blokkeringsliste</string>
   <string name="account_details">Kontodetaljer</string>
-  <string name="remote_fingerprint">Eksternt fingeravtrykk</string>
-  <string name="shared_secret_hint">Ledetråd eller spørsmål</string>
   <string name="confirm">Bekreft</string>
   <string name="in_progress">Underveis</string>
   <string name="respond">Svar</string>
   <string name="try_again">Prøv igjen</string>
   <string name="finish">Fullfør</string>
   <string name="verified">Tiltrodd!</string>
-  <string name="smp_requested">Kontakt forespurte SMP-verifisering</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Forgrunnstjeneste</string>
   <string name="pref_keep_foreground_service_summary">Forhindrer operativsystemet fra å drepe tilkoblingen din</string>
@@ -358,9 +355,6 @@
   <string name="updating">Oppdaterer…</string>
   <string name="password_changed">Passord endret!</string>
   <string name="could_not_change_password">Kunne ikke endre passord</string>
-  <string name="ask_question">Still et spørsmål</string>
-  <string name="shared_secret_hint_should_not_be_empty">Ledetråden din bør ikke stå tom</string>
-  <string name="manual_verification_explanation">Jamfør nøye fingeravtrykket vis nedenfor med din kontakts fingeravtrykk.\nDu kan bruke enhver form for betrodd kommunikasjon som kryptert e-post eller en telefonsamtale for å utveksle disse.</string>
   <string name="change_password">Endre passord</string>
   <string name="current_password">Gjeldende passord</string>
   <string name="new_password">Nytt passord</string>

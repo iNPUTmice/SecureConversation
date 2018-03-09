@@ -278,15 +278,12 @@
   <string name="show_qr_code">Прикажи 2Д бар-кôд</string>
   <string name="show_block_list">Прикажи списак блокираних</string>
   <string name="account_details">Детаљи налога</string>
-  <string name="remote_fingerprint">Отисак удаљеног</string>
-  <string name="shared_secret_hint">Наговештај или питање</string>
   <string name="confirm">Потврди</string>
   <string name="in_progress">У току</string>
   <string name="respond">Одговори</string>
   <string name="try_again">Покушај поново</string>
   <string name="finish">Заврши</string>
   <string name="verified">Оверено!</string>
-  <string name="smp_requested">Контакт захтева СМП оверавање</string>
   <string name="conversations_foreground_service">Конверзација</string>
   <string name="pref_keep_foreground_service">Држи сервис у првом плану</string>
   <string name="pref_keep_foreground_service_summary">Спречава оперативни систем да прекине вашу везу</string>
@@ -324,9 +321,6 @@
   <string name="updating">Ажурирам…</string>
   <string name="password_changed">Лозинка промењена!</string>
   <string name="could_not_change_password">Не могох да променим лозинку</string>
-  <string name="ask_question">Постави питање</string>
-  <string name="shared_secret_hint_should_not_be_empty">Наговештај не би смео бити празан</string>
-  <string name="manual_verification_explanation">Пажљиво упоредите отисак испод са отиском вашег контакта.\nМожете да употребите било који поверљив облик комуникације као што је шифрована е-пошта или позив телефоном да бисте разменили отиске.</string>
   <string name="change_password">Промени лозинку</string>
   <string name="current_password">Текућа лозинка</string>
   <string name="new_password">Нова лозинка</string>

@@ -307,15 +307,12 @@
   <string name="show_qr_code">2D-streepjescode tonen</string>
   <string name="show_block_list">Geblokkeerde contacten weergeven</string>
   <string name="account_details">Accountgegevens</string>
-  <string name="remote_fingerprint">Externe vingerafdruk</string>
-  <string name="shared_secret_hint">Hint of vraag</string>
   <string name="confirm">Bevestigen</string>
   <string name="in_progress">Bezig</string>
   <string name="respond">Antwoorden</string>
   <string name="try_again">Opnieuw proberen</string>
   <string name="finish">Afsluiten</string>
   <string name="verified">Geverifieerd!</string>
-  <string name="smp_requested">Contact vraagt SMP-bevestiging</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Dienst in voorgrond houden</string>
   <string name="pref_keep_foreground_service_summary">Belet het besturingssysteem je verbinding te onderbreken</string>
@@ -358,9 +355,6 @@
   <string name="updating">Bijwerken…</string>
   <string name="password_changed">Wachtwoord gewijzigd!</string>
   <string name="could_not_change_password">Kon wachtwoord niet wijzigen</string>
-  <string name="ask_question">Stel een vraag</string>
-  <string name="shared_secret_hint_should_not_be_empty">Je hint zou niet leeg mogen zijn</string>
-  <string name="manual_verification_explanation">Vergelijk met zorg de vingerafdruk hieronder met de vingerafdruk van je contact.\nJe kan hiervoor een andere betrouwbare vorm van communicatie gebruiken, zoals een versleutelde e-mail of een telefoongesprek.</string>
   <string name="change_password">Wachtwoord wijzigen</string>
   <string name="current_password">Huidig wachtwoord</string>
   <string name="new_password">Nieuw wachtwoord</string>

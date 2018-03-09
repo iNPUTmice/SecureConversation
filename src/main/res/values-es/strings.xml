@@ -307,15 +307,12 @@
   <string name="show_qr_code">Mostrar código QR</string>
   <string name="show_block_list">Mostrar contactos bloqueados</string>
   <string name="account_details">Detalles de la cuenta</string>
-  <string name="remote_fingerprint">Huella digital remota</string>
-  <string name="shared_secret_hint">Sugerencia o pregunta</string>
   <string name="confirm">Confirmar</string>
   <string name="in_progress">En progreso</string>
   <string name="respond">Responder</string>
   <string name="try_again">Intentar de nuevo</string>
   <string name="finish">Terminar</string>
   <string name="verified">¡Verificado!</string>
-  <string name="smp_requested">El contacto solicita verificación SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Servicio en primer plano</string>
   <string name="pref_keep_foreground_service_summary">Mantener el servicio en primer plano previene que el sistema cierre la conexión</string>
@@ -358,9 +355,6 @@
   <string name="updating">Actualizando…</string>
   <string name="password_changed">¡Contraseña cambiada!</string>
   <string name="could_not_change_password">No se puede cambiar la contraseña</string>
-  <string name="ask_question">Haz una pregunta</string>
-  <string name="shared_secret_hint_should_not_be_empty">La pregunta no puede ser vacía</string>
-  <string name="manual_verification_explanation">Compara detenidamente la huella digital mostrada abajo con la de tu contacto.\nPuedes usar cualquier forma de comunicación segura como un correo electrónico cifrado o conversación telefónica para verificarlo.</string>
   <string name="change_password">Cambiar contraseña</string>
   <string name="current_password">Contraseña actual</string>
   <string name="new_password">Nueva contraseña</string>

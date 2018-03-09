@@ -307,15 +307,12 @@
   <string name="show_qr_code">Pokaż kod QR</string>
   <string name="show_block_list">Wyświetl listę banów</string>
   <string name="account_details">Szczegóły konta</string>
-  <string name="remote_fingerprint">Zdalny odcisk klucza</string>
-  <string name="shared_secret_hint">Podpowiedź lub pytanie</string>
   <string name="confirm">Potwierdź</string>
   <string name="in_progress">W toku</string>
   <string name="respond">Odpowiedz</string>
   <string name="try_again">Spróbuj ponownie</string>
   <string name="finish">Zakończ</string>
   <string name="verified">Weryfikacja udana!</string>
-  <string name="smp_requested">Kontakt zażądał weryfikacji SMP</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Usługa na pierwszym planie</string>
   <string name="pref_keep_foreground_service_summary">Uniemożliwia systemowi przerwanie połączenia</string>
@@ -359,9 +356,6 @@
   <string name="updating">Aktualizowanie...</string>
   <string name="password_changed">Hasło zostało zmienione!</string>
   <string name="could_not_change_password">Nie udało się zmienić hasła</string>
-  <string name="ask_question">Zadaj pytanie</string>
-  <string name="shared_secret_hint_should_not_be_empty">Wskazówka nie powinna być pusta</string>
-  <string name="manual_verification_explanation">Ostrożnie porównaj odcisk klucza pokazany poniżej z odciskiem klucza twojego kontaktu.\nMożesz użyć bezpiecznego kanału komunikacji takiego, jak szyfrowany e-mail lub rozmowa telefoniczna, by wymienić odciski klucza.</string>
   <string name="change_password">Zmień hasło</string>
   <string name="current_password">Obecne hasło</string>
   <string name="new_password">Nowe hasło</string>

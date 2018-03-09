@@ -307,15 +307,12 @@
   <string name="show_qr_code">显示二维码</string>
   <string name="show_block_list">显示屏蔽列表</string>
   <string name="account_details">账户详情</string>
-  <string name="remote_fingerprint">远程指纹</string>
-  <string name="shared_secret_hint">提示或问题</string>
   <string name="confirm">确认</string>
   <string name="in_progress">处理中</string>
   <string name="respond">回应</string>
   <string name="try_again">再试一遍</string>
   <string name="finish">完成</string>
   <string name="verified">验证通过！</string>
-  <string name="smp_requested">联系人请求 SMP 验证</string>
   <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">保持前台服务</string>
   <string name="pref_keep_foreground_service_summary">防止操作系统中断你的连接</string>
@@ -358,9 +355,6 @@
   <string name="updating">更新中…</string>
   <string name="password_changed">密码已修改！</string>
   <string name="could_not_change_password">不能修改密码</string>
-  <string name="ask_question">提出问题</string>
-  <string name="shared_secret_hint_should_not_be_empty">你的提示不能为空</string>
-  <string name="manual_verification_explanation">请仔细核对下面显示出来的你的联系人的指纹。\n你可以使用任何可信赖的联系方式，比如加密邮件或电话，来交换这些指纹信息。</string>
   <string name="change_password">修改密码</string>
   <string name="current_password">当前密码</string>
   <string name="new_password">新密码</string>
