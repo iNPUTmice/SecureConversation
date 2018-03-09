@@ -291,7 +291,7 @@ I am available for hire. Contact me via XMPP: `inputmice@siacs.eu`
 #### Why are there three end-to-end encryption methods and which one should I choose?
 
 * OTR is a legacy encryption method. It works out of the box with most contacts as long as they are online.
-* OMEMO works even when a contact is offline, and works with multiple devices. It also allows asynchronous file-transfer when the server has [HTTP File Upload](http://xmpp.org/extensions/xep-0363.html). However, OMEMO is not as widely supported as OTR and is currently implemented only by Conversations and Gajim. OMEMO should be preferred over OTR for contacts who use Conversations.
+* OMEMO works even when a contact is offline, and works with multiple devices. It also allows asynchronous file-transfer when the server has [HTTP File Upload](http://xmpp.org/extensions/xep-0363.html). However, OMEMO is not as widely supported as OTR and is currently implemented only by Conversations and Gajim (you can track per client support status [here](https://omemo.top/)). OMEMO should be preferred over OTR for contacts who use Conversations.
 * OpenPGP (XEP-0027) is a very old encryption method that has some advantages over OTR but should only be used by experts who know what they are doing.
 
 #### How do I use OpenPGP
