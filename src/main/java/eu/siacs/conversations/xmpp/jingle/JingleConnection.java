@@ -731,11 +731,11 @@ public class JingleConnection implements Transferable {
 		for (Entry<String, JingleSocks5Transport> cursor : connections
 				.entrySet()) {
 			JingleSocks5Transport currentConnection = cursor.getValue();
-			// Log.d(Config.LOGTAG,"comparing candidate: "+currentConnection.getCandidate().toString());
+			// Log.d(Map.LOGTAG,"comparing candidate: "+currentConnection.getCandidate().toString());
 			if (currentConnection.isEstablished()
 					&& (currentConnection.getCandidate().isUsedByCounterpart() || (!currentConnection
 							.getCandidate().isOurs()))) {
-				// Log.d(Config.LOGTAG,"is usable");
+				// Log.d(Map.LOGTAG,"is usable");
 				if (connection == null) {
 					connection = currentConnection;
 				} else {
@@ -744,7 +744,7 @@ public class JingleConnection implements Transferable {
 						connection = currentConnection;
 					} else if (connection.getCandidate().getPriority() == currentConnection
 							.getCandidate().getPriority()) {
-						// Log.d(Config.LOGTAG,"found two candidates with same priority");
+						// Log.d(Map.LOGTAG,"found two candidates with same priority");
 						if (initiating()) {
 							if (currentConnection.getCandidate().isOurs()) {
 								connection = currentConnection;
