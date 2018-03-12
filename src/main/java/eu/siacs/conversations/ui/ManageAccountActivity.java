@@ -1,23 +1,24 @@
 package eu.siacs.conversations.ui;
 
-import android.support.v7.app.AlertDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.os.Bundle;
 import android.security.KeyChain;
 import android.security.KeyChainAliasCallback;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.ActionBar;
+import android.support.v7.app.AlertDialog;
 import android.util.Pair;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
-import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import org.openintents.openpgp.util.OpenPgpApi;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +33,6 @@ import eu.siacs.conversations.ui.adapter.AccountAdapter;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import rocks.xmpp.addr.Jid;
 
-import org.openintents.openpgp.util.OpenPgpApi;
-
 public class ManageAccountActivity extends XmppActivity implements OnAccountUpdate, KeyChainAliasCallback, XmppConnectionService.OnAccountCreated {
 
 	private final String STATE_SELECTED_ACCOUNT = "selected_account";
@@ -45,6 +44,7 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 	protected ListView accountListView;
 	protected AccountAdapter mAccountAdapter;
 	protected AtomicBoolean mInvokedAddAccount = new AtomicBoolean(false);
+
 
 	protected Pair<Integer, Intent> mPostponedActivityResult = null;
 
@@ -85,18 +85,24 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 				}
 			}
 		}
+		final FloatingActionButton addAccount = findViewById(R.id.action_add_account);
+		addAccount.setOnClickListener((v) -> startActivity(new Intent(v.getContext(), EditAccountActivity.class)));
+		final FloatingActionButton addAccountWithCertificate = findViewById(R.id.action_add_account_with_cert);
+		addAccountWithCertificate.setOnClickListener((v) -> addAccountFromKey());
+		if (Config.X509_VERIFICATION) {
+			if (addAccount != null) {
+				addAccount.setVisibility(View.GONE);
+				addAccountWithCertificate.setVisibility(View.VISIBLE);
+			} else {
+				addAccount.setVisibility(View.VISIBLE);
+				addAccountWithCertificate.setVisibility(View.GONE);
+			}
+		}
 
-		accountListView = (ListView) findViewById(R.id.account_list);
+		accountListView = findViewById(R.id.account_list);
 		this.mAccountAdapter = new AccountAdapter(this, accountList);
 		accountListView.setAdapter(this.mAccountAdapter);
-		accountListView.setOnItemClickListener(new OnItemClickListener() {
-
-			@Override
-			public void onItemClick(AdapterView<?> arg0, View view,
-									int position, long arg3) {
-				switchToAccount(accountList.get(position));
-			}
-		});
+		accountListView.setOnItemClickListener((arg0, view, position, arg3) -> switchToAccount(accountList.get(position)));
 		registerForContextMenu(accountListView);
 	}
 
@@ -155,13 +161,6 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.manageaccounts, menu);
 		MenuItem enableAll = menu.findItem(R.id.action_enable_all);
-		MenuItem addAccount = menu.findItem(R.id.action_add_account);
-		MenuItem addAccountWithCertificate = menu.findItem(R.id.action_add_account_with_cert);
-
-		if (Config.X509_VERIFICATION) {
-			addAccount.setVisible(false);
-			addAccountWithCertificate.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-		}
 
 		if (!accountsLeftToEnable()) {
 			enableAll.setVisible(false);
@@ -199,18 +198,11 @@ public class ManageAccountActivity extends XmppActivity implements OnAccountUpda
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-			case R.id.action_add_account:
-				startActivity(new Intent(getApplicationContext(),
-						EditAccountActivity.class));
-				break;
 			case R.id.action_disable_all:
 				disableAllAccounts();
 				break;
 			case R.id.action_enable_all:
 				enableAllAccounts();
-				break;
-			case R.id.action_add_account_with_cert:
-				addAccountFromKey();
 				break;
 			default:
 				break;

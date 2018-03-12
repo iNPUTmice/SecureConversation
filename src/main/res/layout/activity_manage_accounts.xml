@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="?attr/color_background_primary" >
-
+    android:background="?attr/color_background_primary">
     <ListView
         android:id="@+id/account_list"
         android:layout_width="fill_parent"
@@ -12,5 +10,21 @@
         android:divider="@android:color/transparent"
         android:dividerHeight="0dp" >
     </ListView>
-
-</LinearLayout>
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/action_add_account"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:src="?attr/icon_add_person"
+        android:layout_margin="16dp"
+        android:title="@string/action_add_account"/>
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/action_add_account_with_cert"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="end|bottom"
+        android:src="?attr/icon_add_person"
+        android:layout_margin="16dp"
+        android:visibility="gone"
+        android:title="@string/action_add_account_with_certificate"/>
+</FrameLayout>
