@@ -27,6 +27,7 @@ import eu.siacs.conversations.ui.ConversationActivity;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.widget.UnreadCountCustomView;
 import eu.siacs.conversations.utils.EmojiWrapper;
+import eu.siacs.conversations.utils.StylingHelper;
 import eu.siacs.conversations.utils.UIHelper;
 
 public class ConversationAdapter extends ArrayAdapter<Conversation> {
@@ -108,6 +109,8 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 			showPreviewText = true;
 		}
 		final Pair<String,Boolean> preview = UIHelper.getMessagePreview(activity,message);
+		viewHolder.lastMessage.addTextChangedListener
+				(new StylingHelper.MessageEditorStyler(viewHolder.lastMessage));
 		if (showPreviewText) {
 			viewHolder.lastMessage.setText(EmojiWrapper.transform(preview.first));
 		} else {
