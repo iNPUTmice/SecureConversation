@@ -12,7 +12,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -111,7 +110,7 @@ public class ConversationAdapter extends ArrayAdapter<Conversation> {
 		}
 		final Pair<String,Boolean> preview = UIHelper.getMessagePreview(activity,message);
 		viewHolder.lastMessage.addTextChangedListener
-				(new StylingHelper.MessageEditorStyler((EditText) viewHolder.lastMessage));
+				(new StylingHelper.MessageEditorStyler(viewHolder.lastMessage));
 		if (showPreviewText) {
 			viewHolder.lastMessage.setText(EmojiWrapper.transform(preview.first));
 		} else {

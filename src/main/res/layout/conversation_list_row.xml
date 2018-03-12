@@ -85,7 +85,7 @@
                             android:layout_height="?attr/IconSize"
                             android:layout_marginRight="?attr/TextSeparation"/>
                       
-                        <EditText
+                        <TextView
                             android:id="@+id/conversation_lastmsg"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
@@ -94,7 +94,6 @@
                             android:scrollHorizontally="false"
                             android:maxLines="1"
                             android:ellipsize="end"
-                            android:background="@null"
                             android:textColor="?attr/color_text_primary"
                             android:textSize="?attr/TextSizeBody"/>
                     </LinearLayout>

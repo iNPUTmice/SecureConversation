@@ -40,7 +40,7 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.StrikethroughSpan;
 import android.text.style.StyleSpan;
 import android.text.style.TypefaceSpan;
-import android.widget.EditText;
+import android.widget.TextView;
 
 import java.util.Arrays;
 import java.util.List;
@@ -116,10 +116,10 @@ public class StylingHelper {
 
 	public static class MessageEditorStyler implements TextWatcher {
 
-		private final EditText mEditText;
+		private final TextView mTextView;
 
-		public MessageEditorStyler(EditText editText) {
-			this.mEditText = editText;
+		public MessageEditorStyler(TextView textView) {
+			this.mTextView = textView;
 		}
 
 		@Override
@@ -135,7 +135,7 @@ public class StylingHelper {
 		@Override
 		public void afterTextChanged(Editable editable) {
 			clear(editable);
-			format(editable, mEditText.getCurrentTextColor());
+			format(editable, mTextView.getCurrentTextColor());
 		}
 	}
 }
