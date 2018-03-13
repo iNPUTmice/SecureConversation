@@ -38,6 +38,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -91,6 +92,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 
 	private boolean isCameraFeatureAvailable = false;
 
+	protected boolean isStartConversationActivity = false;
 	protected boolean mUseSubject = true;
 	protected int mTheme;
 	protected boolean mUsingEnterKey = false;
@@ -841,10 +843,19 @@ public abstract class XmppActivity extends AppCompatActivity {
 	protected int findTheme() {
 		Boolean dark = getPreferences().getString(SettingsActivity.THEME, getResources().getString(R.string.theme)).equals("dark");
 
-		if (dark) {
-			return R.style.ConversationsTheme_Dark;
+		if (!isStartConversationActivity) {
+			if (dark) {
+				return R.style.ConversationsTheme_Dark;
+			} else {
+				return R.style.ConversationsTheme;
+			}
 		} else {
-			return R.style.ConversationsTheme;
+			isStartConversationActivity = false;
+			if (dark) {
+				return R.style.StartConversationsTheme_Dark;
+			} else {
+				return R.style.StartConversationsTheme;
+			}
 		}
 	}
 
