@@ -48,9 +48,8 @@ import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.persistance.FileBackend;
-import eu.siacs.conversations.ui.ConversationActivity;
+import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
-import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.TimePreference;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
@@ -161,7 +160,7 @@ public class NotificationService {
 				}
 			}
 		}
-		Log.d(Config.LOGTAG,account.getJid().toBareJid()+": backlog message count="+count);
+		Log.d(Config.LOGTAG,account.getJid().asBareJid()+": backlog message count="+count);
 		return count;
 	}
 
@@ -195,12 +194,12 @@ public class NotificationService {
 	private void pushNow(final Message message) {
 		mXmppConnectionService.updateUnreadCountBadge();
 		if (!notify(message)) {
-			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().toBareJid()+": suppressing notification because turned off");
+			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().asBareJid()+": suppressing notification because turned off");
 			return;
 		}
 		final boolean isScreenOn = mXmppConnectionService.isInteractive();
 		if (this.mIsInForeground && isScreenOn && this.mOpenConversation == message.getConversation()) {
-			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().toBareJid()+": suppressing notification because conversation is open");
+			Log.d(Config.LOGTAG,message.getConversation().getAccount().getJid().asBareJid()+": suppressing notification because conversation is open");
 			return;
 		}
 		synchronized (notifications) {
@@ -395,7 +394,7 @@ public class NotificationService {
 		for (final ArrayList<Message> messages : notifications.values()) {
 			if (messages.size() > 0) {
 				conversation = messages.get(0).getConversation();
-				final String name = conversation.getName();
+				final String name = conversation.getName().toString();
 				SpannableString styledString;
 				if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
 					int count = messages.size();
@@ -440,7 +439,7 @@ public class NotificationService {
 			mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
 		if (messages.size() >= 1) {
 			final Conversation conversation = messages.get(0).getConversation();
-			final UnreadConversation.Builder mUnreadBuilder = new UnreadConversation.Builder(conversation.getName());
+			final UnreadConversation.Builder mUnreadBuilder = new UnreadConversation.Builder(conversation.getName().toString());
 			mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
 					.get(conversation, getPixel(64)));
 			mBuilder.setContentTitle(conversation.getName());
@@ -457,7 +456,7 @@ public class NotificationService {
 				RemoteInput remoteInput = new RemoteInput.Builder("text_reply").setLabel(UIHelper.getMessageHint(mXmppConnectionService, conversation)).build();
 				PendingIntent markAsReadPendingIntent = createReadPendingIntent(conversation);
 				NotificationCompat.Action markReadAction = new NotificationCompat.Action.Builder(
-						R.drawable.ic_send_text_offline,
+						R.drawable.ic_drafts_white_24dp,
 						mXmppConnectionService.getString(R.string.mark_as_read),
 						markAsReadPendingIntent).build();
 				String replyLabel = mXmppConnectionService.getString(R.string.reply);
@@ -676,11 +675,11 @@ public class NotificationService {
 	}
 
 	private PendingIntent createContentIntent(final String conversationUuid, final String downloadMessageUuid) {
-		final Intent viewConversationIntent = new Intent(mXmppConnectionService,ConversationActivity.class);
-		viewConversationIntent.setAction(ConversationActivity.ACTION_VIEW_CONVERSATION);
-		viewConversationIntent.putExtra(ConversationActivity.CONVERSATION, conversationUuid);
+		final Intent viewConversationIntent = new Intent(mXmppConnectionService,ConversationsActivity.class);
+		viewConversationIntent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
+		viewConversationIntent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversationUuid);
 		if (downloadMessageUuid != null) {
-			viewConversationIntent.putExtra(ConversationActivity.EXTRA_DOWNLOAD_UUID, downloadMessageUuid);
+			viewConversationIntent.putExtra(ConversationsActivity.EXTRA_DOWNLOAD_UUID, downloadMessageUuid);
 			return PendingIntent.getActivity(mXmppConnectionService,
 					generateRequestCode(conversationUuid, 8),
 					viewConversationIntent,
@@ -828,7 +827,7 @@ public class NotificationService {
 	}
 
 	private PendingIntent createOpenConversationsIntent() {
-		return PendingIntent.getActivity(mXmppConnectionService, 0, new Intent(mXmppConnectionService, ConversationActivity.class), 0);
+		return PendingIntent.getActivity(mXmppConnectionService, 0, new Intent(mXmppConnectionService, ConversationsActivity.class), 0);
 	}
 
 	public void updateErrorNotification() {
@@ -848,7 +847,7 @@ public class NotificationService {
 			return;
 		} else if (errors.size() == 1) {
 			mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.problem_connecting_to_account));
-			mBuilder.setContentText(errors.get(0).getJid().toBareJid().toString());
+			mBuilder.setContentText(errors.get(0).getJid().asBareJid().toString());
 		} else {
 			mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.problem_connecting_to_accounts));
 			mBuilder.setContentText(mXmppConnectionService.getString(R.string.touch_to_fix));
