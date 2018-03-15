@@ -18,5 +18,10 @@ public class AboutActivity extends AppCompatActivity {
         setTheme(mTheme);
 
         setContentView(R.layout.activity_about);
+        setSupportActionBar(findViewById(R.id.toolbar));
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setHomeButtonEnabled(true);
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
     }
 }

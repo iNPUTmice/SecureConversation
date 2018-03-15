@@ -243,14 +243,13 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
-		isStartConversationActivity = true;
 		super.onCreate(savedInstanceState);
 		new EmojiService(this).init();
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_start_conversation);
-		Toolbar toolbar = binding.toolbar;
-		toolbar.setTitle(getResources().getString(R.string.title_activity_start_conversation));
-		if (getSupportActionBar() == null) {
-			setActivitySupportActionBar(toolbar);
+		Toolbar toolbar = (Toolbar) binding.toolbar;
+		setSupportActionBar(toolbar);
+		if (getSupportActionBar() != null) {
+			getSupportActionBar().setHomeButtonEnabled(true);
 			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		}
 		this.binding.fab.setOnClickListener((v) -> {
@@ -288,7 +287,6 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 	@Override
 	public void onStart() {
 		super.onStart();
-		isStartConversationActivity = true;
 		final int theme = findTheme();
 		if (this.mTheme != theme) {
 			recreate();
@@ -523,7 +521,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		MenuItem joinGroupChat = menu.findItem(R.id.action_join_conference);
 		MenuItem qrCodeScanMenuItem = menu.findItem(R.id.action_scan_qr_code);
 		ActionBar bar = getSupportActionBar();
-		joinGroupChat.setVisible(bar != null && bar.getSelectedNavigationIndex() == 1);
+		joinGroupChat.setVisible(bar != null && binding.startConversationViewPager.getCurrentItem() == 1);
 		qrCodeScanMenuItem.setVisible(isCameraFeatureAvailable());
 		menuHideOffline.setChecked(this.mHideOfflineContacts);
 		mMenuSearchView = menu.findItem(R.id.action_search);

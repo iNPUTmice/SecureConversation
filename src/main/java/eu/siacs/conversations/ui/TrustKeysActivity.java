@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
@@ -80,7 +81,7 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 		binding.cancelButton.setOnClickListener(mCancelButtonListener);
 		binding.saveButton.setOnClickListener(mSaveButtonListener);
 
-
+		setSupportActionBar((Toolbar) binding.toolbar);
 		if (getSupportActionBar() != null) {
 			getSupportActionBar().setHomeButtonEnabled(true);
 			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
