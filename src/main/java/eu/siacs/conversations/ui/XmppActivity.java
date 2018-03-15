@@ -36,9 +36,7 @@ import android.os.PowerManager;
 import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -92,7 +90,6 @@ public abstract class XmppActivity extends AppCompatActivity {
 
 	private boolean isCameraFeatureAvailable = false;
 
-	protected boolean isStartConversationActivity = false;
 	protected boolean mUseSubject = true;
 	protected int mTheme;
 	protected boolean mUsingEnterKey = false;
@@ -422,10 +419,6 @@ public abstract class XmppActivity extends AppCompatActivity {
 
 		this.mUsingEnterKey = usingEnterKey();
 		mUseSubject = getPreferences().getBoolean("use_subject", getResources().getBoolean(R.bool.use_subject));
-		final ActionBar ab = getSupportActionBar();
-		if (ab != null) {
-			ab.setDisplayHomeAsUpEnabled(true);
-		}
 	}
 
 	protected boolean isCameraFeatureAvailable() {
@@ -843,19 +836,10 @@ public abstract class XmppActivity extends AppCompatActivity {
 	protected int findTheme() {
 		Boolean dark = getPreferences().getString(SettingsActivity.THEME, getResources().getString(R.string.theme)).equals("dark");
 
-		if (!isStartConversationActivity) {
-			if (dark) {
-				return R.style.ConversationsTheme_Dark;
-			} else {
-				return R.style.ConversationsTheme;
-			}
+		if (dark) {
+			return R.style.ConversationsTheme_Dark;
 		} else {
-			isStartConversationActivity = false;
-			if (dark) {
-				return R.style.StartConversationsTheme_Dark;
-			} else {
-				return R.style.StartConversationsTheme;
-			}
+			return R.style.ConversationsTheme;
 		}
 	}
 
