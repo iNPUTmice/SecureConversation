@@ -97,10 +97,7 @@ public abstract class AbstractSearchableListItemActivity extends XmppActivity {
 		super.onCreate(savedInstanceState);
 		this.binding = DataBindingUtil.setContentView(this,R.layout.activity_choose_contact);
 		setSupportActionBar((Toolbar) binding.toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		this.binding.chooseContactList.setFastScrollEnabled(true);
 		mListItemsAdapter = new ListItemAdapter(this, listItems);
 		this.binding.chooseContactList.setAdapter(mListItemsAdapter);

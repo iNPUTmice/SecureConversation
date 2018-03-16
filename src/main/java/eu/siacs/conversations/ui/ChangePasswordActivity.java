@@ -61,10 +61,7 @@ public class ChangePasswordActivity extends XmppActivity implements XmppConnecti
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_change_password);
 		setSupportActionBar(findViewById(R.id.toolbar));
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		Button mCancelButton = findViewById(R.id.left_button);
 		mCancelButton.setOnClickListener(view -> finish());
 		this.mChangePasswordButton = findViewById(R.id.right_button);

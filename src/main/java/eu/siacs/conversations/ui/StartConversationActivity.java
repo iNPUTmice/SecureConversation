@@ -248,10 +248,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_start_conversation);
 		Toolbar toolbar = (Toolbar) binding.toolbar;
 		setSupportActionBar(toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		this.binding.fab.setOnClickListener((v) -> {
 			if (binding.startConversationViewPager.getCurrentItem() == 0) {
 				String searchString = mSearchEditText != null ? mSearchEditText.getText().toString() : null;

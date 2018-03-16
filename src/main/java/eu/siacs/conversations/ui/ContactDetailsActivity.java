@@ -192,10 +192,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_contact_details);
 
 		setSupportActionBar((Toolbar) binding.toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		binding.showInactiveDevices.setOnClickListener(v -> {
 			showInactiveOmemo = !showInactiveOmemo;
 			populateView();

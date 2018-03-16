@@ -538,10 +538,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		}
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_edit_account);
 		setSupportActionBar((Toolbar) binding.toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		binding.accountJid.addTextChangedListener(this.mTextWatcher);
 		binding.accountJid.setOnFocusChangeListener(this.mEditTextFocusListener);
 		this.mAccountJidLayout = (TextInputLayout) findViewById(R.id.account_jid_layout);

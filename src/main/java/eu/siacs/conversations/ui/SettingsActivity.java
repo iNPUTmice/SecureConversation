@@ -71,10 +71,7 @@ public class SettingsActivity extends XmppActivity implements
 		setTheme(this.mTheme);
 		getWindow().getDecorView().setBackgroundColor(Color.get(this, R.attr.color_background_primary));
 		setSupportActionBar(findViewById(R.id.toolbar));
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 	}
 
 	@Override

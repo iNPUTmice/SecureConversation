@@ -3,6 +3,7 @@ package eu.siacs.conversations.ui;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
 import android.app.PendingIntent;
@@ -602,6 +603,13 @@ public abstract class XmppActivity extends AppCompatActivity {
 					}
 				}
 			});
+		}
+	}
+
+	public void configureActionBar(ActionBar actionBar) {
+		if (actionBar != null) {
+			actionBar.setHomeButtonEnabled(true);
+			actionBar.setDisplayHomeAsUpEnabled(true);
 		}
 	}
 

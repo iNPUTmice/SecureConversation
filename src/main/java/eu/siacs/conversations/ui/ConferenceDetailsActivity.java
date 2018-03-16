@@ -228,10 +228,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		this.binding.changeConferenceButton.setOnClickListener(this.mChangeConferenceSettings);
 		this.binding.invite.setOnClickListener(inviteListener);
 		setSupportActionBar((Toolbar) binding.toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		this.binding.editNickButton.setOnClickListener(v -> quickEdit(mConversation.getMucOptions().getActualNick(),
 				0,
 				value -> {

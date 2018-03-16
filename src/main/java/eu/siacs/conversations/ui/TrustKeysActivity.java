@@ -82,10 +82,7 @@ public class TrustKeysActivity extends OmemoActivity implements OnKeyStatusUpdat
 		binding.saveButton.setOnClickListener(mSaveButtonListener);
 
 		setSupportActionBar((Toolbar) binding.toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 
 		if (savedInstanceState != null) {
 			mUseCameraHintShown.set(savedInstanceState.getBoolean("camera_hint_shown", false));

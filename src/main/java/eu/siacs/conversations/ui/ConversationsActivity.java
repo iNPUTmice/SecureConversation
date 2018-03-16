@@ -366,10 +366,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 		new EmojiService(this).init();
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_conversations);
 		setSupportActionBar((Toolbar) binding.toolbar);
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		this.getFragmentManager().addOnBackStackChangedListener(this::invalidateActionBarTitle);
 		this.getFragmentManager().addOnBackStackChangedListener(this::showDialogsIfMainIsOverview);
 		this.initializeFragments();

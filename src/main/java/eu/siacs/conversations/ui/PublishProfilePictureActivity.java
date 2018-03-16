@@ -95,10 +95,7 @@ public class PublishProfilePictureActivity extends XmppActivity implements XmppC
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_publish_profile_picture);
 		setSupportActionBar(findViewById(R.id.toolbar));
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 
 		this.avatar = findViewById(R.id.account_image);
 		this.cancelButton = findViewById(R.id.cancel_button);

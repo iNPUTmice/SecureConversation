@@ -54,10 +54,7 @@ public class MagicCreateActivity extends XmppActivity implements TextWatcher {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.magic_create);
 		setSupportActionBar(findViewById(R.id.toolbar));
-		if (getSupportActionBar() != null) {
-			getSupportActionBar().setHomeButtonEnabled(true);
-			getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-		}
+		configureActionBar(getSupportActionBar());
 		mFullJidDisplay = findViewById(R.id.full_jid);
 		mUsername = findViewById(R.id.username);
 		mRandom = new SecureRandom();
