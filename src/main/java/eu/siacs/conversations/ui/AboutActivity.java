@@ -6,6 +6,8 @@ import android.support.v7.app.AppCompatActivity;
 
 import eu.siacs.conversations.R;
 
+import static eu.siacs.conversations.ui.XmppActivity.configureActionBar;
+
 public class AboutActivity extends AppCompatActivity {
 
     @Override
@@ -19,9 +21,6 @@ public class AboutActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_about);
         setSupportActionBar(findViewById(R.id.toolbar));
-        if (getSupportActionBar() != null) {
-            getSupportActionBar().setHomeButtonEnabled(true);
-            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        }
+        configureActionBar(getSupportActionBar());
     }
 }

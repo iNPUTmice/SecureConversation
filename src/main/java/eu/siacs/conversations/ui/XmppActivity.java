@@ -606,7 +606,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 		}
 	}
 
-	public void configureActionBar(ActionBar actionBar) {
+	public static void configureActionBar(ActionBar actionBar) {
 		if (actionBar != null) {
 			actionBar.setHomeButtonEnabled(true);
 			actionBar.setDisplayHomeAsUpEnabled(true);
