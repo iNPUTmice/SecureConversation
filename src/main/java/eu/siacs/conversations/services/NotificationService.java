@@ -800,7 +800,16 @@ public class NotificationService {
 	}
 
 	public Notification createForegroundNotification() {
-		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+		NotificationCompat.Builder mBuilder;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+			int importance = Config.SHOW_CONNECTED_ACCOUNTS ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_MIN;
+			String id = "siacs/conversations" + importance;
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService, id);
+		}
+		else {
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+			mBuilder.setPriority(Config.SHOW_CONNECTED_ACCOUNTS ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_MIN);
+		}
 
 		mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.conversations_foreground_service));
 		if (Config.SHOW_CONNECTED_ACCOUNTS) {
@@ -821,7 +830,6 @@ public class NotificationService {
 		}
 		mBuilder.setContentIntent(createOpenConversationsIntent());
 		mBuilder.setWhen(0);
-		mBuilder.setPriority(Config.SHOW_CONNECTED_ACCOUNTS ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_MIN);
 		mBuilder.setSmallIcon(R.drawable.ic_link_white_24dp);
 		return mBuilder.build();
 	}
@@ -841,7 +849,15 @@ public class NotificationService {
 		if (mXmppConnectionService.keepForegroundService()) {
 			notificationManager.notify(FOREGROUND_NOTIFICATION_ID, createForegroundNotification());
 		}
-		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+		NotificationCompat.Builder mBuilder;
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			String id = "siacs/conversations" + NotificationManagerCompat.IMPORTANCE_LOW;
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService, id);
+		}
+		else {
+			mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+			mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
+		}
 		if (errors.size() == 0) {
 			notificationManager.cancel(ERROR_NOTIFICATION_ID);
 			return;
@@ -863,7 +879,6 @@ public class NotificationService {
 			mBuilder.setSmallIcon(R.drawable.ic_stat_alert_warning);
 		}
 		mBuilder.setLocalOnly(true);
-		mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
 		mBuilder.setContentIntent(PendingIntent.getActivity(mXmppConnectionService,
 				145,
 				new Intent(mXmppConnectionService,ManageAccountActivity.class),
