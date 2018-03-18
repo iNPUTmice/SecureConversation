@@ -19,6 +19,8 @@ import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Toast;
 
 import java.io.File;
@@ -57,18 +59,19 @@ public class SettingsActivity extends XmppActivity implements
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_settings);
 		FragmentManager fm = getFragmentManager();
-		mSettingsFragment = (SettingsFragment) fm.findFragmentById(android.R.id.content);
+		mSettingsFragment = (SettingsFragment) fm.findFragmentById(R.id.settings_content);
 		if (mSettingsFragment == null || !mSettingsFragment.getClass().equals(SettingsFragment.class)) {
 			mSettingsFragment = new SettingsFragment();
-			fm.beginTransaction().replace(android.R.id.content, mSettingsFragment).commit();
+			fm.beginTransaction().replace(R.id.settings_content, mSettingsFragment).commit();
 		}
 		mSettingsFragment.setActivityIntent(getIntent());
-
 		this.mTheme = findTheme();
 		setTheme(this.mTheme);
 		getWindow().getDecorView().setBackgroundColor(Color.get(this, R.attr.color_background_primary));
-
+		setSupportActionBar(findViewById(R.id.toolbar));
+		configureActionBar(getSupportActionBar());
 	}
 
 	@Override
@@ -113,7 +116,6 @@ public class SettingsActivity extends XmppActivity implements
 			CharSequence[] entries = new CharSequence[choices.length];
 			CharSequence[] entryValues = new CharSequence[choices.length];
 			for (int i = 0; i < choices.length; ++i) {
-				Log.d(Config.LOGTAG,"resolving choice "+choices[i]);
 				entryValues[i] = String.valueOf(choices[i]);
 				if (choices[i] == 0) {
 					entries[i] = getString(R.string.never);
@@ -156,7 +158,7 @@ public class SettingsActivity extends XmppActivity implements
 					displayToast(getString(R.string.toast_no_trusted_certs));
 					return true;
 				}
-				final ArrayList selectedItems = new ArrayList<>();
+				final ArrayList<Integer> selectedItems = new ArrayList<>();
 				final AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(SettingsActivity.this);
 				dialogBuilder.setTitle(getResources().getString(R.string.dialog_manage_certs_title));
 				dialogBuilder.setMultiChoiceItems(aliases.toArray(new CharSequence[aliases.size()]), null,
