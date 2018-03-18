@@ -53,6 +53,12 @@
             android:title="@string/pref_headsup_notifications"
             android:summary="@string/pref_headsup_notifications_summary"/>
         <CheckBoxPreference
+            android:defaultValue="@bool/dismiss_notification"
+            android:dependency="show_notification"
+            android:key="dismiss_notification"
+            android:title="@string/pref_dismiss_notification"
+            android:summary="@string/pref_dismiss_notification_summary"/>
+        <CheckBoxPreference
             android:defaultValue="@bool/vibrate_on_notification"
             android:dependency="show_notification"
             android:key="vibrate_on_notification"

@@ -5,6 +5,7 @@
     <bool name="enter_is_send">false</bool>
     <bool name="notifications_from_strangers">false</bool>
     <bool name="headsup_notifications">false</bool>
+    <bool name="dismiss_notification">false</bool>
     <bool name="dnd_on_silent_mode">false</bool>
     <bool name="treat_vibrate_as_silent">false</bool>
     <bool name="confirm_messages">true</bool>

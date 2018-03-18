@@ -395,6 +395,8 @@ public class NotificationService {
 				}
 				RemoteInput remoteInput = new RemoteInput.Builder("text_reply").setLabel(UIHelper.getMessageHint(mXmppConnectionService, conversation)).build();
 				PendingIntent markAsReadPendingIntent = createReadPendingIntent(conversation);
+                final SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(mXmppConnectionService);
+                final boolean dismiss_notification = preferences.getBoolean( "dismiss_notification", false);
 				NotificationCompat.Action markReadAction = new NotificationCompat.Action.Builder(
 						R.drawable.ic_drafts_white_24dp,
 						mXmppConnectionService.getString(R.string.mark_as_read),
@@ -403,7 +405,7 @@ public class NotificationService {
 				NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(
 						R.drawable.ic_send_text_offline,
 						replyLabel,
-						createReplyIntent(conversation, false)).addRemoteInput(remoteInput).build();
+						createReplyIntent(conversation, dismiss_notification)).addRemoteInput(remoteInput).build();
 				NotificationCompat.Action wearReplyAction = new NotificationCompat.Action.Builder(R.drawable.ic_wear_reply,
 						replyLabel,
 						createReplyIntent(conversation, true)).addRemoteInput(remoteInput).build();
