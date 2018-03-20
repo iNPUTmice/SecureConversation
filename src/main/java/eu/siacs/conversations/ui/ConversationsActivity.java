@@ -422,6 +422,10 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 			} else {
 				conversationFragment = new ConversationFragment();
 				FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+				fragmentTransaction.setCustomAnimations(
+						R.animator.fade_bottom_in, R.animator.fade_bottom_out,
+						R.animator.fade_bottom_in, R.animator.fade_bottom_out
+				);
 				fragmentTransaction.replace(R.id.main_fragment, conversationFragment);
 				fragmentTransaction.addToBackStack(null);
 				fragmentTransaction.commit();
