@@ -3,7 +3,6 @@ package eu.siacs.conversations.ui;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -28,7 +27,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
-import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
@@ -37,7 +35,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TableLayout;
-import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,6 +64,7 @@ import eu.siacs.conversations.ui.adapter.PresenceTemplateAdapter;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.widget.DisabledActionModeCallback;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.TorServiceUtils;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xml.Element;
@@ -127,6 +125,14 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			final String password = mPassword.getText().toString();
 			final boolean wasDisabled = mAccount != null && mAccount.getStatus() == Account.State.DISABLED;
 
+			if (mInitMode && mUseTor && (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this) || !TorServiceUtils.isOrbotStarted())) {
+				if (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this)) {
+					TorServiceUtils.downloadOrbot(EditAccountActivity.this);
+				} else {
+					TorServiceUtils.startOrbot(EditAccountActivity.this);
+				}
+				return;
+			}
 			if (!mInitMode && passwordChangedInMagicCreateMode()) {
 				gotoChangePassword(password);
 				return;
@@ -258,7 +264,6 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				updateSaveButton();
 				updateAccountInformation(true);
 			}
-
 		}
 	};
 	private final OnClickListener mCancelButtonClickListener = new OnClickListener() {
@@ -484,6 +489,14 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				URL url = connection != null && mAccount.getStatus() == Account.State.REGISTRATION_WEB ? connection.getRedirectionUrl() : null;
 				if (url != null && this.binding.accountRegisterNew.isChecked()) {
 					this.mSaveButton.setText(R.string.open_website);
+				} else if (mUseTor) {
+					if (!TorServiceUtils.isOrbotInstalled(this)) {
+						this.mSaveButton.setText(R.string.download_orbot);
+					} else if (!TorServiceUtils.isOrbotStarted()) {
+						this.mSaveButton.setText(R.string.start_orbot);
+					} else {
+						this.mSaveButton.setText(R.string.next);
+					}
 				} else {
 					this.mSaveButton.setText(R.string.next);
 				}

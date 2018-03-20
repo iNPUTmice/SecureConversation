@@ -38,6 +38,7 @@ import android.app.FragmentTransaction;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.databinding.DataBindingUtil;
 import android.net.Uri;
@@ -72,6 +73,7 @@ import eu.siacs.conversations.ui.service.EmojiService;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.utils.ExceptionHelper;
+import eu.siacs.conversations.utils.TorServiceUtils;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 
 import static eu.siacs.conversations.ui.ConversationFragment.REQUEST_DECRYPT_PGP;
@@ -84,6 +86,13 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 	public static final String EXTRA_TEXT = "text";
 	public static final String EXTRA_NICK = "nick";
 	public static final String EXTRA_IS_PRIVATE_MESSAGE = "pm";
+
+	public static final String START_ORBOT_PREF_TITLE = "start_orbot";
+ 	public static final String START_ORBOT_PREF_LAST_TIME="time_dialog_last_shown";
+ 	public static final String DOWNLOAD_ORBOT_PREF_TITLE = "download_orbot";
+ 	public static final String DOWNLOAD_ORBOT_PREF_LAST_TIME="download_dialog_last_shown";
+ 	private static final String ORBOT_DIALOG_TAG="DIALOG_ORBOT";
+	private static final int TIME_SINCE_PREV_DIALOG = 15;
 
 	public static final int REQUEST_OPEN_MESSAGE = 0x9876;
 	public static final int REQUEST_PLAY_PAUSE = 0x5432;
@@ -114,6 +123,72 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 		for (@IdRes int id : FRAGMENT_ID_NOTIFICATION_ORDER) {
 			refreshFragment(id);
 		}
+		checkOrbotStatus();
+	}
+
+	private boolean isUseTor() {
+		SharedPreferences preferences = getPreferences();
+		return Config.FORCE_ORBOT || preferences.getBoolean("use_tor", false);
+	}
+
+	private void checkOrbotStatus() {
+		if (isUseTor()) {
+			if (!TorServiceUtils.isOrbotInstalled(this)) {
+				showDialogIfNecessary(DOWNLOAD_ORBOT_PREF_TITLE, DOWNLOAD_ORBOT_PREF_LAST_TIME, false);
+			} else {
+				if (!TorServiceUtils.isOrbotStarted()) {
+					showDialogIfNecessary(START_ORBOT_PREF_TITLE, START_ORBOT_PREF_LAST_TIME, true);
+				}
+			}
+		}
+	}
+
+	private void showDialogIfNecessary(String prefTitle, String prefLastTimeName, boolean isStartOrbot) {
+		SharedPreferences prefs = getSharedPreferences(prefTitle, 0);
+		Long timeDialogLastShown = prefs.getLong(prefLastTimeName, 0);
+
+		if (System.currentTimeMillis() >= timeDialogLastShown +
+					 secondsToMilliseconds(TIME_SINCE_PREV_DIALOG)) {
+			timeDialogLastShown = System.currentTimeMillis();
+			SharedPreferences.Editor editor = prefs.edit();
+			editor.putLong(prefLastTimeName, timeDialogLastShown);
+			editor.apply();
+			if (!isStartOrbot) {
+				if (!mActivityPaused) {
+					showDownloadOrbotDialog(true);
+				}
+			} else {
+				if (!mActivityPaused) {
+					showStartOrbotDialog(true);
+				}
+			}
+		}
+	}
+
+	private static int secondsToMilliseconds(int seconds) {
+		return seconds * 1000;
+	}
+
+	private void showDownloadOrbotDialog(Boolean cancelable) {
+		DownloadOrbotDialog downloadOrbotDialog = DownloadOrbotDialog.newInstance(cancelable);
+		FragmentTransaction ft = getFragmentManager().beginTransaction();
+		Fragment prev = getFragmentManager().findFragmentByTag(ORBOT_DIALOG_TAG);
+		if (prev != null) {
+			ft.remove(prev);
+		}
+		ft.addToBackStack(null);
+		downloadOrbotDialog.show(ft, ORBOT_DIALOG_TAG);
+	}
+
+	private void showStartOrbotDialog(Boolean cancelable) {
+		StartOrbotDialog startOrbotDialog = StartOrbotDialog.newInstance(cancelable);
+		FragmentTransaction ft = getFragmentManager().beginTransaction();
+		Fragment prev = getFragmentManager().findFragmentByTag(ORBOT_DIALOG_TAG);
+		if (prev != null) {
+			ft.remove(prev);
+		}
+		ft.addToBackStack(null);
+		startOrbotDialog.show(ft, ORBOT_DIALOG_TAG);
 	}
 
 	@Override
@@ -492,6 +567,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 	public void onResume() {
 		super.onResume();
 		this.mActivityPaused = false;
+		checkOrbotStatus();
 	}
 
 	private void initializeFragments() {
