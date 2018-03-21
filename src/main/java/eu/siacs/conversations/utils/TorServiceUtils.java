@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.URLEncoder;
 import java.util.StringTokenizer;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -108,5 +109,17 @@ public class TorServiceUtils {
         Intent launchIntent = new Intent(URI_ORBOT);
         launchIntent.setAction(ACTION_START_TOR);
         context.startActivity(launchIntent);
+    }
+
+    public static void downloadOrbot(Activity activity, int requestCode) {
+        Uri uri = Uri.parse(ORBOT_PLAYSTORE_URI);
+        Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+        activity.startActivityForResult(intent, requestCode);
+    }
+
+    public static void startOrbot(Activity activity, int requestCode) {
+        Intent launchIntent = new Intent(URI_ORBOT);
+        launchIntent.setAction(ACTION_START_TOR);
+        activity.startActivityForResult(launchIntent, requestCode);
     }
 }

@@ -81,6 +81,8 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
 	private static final int REQUEST_DATA_SAVER = 0xf244;
 	private static final int REQUEST_CHANGE_STATUS = 0xee11;
+	private static final int REQUEST_DOWNLOAD_ORBOT = 0xee12;
+	private static final int REQUEST_START_ORBOT = 0xee13;
 	private TextInputLayout mAccountJidLayout;
 	private EditText mPassword;
 	private TextInputLayout mPasswordLayout;
@@ -127,9 +129,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
 			if (mInitMode && mUseTor && (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this) || !TorServiceUtils.isOrbotStarted())) {
 				if (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this)) {
-					TorServiceUtils.downloadOrbot(EditAccountActivity.this);
+					TorServiceUtils.downloadOrbot(EditAccountActivity.this, REQUEST_DOWNLOAD_ORBOT);
 				} else {
-					TorServiceUtils.startOrbot(EditAccountActivity.this);
+					TorServiceUtils.startOrbot(EditAccountActivity.this, REQUEST_START_ORBOT);
 				}
 				return;
 			}
@@ -432,6 +434,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			} else {
 				Log.d(Config.LOGTAG,"pgp result not ok");
 			}
+		}
+		if (requestCode == REQUEST_DOWNLOAD_ORBOT || requestCode == REQUEST_START_ORBOT) {
+			updateSaveButton();
 		}
 	}
 
