@@ -4,14 +4,18 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URLEncoder;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.util.Log;
+
+import eu.siacs.conversations.entities.Account;
 
 public class TorServiceUtils {
 
@@ -94,9 +98,17 @@ public class TorServiceUtils {
         return installed;
     }
 
-    public static boolean isOrbotStarted() {
-        int procId = TorServiceUtils.findOrbotProcessId();
-        return (procId != -1);
+    public static boolean isOrbotStarted(Account account) {
+        return !(account != null && account.getStatus() == Account.State.TOR_NOT_AVAILABLE);
+    }
+
+    public static boolean isOrbotStarted(List<Account> accountList) {
+        for (Account account : accountList) {
+            if (!isOrbotStarted(account)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public static void downloadOrbot(Context context) {
@@ -114,7 +126,11 @@ public class TorServiceUtils {
     public static void downloadOrbot(Activity activity, int requestCode) {
         Uri uri = Uri.parse(ORBOT_PLAYSTORE_URI);
         Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-        activity.startActivityForResult(intent, requestCode);
+        try {
+            activity.startActivityForResult(intent, requestCode);
+        } catch(ActivityNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void startOrbot(Activity activity, int requestCode) {

@@ -136,7 +136,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 			if (!TorServiceUtils.isOrbotInstalled(this)) {
 				showDialogIfNecessary(DOWNLOAD_ORBOT_PREF_TITLE, DOWNLOAD_ORBOT_PREF_LAST_TIME, false);
 			} else {
-				if (!TorServiceUtils.isOrbotStarted()) {
+				if (xmppConnectionService != null && !TorServiceUtils.isOrbotStarted(xmppConnectionService.getAccounts())) {
 					showDialogIfNecessary(START_ORBOT_PREF_TITLE, START_ORBOT_PREF_LAST_TIME, true);
 				}
 			}

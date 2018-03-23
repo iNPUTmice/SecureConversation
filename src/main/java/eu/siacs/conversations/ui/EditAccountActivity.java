@@ -127,7 +127,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			final String password = mPassword.getText().toString();
 			final boolean wasDisabled = mAccount != null && mAccount.getStatus() == Account.State.DISABLED;
 
-			if (mInitMode && mUseTor && (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this) || !TorServiceUtils.isOrbotStarted())) {
+			if (mInitMode && mUseTor && (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this) || !(TorServiceUtils.isOrbotStarted(mAccount)))) {
 				if (!TorServiceUtils.isOrbotInstalled(EditAccountActivity.this)) {
 					TorServiceUtils.downloadOrbot(EditAccountActivity.this, REQUEST_DOWNLOAD_ORBOT);
 				} else {
@@ -436,7 +436,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 			}
 		}
 		if (requestCode == REQUEST_DOWNLOAD_ORBOT || requestCode == REQUEST_START_ORBOT) {
-			updateSaveButton();
+			if (mAccount != null) {
+				xmppConnectionService.updateAccount(mAccount);
+			}
 		}
 	}
 
@@ -497,7 +499,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				} else if (mUseTor) {
 					if (!TorServiceUtils.isOrbotInstalled(this)) {
 						this.mSaveButton.setText(R.string.download_orbot);
-					} else if (!TorServiceUtils.isOrbotStarted()) {
+					} else if (!TorServiceUtils.isOrbotStarted(mAccount)) {
 						this.mSaveButton.setText(R.string.start_orbot);
 					} else {
 						this.mSaveButton.setText(R.string.next);
@@ -1109,6 +1111,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 					errorLayout = this.mAccountJidLayout;
 				}
 				errorLayout.setError(getString(this.mAccount.getStatus().getReadableId()));
+
 				if (init || !accountInfoEdited()) {
 					errorLayout.requestFocus();
 				}
