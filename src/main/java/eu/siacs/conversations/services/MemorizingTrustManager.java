@@ -709,24 +709,22 @@ public class MemorizingTrustManager {
 		MTMDecision choice = new MTMDecision();
 		final int myId = createDecisionId(choice);
 
-		masterHandler.post(new Runnable() {
-			public void run() {
-				Intent ni = new Intent(master, MemorizingActivity.class);
-				ni.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				ni.setData(Uri.parse(MemorizingTrustManager.class.getName() + "/" + myId));
-				ni.putExtra(DECISION_INTENT_ID, myId);
-				ni.putExtra(DECISION_INTENT_CERT, message);
-				ni.putExtra(DECISION_TITLE_ID, titleId);
+		masterHandler.post(() -> {
+            Intent ni = new Intent(master, MemorizingActivity.class);
+            ni.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            ni.setData(Uri.parse(MemorizingTrustManager.class.getName() + "/" + myId));
+            ni.putExtra(DECISION_INTENT_ID, myId);
+            ni.putExtra(DECISION_INTENT_CERT, message);
+            ni.putExtra(DECISION_TITLE_ID, titleId);
 
-				// we try to directly start the activity and fall back to
-				// making a notification
-				try {
-					getUI().startActivity(ni);
-				} catch (Exception e) {
-					LOGGER.log(Level.FINE, "startActivity(MemorizingActivity)", e);
-				}
-			}
-		});
+            // we try to directly start the activity and fall back to
+            // making a notification
+            try {
+                getUI().startActivity(ni);
+            } catch (Exception e) {
+                LOGGER.log(Level.FINE, "startActivity(MemorizingActivity)", e);
+            }
+        });
 
 		LOGGER.log(Level.FINE, "openDecisions: " + openDecisions + ", waiting on " + myId);
 		try {

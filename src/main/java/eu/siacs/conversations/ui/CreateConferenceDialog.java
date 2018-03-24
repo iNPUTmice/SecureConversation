@@ -46,12 +46,7 @@ public class CreateConferenceDialog extends DialogFragment {
         ArrayList<String> mActivatedAccounts = getArguments().getStringArrayList(ACCOUNTS_LIST_KEY);
         StartConversationActivity.populateAccountSpinner(getActivity(), mActivatedAccounts, binding.account);
         builder.setView(binding.getRoot());
-        builder.setPositiveButton(R.string.choose_participants, new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                mListener.onCreateDialogPositiveClick(binding.account, binding.subject.getText().toString());
-            }
-        });
+        builder.setPositiveButton(R.string.choose_participants, (dialog, which) -> mListener.onCreateDialogPositiveClick(binding.account, binding.subject.getText().toString()));
         builder.setNegativeButton(R.string.cancel, null);
         return builder.create();
     }

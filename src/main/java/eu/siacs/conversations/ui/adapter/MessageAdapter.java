@@ -807,13 +807,7 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 				}
 			} else {
 				displayInfoMessage(viewHolder, activity.getString(R.string.install_openkeychain), darkBackground);
-				viewHolder.message_box.setOnClickListener(new OnClickListener() {
-
-					@Override
-					public void onClick(View v) {
-						activity.showInstallPgpDialog();
-					}
-				});
+				viewHolder.message_box.setOnClickListener(v -> activity.showInstallPgpDialog());
 			}
 		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 			displayDecryptionFailed(viewHolder, darkBackground);

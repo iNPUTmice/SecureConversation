@@ -43,16 +43,13 @@ public class JingleInbandTransport extends JingleTransport {
 
 	private OnFileTransmissionStatusChanged onFileTransmissionStatusChanged;
 
-	private OnIqPacketReceived onAckReceived = new OnIqPacketReceived() {
-		@Override
-		public void onIqPacketReceived(Account account, IqPacket packet) {
-			if (connected && packet.getType() == IqPacket.TYPE.RESULT) {
-				if (remainingSize > 0) {
-					sendNextBlock();
-				}
-			}
-		}
-	};
+	private OnIqPacketReceived onAckReceived = (account, packet) -> {
+        if (connected && packet.getType() == IqPacket.TYPE.RESULT) {
+            if (remainingSize > 0) {
+                sendNextBlock();
+            }
+        }
+    };
 
 	public JingleInbandTransport(final JingleConnection connection, final String sid, final int blocksize) {
 		this.connection = connection;
@@ -79,18 +76,13 @@ public class JingleInbandTransport extends JingleTransport {
 		open.setAttribute("block-size", Integer.toString(this.blockSize));
 		this.connected = true;
 		this.account.getXmppConnection().sendIqPacket(iq,
-				new OnIqPacketReceived() {
-
-					@Override
-					public void onIqPacketReceived(Account account,
-							IqPacket packet) {
-						if (packet.getType() != IqPacket.TYPE.RESULT) {
-							callback.failed();
-						} else {
-							callback.established();
-						}
-					}
-				});
+				(account, packet) -> {
+                    if (packet.getType() != IqPacket.TYPE.RESULT) {
+                        callback.failed();
+                    } else {
+                        callback.established();
+                    }
+                });
 	}
 
 	@Override

@@ -178,19 +178,16 @@ public final class CameraManager {
         }
     }
 
-    private static final Comparator<Camera.Size> numPixelComparator = new Comparator<Camera.Size>() {
-        @Override
-        public int compare(final Camera.Size size1, final Camera.Size size2) {
-            final int pixels1 = size1.height * size1.width;
-            final int pixels2 = size2.height * size2.width;
+    private static final Comparator<Camera.Size> numPixelComparator = (size1, size2) -> {
+        final int pixels1 = size1.height * size1.width;
+        final int pixels2 = size2.height * size2.width;
 
-            if (pixels1 < pixels2)
-                return 1;
-            else if (pixels1 > pixels2)
-                return -1;
-            else
-                return 0;
-        }
+        if (pixels1 < pixels2)
+            return 1;
+        else if (pixels1 > pixels2)
+            return -1;
+        else
+            return 0;
     };
 
     private static Camera.Size findBestPreviewSizeValue(final Camera.Parameters parameters, int width, int height) {

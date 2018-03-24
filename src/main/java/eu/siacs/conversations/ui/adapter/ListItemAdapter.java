@@ -36,16 +36,13 @@ public class ListItemAdapter extends ArrayAdapter<ListItem> {
 	protected XmppActivity activity;
 	protected boolean showDynamicTags = false;
 	private OnTagClickedListener mOnTagClickedListener = null;
-	private View.OnClickListener onTagTvClick = new View.OnClickListener() {
-		@Override
-		public void onClick(View view) {
-			if (view instanceof TextView && mOnTagClickedListener != null) {
-				TextView tv = (TextView) view;
-				final String tag = tv.getText().toString();
-				mOnTagClickedListener.onTagClicked(tag);
-			}
-		}
-	};
+	private View.OnClickListener onTagTvClick = view -> {
+        if (view instanceof TextView && mOnTagClickedListener != null) {
+            TextView tv = (TextView) view;
+            final String tag = tv.getText().toString();
+            mOnTagClickedListener.onTagClicked(tag);
+        }
+    };
 
 	public ListItemAdapter(XmppActivity activity, List<ListItem> objects) {
 		super(activity, 0, objects);

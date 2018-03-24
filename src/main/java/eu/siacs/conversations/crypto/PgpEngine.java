@@ -256,23 +256,19 @@ public class PgpEngine {
 		Intent params = new Intent();
 		params.setAction(OpenPgpApi.ACTION_GET_KEY);
 		params.putExtra(OpenPgpApi.EXTRA_KEY_ID, contact.getPgpKeyId());
-		api.executeApiAsync(params, null, null, new IOpenPgpCallback() {
-
-			@Override
-			public void onReturn(Intent result) {
-				switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
-					case OpenPgpApi.RESULT_CODE_SUCCESS:
-						callback.success(contact);
-						return;
-					case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
-						callback.userInputRequried(result.getParcelableExtra(OpenPgpApi.RESULT_INTENT), contact);
-						return;
-					case OpenPgpApi.RESULT_CODE_ERROR:
-						logError(contact.getAccount(), result.getParcelableExtra(OpenPgpApi.RESULT_ERROR));
-						callback.error(R.string.openpgp_error, contact);
-				}
-			}
-		});
+		api.executeApiAsync(params, null, null, result -> {
+            switch (result.getIntExtra(OpenPgpApi.RESULT_CODE, 0)) {
+                case OpenPgpApi.RESULT_CODE_SUCCESS:
+                    callback.success(contact);
+                    return;
+                case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
+                    callback.userInputRequried(result.getParcelableExtra(OpenPgpApi.RESULT_INTENT), contact);
+                    return;
+                case OpenPgpApi.RESULT_CODE_ERROR:
+                    logError(contact.getAccount(), result.getParcelableExtra(OpenPgpApi.RESULT_ERROR));
+                    callback.error(R.string.openpgp_error, contact);
+            }
+        });
 	}
 
 	public PendingIntent getIntentForKey(long pgpKeyId) {

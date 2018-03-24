@@ -706,40 +706,37 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	}
 
 	public Iterable<Message> getMessagesIterable(final Conversation conversation) {
-		return new Iterable<Message>() {
-			@Override
-			public Iterator<Message> iterator() {
-				class MessageIterator implements Iterator<Message> {
-					SQLiteDatabase db = getReadableDatabase();
-					String[] selectionArgs = {conversation.getUuid()};
-					Cursor cursor = db.query(Message.TABLENAME, null, Message.CONVERSATION
-							+ "=?", selectionArgs, null, null, Message.TIME_SENT
-							+ " ASC", null);
+		return () -> {
+            class MessageIterator implements Iterator<Message> {
+                SQLiteDatabase db = getReadableDatabase();
+                String[] selectionArgs = {conversation.getUuid()};
+                Cursor cursor = db.query(Message.TABLENAME, null, Message.CONVERSATION
+                        + "=?", selectionArgs, null, null, Message.TIME_SENT
+                        + " ASC", null);
 
-					public MessageIterator() {
-						cursor.moveToFirst();
-					}
+                public MessageIterator() {
+                    cursor.moveToFirst();
+                }
 
-					@Override
-					public boolean hasNext() {
-						return !cursor.isAfterLast();
-					}
+                @Override
+                public boolean hasNext() {
+                    return !cursor.isAfterLast();
+                }
 
-					@Override
-					public Message next() {
-						Message message = Message.fromCursor(cursor, conversation);
-						cursor.moveToNext();
-						return message;
-					}
+                @Override
+                public Message next() {
+                    Message message = Message.fromCursor(cursor, conversation);
+                    cursor.moveToNext();
+                    return message;
+                }
 
-					@Override
-					public void remove() {
-						throw new UnsupportedOperationException();
-					}
-				}
-				return new MessageIterator();
-			}
-		};
+                @Override
+                public void remove() {
+                    throw new UnsupportedOperationException();
+                }
+            }
+            return new MessageIterator();
+        };
 	}
 
 	public Conversation findConversation(final Account account, final Jid contactJid) {

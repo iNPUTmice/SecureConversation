@@ -48,27 +48,23 @@ public final class BlockContactDialog {
 			spannable.setSpan(new TypefaceSpan("monospace"),start,start + value.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
 		}
 		message.setText(spannable);
-		builder.setPositiveButton(isBlocked ? R.string.unblock : R.string.block, new DialogInterface.OnClickListener() {
-
-			@Override
-			public void onClick(final DialogInterface dialog, final int which) {
-				if (isBlocked) {
-					xmppActivity.xmppConnectionService.sendUnblockRequest(blockable);
-				} else {
-					boolean toastShown = false;
-					if (xmppActivity.xmppConnectionService.sendBlockRequest(blockable, report.isChecked())) {
-						Toast.makeText(xmppActivity,R.string.corresponding_conversations_closed,Toast.LENGTH_SHORT).show();
-						toastShown = true;
-					}
-					if (xmppActivity instanceof ContactDetailsActivity) {
-						if (!toastShown) {
-							Toast.makeText(xmppActivity,R.string.contact_blocked_past_tense,Toast.LENGTH_SHORT).show();
-						}
-						xmppActivity.finish();
-					}
-				}
-			}
-		});
+		builder.setPositiveButton(isBlocked ? R.string.unblock : R.string.block, (dialog, which) -> {
+            if (isBlocked) {
+                xmppActivity.xmppConnectionService.sendUnblockRequest(blockable);
+            } else {
+                boolean toastShown = false;
+                if (xmppActivity.xmppConnectionService.sendBlockRequest(blockable, report.isChecked())) {
+                    Toast.makeText(xmppActivity,R.string.corresponding_conversations_closed,Toast.LENGTH_SHORT).show();
+                    toastShown = true;
+                }
+                if (xmppActivity instanceof ContactDetailsActivity) {
+                    if (!toastShown) {
+                        Toast.makeText(xmppActivity,R.string.contact_blocked_past_tense,Toast.LENGTH_SHORT).show();
+                    }
+                    xmppActivity.finish();
+                }
+            }
+        });
 		builder.create().show();
 	}
 }

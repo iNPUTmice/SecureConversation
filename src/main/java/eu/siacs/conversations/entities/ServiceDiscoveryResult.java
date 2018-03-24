@@ -276,22 +276,12 @@ public class ServiceDiscoveryResult {
 			s.append(feature + "<");
 		}
 
-		Collections.sort(forms, new Comparator<Data>() {
-			@Override
-			public int compare(Data lhs, Data rhs) {
-				return lhs.getFormType().compareTo(rhs.getFormType());
-			}
-		});
+		Collections.sort(forms, (lhs, rhs) -> lhs.getFormType().compareTo(rhs.getFormType()));
 
 		for(Data form : forms) {
 			s.append(form.getFormType() + "<");
 			List<Field> fields = form.getFields();
-			Collections.sort(fields, new Comparator<Field>() {
-				@Override
-				public int compare(Field lhs, Field rhs) {
-					return lhs.getFieldName().compareTo(rhs.getFieldName());
-				}
-			});
+			Collections.sort(fields, (lhs, rhs) -> lhs.getFieldName().compareTo(rhs.getFieldName()));
 			for(Field field : fields) {
 				s.append(field.getFieldName()+"<");
 				List<String> values = field.getValues();

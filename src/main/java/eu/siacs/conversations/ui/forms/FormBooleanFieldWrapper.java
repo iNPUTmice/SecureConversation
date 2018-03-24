@@ -17,13 +17,10 @@ public class FormBooleanFieldWrapper extends FormFieldWrapper {
 	protected FormBooleanFieldWrapper(Context context, Field field) {
 		super(context, field);
 		checkBox = (CheckBox) view.findViewById(R.id.field);
-		checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-				checkBox.setError(null);
-				invokeOnFormFieldValuesEdited();
-			}
-		});
+		checkBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            checkBox.setError(null);
+            invokeOnFormFieldValuesEdited();
+        });
 	}
 
 	@Override

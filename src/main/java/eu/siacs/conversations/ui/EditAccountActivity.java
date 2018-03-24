@@ -259,14 +259,10 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 
 		}
 	};
-	private final OnClickListener mCancelButtonClickListener = new OnClickListener() {
-
-		@Override
-		public void onClick(final View v) {
-			deleteAccountAndReturnIfNecessary();
-			finish();
-		}
-	};
+	private final OnClickListener mCancelButtonClickListener = v -> {
+        deleteAccountAndReturnIfNecessary();
+        finish();
+    };
 	private Toast mFetchingMamPrefsToast;
 	private String mSavedInstanceAccount;
 	private boolean mSavedInstanceInit = false;
@@ -575,12 +571,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		if (savedInstanceState != null && savedInstanceState.getBoolean("showMoreTable")) {
 			changeMoreTableVisibility(true);
 		}
-		final OnCheckedChangeListener OnCheckedShowConfirmPassword = new OnCheckedChangeListener() {
-			@Override
-			public void onCheckedChanged(final CompoundButton buttonView, final boolean isChecked) {
-				updateSaveButton();
-			}
-		};
+		final OnCheckedChangeListener OnCheckedShowConfirmPassword = (buttonView, isChecked) -> updateSaveButton();
 		this.binding.accountRegisterNew.setOnCheckedChangeListener(OnCheckedShowConfirmPassword);
 		if (Config.DISALLOW_REGISTRATION_IN_UI) {
 			this.binding.accountRegisterNew.setVisibility(View.GONE);
