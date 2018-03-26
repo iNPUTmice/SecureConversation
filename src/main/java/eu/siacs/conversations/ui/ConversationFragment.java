@@ -128,14 +128,16 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	public static final String STATE_CONVERSATION_UUID = ConversationFragment.class.getName() + ".uuid";
 	public static final String STATE_SCROLL_POSITION = ConversationFragment.class.getName() + ".scroll_position";
 	public static final String STATE_PHOTO_URI = ConversationFragment.class.getName() + ".take_photo_uri";
-
+	private static final String STATE_LAST_MESSAGE_UUID = "state_last_message_uuid";
 
 	final protected List<Message> messageList = new ArrayList<>();
+	private String lastMessageUuid = null;
 	private final PendingItem<ActivityResult> postponedActivityResult = new PendingItem<>();
 	private final PendingItem<String> pendingConversationsUuid = new PendingItem<>();
 	private final PendingItem<Bundle> pendingExtras = new PendingItem<>();
 	private final PendingItem<Uri> pendingTakePhotoUri = new PendingItem<>();
 	private final PendingItem<ScrollState> pendingScrollState = new PendingItem<>();
+	private final PendingItem<String> pendingLastMessageUuid = new PendingItem<>();
 	private final PendingItem<Message> pendingMessage = new PendingItem<>();
 	public Uri mPendingEditorContent = null;
 	protected MessageAdapter messageListAdapter;
@@ -188,8 +190,21 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
 		@Override
 		public void onScrollStateChanged(AbsListView view, int scrollState) {
-			// TODO Auto-generated method stub
-
+			if (binding.messagesView.getLastVisiblePosition() < binding.messagesView.getCount() - 5) {
+				binding.scrollToBottomButton.setEnabled(true);
+				binding.scrollToBottomButton.setVisibility(View.VISIBLE);
+				if (lastMessageUuid == null) {
+					lastMessageUuid = conversation.getLatestMessage().getUuid();
+				}
+				if (conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) > 0) {
+					binding.unreadCountCustomView.setVisibility(View.VISIBLE);
+				}
+			} else {
+				lastMessageUuid = null;
+				binding.scrollToBottomButton.setEnabled(false);
+				binding.scrollToBottomButton.setVisibility(View.GONE);
+				binding.unreadCountCustomView.setVisibility(View.GONE);
+			}
 		}
 
 		@Override
@@ -362,6 +377,19 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			return false;
 		}
 	};
+	private OnClickListener mScrollButtonListener = new OnClickListener() {
+
+ 		@Override
+ 		public void onClick(View v) {
+			binding.messagesView.setSelection(binding.messagesView.getCount() - 1);
+			binding.messagesView.post(new Runnable() {
+				@Override
+ 				public void run() {
+					mOnScrollListener.onScrollStateChanged(binding.messagesView, 0);
+				}
+ 			});
+		}
+ 	};
 	private OnClickListener mSendButtonListener = new OnClickListener() {
 
 		@Override
@@ -869,6 +897,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
 		binding.textSendButton.setOnClickListener(this.mSendButtonListener);
 
+		binding.scrollToBottomButton.setOnClickListener(this.mScrollButtonListener);
 		binding.messagesView.setOnScrollListener(mOnScrollListener);
 		binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
 		messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
@@ -1691,6 +1720,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		super.onSaveInstanceState(outState);
 		if (conversation != null) {
 			outState.putString(STATE_CONVERSATION_UUID, conversation.getUuid());
+			outState.putString(STATE_LAST_MESSAGE_UUID, lastMessageUuid);
 			final Uri uri = pendingTakePhotoUri.peek();
 			if (uri != null) {
 				outState.putString(STATE_PHOTO_URI, uri.toString());
@@ -1709,6 +1739,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			return;
 		}
 		String uuid = savedInstanceState.getString(STATE_CONVERSATION_UUID);
+		pendingLastMessageUuid.push(savedInstanceState.getString(STATE_LAST_MESSAGE_UUID, null));
 		if (uuid != null) {
 			this.pendingConversationsUuid.push(uuid);
 			String takePhotoUri = savedInstanceState.getString(STATE_PHOTO_URI);
@@ -1819,6 +1850,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		this.binding.textinput.setKeyboardListener(this);
 		messageListAdapter.updatePreferences();
 		refresh(false);
+		updateUnreadMessagesCount();
 		this.conversation.messagesLoaded.set(true);
 
 		Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
@@ -1843,6 +1875,17 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		//TODO if we only do this when this fragment is running on main it won't *bing* in tablet layout which might be unnecessary since we can *see* it
 		activity.xmppConnectionService.getNotificationService().setOpenConversation(this.conversation);
 		return true;
+	}
+
+	private void updateUnreadMessagesCount() {
+		lastMessageUuid = null;
+		hideUnreadMessagesCount();
+	}
+
+	private void hideUnreadMessagesCount() {
+		binding.scrollToBottomButton.setEnabled(false);
+		binding.scrollToBottomButton.setVisibility(View.GONE);
+		binding.unreadCountCustomView.setVisibility(View.GONE);
 	}
 
 	private void setSelection(int pos) {
@@ -2001,6 +2044,10 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				conversation.populateWithMessages(this.messageList);
 				updateSnackBar(conversation);
 				updateStatusMessages();
+				if (conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid) != 0) {
+					binding.unreadCountCustomView.setVisibility(View.VISIBLE);
+					binding.unreadCountCustomView.setUnreadCount(conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid));
+				}
 				this.messageListAdapter.notifyDataSetChanged();
 				updateChatMsgHint();
 				if (notifyConversationRead && activity != null) {
@@ -2029,6 +2076,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			new Handler().post(() -> {
 				int size = messageList.size();
 				this.binding.messagesView.setSelection(size - 1);
+				binding.messagesView.post(() -> mOnScrollListener.onScrollStateChanged(binding.messagesView, 0));
 			});
 		}
 	}
@@ -2472,6 +2520,16 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			ScrollState scrollState = pendingScrollState.pop();
 			if (scrollState != null) {
 				setScrollPosition(scrollState);
+			}
+			String lastMessageUuid = pendingLastMessageUuid.pop();
+			if (lastMessageUuid != null) {
+				this.lastMessageUuid = lastMessageUuid;
+				binding.unreadCountCustomView.setUnreadCount(conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid));
+				binding.messagesView.post(new Runnable() {
+					public void run() {
+						mOnScrollListener.onScrollStateChanged(binding.messagesView, 0);
+					}
+				});
 			}
 		}
 		ActivityResult activityResult = postponedActivityResult.pop();
