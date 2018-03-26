@@ -205,6 +205,11 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 				}
 			}
 
+			if (Config.HOST_LOCK != null) {
+				hostname = Config.HOST_LOCK;
+				numericPort = Config.PORT_LOCK;
+			}
+
 			if (jid.getLocal() == null) {
 				if (mUsernameMode) {
 					mAccountJidLayout.setError(getString(R.string.invalid_username));
@@ -674,7 +679,7 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
 		}
 		SharedPreferences preferences = getPreferences();
 		mUseTor = Config.FORCE_ORBOT || preferences.getBoolean("use_tor", false);
-		this.mShowOptions = mUseTor || preferences.getBoolean("show_connection_options", false);
+		this.mShowOptions = (mUseTor || preferences.getBoolean("show_connection_options", false)) && (Config.HOST_LOCK == null);
 		this.binding.namePort.setVisibility(mShowOptions ? View.VISIBLE : View.GONE);
 	}
 

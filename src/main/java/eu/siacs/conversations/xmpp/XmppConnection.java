@@ -278,7 +278,7 @@ public class XmppConnection implements Runnable {
 				} catch (Exception e) {
 					throw new IOException(e.getMessage());
 				}
-			} else if (extended && !account.getHostname().isEmpty()) {
+			} else if ((extended && !account.getHostname().isEmpty()) || (Config.HOST_LOCK != null) ) {
 
 				this.verifiedHostname = account.getHostname();
 
