@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
+import eu.siacs.conversations.crypto.OmemoSetting;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
@@ -592,12 +593,15 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	}
 
 	public int getNextEncryption() {
+		if (!Config.supportOmemo() && !Config.supportOpenPgp()) {
+			return Message.ENCRYPTION_NONE;
+		}
+		if (OmemoSetting.isAlways()) {
+			return suitableForOmemoByDefault(this) ? Message.ENCRYPTION_AXOLOTL : Message.ENCRYPTION_NONE;
+		}
 		final int defaultEncryption;
-		AxolotlService axolotlService = account.getAxolotlService();
-		if (contactJid.asBareJid().equals(Config.BUG_REPORTS)) {
-			defaultEncryption = Message.ENCRYPTION_NONE;
-		} else if (axolotlService != null && axolotlService.isConversationAxolotlCapable(this)) {
-			defaultEncryption = Message.ENCRYPTION_AXOLOTL;
+		if (suitableForOmemoByDefault(this)) {
+			defaultEncryption = OmemoSetting.getEncryption();
 		} else {
 			defaultEncryption = Message.ENCRYPTION_NONE;
 		}
@@ -607,6 +611,19 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		} else {
 			return encryption;
 		}
+	}
+
+	private static boolean suitableForOmemoByDefault(final Conversation conversation) {
+		if (conversation.getJid().asBareJid().equals(Config.BUG_REPORTS)) {
+			return false;
+		}
+		final String contact = conversation.getJid().getDomain();
+		final String account = conversation.getAccount().getServer();
+		if (Config.OMEMO_EXCEPTIONS.CONTACT_DOMAINS.contains(contact) || Config.OMEMO_EXCEPTIONS.ACCOUNT_DOMAINS.contains(account)) {
+			return false;
+		}
+		final AxolotlService axolotlService = conversation.getAccount().getAxolotlService();
+		return axolotlService != null && axolotlService.isConversationAxolotlCapable(conversation);
 	}
 
 	public void setNextEncryption(int encryption) {
