@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<layout xmlns:android="http://schemas.android.com/apk/res/android">
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <RelativeLayout
         xmlns:tools="http://schemas.android.com/tools"
@@ -27,16 +28,25 @@
             android:id="@+id/textsend"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentLeft="true"
+            android:layout_above="@+id/emoticonLayout"
             android:background="?attr/color_background_primary">
+
+            <ImageButton
+                android:id="@+id/insertEmoticonButton"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_centerVertical="true"
+                android:background="?attr/color_background_primary"
+                android:src="@drawable/ic_insert_emoticon"
+                android:contentDescription="@string/insert_emoticons"
+               />
 
             <eu.siacs.conversations.ui.widget.EditMessage
                 android:id="@+id/textinput"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentLeft="true"
                 android:layout_toLeftOf="@+id/textSendButton"
+                android:layout_toRightOf="@id/insertEmoticonButton"
                 android:background="?attr/color_background_primary"
                 android:ems="10"
                 android:imeOptions="flagNoExtractUi|actionSend"
@@ -62,7 +72,36 @@
                 android:contentDescription="@string/send_message"
                 android:src="?attr/ic_send_text_offline"/>
         </RelativeLayout>
+        <eu.siacs.conversations.ui.widget.KeyboardMeasurementLayout
+            android:id="@id/emoticonLayout"
+            android:layout_alignParentBottom="true"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:initHeight="320dp"
+            >
+            <android.support.v4.view.ViewPager
+                android:id="@+id/viewPager"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_above="@+id/tabLayout"
+                android:background="@color/white"></android.support.v4.view.ViewPager>
 
+            <android.support.design.widget.TabLayout
+                android:id="@+id/tabLayout"
+                android:layout_width="match_parent"
+                android:layout_height="32dp"
+                android:layout_alignParentBottom="true"
+                android:elevation="2dp"
+                android:minHeight="0dp"
+                android:background="?attr/color_background_primary"
+                android:padding="0dp"
+                app:tabBackground="?attr/backgroundColor"
+                app:tabIndicatorColor="?attr/colorPrimary"
+                app:tabIndicatorHeight="2dp"
+                app:tabMode="scrollable"
+                app:tabPadding="4dp">
+            </android.support.design.widget.TabLayout>
+        </eu.siacs.conversations.ui.widget.KeyboardMeasurementLayout>
         <RelativeLayout
             android:id="@+id/snackbar"
             android:layout_width="fill_parent"

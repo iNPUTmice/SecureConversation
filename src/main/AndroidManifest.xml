@@ -117,7 +117,8 @@
             android:launchMode="singleTask"/>
         <activity
             android:name=".ui.SettingsActivity"
-            android:label="@string/title_activity_settings" />
+            android:label="@string/title_activity_settings"
+            android:windowSoftInputMode="stateHidden" />
         <activity
             android:name=".ui.ChooseContactActivity"
             android:label="@string/title_activity_choose_contact" />
@@ -130,7 +131,8 @@
         <activity
             android:name=".ui.ManageAccountActivity"
             android:label="@string/title_activity_manage_accounts"
-            android:launchMode="singleTask" />
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="stateHidden" />
         <activity
             android:name=".ui.ShareViaAccountActivity"
             android:label="@string/title_activity_share_via_account"

@@ -30,6 +30,7 @@
 package eu.siacs.conversations.ui.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.TypedArray;
 import android.preference.PreferenceManager;
@@ -174,9 +175,9 @@ public class SendButtonTool {
 		return getThemeResource(activity, R.attr.ic_send_text_offline, R.drawable.ic_send_text_offline);
 	}
 
-	private static int getThemeResource(Activity activity, int r_attr_name, int r_drawable_def) {
+	public static int getThemeResource(Context context, int r_attr_name, int r_drawable_def) {
 		int[] attrs = {r_attr_name};
-		TypedArray ta = activity.getTheme().obtainStyledAttributes(attrs);
+		TypedArray ta = context.getTheme().obtainStyledAttributes(attrs);
 
 		int res = ta.getResourceId(0, r_drawable_def);
 		ta.recycle();

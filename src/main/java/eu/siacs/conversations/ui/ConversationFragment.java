@@ -3,17 +3,6 @@ package eu.siacs.conversations.ui;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.databinding.DataBindingUtil;
-import android.net.Uri;
-import android.os.Build;
-import android.preference.PreferenceManager;
-import android.provider.MediaStore;
-import android.support.annotation.IdRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.support.v7.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -21,11 +10,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.databinding.DataBindingUtil;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.support.annotation.IdRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
+import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -39,6 +39,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.ViewParent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
@@ -46,6 +47,7 @@ import android.widget.AbsListView.OnScrollListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.CheckBox;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView.OnEditorActionListener;
@@ -81,6 +83,8 @@ import eu.siacs.conversations.http.HttpDownloadConnection;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.ui.adapter.EmoticonAdapter;
+import eu.siacs.conversations.ui.adapter.EmoticonsPagerAdapter;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.AttachmentTool;
@@ -92,6 +96,7 @@ import eu.siacs.conversations.ui.util.ScrollState;
 import eu.siacs.conversations.ui.util.SendButtonAction;
 import eu.siacs.conversations.ui.util.SendButtonTool;
 import eu.siacs.conversations.ui.widget.EditMessage;
+import eu.siacs.conversations.utils.Emojis;
 import eu.siacs.conversations.utils.MessageUtils;
 import eu.siacs.conversations.utils.NickValidityChecker;
 import eu.siacs.conversations.utils.StylingHelper;
@@ -398,6 +403,62 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			}
 		}
 	};
+
+	private OnClickListener mTextInputListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (binding.emoticonLayout.isShown()) {
+				lockRootHeight();
+				binding.emoticonLayout.hide();
+				unlockRootHeight();
+			}
+		}
+	};
+
+	private void unlockRootHeight() {
+		new Handler().postDelayed(() -> {
+            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) binding.getRoot().getLayoutParams();
+            params.height = -1;
+            binding.getRoot().requestLayout();
+        },500);
+	}
+
+	@NonNull
+	private void lockRootHeight() {
+		ViewGroup.LayoutParams params =  binding.getRoot().getLayoutParams();
+		ViewParent parent = binding.getRoot().getParent();
+		int rootHeight = ((View) parent).getHeight();
+		params.height = rootHeight -binding.emoticonLayout.getKeyboardHeight();
+		binding.getRoot().requestLayout();
+	}
+
+	private OnClickListener mInsertEmoticonListener = new OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (binding.emoticonLayout.isKeyboardActive()) {
+				hideSoftKeyboard(getActivity());
+				binding.emoticonLayout.showNotRequest();
+				SystemClock.sleep(200);
+			}else {
+				if(binding.emoticonLayout.isShown()){
+					binding.emoticonLayout.hide();
+				}else {
+					binding.emoticonLayout.show();
+				}
+			}
+		}
+	};
+
+	private EmoticonAdapter.OnEmoticonClickListener
+			onEmoticonClickListener = new EmoticonAdapter.OnEmoticonClickListener() {
+		@Override
+		public void onEmoticonClick(String emoji) {
+			int start = binding.textinput.getSelectionStart();
+			Editable editable = binding.textinput.getEditableText();
+			editable.insert(start,emoji);
+		}
+	};
+
 	private int completionIndex = 0;
 	private int lastCompletionLength = 0;
 	private String incomplete;
@@ -866,7 +927,17 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		binding.textinput.setOnEditorActionListener(mEditorActionListener);
 		binding.textinput.setRichContentListener(new String[]{"image/*"}, mEditorContentListener);
 
-		binding.textSendButton.setOnClickListener(this.mSendButtonListener);
+		binding.textinput.setOnClickListener(mTextInputListener);
+		binding.textSendButton.setOnClickListener(mSendButtonListener);
+		binding.insertEmoticonButton.setOnClickListener(mInsertEmoticonListener);
+		binding.emoticonLayout.setIndicator(binding.insertEmoticonButton);
+		binding.viewPager.setAdapter(new EmoticonsPagerAdapter(onEmoticonClickListener));
+		binding.tabLayout.setupWithViewPager(binding.viewPager);
+		for (int i = 0; i < binding.tabLayout.getTabCount(); i++) {
+			int codePoint = Emojis.CATEGORY_ICON[i];
+			char[] chars = Character.toChars(codePoint);
+			binding.tabLayout.getTabAt(i).setText(String.valueOf(chars));
+		}
 
 		binding.messagesView.setOnScrollListener(mOnScrollListener);
 		binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
@@ -938,8 +1009,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		});
 		messageListAdapter.setOnQuoteListener(this::quoteText);
 		binding.messagesView.setAdapter(messageListAdapter);
-
 		registerForContextMenu(binding.messagesView);
+
+		new Handler().postDelayed(() -> {
+			InputMethodManager imm = (InputMethodManager) activity.getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.showSoftInput(binding.textinput, InputMethodManager.SHOW_FORCED);
+		}, 300);
 
 		return binding.getRoot();
 	}

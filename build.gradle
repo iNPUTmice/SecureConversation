@@ -120,7 +120,7 @@ android {
 
 
 
-    if(new File("signing.properties").exists()) {
+    if (new File("signing.properties").exists()) {
         Properties props = new Properties()
         props.load(new FileInputStream(file("signing.properties")))
 

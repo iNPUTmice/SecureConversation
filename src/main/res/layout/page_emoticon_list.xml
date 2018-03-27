@@ -1,0 +1,7 @@
+<layout xmlns:android="http://schemas.android.com/apk/res/android">
+   <android.support.v7.widget.RecyclerView
+       android:id="@+id/recyclerView"
+       android:background="?attr/color_background_secondary"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content" />
+</layout>
