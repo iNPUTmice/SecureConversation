@@ -51,6 +51,7 @@ import java.util.Locale;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -137,7 +138,11 @@ public class FileBackend {
 		if (path == null) {
 			path = message.getUuid();
 		}
-		final DownloadableFile file = getFileForPath(path, message.getMimeType());
+		String contactPath = message.getConversation().getJid().asBareJid() + "/" + path;
+		if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
+			contactPath = "muc/" + contactPath;
+		}
+		final DownloadableFile file = getFileForPath(contactPath, message.getMimeType());
 		if (encrypted) {
 			return new DownloadableFile(getConversationsDirectory("Files") + file.getName() + ".pgp");
 		} else {
