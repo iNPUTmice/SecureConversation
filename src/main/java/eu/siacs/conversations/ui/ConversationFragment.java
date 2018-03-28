@@ -1,19 +1,10 @@
 package eu.siacs.conversations.ui;
 
 import android.Manifest;
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.databinding.DataBindingUtil;
-import android.net.Uri;
-import android.os.Build;
-import android.preference.PreferenceManager;
-import android.provider.MediaStore;
-import android.support.annotation.IdRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.StringRes;
-import android.support.v7.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
 import android.content.ActivityNotFoundException;
@@ -21,11 +12,22 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.databinding.DataBindingUtil;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
+import android.provider.MediaStore;
+import android.support.annotation.IdRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
+import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -943,6 +945,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		registerForContextMenu(binding.messagesView);
 
 		return binding.getRoot();
+	}
+
+	@Override
+	public Animator onCreateAnimator(int transit, boolean enter, int nextAnim) {
+		int animator = enter ? R.animator.fade_right_in : R.animator.fade_right_out;
+		return AnimatorInflater.loadAnimator(getActivity(), animator);
 	}
 
 	private void quoteText(String text) {

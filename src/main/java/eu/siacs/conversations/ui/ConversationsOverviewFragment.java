@@ -29,6 +29,8 @@
 
 package eu.siacs.conversations.ui;
 
+import android.animation.Animator;
+import android.animation.AnimatorInflater;
 import android.app.Activity;
 import android.app.Fragment;
 import android.databinding.DataBindingUtil;
@@ -184,6 +186,12 @@ public class ConversationsOverviewFragment extends XmppFragment implements Enhan
 	public void onResume() {
 		super.onResume();
 		Log.d(Config.LOGTAG, "ConversationsOverviewFragment.onResume()");
+	}
+
+	@Override
+	public Animator onCreateAnimator(int transit, boolean enter, int nextAnim) {
+		int animator = enter ? R.animator.fade_left_in : R.animator.fade_left_out;
+		return AnimatorInflater.loadAnimator(getActivity(), animator);
 	}
 
 	@Override
