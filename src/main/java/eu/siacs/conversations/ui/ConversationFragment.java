@@ -1816,6 +1816,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			this.reInitRequiredOnStart = true;
 			pendingExtras.push(extras);
 		}
+		updateUnreadMessagesCount();
 	}
 
 	private void reInit(Conversation conversation) {
@@ -1850,9 +1851,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		this.binding.textinput.setKeyboardListener(this);
 		messageListAdapter.updatePreferences();
 		refresh(false);
-		updateUnreadMessagesCount();
 		this.conversation.messagesLoaded.set(true);
-
 		Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
 
 		if (hasExtras || scrolledToBottomAndNoPending) {
@@ -1883,9 +1882,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	}
 
 	private void hideUnreadMessagesCount() {
-		binding.scrollToBottomButton.setEnabled(false);
-		binding.scrollToBottomButton.setVisibility(View.GONE);
-		binding.unreadCountCustomView.setVisibility(View.GONE);
+		if (this.binding == null) {
+			return;
+		}
+		this.binding.scrollToBottomButton.setEnabled(false);
+		this.binding.scrollToBottomButton.setVisibility(View.GONE);
+		this.binding.unreadCountCustomView.setVisibility(View.GONE);
 	}
 
 	private void setSelection(int pos) {
