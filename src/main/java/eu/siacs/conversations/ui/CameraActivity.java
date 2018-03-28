@@ -12,12 +12,16 @@ import org.webrtc.Camera1Enumerator;
 import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
 import org.webrtc.MediaConstraints;
+import org.webrtc.NativeLibraryLoader;
+import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
+
+import java.lang.annotation.Native;
 
 public class CameraActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -30,12 +34,17 @@ public class CameraActivity extends AppCompatActivity {
         //Params are context, initAudio,initVideo and videoCodecHwAcceleration
         //PeerConnectionFactory.initializeAndroidGlobals(this, true, true, true);
         //PeerConnectionFactory.InitializationOptions(this, true, true, true);
-        PeerConnectionFactory.initializeAndroidGlobals(this, true, true, true);
 
         //Create a new PeerConnectionFactory instance.
-        PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
-        PeerConnectionFactory peerConnectionFactory = new PeerConnectionFactory(options);
-
+        //PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+        /*PeerConnectionFactory.initialize(PeerConnectionFactory.InitializationOptions
+                .builder(getBaseContext())
+                .createInitializationOptions());*/
+        PeerConnectionFactory.InitializationOptions.Builder builder = PeerConnectionFactory.InitializationOptions.builder(this);
+        builder.setEnableInternalTracer(true);
+        builder.setEnableVideoHwAcceleration(true);
+        PeerConnectionFactory.initialize(builder.createInitializationOptions());
+        PeerConnectionFactory peerConnectionFactory = PeerConnectionFactory.builder().createPeerConnectionFactory();
 
 
 

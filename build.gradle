@@ -58,14 +58,9 @@ dependencies {
     implementation "com.wefika:flowlayout:0.4.1"
     implementation 'net.ypresto.androidtranscoder:android-transcoder:0.2.0'
     implementation 'rocks.xmpp:xmpp-addr:0.8.0-SNAPSHOT'
-    compile(name:'libwebrtc', ext:'aar')
+    implementation 'org.webrtc:google-webrtc:1.0.+'
 }
 
-repositories {
-    flatDir {
-        dirs 'libs'
-    }
-}
 
 ext {
     travisBuild = System.getenv("TRAVIS") == "true"
@@ -115,7 +110,13 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled false
+                shrinkResources true
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            shrinkResources true
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
