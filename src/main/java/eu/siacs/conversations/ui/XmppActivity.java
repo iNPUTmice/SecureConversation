@@ -45,6 +45,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -731,6 +732,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 		builder.setView(view);
 		builder.setNegativeButton(R.string.cancel, null);
 		final AlertDialog dialog = builder.create();
+		dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
 		dialog.show();
 		View.OnClickListener clickListener = v -> {
 			String value = editor.getText().toString();
@@ -743,6 +745,10 @@ public abstract class XmppActivity extends AppCompatActivity {
 			}
 			dialog.dismiss();
 		};
+		dialog.setOnDismissListener((dialogInterface) -> {
+			InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+			imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+		});
 		dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(clickListener);
 	}
 
