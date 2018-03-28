@@ -917,7 +917,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 		int count = 0;
 		for (int i = messages.size() - 1; i >= 0; i--) {
-			if (Objects.equals(messages.get(i).getUuid(), uuid)) {
+			if (uuid.equals(messages.get(i).getUuid())) {
 				return count;
 			}
 			if (messages.get(i).getStatus() <= Message.STATUS_RECEIVED) {
@@ -926,7 +926,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 		return 0;
 	}
-		
+
 	public interface OnMessageFound {
 		void onMessageFound(final Message message);
 	}

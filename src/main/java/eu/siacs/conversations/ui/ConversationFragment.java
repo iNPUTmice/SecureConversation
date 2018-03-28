@@ -201,9 +201,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				}
 			} else {
 				lastMessageUuid = null;
-				binding.scrollToBottomButton.setEnabled(false);
-				binding.scrollToBottomButton.setVisibility(View.GONE);
-				binding.unreadCountCustomView.setVisibility(View.GONE);
+				hideUnreadMessagesCount();
 			}
 		}
 
