@@ -17,7 +17,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import eu.siacs.conversations.Config;
@@ -916,12 +915,15 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 			return  0;
 		}
 		int count = 0;
-		for (int i = messages.size() - 1; i >= 0; i--) {
-			if (uuid.equals(messages.get(i).getUuid())) {
-				return count;
-			}
-			if (messages.get(i).getStatus() <= Message.STATUS_RECEIVED) {
-				count = count + 1;
+		synchronized (this.messages) {
+			for (int i = messages.size() - 1; i >= 0; i--) {
+				final Message message = messages.get(i);
+				if (uuid.equals(message.getUuid())) {
+					return count;
+				}
+				if (message.getStatus() <= Message.STATUS_RECEIVED) {
+					++count;
+				}
 			}
 		}
 		return 0;

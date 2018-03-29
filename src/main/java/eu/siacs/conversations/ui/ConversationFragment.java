@@ -380,12 +380,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
  		@Override
  		public void onClick(View v) {
 			binding.messagesView.setSelection(binding.messagesView.getCount() - 1);
-			binding.messagesView.post(new Runnable() {
-				@Override
- 				public void run() {
-					mOnScrollListener.onScrollStateChanged(binding.messagesView, 0);
-				}
- 			});
+			binding.messagesView.post(() -> mOnScrollListener.onScrollStateChanged(binding.messagesView, 0));
 		}
  	};
 	private OnClickListener mSendButtonListener = new OnClickListener() {
@@ -2525,11 +2520,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			if (lastMessageUuid != null) {
 				this.lastMessageUuid = lastMessageUuid;
 				binding.unreadCountCustomView.setUnreadCount(conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid));
-				binding.messagesView.post(new Runnable() {
-					public void run() {
-						mOnScrollListener.onScrollStateChanged(binding.messagesView, 0);
-					}
-				});
+				binding.messagesView.post(() -> mOnScrollListener.onScrollStateChanged(binding.messagesView, 0));
 			}
 		}
 		ActivityResult activityResult = postponedActivityResult.pop();
