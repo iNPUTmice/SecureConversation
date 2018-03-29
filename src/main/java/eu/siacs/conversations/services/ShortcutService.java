@@ -4,9 +4,11 @@ import android.annotation.TargetApi;
 import android.content.Intent;
 import android.content.pm.ShortcutInfo;
 import android.content.pm.ShortcutManager;
+import android.graphics.Bitmap;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
 import android.os.Build;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -117,6 +119,23 @@ public class ShortcutService {
         intent.setAction(Intent.ACTION_VIEW);
         intent.setData(Uri.parse("xmpp:"+contact.getJid().asBareJid().toString()));
         intent.putExtra("account",contact.getAccount().getJid().asBareJid().toString());
+        return intent;
+    }
+
+    public Intent createShortcut(String accountJid, String contactJid) {
+        Account account = xmppConnectionService.findAccountByJid(Jid.of(accountJid));
+        Contact contact = account.getRoster().getContact(Jid.of(contactJid));
+        Bitmap icon = xmppConnectionService.getAvatarService().getRoundedShortcut(contact);
+        Intent intent = createShortcut(contact, icon);
+        return intent;
+    }
+
+    @NonNull
+    private Intent createShortcut(Contact contact, Bitmap icon) {
+        Intent intent = new Intent();
+        intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, contact.getDisplayName());
+        intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, icon);
+        intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, getShortcutIntent(contact));
         return intent;
     }
 
