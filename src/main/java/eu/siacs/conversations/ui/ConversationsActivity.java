@@ -92,7 +92,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
  	public static final String DOWNLOAD_ORBOT_PREF_TITLE = "download_orbot";
  	public static final String DOWNLOAD_ORBOT_PREF_LAST_TIME="download_dialog_last_shown";
  	private static final String ORBOT_DIALOG_TAG="DIALOG_ORBOT";
-	private static final int TIME_SINCE_PREV_DIALOG = 15;
+	private static final int TIME_SINCE_PREV_DIALOG = 25;
 
 	public static final int REQUEST_OPEN_MESSAGE = 0x9876;
 	public static final int REQUEST_PLAY_PAUSE = 0x5432;
