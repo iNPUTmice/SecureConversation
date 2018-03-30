@@ -2,6 +2,7 @@ package eu.siacs.conversations.services;
 
 import android.app.Notification;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -47,6 +48,7 @@ import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
 import eu.siacs.conversations.ui.TimePreference;
+import eu.siacs.conversations.ui.util.NotificationChannelHelper;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -267,15 +269,15 @@ public class NotificationService {
 			}
 			final Builder mBuilder;
 			if (notifications.size() == 1 && Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-				mBuilder = buildSingleConversations(notifications.values().iterator().next());
+				mBuilder = buildSingleConversations(notify, true, notifications.values().iterator().next());
 				modifyForSoundVibrationAndLight(mBuilder, notify, preferences);
 				notificationManager.notify(NOTIFICATION_ID, mBuilder.build());
 			} else {
-				mBuilder = buildMultipleConversation();
+				mBuilder = buildMultipleConversation(notify);
 				modifyForSoundVibrationAndLight(mBuilder, notify, preferences);
 				if (!summaryOnly) {
 					for (Map.Entry<String, ArrayList<Message>> entry : notifications.entrySet()) {
-						Builder singleBuilder = buildSingleConversations(entry.getValue());
+						Builder singleBuilder = buildSingleConversations(notify, false, entry.getValue());
 						singleBuilder.setGroup(CONVERSATIONS_GROUP);
 						setNotificationColor(singleBuilder);
 						notificationManager.notify(entry.getKey(), NOTIFICATION_ID, singleBuilder.build());
@@ -303,7 +305,7 @@ public class NotificationService {
 			}
 			Uri uri = Uri.parse(ringtone);
 			try {
-				mBuilder.setSound(fixRingtoneUri(uri));
+				mBuilder.setSound(fixRingtoneUri(mXmppConnectionService, uri));
 			} catch (SecurityException e) {
 				Log.d(Config.LOGTAG,"unable to use custom notification sound "+uri.toString());
 			}
@@ -319,17 +321,22 @@ public class NotificationService {
 		}
 	}
 
-	private Uri fixRingtoneUri(Uri uri) {
+	public static Uri fixRingtoneUri(Context context, Uri uri) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && "file".equals(uri.getScheme())) {
-			return FileBackend.getUriForFile(mXmppConnectionService,new File(uri.getPath()));
+			return FileBackend.getUriForFile(context, new File(uri.getPath()));
 		} else {
 			return uri;
 		}
 	}
 
-	private Builder buildMultipleConversation() {
-		final Builder mBuilder = new NotificationCompat.Builder(
-				mXmppConnectionService);
+	private Builder buildMultipleConversation(boolean notify) {
+		String channelId;
+		if (notify && !isQuietHours()) {
+			channelId = NotificationChannelHelper.getPreviousNotificationChannelId(mXmppConnectionService, false);
+		} else {
+			channelId = NotificationChannelHelper.getPreviousNotificationChannelId(mXmppConnectionService, true);
+		}
+		final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, channelId);
 		final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
 		style.setBigContentTitle(notifications.size()
 				+ " "
@@ -375,8 +382,16 @@ public class NotificationService {
 		return mBuilder;
 	}
 
-	private Builder buildSingleConversations(final ArrayList<Message> messages) {
-		final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+	private Builder buildSingleConversations(boolean notify, boolean summaryOnly, final ArrayList<Message> messages) {
+		String channelId;
+		if (!summaryOnly) {
+			channelId = NotificationChannelHelper.getPreviousNotificationChannelId(mXmppConnectionService, true);
+		} else if (notify && !isQuietHours()) {
+			channelId = NotificationChannelHelper.getPreviousNotificationChannelId(mXmppConnectionService, false);
+		} else {
+			channelId = NotificationChannelHelper.getPreviousNotificationChannelId(mXmppConnectionService, true);
+		}
+		final Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService, channelId);
 		if (messages.size() >= 1) {
 			final Conversation conversation = messages.get(0).getConversation();
 			final UnreadConversation.Builder mUnreadBuilder = new UnreadConversation.Builder(conversation.getName().toString());
@@ -740,7 +755,8 @@ public class NotificationService {
 	}
 
 	public Notification createForegroundNotification() {
-		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder
+				(mXmppConnectionService, NotificationChannelHelper.FOREGROUND_NOTIFICATION_CHANNEL_ID);
 
 		mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.conversations_foreground_service));
 		if (Config.SHOW_CONNECTED_ACCOUNTS) {
@@ -781,7 +797,8 @@ public class NotificationService {
 		if (mXmppConnectionService.keepForegroundService()) {
 			notificationManager.notify(FOREGROUND_NOTIFICATION_ID, createForegroundNotification());
 		}
-		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+		final NotificationCompat.Builder mBuilder = new NotificationCompat.Builder
+				(mXmppConnectionService, NotificationChannelHelper.UPDATE_ERROR_NOTIFICATION_CHANNEL_ID);
 		if (errors.size() == 0) {
 			notificationManager.cancel(ERROR_NOTIFICATION_ID);
 			return;
@@ -813,7 +830,8 @@ public class NotificationService {
 
 	public Notification updateFileAddingNotification(int current, Message message) {
 		final NotificationManagerCompat notificationManager = NotificationManagerCompat.from(mXmppConnectionService);
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(mXmppConnectionService);
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder
+				(mXmppConnectionService, NotificationChannelHelper.FILE_ADDING_NOTIFICATION_CHANNEL_ID);
 		mBuilder.setContentTitle(mXmppConnectionService.getString(R.string.transcoding_video));
 		mBuilder.setProgress(100, current, false);
 		mBuilder.setSmallIcon(R.drawable.ic_hourglass_empty_white_24dp);
