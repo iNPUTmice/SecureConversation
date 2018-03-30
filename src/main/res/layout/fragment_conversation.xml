@@ -45,7 +45,8 @@
             android:layout_alignEnd="@+id/scroll_to_bottom_button"
             android:elevation="8dp"
             android:visibility="gone"
-            app:backgroundColor="?attr/unread_count" />
+            app:backgroundColor="?attr/unread_count"
+            style="@style/TextAppearance.Conversations.Body1.Secondary"/>
 
         <RelativeLayout
             android:id="@+id/textsend"

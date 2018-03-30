@@ -13,6 +13,7 @@ import android.provider.MediaStore;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
@@ -1746,6 +1747,9 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	@Override
 	public void onStart() {
 		super.onStart();
+		XmppActivity activity = (XmppActivity) getActivity();
+		binding.scrollToBottomButton.setBackgroundTintList(ContextCompat.getColorStateList
+				(activity, activity.getThemeResource(R.attr.color_background_primary, R.color.white)));
 		if (this.reInitRequiredOnStart) {
 			final Bundle extras = pendingExtras.pop();
 			reInit(conversation, extras != null);
