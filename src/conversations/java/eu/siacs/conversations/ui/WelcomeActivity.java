@@ -83,6 +83,8 @@ public class WelcomeActivity extends XmppActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.welcome_menu, menu);
+        MenuItem qrCodeScanMenuItem = menu.findItem(R.id.action_scan_qr_code);
+        qrCodeScanMenuItem.setVisible(isCameraFeatureAvailable());
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -92,6 +94,9 @@ public class WelcomeActivity extends XmppActivity {
             if (hasStoragePermission(REQUEST_IMPORT_BACKUP)) {
                 startActivity(new Intent(this, ImportBackupActivity.class));
             }
+            return true;
+        } else if (item.getItemId() == R.id.action_scan_qr_code) {
+            UriHandlerActivity.scan(this);
             return true;
         }
         return super.onOptionsItemSelected(item);
