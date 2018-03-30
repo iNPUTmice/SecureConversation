@@ -1,60 +1,68 @@
 package eu.siacs.conversations.ui;
 
-import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.ActionBar;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 
-import eu.siacs.conversations.services.XmppConnectionService;
+import java.util.Collections;
 
-import static eu.siacs.conversations.ui.XmppActivity.EXTRA_ACCOUNT;
+import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Account;
+import eu.siacs.conversations.entities.Contact;
+import eu.siacs.conversations.entities.ListItem;
 
-public class ShortcutActivity extends AppCompatActivity implements ServiceConnection {
-
-
-    private static final int REQUEST_CODE_CHOOSE_CONTACT = 0xcafe;
-    private XmppConnectionService xmppConnectionService;
+public class ShortcutActivity extends AbstractSearchableListItemActivity{
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        Intent service = new Intent(this, XmppConnectionService.class);
-        startService(service);
-        bindService(service, this, BIND_AUTO_CREATE);
+    protected void refreshUiReal() {
+
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_CHOOSE_CONTACT && resultCode == RESULT_OK) {
-            String account = data.getStringExtra(EXTRA_ACCOUNT);
-            String contact = data.getStringExtra("contact");
-            Intent shortcut = xmppConnectionService.getShortcutService().createShortcut(account, contact);
-            setResult(RESULT_OK, shortcut);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getListView().setOnItemClickListener((parent, view, position, id) -> {
+            final InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(getSearchEditText().getWindowToken(), InputMethodManager.HIDE_IMPLICIT_ONLY);
+
+            ListItem listItem = getListItems().get(position);
+            Intent shortcut = xmppConnectionService.getShortcutService().createShortcut(((Contact) listItem));
+            setResult(RESULT_OK,shortcut);
             finish();
-        }else {
-            setResult(RESULT_CANCELED);
-            finish();
+        });
+        binding.fab.setVisibility(View.GONE);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        ActionBar bar = getSupportActionBar();
+        if(bar != null){
+            bar.setTitle(R.string.create_shortcut);
         }
     }
 
     @Override
-    public void onServiceConnected(ComponentName name, IBinder service) {
-        xmppConnectionService = ((XmppConnectionService.XmppConnectionBinder) service).getService();
-        Intent intent = new Intent(this, ChooseContactActivity.class);
-        startActivityForResult(intent, REQUEST_CODE_CHOOSE_CONTACT);
-    }
-
-    @Override
-    public void onServiceDisconnected(ComponentName name) {
-
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        unbindService(this);
+    protected void filterContacts(String needle) {
+        getListItems().clear();
+        if (xmppConnectionService == null) {
+            getListItemAdapter().notifyDataSetChanged();
+            return;
+        }
+        for (final Account account : xmppConnectionService.getAccounts()) {
+            if (account.getStatus() != Account.State.DISABLED) {
+                for (final Contact contact : account.getRoster().getContacts()) {
+                    if (contact.showInRoster()
+                            && contact.match(this, needle)) {
+                        getListItems().add(contact);
+                    }
+                }
+            }
+        }
+        Collections.sort(getListItems());
+        getListItemAdapter().notifyDataSetChanged();
     }
 }

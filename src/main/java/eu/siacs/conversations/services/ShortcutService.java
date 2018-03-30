@@ -122,16 +122,9 @@ public class ShortcutService {
         return intent;
     }
 
-    public Intent createShortcut(String accountJid, String contactJid) {
-        Account account = xmppConnectionService.findAccountByJid(Jid.of(accountJid));
-        Contact contact = account.getRoster().getContact(Jid.of(contactJid));
-        Bitmap icon = xmppConnectionService.getAvatarService().getRoundedShortcut(contact);
-        Intent intent = createShortcut(contact, icon);
-        return intent;
-    }
-
     @NonNull
-    private Intent createShortcut(Contact contact, Bitmap icon) {
+    public Intent createShortcut(Contact contact) {
+        Bitmap icon = xmppConnectionService.getAvatarService().getRoundedShortcut(contact);
         Intent intent = new Intent();
         intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, contact.getDisplayName());
         intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, icon);
