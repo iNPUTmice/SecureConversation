@@ -592,6 +592,10 @@ public class Account extends AbstractEntity {
 		return null;
 	}
 
+	public void removeAvatar() {
+		this.avatar = null;
+	}
+
 	public boolean setAvatar(final String filename) {
 		if (this.avatar != null && this.avatar.equals(filename)) {
 			return false;

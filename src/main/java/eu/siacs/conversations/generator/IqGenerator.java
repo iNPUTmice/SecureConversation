@@ -140,15 +140,17 @@ public class IqGenerator extends AbstractGenerator {
 
 	public IqPacket publishAvatarMetadata(final Avatar avatar) {
 		final Element item = new Element("item");
-		item.setAttribute("id", avatar.sha1sum);
 		final Element metadata = item
 			.addChild("metadata", "urn:xmpp:avatar:metadata");
-		final Element info = metadata.addChild("info");
-		info.setAttribute("bytes", avatar.size);
-		info.setAttribute("id", avatar.sha1sum);
-		info.setAttribute("height", avatar.height);
-		info.setAttribute("width", avatar.height);
-		info.setAttribute("type", avatar.type);
+		if (avatar != null) {
+			item.setAttribute("id", avatar.sha1sum);
+			final Element info = metadata.addChild("info");
+			info.setAttribute("bytes", avatar.size);
+			info.setAttribute("id", avatar.sha1sum);
+			info.setAttribute("height", avatar.height);
+			info.setAttribute("width", avatar.height);
+			info.setAttribute("type", avatar.type);
+		}
 		return publish("urn:xmpp:avatar:metadata", item);
 	}
 

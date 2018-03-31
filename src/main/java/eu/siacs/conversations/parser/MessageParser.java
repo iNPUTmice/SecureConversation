@@ -174,6 +174,26 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 				} else if (mXmppConnectionService.isDataSaverDisabled()) {
 					mXmppConnectionService.fetchAvatar(account, avatar);
 				}
+			} else if (Avatar.isAvatarDisableRequest(items)) {
+				if (account.getJid().asBareJid().equals(from)) {
+					if (account.getAvatar() != null) {
+						mXmppConnectionService.getFileBackend().delete(account.getAvatar());
+						account.removeAvatar();
+						mXmppConnectionService.databaseBackend.updateAccount(account);
+						mXmppConnectionService.getAvatarService().clear(account);
+						mXmppConnectionService.updateConversationUi();
+						mXmppConnectionService.updateAccountUi();
+					}
+				} else {
+					Contact contact = account.getRoster().getContact(from);
+					if (contact.getAvatar() != null) {
+						mXmppConnectionService.getFileBackend().delete(contact.getAvatar());
+						contact.removeAvatar();
+						mXmppConnectionService.getAvatarService().clear(contact);
+						mXmppConnectionService.updateConversationUi();
+						mXmppConnectionService.updateRosterUi();
+					}
+				}
 			}
 		} else if ("http://jabber.org/protocol/nick".equals(node)) {
 			final Element i = items.findChild("item");

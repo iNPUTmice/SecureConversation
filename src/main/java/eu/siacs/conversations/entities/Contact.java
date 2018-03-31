@@ -399,6 +399,10 @@ public class Contact implements ListItem, Blockable {
 				another.getDisplayName());
 	}
 
+	public void removeAvatar() {
+		this.avatar = null;
+	}
+
 	public String getServer() {
 		return getJid().getDomain();
 	}

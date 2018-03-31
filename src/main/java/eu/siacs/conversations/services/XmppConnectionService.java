@@ -2748,6 +2748,29 @@ public class XmppConnectionService extends Service {
 
 	}
 
+	public void removeAvatar(Account account, final String avatar, final UiCallback<String> callback) {
+		getFileBackend().delete(avatar);
+		final IqPacket packet = XmppConnectionService.this.mIqGenerator.publishAvatarMetadata(null);
+		sendIqPacket(account, packet, new OnIqPacketReceived() {
+			@Override
+			public void onIqPacketReceived(Account account, IqPacket result) {
+				if (result.getType() == IqPacket.TYPE.RESULT) {
+					account.removeAvatar();
+					getAvatarService().clear(account);
+					databaseBackend.updateAccount(account);
+					Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": disabled avatar");
+					if (callback != null) {
+						callback.success(avatar);
+					}
+				} else {
+					if (callback != null) {
+						callback.error(R.string.error_disable_avatar_server_reject, avatar);
+					}
+				}
+			}
+		});
+	}
+
 	public void publishAvatar(Account account, final Avatar avatar, final UiCallback<Avatar> callback) {
 		IqPacket packet = this.mIqGenerator.publishAvatar(avatar);
 		this.sendIqPacket(account, packet, new OnIqPacketReceived() {

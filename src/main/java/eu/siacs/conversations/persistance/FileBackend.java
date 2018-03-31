@@ -663,6 +663,20 @@ public class FileBackend {
 		return file.exists();
 	}
 
+	private boolean isAvatarCached(String avatar) {
+		File file = new File(getAvatarPath(avatar));
+		return file.exists();
+	}
+
+	public boolean delete(String avatar) {
+		File file;
+		if (isAvatarCached(avatar)) {
+			file = new File(getAvatarPath(avatar));
+			file.delete();
+		}
+		return true;
+	}
+
 	public boolean save(Avatar avatar) {
 		File file;
 		if (isAvatarCached(avatar)) {

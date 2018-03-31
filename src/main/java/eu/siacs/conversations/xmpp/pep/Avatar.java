@@ -72,6 +72,19 @@ public class Avatar {
 		return null;
 	}
 
+	public static boolean isAvatarDisableRequest(Element items) {
+		Element item = items.findChild("item");
+		if (item == null) {
+			return false;
+		}
+		Element metadata = item.findChild("metadata");
+		if (metadata == null) {
+			return false;
+		}
+		String primaryId = item.getAttribute("id");
+		return primaryId != null && metadata.getChildren().size() == 0;
+	}
+
 	@Override
 	public boolean equals(Object object) {
 		if (object != null && object instanceof Avatar) {

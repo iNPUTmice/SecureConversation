@@ -90,6 +90,33 @@ public class PublishProfilePictureActivity extends XmppActivity implements XmppC
 		}
 	};
 
+	private UiCallback<String> avatarDisable = new UiCallback<String>() {
+
+		@Override
+		public void success(String object) {
+			runOnUiThread(() -> {
+				Toast.makeText(PublishProfilePictureActivity.this,
+						R.string.avatar_has_been_disabled,
+						Toast.LENGTH_SHORT).show();
+				finish();
+			});
+		}
+
+		@Override
+		public void error(final int errorCode, String object) {
+			runOnUiThread(() -> {
+				hintOrWarning.setText(errorCode);
+				hintOrWarning.setTextColor(getWarningTextColor());
+				hintOrWarning.setVisibility(View.VISIBLE);
+			});
+
+		}
+
+		@Override
+		public void userInputRequried(PendingIntent pi, String object) {
+		}
+	};
+
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -154,6 +181,12 @@ public class PublishProfilePictureActivity extends XmppActivity implements XmppC
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.publish_avatar, menu);
+		final MenuItem removeImage = menu.findItem(R.id.action_remove_image);
+		if (this.account != null && this.account.getAvatar() != null) {
+			removeImage.setVisible(true);
+		} else {
+			removeImage.setVisible(false);
+		}
 		return super.onCreateOptionsMenu(menu);
 	}
 
@@ -164,10 +197,14 @@ public class PublishProfilePictureActivity extends XmppActivity implements XmppC
 				chooseAvatar(true);
 			}
 			return true;
+		} else if (item.getItemId() == R.id.action_remove_image) {
+			xmppConnectionService.removeAvatar(this.account, account.getAvatar(), avatarDisable);
+			return true;
 		} else {
 			return super.onOptionsItemSelected(item);
 		}
 	}
+
 
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, final Intent data) {
@@ -219,6 +256,7 @@ public class PublishProfilePictureActivity extends XmppActivity implements XmppC
 	protected void onBackendConnected() {
 		this.account = extractAccount(getIntent());
 		if (this.account != null) {
+			invalidateOptionsMenu();
 			reloadAvatar();
 		}
 	}
@@ -300,6 +338,7 @@ public class PublishProfilePictureActivity extends XmppActivity implements XmppC
 	public void refreshUiReal() {
 		if (this.account != null) {
 			reloadAvatar();
+			invalidateOptionsMenu();
 		}
 	}
 

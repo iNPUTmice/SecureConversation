@@ -247,6 +247,7 @@
 	<string name="touch_to_choose_picture">Touch avatar to select picture from gallery</string>
 	<string name="publishing">Publishing…</string>
 	<string name="error_publish_avatar_server_reject">The server rejected your publication</string>
+	<string name="error_disable_avatar_server_reject">The server rejected your request</string>
 	<string name="error_publish_avatar_converting">Something went wrong while converting your picture</string>
 	<string name="error_saving_avatar">Could not save avatar to disk</string>
 	<string name="or_long_press_for_default">(Or long press to bring back default)</string>
@@ -427,6 +428,7 @@
 	<string name="disable_foreground_service">Disable foreground service</string>
 	<string name="touch_to_open_conversations">Touch to open Conversations</string>
 	<string name="avatar_has_been_published">Avatar has been published!</string>
+	<string name="avatar_has_been_disabled">Avatar has been disabled!</string>
 	<string name="sending_x_file">Sending %s</string>
 	<string name="offering_x_file">Offering %s</string>
 	<string name="hide_offline">Hide offline</string>
@@ -552,6 +554,7 @@
 	<string name="send_corrected_message">Send corrected message</string>
 	<string name="no_keys_just_confirm">You already trust this contact. By selecting \'done\' you are just confirming that %s is part of this group chat.</string>
 	<string name="select_image_and_crop">Select image and crop</string>
+	<string name="remove_image">Remove Image</string>
 	<string name="this_account_is_disabled">You have disabled this account</string>
 	<string name="security_error_invalid_file_access">Security error: Invalid file access</string>
 	<string name="no_application_to_share_uri">No application found to share URI</string>

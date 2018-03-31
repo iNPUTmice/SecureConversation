@@ -6,4 +6,9 @@
         app:showAsAction="always"
         android:icon="@drawable/ic_crop_white_24dp"
         android:title="@string/select_image_and_crop"/>
+    <item
+        android:id="@+id/action_remove_image"
+        app:showAsAction="always"
+        android:icon="@drawable/ic_delete_white_24dp"
+        android:title="@string/remove_image"/>
 </menu>
