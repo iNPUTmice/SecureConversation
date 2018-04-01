@@ -290,6 +290,12 @@ public class NotificationService {
 
 
 	private void modifyForSoundVibrationAndLight(Builder mBuilder, boolean notify, SharedPreferences preferences) {
+		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			mBuilder.setCategory(Notification.CATEGORY_MESSAGE);
+		}
+		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			return;
+		}
 		final Resources resources = mXmppConnectionService.getResources();
 		final String ringtone = preferences.getString("notification_ringtone", resources.getString(R.string.notification_ringtone));
 		final boolean vibrate = preferences.getBoolean("vibrate_on_notification", resources.getBoolean(R.bool.vibrate_on_notification));
@@ -309,9 +315,6 @@ public class NotificationService {
 			} catch (SecurityException e) {
 				Log.d(Config.LOGTAG,"unable to use custom notification sound "+uri.toString());
 			}
-		}
-		if (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			mBuilder.setCategory(Notification.CATEGORY_MESSAGE);
 		}
 		mBuilder.setPriority(notify ? (headsup ? NotificationCompat.PRIORITY_HIGH : NotificationCompat.PRIORITY_DEFAULT) : NotificationCompat.PRIORITY_LOW);
 		setNotificationColor(mBuilder);
@@ -777,7 +780,9 @@ public class NotificationService {
 		}
 		mBuilder.setContentIntent(createOpenConversationsIntent());
 		mBuilder.setWhen(0);
-		mBuilder.setPriority(Config.SHOW_CONNECTED_ACCOUNTS ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_MIN);
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+			mBuilder.setPriority(Config.SHOW_CONNECTED_ACCOUNTS ? NotificationCompat.PRIORITY_DEFAULT : NotificationCompat.PRIORITY_MIN);
+		}
 		mBuilder.setSmallIcon(R.drawable.ic_link_white_24dp);
 		return mBuilder.build();
 	}
@@ -820,7 +825,9 @@ public class NotificationService {
 			mBuilder.setSmallIcon(R.drawable.ic_stat_alert_warning);
 		}
 		mBuilder.setLocalOnly(true);
-		mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+			mBuilder.setPriority(NotificationCompat.PRIORITY_LOW);
+		}
 		mBuilder.setContentIntent(PendingIntent.getActivity(mXmppConnectionService,
 				145,
 				new Intent(mXmppConnectionService,ManageAccountActivity.class),
