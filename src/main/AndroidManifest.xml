@@ -225,7 +225,8 @@
             android:exported="false"
             android:grantUriPermissions="true"/>
 
-        <activity android:name=".ui.ShortcutActivity">
+        <activity android:name=".ui.ShortcutActivity"
+            android:label="@string/contacts">
             <intent-filter>
                 <action android:name="android.intent.action.CREATE_SHORTCUT" />
             </intent-filter>
