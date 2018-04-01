@@ -1,12 +1,15 @@
 package eu.siacs.conversations.ui;
 
+import android.content.ContentValues;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.databinding.DataBindingUtil;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.provider.ContactsContract;
 import android.provider.ContactsContract.CommonDataKinds;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents;
@@ -25,6 +28,8 @@ import android.widget.Toast;
 
 import org.openintents.openpgp.util.OpenPgpUtils;
 
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import eu.siacs.conversations.Config;
@@ -114,6 +119,16 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 			intent.putExtra(Intents.Insert.IM_HANDLE, contact.getJid().toString());
 			intent.putExtra(Intents.Insert.IM_PROTOCOL,
 					CommonDataKinds.Im.PROTOCOL_JABBER);
+			if (contact.getAvatar() != null) {
+				ArrayList<ContentValues> data = new ArrayList<>();
+				Bitmap bitmap = avatarService().get(contact, getPixel(72));
+				ContentValues row = new ContentValues();
+				row.put(ContactsContract.Data.IS_SUPER_PRIMARY, 1);
+				row.put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE);
+				row.put(ContactsContract.CommonDataKinds.Photo.PHOTO, bitmapToByteArray(bitmap));
+				data.add(row);
+				intent.putParcelableArrayListExtra(Intents.Insert.DATA, data);
+			}
 			intent.putExtra("finishActivityOnSaveCompleted", true);
 			ContactDetailsActivity.this.startActivityForResult(intent, 0);
 		}
@@ -462,6 +477,12 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 				binding.tags.addView(tv);
 			}
 		}
+	}
+
+	private byte[] bitmapToByteArray(Bitmap bitmap) {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+		return stream.toByteArray();
 	}
 
 	public void onBackendConnected() {
