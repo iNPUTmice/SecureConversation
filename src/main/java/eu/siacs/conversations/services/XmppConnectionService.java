@@ -63,6 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
+import eu.siacs.conversations.crypto.OmemoSetting;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
@@ -606,7 +607,7 @@ public class XmppConnectionService extends Service {
 						}
 						try {
 							restoredFromDatabaseLatch.await();
-							sendReadMarker(c);
+							sendReadMarker(c, null);
 						} catch (InterruptedException e) {
 							Log.d(Config.LOGTAG, "unable to process notification read marker for conversation " + c.getName());
 						}
@@ -932,6 +933,7 @@ public class XmppConnectionService extends Service {
 	@SuppressLint("TrulyRandom")
 	@Override
 	public void onCreate() {
+		OmemoSetting.load(this);
 		ExceptionHelper.init(getApplicationContext());
 		PRNGFixes.apply();
 		Resolver.init(this);
@@ -1057,9 +1059,9 @@ public class XmppConnectionService extends Service {
 		int activeAccounts = 0;
 		for (final Account account : accounts) {
 			if (account.getStatus() != Account.State.DISABLED) {
+				databaseBackend.writeRoster(account.getRoster());
 				activeAccounts++;
 			}
-			databaseBackend.writeRoster(account.getRoster());
 			if (account.getXmppConnection() != null) {
 				new Thread(() -> disconnect(account, false)).start();
 			}
@@ -1611,6 +1613,17 @@ public class XmppConnectionService extends Service {
 				return false;
 			}
 		}
+	}
+
+	public boolean isConversationStillOpen(final Conversation conversation) {
+		synchronized (this.conversations) {
+			for (Conversation current : this.conversations) {
+				if (current == conversation) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	public Conversation findOrCreateConversation(Account account, Jid jid, boolean muc, final boolean async) {
@@ -2497,14 +2510,14 @@ public class XmppConnectionService extends Service {
 						}
 					}
 					Element form = query.findChild("x", Namespace.DATA);
-					if (form != null) {
-						conversation.getMucOptions().updateFormData(Data.parse(form));
+					Data data = form == null ? null : Data.parse(form);
+					if (conversation.getMucOptions().updateConfiguration(features, data)) {
+						Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": muc configuration changed for " + conversation.getJid().asBareJid());
+						updateConversation(conversation);
 					}
-					conversation.getMucOptions().updateFeatures(features);
 					if (callback != null) {
 						callback.onConferenceConfigurationFetched(conversation);
 					}
-					Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetched muc configuration for " + conversation.getJid().asBareJid() + " - " + features.toString());
 					updateConversationUi();
 				} else if (packet.getType() == IqPacket.TYPE.ERROR) {
 					if (callback != null) {
@@ -3103,9 +3116,11 @@ public class XmppConnectionService extends Service {
 
 
 	public void markMessage(Message message, int status, String errorMessage) {
-		if (status == Message.STATUS_SEND_FAILED
-				&& (message.getStatus() == Message.STATUS_SEND_RECEIVED || message
-				.getStatus() == Message.STATUS_SEND_DISPLAYED)) {
+		final int c = message.getStatus();
+		if (status == Message.STATUS_SEND_FAILED && (c == Message.STATUS_SEND_RECEIVED || c == Message.STATUS_SEND_DISPLAYED)) {
+			return;
+		}
+		if (status == Message.STATUS_SEND_RECEIVED && c == Message.STATUS_SEND_DISPLAYED) {
 			return;
 		}
 		message.setErrorMessage(errorMessage);
@@ -3249,15 +3264,19 @@ public class XmppConnectionService extends Service {
 		return null;
 	}
 
-	public boolean markRead(final Conversation conversation) {
-		return markRead(conversation, true);
+	public boolean markRead(final Conversation conversation, boolean dismiss) {
+		return markRead(conversation, null, dismiss).size() > 0;
 	}
 
-	public boolean markRead(final Conversation conversation, boolean clear) {
-		if (clear) {
+	public void markRead(final Conversation conversation) {
+		markRead(conversation, null, true);
+	}
+
+	public List<Message> markRead(final Conversation conversation, String upToUuid, boolean dismiss) {
+		if (dismiss) {
 			mNotificationService.clear(conversation);
 		}
-		final List<Message> readMessages = conversation.markRead();
+		final List<Message> readMessages = conversation.markRead(upToUuid);
 		if (readMessages.size() > 0) {
 			Runnable runnable = () -> {
 				for (Message message : readMessages) {
@@ -3266,9 +3285,9 @@ public class XmppConnectionService extends Service {
 			};
 			mDatabaseWriterExecutor.execute(runnable);
 			updateUnreadCountBadge();
-			return true;
+			return readMessages;
 		} else {
-			return false;
+			return readMessages;
 		}
 	}
 
@@ -3285,12 +3304,13 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
-	public void sendReadMarker(final Conversation conversation) {
+	public void sendReadMarker(final Conversation conversation, String upToUuid) {
 		final boolean isPrivateAndNonAnonymousMuc = conversation.getMode() == Conversation.MODE_MULTI && conversation.isPrivateAndNonAnonymous();
-		final Message markable = conversation.getLatestMarkableMessage(isPrivateAndNonAnonymousMuc);
-		if (this.markRead(conversation)) {
+		final List<Message> readMessages = this.markRead(conversation, upToUuid, true);
+		if (readMessages.size() > 0) {
 			updateConversationUi();
 		}
+		final Message markable = Conversation.getLatestMarkableMessage(readMessages, isPrivateAndNonAnonymousMuc);
 		if (confirmMessages()
 				&& markable != null
 				&& (markable.trusted() || isPrivateAndNonAnonymousMuc)
@@ -3357,10 +3377,7 @@ public class XmppConnectionService extends Service {
 		final Set<String> mucServers = new HashSet<>();
 		for (final Account account : accounts) {
 			if (account.getXmppConnection() != null) {
-				final String server = account.getXmppConnection().getMucServer();
-				if (server != null) {
-					mucServers.add(server);
-				}
+				mucServers.addAll(account.getXmppConnection().getMucServers());
 				for (Bookmark bookmark : account.getBookmarks()) {
 					final Jid jid = bookmark.getJid();
 					final String s = jid == null ? null : jid.getDomain();

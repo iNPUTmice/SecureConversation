@@ -27,10 +27,50 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package eu.siacs.conversations.ui.interfaces;
+package eu.siacs.conversations.crypto;
 
-import eu.siacs.conversations.entities.Conversation;
 
-public interface OnConversationRead {
-	void onConversationRead(Conversation conversation, String upToUuid);
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
+
+import eu.siacs.conversations.R;
+import eu.siacs.conversations.entities.Message;
+import eu.siacs.conversations.ui.SettingsActivity;
+
+public class OmemoSetting {
+
+	private static boolean always = false;
+	private static int encryption = Message.ENCRYPTION_AXOLOTL;
+
+	public static boolean isAlways() {
+		return always;
+	}
+
+	public static int getEncryption() {
+		return encryption;
+	}
+
+	public static void load(final Context context, final SharedPreferences sharedPreferences) {
+		final String value = sharedPreferences.getString(SettingsActivity.OMEMO_SETTING, context.getResources().getString(R.string.omemo_setting_default));
+		switch (value) {
+			case "always":
+				always = true;
+				encryption = Message.ENCRYPTION_AXOLOTL;
+				break;
+			case "default_off":
+				always = false;
+				encryption = Message.ENCRYPTION_NONE;
+				break;
+			default:
+				always = false;
+				encryption = Message.ENCRYPTION_AXOLOTL;
+				break;
+
+		}
+	}
+
+	public static void load(final Context context) {
+		load(context, PreferenceManager.getDefaultSharedPreferences(context));
+	}
 }

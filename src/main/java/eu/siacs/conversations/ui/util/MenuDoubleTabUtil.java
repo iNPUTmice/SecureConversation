@@ -27,10 +27,28 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package eu.siacs.conversations.ui.interfaces;
+package eu.siacs.conversations.ui.util;
 
-import eu.siacs.conversations.entities.Conversation;
+import android.os.SystemClock;
+import android.util.Log;
 
-public interface OnConversationRead {
-	void onConversationRead(Conversation conversation, String upToUuid);
+import eu.siacs.conversations.Config;
+
+public class MenuDoubleTabUtil {
+
+	private static final int TIMEOUT = 250;
+
+	private static long lastMenuOpenedTimestamp = 0L;
+
+	public static void recordMenuOpen() {
+		lastMenuOpenedTimestamp = SystemClock.elapsedRealtime();
+	}
+
+	public static boolean shouldIgnoreTap() {
+		boolean ignoreTab = lastMenuOpenedTimestamp + 250 > SystemClock.elapsedRealtime();
+		if (ignoreTab) {
+			Log.d(Config.LOGTAG,"ignoring tab");
+		}
+		return ignoreTab;
+	}
 }
