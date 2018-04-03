@@ -328,27 +328,13 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
 		double position = AudioPlayer.player.getCurrentPosition();
 		double duration = AudioPlayer.player.getDuration();
 		double progress = position / duration;
-		if (streamType == AudioManager.STREAM_VOICE_CALL &&
-				AudioPlayer.player.getAudioStreamType() != streamType) {
+		if (AudioPlayer.player.getAudioStreamType() != streamType) {
 			synchronized (AudioPlayer.LOCK) {
 				stopCurrent();
 				try {
 					ViewHolder currentViewHolder = getCurrentViewHolder();
 					if (currentViewHolder != null) {
-						play(currentViewHolder, currentlyPlayingMessage, true, progress);
-					}
-				} catch (Exception e) {
-					Log.w(Config.LOGTAG, e);
-				}
-			}
-		} else if (streamType == AudioManager.STREAM_MUSIC &&
-				AudioPlayer.player.getAudioStreamType() != streamType) {
-			synchronized (AudioPlayer.LOCK) {
-				stopCurrent();
-				try {
-					ViewHolder currentViewHolder = getCurrentViewHolder();
-					if (currentViewHolder != null) {
-						play(currentViewHolder, currentlyPlayingMessage, false, progress);
+						play(currentViewHolder, currentlyPlayingMessage, streamType == AudioManager.STREAM_VOICE_CALL, progress);
 					}
 				} catch (Exception e) {
 					Log.w(Config.LOGTAG, e);
