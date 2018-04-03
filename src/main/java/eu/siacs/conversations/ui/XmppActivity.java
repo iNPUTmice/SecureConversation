@@ -42,6 +42,7 @@ import android.support.v7.app.AppCompatDelegate;
 import android.text.InputType;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -700,18 +701,19 @@ public abstract class XmppActivity extends AppCompatActivity {
 		builder.create().show();
 	}
 
-	protected void quickEdit(String previousValue, int hint, OnValueEdited callback) {
-		quickEdit(previousValue, callback, hint, false);
+	protected void quickEdit(String previousValue, int hint, View windowView, OnValueEdited callback) {
+		quickEdit(previousValue, callback, hint, windowView, false);
 	}
 
-	protected void quickPasswordEdit(String previousValue, OnValueEdited callback) {
-		quickEdit(previousValue, callback, R.string.password, true);
+	protected void quickPasswordEdit(String previousValue, View windowView, OnValueEdited callback) {
+		quickEdit(previousValue, callback, R.string.password, windowView, true);
 	}
 
 	@SuppressLint("InflateParams")
 	private void quickEdit(final String previousValue,
 	                       final OnValueEdited callback,
 	                       final int hint,
+	                       final View windowView,
 	                       boolean password) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		View view = getLayoutInflater().inflate(R.layout.quickedit, null);
@@ -747,9 +749,21 @@ public abstract class XmppActivity extends AppCompatActivity {
 		};
 		dialog.setOnDismissListener((dialogInterface) -> {
 			InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-			imm.toggleSoftInput(InputMethodManager.HIDE_IMPLICIT_ONLY, 0);
+			if (isSoftKeyboardVisible(windowView)) {
+				imm.toggleSoftInput(InputMethodManager.SHOW_IMPLICIT, 0);
+			}
 		});
 		dialog.getButton(DialogInterface.BUTTON_POSITIVE).setOnClickListener(clickListener);
+	}
+
+	private boolean isSoftKeyboardVisible(View windowView) {
+		int heightDiff = windowView.getRootView().getHeight() - windowView.getHeight();
+		return heightDiff > dpToPx(Config.SOFT_KEYBOARD_HEIGHT);
+	}
+
+	private float dpToPx(float valueInDp) {
+		DisplayMetrics metrics = getResources().getDisplayMetrics();
+		return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInDp, metrics);
 	}
 
 	protected boolean hasStoragePermission(int requestCode) {
