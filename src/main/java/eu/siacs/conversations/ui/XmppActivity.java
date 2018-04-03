@@ -372,6 +372,9 @@ public abstract class XmppActivity extends AppCompatActivity {
 			case R.id.action_show_qr_code:
 				showQrCode();
 				break;
+			case R.id.action_camera:
+				startActivity(new Intent(this,CameraActivity.class));
+				break;
 		}
 		return super.onOptionsItemSelected(item);
 	}

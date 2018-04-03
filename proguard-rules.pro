@@ -17,3 +17,5 @@
 -dontwarn org.bouncycastle.jce.provider.X509LDAPCertStoreSpi
 -dontwarn org.bouncycastle.cert.dane.**
 -dontwarn rocks.xmpp.addr.**
+#-dontwarn org.webrtc.voiceengine.WebRtcAudioTrack
+-keep class org.webrtc.** { *; }

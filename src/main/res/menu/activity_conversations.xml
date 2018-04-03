@@ -17,4 +17,11 @@
         android:title="@string/action_settings"
         app:showAsAction="never"/>
 
+    <item
+        android:id="@+id/action_camera"
+        android:orderInCategory="80"
+        android:title="@string/action_camera"
+        app:showAsAction="never"/>
+
+
 </menu>

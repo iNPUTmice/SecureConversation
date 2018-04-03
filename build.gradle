@@ -37,6 +37,7 @@ ext {
 
 dependencies {
     implementation project(':libs:EnhancedListView')
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     playstoreImplementation 'com.google.android.gms:play-services-gcm:11.8.0'
     implementation 'org.sufficientlysecure:openpgp-api:10.0'
     implementation 'com.soundcloud.android:android-crop:1.0.1@aar'
@@ -56,7 +57,9 @@ dependencies {
     implementation "com.wefika:flowlayout:0.4.1"
     implementation 'net.ypresto.androidtranscoder:android-transcoder:0.2.0'
     implementation 'rocks.xmpp:xmpp-addr:0.8.0-SNAPSHOT'
+    implementation 'org.webrtc:google-webrtc:1.0.+'
 }
+
 
 ext {
     travisBuild = System.getenv("TRAVIS") == "true"
@@ -106,9 +109,9 @@ android {
 
     buildTypes {
         release {
-            shrinkResources true
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+                shrinkResources true
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
         debug {
             shrinkResources true
@@ -119,7 +122,7 @@ android {
 
 
 
-    if(new File("signing.properties").exists()) {
+    if (new File("signing.properties").exists()) {
         Properties props = new Properties()
         props.load(new FileInputStream(file("signing.properties")))
 
