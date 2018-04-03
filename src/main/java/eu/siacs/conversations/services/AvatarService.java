@@ -112,7 +112,7 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 
 	private void drawIcon(Canvas canvas, Paint paint) {
 		BitmapFactory.Options opts = new BitmapFactory.Options();
-		opts.inSampleSize = 2;
+		opts.inSampleSize = 3;
 		Resources resources = mXmppConnectionService.getResources();
 		Bitmap icon = BitmapFactory.decodeResource(resources, R.drawable.ic_launcher, opts);
 		paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC_OVER));
