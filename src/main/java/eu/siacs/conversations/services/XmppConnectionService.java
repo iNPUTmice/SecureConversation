@@ -1531,6 +1531,7 @@ public class XmppConnectionService extends Service {
 		if (XmppConnectionService.this.getMessageArchiveService().queryInProgress(conversation, callback)) {
 			return;
 		} else if (timestamp == 0) {
+			callback.dismissRefreshLayout();
 			return;
 		}
 		Log.d(Config.LOGTAG, "load more messages for " + conversation.getName() + " prior to " + MessageGenerator.getTimestamp(timestamp));
@@ -1557,9 +1558,13 @@ public class XmppConnectionService extends Service {
 						callback.informUser(R.string.fetching_history_from_server);
 					} else {
 						callback.informUser(R.string.not_fetching_history_retention_period);
+						callback.dismissRefreshLayout();
 					}
-
+				} else {
+					callback.dismissRefreshLayout();
 				}
+			} else {
+				callback.dismissRefreshLayout();
 			}
 		};
 		mDatabaseReaderExecutor.execute(runnable);
@@ -3828,6 +3833,8 @@ public class XmppConnectionService extends Service {
 		void onMoreMessagesLoaded(int count, Conversation conversation);
 
 		void informUser(int r);
+
+		void dismissRefreshLayout();
 	}
 
 	public interface OnAccountPasswordChanged {

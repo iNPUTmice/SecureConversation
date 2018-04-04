@@ -178,7 +178,9 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
 				} else if (p.getType() == IqPacket.TYPE.RESULT && fin != null) {
 					processFin(query, fin);
 				} else if (p.getType() == IqPacket.TYPE.RESULT && query.isLegacy()) {
-					//do nothing
+					if (query.hasCallback()) {
+						query.callback.dismissRefreshLayout();
+					}
 				} else {
 					Log.d(Config.LOGTAG, a.getJid().asBareJid().toString() + ": error executing mam: " + p.toString());
 					finalizeQuery(query, true);
@@ -187,6 +189,9 @@ public class MessageArchiveService implements OnAdvancedStreamFeaturesLoaded {
 		} else {
 			synchronized (this.pendingQueries) {
 				this.pendingQueries.add(query);
+			}
+			if (query.hasCallback()) {
+				query.callback.dismissRefreshLayout();
 			}
 		}
 	}
