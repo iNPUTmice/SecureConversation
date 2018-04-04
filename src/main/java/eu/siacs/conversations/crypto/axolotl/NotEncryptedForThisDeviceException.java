@@ -27,10 +27,11 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package eu.siacs.conversations.ui.interfaces;
+package eu.siacs.conversations.crypto.axolotl;
 
-import eu.siacs.conversations.entities.Conversation;
 
-public interface OnConversationRead {
-	void onConversationRead(Conversation conversation, String upToUuid);
+public class NotEncryptedForThisDeviceException extends CryptoFailedException {
+	public NotEncryptedForThisDeviceException() {
+		super("Message was not encrypted for this device");
+	}
 }

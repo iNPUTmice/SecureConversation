@@ -242,10 +242,8 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 					Toast.makeText(this, R.string.device_does_not_support_battery_op, Toast.LENGTH_SHORT).show();
 				}
 			});
-			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-				builder.setOnDismissListener(dialog -> setNeverAskForBatteryOptimizationsAgain());
-			}
-			AlertDialog dialog = builder.create();
+			builder.setOnDismissListener(dialog -> setNeverAskForBatteryOptimizationsAgain());
+			final AlertDialog dialog = builder.create();
 			dialog.setCanceledOnTouchOutside(false);
 			dialog.show();
 		}
@@ -594,9 +592,9 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 	}
 
 	@Override
-	public void onConversationRead(Conversation conversation) {
+	public void onConversationRead(Conversation conversation, String upToUuid) {
 		if (!mActivityPaused && pendingViewIntent.peek() == null) {
-			xmppConnectionService.sendReadMarker(conversation);
+			xmppConnectionService.sendReadMarker(conversation, upToUuid);
 		} else {
 			Log.d(Config.LOGTAG, "ignoring read callback. mActivityPaused=" + Boolean.toString(mActivityPaused));
 		}

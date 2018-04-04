@@ -27,10 +27,30 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package eu.siacs.conversations.ui.interfaces;
+package eu.siacs.conversations.utils;
 
-import eu.siacs.conversations.entities.Conversation;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.preference.PreferenceManager;
 
-public interface OnConversationRead {
-	void onConversationRead(Conversation conversation, String upToUuid);
+import eu.siacs.conversations.R;
+import eu.siacs.conversations.ui.SettingsActivity;
+
+public class ThemeHelper {
+
+	public static int find(Context context) {
+		final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		final Resources resources = context.getResources();
+		final boolean dark = sharedPreferences.getString(SettingsActivity.THEME, resources.getString(R.string.theme)).equals("dark");
+		final String fontSize = sharedPreferences.getString("font_size", resources.getString(R.string.default_font_size));
+		switch (fontSize) {
+			case "medium":
+				return dark ? R.style.ConversationsTheme_Dark_Medium : R.style.ConversationsTheme_Medium;
+			case "large":
+				return dark ? R.style.ConversationsTheme_Dark_Large : R.style.ConversationsTheme_Large;
+			default:
+				return dark ? R.style.ConversationsTheme_Dark : R.style.ConversationsTheme;
+		}
+	}
 }
