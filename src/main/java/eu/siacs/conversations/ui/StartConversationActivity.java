@@ -225,7 +225,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 	}
 
 	private static boolean isViewIntent(final Intent i) {
-		return i != null && (Intent.ACTION_VIEW.equals(i.getAction()) || Intent.ACTION_SENDTO.equals(i.getAction()));
+		return i != null && (Intent.ACTION_VIEW.equals(i.getAction()) || Intent.ACTION_SENDTO.equals(i.getAction()) || i.hasExtra(WelcomeActivity.EXTRA_INVITE_URI));
 	}
 
 	protected void hideToast() {
@@ -316,8 +316,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		if (this.mTheme != theme) {
 			recreate();
 		} else {
-			Intent i = getIntent();
-			if (i == null || !i.hasExtra(WelcomeActivity.EXTRA_INVITE_URI)) {
+			if (pendingViewIntent.peek() == null) {
 				askForContactsPermissions();
 			}
 		}
@@ -572,6 +571,9 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 			return false;
 		}
 		switch (item.getItemId()) {
+			case android.R.id.home:
+				navigateBack();
+				return true;
 			case R.id.action_join_conference:
 				showJoinConferenceDialog(null);
 				return true;
@@ -689,6 +691,17 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 			}
 	}
 
+	private void configureHomeButton() {
+		final ActionBar actionBar = getSupportActionBar();
+		if (actionBar == null) {
+			return;
+		}
+		boolean openConversations = !xmppConnectionService.isConversationsListEmpty(null);
+		actionBar.setDisplayHomeAsUpEnabled(openConversations);
+		actionBar.setDisplayHomeAsUpEnabled(openConversations);
+
+	}
+
 	@Override
 	protected void onBackendConnected() {
 		if (mPostponedActivityResult != null) {
@@ -705,13 +718,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 				}
 			}
 		}
-		final ActionBar ab = getSupportActionBar();
-		boolean noConversations = xmppConnectionService.getConversations().size() == 0;
-		if (noConversations && ab != null) {
-			ab.setDisplayShowHomeEnabled(false);
-			ab.setDisplayHomeAsUpEnabled(false);
-			ab.setHomeButtonEnabled(false);
-		}
+		configureHomeButton();
 		Intent intent = pendingViewIntent.pop();
 		if (intent != null && processViewIntent(intent)) {
 			filter(null);
@@ -729,7 +736,7 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		}
 	}
 
-	protected boolean processViewIntent(Intent intent) {
+	protected boolean processViewIntent(@NonNull Intent intent) {
 		final String inviteUri = intent.getStringExtra(WelcomeActivity.EXTRA_INVITE_URI);
 		if (inviteUri != null) {
 			Invite invite = new Invite(inviteUri);
@@ -884,6 +891,21 @@ public class StartConversationActivity extends XmppActivity implements OnRosterU
 		if (mSearchEditText != null) {
 			filter(mSearchEditText.getText().toString());
 		}
+		configureHomeButton();
+	}
+
+	@Override
+	public void onBackPressed() {
+		navigateBack();
+	}
+
+	private void navigateBack() {
+		if (xmppConnectionService != null && !xmppConnectionService.isConversationsListEmpty(null)) {
+			Intent intent = new Intent(this, ConversationsActivity.class);
+			intent.addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
+			startActivity(intent);
+		}
+		finish();
 	}
 
 	@Override
