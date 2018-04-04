@@ -330,7 +330,9 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
 		double progress = position / duration;
 		if (AudioPlayer.player.getAudioStreamType() != streamType) {
 			synchronized (AudioPlayer.LOCK) {
-				stopCurrent();
+				AudioPlayer.player.stop();
+				AudioPlayer.player.release();
+				AudioPlayer.player = null;
 				try {
 					ViewHolder currentViewHolder = getCurrentViewHolder();
 					if (currentViewHolder != null) {
