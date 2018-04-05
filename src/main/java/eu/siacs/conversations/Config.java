@@ -58,6 +58,8 @@ public final class Config {
 
 	public static final boolean DISABLE_BAN = false; // disables the ability to ban users from rooms
 
+	public static final boolean INVITES_MAY_UPDATE_NAME = false; // should XMPP-URI invites be allowed to update names in the roster?
+
 	public static final int PING_MAX_INTERVAL = 300;
 	public static final int IDLE_PING_INTERVAL = 600; //540 is minimum according to docs;
 	public static final int PING_MIN_INTERVAL = 30;
