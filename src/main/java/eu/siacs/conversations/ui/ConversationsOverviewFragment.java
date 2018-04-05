@@ -32,6 +32,8 @@ package eu.siacs.conversations.ui;
 import android.app.Activity;
 import android.app.Fragment;
 import android.databinding.DataBindingUtil;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.design.widget.Snackbar;
 import android.support.v7.widget.LinearLayoutManager;
@@ -52,6 +54,7 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.ui.adapter.ConversationAdapter;
 import eu.siacs.conversations.ui.interfaces.OnConversationArchived;
 import eu.siacs.conversations.ui.interfaces.OnConversationSelected;
+import eu.siacs.conversations.ui.util.Color;
 import eu.siacs.conversations.ui.util.PendingActionHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.util.ScrollState;
@@ -76,6 +79,28 @@ public class ConversationsOverviewFragment extends XmppFragment {
 		public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
 			//todo maybe we can manually changing the position of the conversation
 			return false;
+		}
+
+		@Override
+		public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
+									float dX, float dY, int actionState, boolean isCurrentlyActive) {
+			super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+			if(actionState != ItemTouchHelper.ACTION_STATE_IDLE){
+				Paint paint = new Paint();
+				paint.setColor(Color.get(activity,R.attr.conversations_overview_background));
+				paint.setStyle(Paint.Style.FILL);
+				c.drawRect(viewHolder.itemView.getLeft(),viewHolder.itemView.getTop()
+						,viewHolder.itemView.getRight(),viewHolder.itemView.getBottom(), paint);
+			}
+			int width = viewHolder.itemView.getWidth();
+			viewHolder.itemView.setAlpha(
+					Math.max(0f, Math.min(1f, 1f - Math.abs(dX) / width))); // This code reference the EnhancedListView
+		}
+
+		@Override
+		public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+			super.clearView(recyclerView, viewHolder);
+			viewHolder.itemView.setAlpha(1f);
 		}
 
 		@Override
@@ -140,7 +165,6 @@ public class ConversationsOverviewFragment extends XmppFragment {
 					.show();
 		}
 	};
-
 
 	private ItemTouchHelper touchHelper = new ItemTouchHelper(callback);
 

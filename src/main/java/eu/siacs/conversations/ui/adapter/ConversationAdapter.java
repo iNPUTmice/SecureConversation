@@ -260,7 +260,6 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
 	}
 
 	public static class ConversationViewHolder extends RecyclerView.ViewHolder {
-		private View swipeableItem;
 		private TextView name;
 		private TextView lastMessage;
 		private ImageView lastMessageIcon;
@@ -278,7 +277,6 @@ public class ConversationAdapter extends RecyclerView.Adapter<ConversationAdapte
 			ConversationViewHolder conversationViewHolder = (ConversationViewHolder) layout.getTag();
 			if (conversationViewHolder == null) {
 				conversationViewHolder = new ConversationViewHolder(layout);
-				conversationViewHolder.swipeableItem = layout.findViewById(R.id.swipeable_item);
 				conversationViewHolder.name = layout.findViewById(R.id.conversation_name);
 				conversationViewHolder.lastMessage = layout.findViewById(R.id.conversation_lastmsg);
 				conversationViewHolder.lastMessageIcon = layout.findViewById(R.id.conversation_lastmsg_img);
