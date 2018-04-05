@@ -92,9 +92,6 @@ public class ConversationsOverviewFragment extends XmppFragment {
 				c.drawRect(viewHolder.itemView.getLeft(),viewHolder.itemView.getTop()
 						,viewHolder.itemView.getRight(),viewHolder.itemView.getBottom(), paint);
 			}
-			int width = viewHolder.itemView.getWidth();
-			viewHolder.itemView.setAlpha(
-					Math.max(0f, Math.min(1f, 1f - Math.abs(dX) / width))); // This code reference the EnhancedListView
 		}
 
 		@Override

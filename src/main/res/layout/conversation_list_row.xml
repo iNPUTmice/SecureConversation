@@ -4,11 +4,6 @@
              android:layout_height="wrap_content"
              android:descendantFocusability="blocksDescendants">
 
-    <View
-        android:layout_width="fill_parent"
-        android:layout_height="match_parent"
-        android:background="?attr/conversations_overview_background"/>
-
     <FrameLayout
         android:id="@+id/swipeable_item"
         android:layout_width="fill_parent"
