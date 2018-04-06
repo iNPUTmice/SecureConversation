@@ -663,6 +663,42 @@ public class FileBackend {
 		return file.exists();
 	}
 
+	private boolean isConversationWallpaperCached(String filename) {
+		File file = new File(getConversationWallpaperPath(filename));
+		return file.exists();
+	}
+
+	public boolean saveConversationWallpaper(Bitmap bitmap, String filename) {
+		File file;
+		if (isConversationWallpaperCached(filename)) {
+			return true;
+		} else {
+			String filepath = getConversationWallpaperPath(filename);
+			file = new File(filepath);
+			file.getParentFile().mkdirs();
+			OutputStream os = null;
+			try {
+				file.createNewFile();
+				os = new FileOutputStream(file);
+				bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+				os.close();
+				return os != null;
+			} catch (IOException e) {
+				return false;
+			} finally {
+				close(os);
+			}
+		}
+	}
+
+	public void removeConversationWallpaper(String filename) {
+		File file;
+		if (isConversationWallpaperCached(filename)) {
+			file = new File(getConversationWallpaperPath(filename));
+			file.delete();
+		}
+	}
+
 	public boolean save(Avatar avatar) {
 		File file;
 		if (isAvatarCached(avatar)) {
@@ -705,8 +741,16 @@ public class FileBackend {
 		return mXmppConnectionService.getFilesDir().getAbsolutePath() + "/avatars/" + avatar;
 	}
 
+	private String getConversationWallpaperPath(String filename) {
+		return mXmppConnectionService.getFilesDir().getAbsolutePath() + "/wallpapers/" + filename;
+	}
+
 	public Uri getAvatarUri(String avatar) {
 		return Uri.parse("file:" + getAvatarPath(avatar));
+	}
+
+	private Uri getConversationWallpaperUri(String filename) {
+		return Uri.parse("file:" + getConversationWallpaperPath(filename));
 	}
 
 	public Bitmap cropCenterSquare(Uri image, int size) {
@@ -995,6 +1039,17 @@ public class FileBackend {
 			return null;
 		}
 		Bitmap bm = cropCenter(getAvatarUri(avatar), size, size);
+		if (bm == null) {
+			return null;
+		}
+		return bm;
+	}
+
+	public Bitmap getConversationWallpaper(String filename, int height, int width) {
+		if (filename == null) {
+			return null;
+		}
+		Bitmap bm = cropCenter(getConversationWallpaperUri(filename), height, width);
 		if (bm == null) {
 			return null;
 		}

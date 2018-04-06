@@ -97,4 +97,14 @@
         android:orderInCategory="71"
         app:showAsAction="never"
         android:title="@string/enable_notifications"/>
+    <item
+        android:id="@+id/action_add_wallpaper"
+        android:orderInCategory="72"
+        app:showAsAction="never"
+        android:title="@string/add_wallpaper"/>
+    <item
+        android:id="@+id/action_remove_wallpaper"
+        android:orderInCategory="72"
+        app:showAsAction="never"
+        android:title="@string/remove_wallpaper"/>
 </menu>

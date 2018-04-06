@@ -5,11 +5,15 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.databinding.DataBindingUtil;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
+import android.provider.OpenableColumns;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
@@ -27,6 +31,7 @@ import android.os.SystemClock;
 import android.support.v13.view.inputmethod.InputConnectionCompat;
 import android.support.v13.view.inputmethod.InputContentInfoCompat;
 import android.text.Editable;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -84,6 +89,7 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.AttachmentTool;
+import eu.siacs.conversations.ui.util.Color;
 import eu.siacs.conversations.ui.util.ConversationMenuConfigurator;
 import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
 import eu.siacs.conversations.ui.util.PendingItem;
@@ -124,6 +130,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	public static final int ATTACHMENT_CHOICE_LOCATION = 0x0305;
 	public static final int ATTACHMENT_CHOICE_INVALID = 0x0306;
 	public static final int ATTACHMENT_CHOICE_RECORD_VIDEO = 0x0307;
+	private static final int REQUEST_CHOOSE_WALLPAPER = 0x0308;
 
 	public static final String RECENTLY_USED_QUICK_ACTION = "recently_used_quick_action";
 	public static final String STATE_CONVERSATION_UUID = ConversationFragment.class.getName() + ".uuid";
@@ -840,6 +847,10 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 					}
 				}
 				break;
+			case REQUEST_CHOOSE_WALLPAPER:
+				List<Uri> wallpaperUris = AttachmentTool.extractUriFromIntent(data);
+				saveWallpaper(wallpaperUris.get(0));
+				break;
 		}
 	}
 
@@ -895,7 +906,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
 		final MenuItem menuMute = menu.findItem(R.id.action_mute);
 		final MenuItem menuUnmute = menu.findItem(R.id.action_unmute);
-
+		final MenuItem menuAddWallpaper = menu.findItem(R.id.action_add_wallpaper);
+		final MenuItem menuRemoveWallpaper = menu.findItem(R.id.action_remove_wallpaper);
 
 		if (conversation != null) {
 			if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -911,6 +923,13 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				menuMute.setVisible(false);
 			} else {
 				menuUnmute.setVisible(false);
+			}
+			if (conversation.getConversationWallpaper() == null) {
+				menuAddWallpaper.setVisible(true);
+				menuRemoveWallpaper.setVisible(false);
+			} else {
+				menuAddWallpaper.setVisible(false);
+				menuRemoveWallpaper.setVisible(true);
 			}
 			ConversationMenuConfigurator.configureAttachmentMenu(conversation, menu);
 			ConversationMenuConfigurator.configureEncryptionMenu(conversation, menu);
@@ -1213,10 +1232,92 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 					BlockContactDialog.show((XmppActivity) activity, conversation);
 				}
 				break;
+			case R.id.action_add_wallpaper:
+				addWallpaper();
+				break;
+			case R.id.action_remove_wallpaper:
+				removeWallpaper();
+				break;
 			default:
 				break;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+
+	private void addWallpaper() {
+		if (!Config.ONLY_INTERNAL_STORAGE && !hasStoragePermission(REQUEST_CHOOSE_WALLPAPER)) {
+			return;
+		}
+		Intent attachFileIntent = new Intent();
+		attachFileIntent.setType("image/*");
+		attachFileIntent.setAction(Intent.ACTION_GET_CONTENT);
+
+		Intent chooser = Intent.createChooser(attachFileIntent, getString(R.string.wallpaper));
+		startActivityForResult(chooser, REQUEST_CHOOSE_WALLPAPER);
+	}
+
+	private void saveWallpaper(Uri uri) {
+		if (conversation == null) {
+			return;
+		}
+		if (FileBackend.weOwnFile(getActivity(), uri)) {
+			Toast.makeText(getActivity(), R.string.security_error_invalid_file_access, Toast.LENGTH_SHORT).show();
+			return;
+		}
+		String filename = getFilename(uri);
+		DisplayMetrics displayMetrics = new DisplayMetrics();
+		activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+		int height = displayMetrics.heightPixels;
+		int width = displayMetrics.widthPixels;
+		Bitmap bitmap = activity.xmppConnectionService.getFileBackend().cropCenter(uri, height, width);
+		if (!activity.xmppConnectionService.getFileBackend().saveConversationWallpaper(bitmap, filename)) {
+			return;
+		}
+		if (conversation.setWallpaperUri(filename)) {
+			activity.xmppConnectionService.updateConversation(conversation);
+			activity.invalidateOptionsMenu();
+			loadWallpaper();
+		}
+	}
+
+	private String getFilename(Uri uri) {
+		String result = null;
+		try (Cursor cursor = activity.getContentResolver().query(uri, null, null, null, null)) {
+			if (cursor != null && cursor.moveToFirst()) {
+				result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
+			}
+		}
+  		if (result == null) {
+			result = uri.getPath();
+			int cut = result.lastIndexOf('/');
+			if (cut != -1) {
+				result = result.substring(cut + 1);
+			}
+		}
+  		return result;
+	}
+
+	private void removeWallpaper() {
+		String oldFilename = conversation.getConversationWallpaper();
+		if (conversation.setWallpaperUri(null)) {
+			activity.xmppConnectionService.updateConversation(conversation);
+			activity.xmppConnectionService.getFileBackend().removeConversationWallpaper(oldFilename);
+			activity.invalidateOptionsMenu();
+			loadWallpaper();
+		}
+	}
+
+	private void loadWallpaper() {
+		if (conversation.getConversationWallpaper() == null) {
+			binding.messagesView.setBackgroundColor(Color.get(activity, R.attr.color_background_secondary));
+			return;
+		}
+		DisplayMetrics displayMetrics = new DisplayMetrics();
+		activity.getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+		int height = displayMetrics.heightPixels;
+		int width = displayMetrics.widthPixels;
+		Bitmap bitmap = activity.xmppConnectionService.getFileBackend().getConversationWallpaper(conversation.getConversationWallpaper(), height, width);
+		binding.messagesView.setBackground(new BitmapDrawable(activity.getResources(), bitmap));
 	}
 
 	private void handleAttachmentSelection(MenuItem item) {
@@ -1356,6 +1457,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 					if (this.mPendingEditorContent != null) {
 						attachImageToConversation(this.mPendingEditorContent);
 					}
+				} else if (requestCode == REQUEST_CHOOSE_WALLPAPER) {
+					addWallpaper();
 				} else {
 					attachFile(requestCode);
 				}
@@ -1915,7 +2018,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		refresh(false);
 		this.conversation.messagesLoaded.set(true);
 		Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
-
+		loadWallpaper();
 		if (hasExtras || scrolledToBottomAndNoPending) {
 			resetUnreadMessagesCount();
 			synchronized (this.messageList) {
