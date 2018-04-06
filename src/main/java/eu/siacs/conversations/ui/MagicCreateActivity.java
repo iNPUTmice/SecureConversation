@@ -112,7 +112,7 @@ public class MagicCreateActivity extends XmppActivity implements TextWatcher {
 
 	@Override
 	public void afterTextChanged(Editable s) {
-		if (s.toString().trim().length() > 0) {
+		if (Config.MAGIC_CREATE_DOMAIN != null && s.toString().trim().length() > 0) {
 			try {
 				mFullJidDisplay.setVisibility(View.VISIBLE);
 				Jid jid = Jid.of(s.toString().toLowerCase(), Config.MAGIC_CREATE_DOMAIN, null);
