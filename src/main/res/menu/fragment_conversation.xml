@@ -103,8 +103,8 @@
         app:showAsAction="never"
         android:title="@string/add_wallpaper"/>
     <item
-        android:id="@+id/action_remove_wallpaper"
+        android:id="@+id/action_wallpaper"
         android:orderInCategory="72"
         app:showAsAction="never"
-        android:title="@string/remove_wallpaper"/>
+        android:title="@string/wallpaper"/>
 </menu>
