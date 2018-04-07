@@ -131,7 +131,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	public static final String STATE_PHOTO_URI = ConversationFragment.class.getName() + ".take_photo_uri";
 	private static final String STATE_LAST_MESSAGE_UUID = "state_last_message_uuid";
 
-	final protected List<Message> messageList = new ArrayList<>();
+	private final List<Message> messageList = new ArrayList<>();
 	private final PendingItem<ActivityResult> postponedActivityResult = new PendingItem<>();
 	private final PendingItem<String> pendingConversationsUuid = new PendingItem<>();
 	private final PendingItem<Bundle> pendingExtras = new PendingItem<>();
@@ -214,31 +214,33 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 								return;
 							}
 							runOnUiThread(() -> {
-								final int oldPosition = binding.messagesView.getFirstVisiblePosition();
-								Message message = null;
-								int childPos;
-								for (childPos = 0; childPos + oldPosition < messageList.size(); ++childPos) {
-									message = messageList.get(oldPosition + childPos);
-									if (message.getType() != Message.TYPE_STATUS) {
-										break;
+								synchronized (messageList) {
+									final int oldPosition = binding.messagesView.getFirstVisiblePosition();
+									Message message = null;
+									int childPos;
+									for (childPos = 0; childPos + oldPosition < messageList.size(); ++childPos) {
+										message = messageList.get(oldPosition + childPos);
+										if (message.getType() != Message.TYPE_STATUS) {
+											break;
+										}
 									}
+									final String uuid = message != null ? message.getUuid() : null;
+									View v = binding.messagesView.getChildAt(childPos);
+									final int pxOffset = (v == null) ? 0 : v.getTop();
+									ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
+									try {
+										updateStatusMessages();
+									} catch (IllegalStateException e) {
+										Log.d(Config.LOGTAG, "caught illegal state exception while updating status messages");
+									}
+									messageListAdapter.notifyDataSetChanged();
+									int pos = Math.max(getIndexOf(uuid, messageList), 0);
+									binding.messagesView.setSelectionFromTop(pos, pxOffset);
+									if (messageLoaderToast != null) {
+										messageLoaderToast.cancel();
+									}
+									conversation.messagesLoaded.set(true);
 								}
-								final String uuid = message != null ? message.getUuid() : null;
-								View v = binding.messagesView.getChildAt(childPos);
-								final int pxOffset = (v == null) ? 0 : v.getTop();
-								ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
-								try {
-									updateStatusMessages();
-								} catch (IllegalStateException e) {
-									Log.d(Config.LOGTAG, "caught illegal state exception while updating status messages");
-								}
-								messageListAdapter.notifyDataSetChanged();
-								int pos = Math.max(getIndexOf(uuid, messageList), 0);
-								binding.messagesView.setSelectionFromTop(pos, pxOffset);
-								if (messageLoaderToast != null) {
-									messageLoaderToast.cancel();
-								}
-								conversation.messagesLoaded.set(true);
 							});
 						}
 
@@ -1054,6 +1056,10 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		}
 		if (m.getType() != Message.TYPE_STATUS) {
 
+			if (m.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE) {
+				return;
+			}
+
 			final boolean treatAsFile = m.getType() != Message.TYPE_TEXT
 					&& m.getType() != Message.TYPE_PRIVATE
 					&& !(t instanceof TransferablePlaceholder);
@@ -1577,20 +1583,27 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		if (binding == null) {
 			return null;
 		}
-		int pos = binding.messagesView.getLastVisiblePosition();
-		if (pos >= 0) {
-			Message message = null;
-			for(int i = pos ; i >= 0; --i) {
-				message = (Message) binding.messagesView.getItemAtPosition(i);
-				if (message.getType() != Message.TYPE_STATUS) {
-					break;
+		synchronized (this.messageList) {
+			int pos = binding.messagesView.getLastVisiblePosition();
+			if (pos >= 0) {
+				Message message = null;
+				for (int i = pos; i >= 0; --i) {
+					try {
+						message = (Message) binding.messagesView.getItemAtPosition(i);
+					} catch (IndexOutOfBoundsException e) {
+						//should not happen if we synchronize properly. however if that fails we just gonna try item -1
+						continue;
+					}
+					if (message.getType() != Message.TYPE_STATUS) {
+						break;
+					}
 				}
-			}
-			if (message != null) {
-				while (message.next() != null && message.next().wasMergedIntoPrevious()) {
-					message = message.next();
+				if (message != null) {
+					while (message.next() != null && message.next().wasMergedIntoPrevious()) {
+						message = message.next();
+					}
+					return message.getUuid();
 				}
-				return message.getUuid();
 			}
 		}
 		return null;
