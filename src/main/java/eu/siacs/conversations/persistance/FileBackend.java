@@ -680,7 +680,7 @@ public class FileBackend {
 			try {
 				file.createNewFile();
 				os = new FileOutputStream(file);
-				bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+				bitmap.compress(Bitmap.CompressFormat.JPEG, 90, os);
 				os.close();
 				return os != null;
 			} catch (IOException e) {
