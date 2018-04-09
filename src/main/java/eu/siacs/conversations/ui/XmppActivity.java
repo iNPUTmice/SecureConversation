@@ -3,6 +3,8 @@ package eu.siacs.conversations.ui;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.support.design.widget.TextInputEditText;
+import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
@@ -39,14 +41,15 @@ import android.preference.PreferenceManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.AppCompatDelegate;
+import android.text.Editable;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -715,17 +718,39 @@ public abstract class XmppActivity extends AppCompatActivity {
 	                       boolean password) {
 		AlertDialog.Builder builder = new AlertDialog.Builder(this);
 		View view = getLayoutInflater().inflate(R.layout.quickedit, null);
-		final EditText editor = view.findViewById(R.id.editor);
-		if (password) {
-			editor.setInputType(InputType.TYPE_CLASS_TEXT
-					| InputType.TYPE_TEXT_VARIATION_PASSWORD);
-		}
+		final TextInputLayout editorInputLayout = view.findViewById(R.id.editor_input_layout);
+		final TextInputEditText editor = view.findViewById(R.id.editor);
 		builder.setPositiveButton(R.string.accept, null);
 		if (hint != 0) {
-			editor.setHint(hint);
+			editorInputLayout.setHint(getResources().getString(hint));
 		}
 		editor.requestFocus();
 		editor.setText("");
+		if (password) {
+			editor.setInputType(InputType.TYPE_CLASS_TEXT
+					| InputType.TYPE_TEXT_VARIATION_PASSWORD);
+			if (!previousValue.equals("")) {
+				editor.addTextChangedListener(new TextWatcher() {
+					@Override
+					public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+					}
+
+					@Override
+					public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+					}
+
+					@Override
+					public void afterTextChanged(Editable editable) {
+						if (editable.length() == 0) {
+							editorInputLayout.setPasswordVisibilityToggleEnabled(true);
+							editor.removeTextChangedListener(this);
+						}
+					}
+				});
+			} else {
+				editorInputLayout.setPasswordVisibilityToggleEnabled(true);
+			}
+		}
 		if (previousValue != null) {
 			editor.getText().append(previousValue);
 		}
@@ -738,7 +763,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 			if (!value.equals(previousValue) && value.trim().length() > 0) {
 				String error = callback.onValueEdited(value);
 				if (error != null) {
-					editor.setError(error);
+					editorInputLayout.setError(error);
 					return;
 				}
 			}
