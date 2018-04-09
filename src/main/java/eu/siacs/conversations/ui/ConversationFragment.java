@@ -5,7 +5,6 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
@@ -13,7 +12,6 @@ import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
-import android.provider.OpenableColumns;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
@@ -159,7 +157,6 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	private Toast messageLoaderToast;
 	private ConversationsActivity activity;
 	private boolean reInitRequiredOnStart = true;
-	private String cachedFileName = null;
 	private OnClickListener clickToMuc = new OnClickListener() {
 
 		@Override
@@ -861,23 +858,28 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				int[] messageListDimensions = getMessageListDimensions();
 				int width = messageListDimensions[0];
 				int height = messageListDimensions[1];
-				File cachedFile = new File(activity.getCacheDir(), cachedFileName);
+				File cachedFile = new File(activity.getCacheDir(), "conversationWallpaper");
 				Uri wallpaperUri = Uri.fromFile(cachedFile);
-				Bitmap bitmap = activity.xmppConnectionService.getFileBackend().cropCenter(wallpaperUri, height, width);
-				if (bitmap == null) {
-					return;
-				}
-				cachedFile.delete();
-				if (!activity.xmppConnectionService.getFileBackend().saveConversationWallpaper(bitmap, cachedFileName)) {
-					return;
-				}
-				String oldFilename = conversation.getConversationWallpaper();
-				if (conversation.setWallpaperUri(cachedFileName)) {
-					activity.xmppConnectionService.getFileBackend().removeConversationWallpaper(oldFilename);
-					activity.xmppConnectionService.updateConversation(conversation);
-					activity.invalidateOptionsMenu();
-					loadWallpaper();
-				}
+				activity.xmppConnectionService.publishWallpaper(conversation, wallpaperUri, width, height, new UiCallback<String>() {
+					@Override
+					public void success(String object) {
+						cachedFile.delete();
+						runOnUiThread(() -> {
+							activity.invalidateOptionsMenu();
+							loadWallpaper();
+						});
+					}
+
+					@Override
+					public void error(int errorCode, String object) {
+						cachedFile.delete();
+						runOnUiThread(() -> Toast.makeText(activity, errorCode, Toast.LENGTH_SHORT).show());
+					}
+
+					@Override
+					public void userInputRequried(PendingIntent pi, String object) {
+					}
+				});
 		}
 	}
 
@@ -951,7 +953,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			} else {
 				menuUnmute.setVisible(false);
 			}
-			if (conversation.getConversationWallpaper() == null) {
+			if (!conversation.hasWallpaper()) {
 				menuAddWallpaper.setVisible(true);
 				menuWallpaper.setVisible(false);
 			} else {
@@ -1298,26 +1300,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		if (original != null) {
 			uri = Uri.parse("file://" + original);
 		}
-		cachedFileName = getFilename(uri);
-		Uri destination = Uri.fromFile(new File(activity.getCacheDir(), cachedFileName));
+		Uri destination = Uri.fromFile(new File(activity.getCacheDir(), "conversationWallpaper"));
 		Crop.of(uri, destination).withAspect(width, height).withMaxSize(width, height).start(activity, this);
-	}
-
-	private String getFilename(Uri uri) {
-		String result = null;
-		try (Cursor cursor = activity.getContentResolver().query(uri, null, null, null, null)) {
-			if (cursor != null && cursor.moveToFirst()) {
-				result = cursor.getString(cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME));
-			}
-		}
-  		if (result == null) {
-			result = uri.getPath();
-			int cut = result.lastIndexOf('/');
-			if (cut != -1) {
-				result = result.substring(cut + 1);
-			}
-		}
-  		return conversation.getUuid() + result;
 	}
 
 	private int[] getMessageListDimensions() {
@@ -1333,14 +1317,14 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	}
 
 	private void loadWallpaper() {
-		if (conversation.getConversationWallpaper() == null) {
+		if (!conversation.hasWallpaper()) {
 			binding.messagesView.setBackgroundColor(Color.get(activity, R.attr.color_background_secondary));
 			return;
 		}
 		int[] messageListDimensions = getMessageListDimensions();
 		int width = messageListDimensions[0];
 		int height = messageListDimensions[1];
-		Bitmap bitmap = activity.xmppConnectionService.getFileBackend().getConversationWallpaper(conversation.getConversationWallpaper(), height, width);
+		Bitmap bitmap = activity.xmppConnectionService.getFileBackend().getConversationWallpaper(conversation.getUuid(), height, width);
 		binding.messagesView.setBackground(new BitmapDrawable(activity.getResources(), bitmap));
 	}
 
@@ -2042,13 +2026,6 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		refresh(false);
 		this.conversation.messagesLoaded.set(true);
 		Log.d(Config.LOGTAG, "scrolledToBottomAndNoPending=" + Boolean.toString(scrolledToBottomAndNoPending));
-		binding.messagesView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-			@Override
-			public void onGlobalLayout() {
-				binding.messagesView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-				loadWallpaper();
-			}
-		});
 		if (hasExtras || scrolledToBottomAndNoPending) {
 			resetUnreadMessagesCount();
 			synchronized (this.messageList) {
@@ -2065,7 +2042,13 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				setSelection(pos);
 			}
 		}
-
+		binding.messagesView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+			@Override
+			public void onGlobalLayout() {
+				binding.messagesView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+				loadWallpaper();
+			}
+		});
 
 		this.binding.messagesView.post(this::fireReadEvent);
 		//TODO if we only do this when this fragment is running on main it won't *bing* in tablet layout which might be unnecessary since we can *see* it
@@ -2759,12 +2742,10 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
 	@Override
 	public void onRemoveWallpaperClicked() {
-		String oldFilename = conversation.getConversationWallpaper();
-		if (conversation.setWallpaperUri(null)) {
-			activity.xmppConnectionService.updateConversation(conversation);
-			activity.xmppConnectionService.getFileBackend().removeConversationWallpaper(oldFilename);
-			activity.invalidateOptionsMenu();
-			loadWallpaper();
-		}
+		activity.xmppConnectionService.getFileBackend().removeConversationWallpaper(conversation.getUuid());
+		conversation.setHasWallpaper(false);
+		activity.xmppConnectionService.updateConversation(conversation);
+		activity.invalidateOptionsMenu();
+		loadWallpaper();
 	}
 }

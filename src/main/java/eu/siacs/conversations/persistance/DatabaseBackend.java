@@ -190,7 +190,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 				+ Conversation.ACCOUNT + " TEXT, " + Conversation.CONTACTJID
 				+ " TEXT, " + Conversation.CREATED + " NUMBER, "
 				+ Conversation.STATUS + " NUMBER, " + Conversation.MODE
-				+ " NUMBER, " + Conversation.WALLPAPERURI + " TEXT, "
+				+ " NUMBER, " + Conversation.HASWALLPAPER + " INTEGER DEFAULT 0, "
 				+ Conversation.ATTRIBUTES + " TEXT, FOREIGN KEY("
 				+ Conversation.ACCOUNT + ") REFERENCES " + Account.TABLENAME
 				+ "(" + Account.UUID + ") ON DELETE CASCADE);");
@@ -481,7 +481,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		}
 
 		if (oldVersion < 41 && newVersion >= 41) {
-			db.execSQL("ALTER TABLE " + Conversation.TABLENAME + " ADD COLUMN " + Conversation.WALLPAPERURI + " TEXT");
+			db.execSQL("ALTER TABLE " + Conversation.TABLENAME + " ADD COLUMN " + Conversation.HASWALLPAPER + " INTEGER DEFAULT 0");
 		}
 	}
 

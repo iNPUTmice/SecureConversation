@@ -670,31 +670,47 @@ public class FileBackend {
 
 	public boolean saveConversationWallpaper(Bitmap bitmap, String filename) {
 		File file;
-		if (isConversationWallpaperCached(filename)) {
-			return true;
+		boolean isWallpaperCached = false;
+		if (isConversationWallpaperCached(filename + ".jpg")) {
+			isWallpaperCached = true;
+			file = new File(getConversationWallpaperPath(filename + "_tempWallpaper.jpg"));
 		} else {
-			String filepath = getConversationWallpaperPath(filename);
-			file = new File(filepath);
-			file.getParentFile().mkdirs();
-			OutputStream os = null;
-			try {
-				file.createNewFile();
-				os = new FileOutputStream(file);
-				bitmap.compress(Bitmap.CompressFormat.JPEG, 90, os);
-				os.close();
-				return os != null;
-			} catch (IOException e) {
-				return false;
-			} finally {
-				close(os);
+			file = new File(getConversationWallpaperPath(filename + ".jpg"));
+		}
+		file.getParentFile().mkdirs();
+		OutputStream outputStream = null;
+		try {
+			file.createNewFile();
+			outputStream = new FileOutputStream(file);
+			bitmap.compress(Bitmap.CompressFormat.JPEG, 90, outputStream);
+			outputStream.flush();
+			outputStream.close();
+			if (outputStream != null) {
+				if (isWallpaperCached) {
+					File oldFile = new File(getConversationWallpaperPath(filename + ".jpg"));
+					if (oldFile.delete()) {
+						file.renameTo(oldFile);
+						return true;
+					}
+					file.delete();
+					return false;
+				}
+			} else {
+				file.delete();
 			}
+			return outputStream != null;
+		} catch (IOException e) {
+			file.delete();
+			return false;
+		} finally {
+			close(outputStream);
 		}
 	}
 
 	public void removeConversationWallpaper(String filename) {
 		File file;
-		if (isConversationWallpaperCached(filename)) {
-			file = new File(getConversationWallpaperPath(filename));
+		if (isConversationWallpaperCached(filename + ".jpg")) {
+			file = new File(getConversationWallpaperPath(filename + ".jpg"));
 			file.delete();
 		}
 	}
@@ -1049,7 +1065,7 @@ public class FileBackend {
 		if (filename == null) {
 			return null;
 		}
-		Bitmap bm = cropCenter(getConversationWallpaperUri(filename), height, width);
+		Bitmap bm = cropCenter(getConversationWallpaperUri(filename + ".jpg"), height, width);
 		if (bm == null) {
 			return null;
 		}

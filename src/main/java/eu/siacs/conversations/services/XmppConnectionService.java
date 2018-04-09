@@ -2730,6 +2730,23 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
+	public void publishWallpaper(final Conversation conversation, final Uri image, final int width, final int height, final UiCallback<String> callback) {
+		new Thread(() -> {
+			Bitmap bitmap = getFileBackend().cropCenter(image, height, width);
+			if (bitmap == null) {
+				callback.error(R.string.error_publish_wallpaper_converting, null);
+				return;
+			}
+			if (!getFileBackend().saveConversationWallpaper(bitmap, conversation.getUuid())) {
+				callback.error(R.string.error_saving_wallpaper, null);
+				return;
+			}
+			conversation.setHasWallpaper(true);
+			updateConversation(conversation);
+			callback.success(null);
+		}).start();
+	}
+
 	public void publishAvatar(final Account account, final Uri image, final UiCallback<Avatar> callback) {
 		new Thread(() -> {
 			final Bitmap.CompressFormat format = Config.AVATAR_FORMAT;
