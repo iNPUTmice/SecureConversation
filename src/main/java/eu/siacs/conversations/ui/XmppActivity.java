@@ -729,7 +729,7 @@ public abstract class XmppActivity extends AppCompatActivity {
 		if (password) {
 			editor.setInputType(InputType.TYPE_CLASS_TEXT
 					| InputType.TYPE_TEXT_VARIATION_PASSWORD);
-			if (!previousValue.equals("")) {
+			if (!previousValue.isEmpty()) {
 				editor.addTextChangedListener(new TextWatcher() {
 					@Override
 					public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
