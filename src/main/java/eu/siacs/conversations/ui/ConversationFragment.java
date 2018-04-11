@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -15,6 +16,7 @@ import android.provider.MediaStore;
 import android.support.annotation.IdRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.StringRes;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
@@ -90,7 +92,6 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.AttachmentTool;
-import eu.siacs.conversations.ui.util.Color;
 import eu.siacs.conversations.ui.util.ConversationMenuConfigurator;
 import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
 import eu.siacs.conversations.ui.util.PendingItem;
@@ -855,9 +856,9 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				cropWallpaper(wallpaperUris.get(0));
 				break;
 			case Crop.REQUEST_CROP:
-				int[] messageListDimensions = getMessageListDimensions();
-				int width = messageListDimensions[0];
-				int height = messageListDimensions[1];
+				int[] chatWallpaperDimensions = getChatWallpaperDimensions();
+				int width = chatWallpaperDimensions[0];
+				int height = chatWallpaperDimensions[1];
 				File cachedFile = new File(activity.getCacheDir(), "conversationWallpaper");
 				Uri wallpaperUri = Uri.fromFile(cachedFile);
 				activity.xmppConnectionService.publishWallpaper(conversation, wallpaperUri, width, height, new UiCallback<String>() {
@@ -1293,9 +1294,9 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			Toast.makeText(getActivity(), R.string.security_error_invalid_file_access, Toast.LENGTH_SHORT).show();
 			return;
 		}
-		int[] messageListDimensions = getMessageListDimensions();
-		int width = messageListDimensions[0];
-		int height = messageListDimensions[1];
+		int[] chatWallpaperDimensions = getChatWallpaperDimensions();
+		int width = chatWallpaperDimensions[0];
+		int height = chatWallpaperDimensions[1];
 		String original = FileUtils.getPath(activity, uri);
 		if (original != null) {
 			uri = Uri.parse("file://" + original);
@@ -1304,9 +1305,9 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		Crop.of(uri, destination).withAspect(width, height).withMaxSize(width, height).start(activity, this);
 	}
 
-	private int[] getMessageListDimensions() {
-		int width = binding.messagesView.getWidth();
-		int height = binding.messagesView.getHeight();
+	private int[] getChatWallpaperDimensions() {
+		int width = binding.chatWallpaper.getWidth();
+		int height = binding.chatWallpaper.getHeight();
 		return new int[]{width, height};
 	}
 
@@ -1318,14 +1319,15 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
 	private void loadWallpaper() {
 		if (!conversation.hasWallpaper()) {
-			binding.messagesView.setBackgroundColor(Color.get(activity, R.attr.color_background_secondary));
+			binding.chatWallpaper.setImageDrawable(new ColorDrawable(ContextCompat.getColor(activity, activity.getThemeResource(R.attr.color_background_secondary, R.color.grey200))));
 			return;
 		}
-		int[] messageListDimensions = getMessageListDimensions();
-		int width = messageListDimensions[0];
-		int height = messageListDimensions[1];
+		int[] chatWallpaperDimensions = getChatWallpaperDimensions();
+		int width = chatWallpaperDimensions[0];
+		int height = chatWallpaperDimensions[1];
 		Bitmap bitmap = activity.xmppConnectionService.getFileBackend().getConversationWallpaper(conversation.getUuid(), height, width);
-		binding.messagesView.setBackground(new BitmapDrawable(activity.getResources(), bitmap));
+		binding.chatWallpaper.setImageDrawable(new BitmapDrawable(activity.getResources(), bitmap));
+
 	}
 
 	private void handleAttachmentSelection(MenuItem item) {
