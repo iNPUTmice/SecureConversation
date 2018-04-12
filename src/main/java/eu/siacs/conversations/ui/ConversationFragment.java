@@ -6,6 +6,7 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.databinding.DataBindingUtil;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.preference.PreferenceManager;
@@ -50,6 +51,9 @@ import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
+
+import com.android.colorpicker.ColorPickerDialog;
+import com.android.colorpicker.ColorPickerSwatch;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -131,6 +135,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	public static final String STATE_SCROLL_POSITION = ConversationFragment.class.getName() + ".scroll_position";
 	public static final String STATE_PHOTO_URI = ConversationFragment.class.getName() + ".take_photo_uri";
 	private static final String STATE_LAST_MESSAGE_UUID = "state_last_message_uuid";
+	private static final String COLOR_PALETTE_DIALOG_TAG = "color_picker_dialog";
 
 	private final List<Message> messageList = new ArrayList<>();
 	private final PendingItem<ActivityResult> postponedActivityResult = new PendingItem<>();
@@ -1078,6 +1083,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
 			MenuItem deleteFile = menu.findItem(R.id.delete_file);
 			MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
+			MenuItem messageColor = menu.findItem(R.id.message_color);
 			if (!m.isFileOrImage() && !encrypted && !m.isGeoUri() && !m.treatAsDownloadable()) {
 				copyMessage.setVisible(true);
 				quoteMessage.setVisible(MessageUtils.prepareQuote(m).length() > 0);
@@ -1122,6 +1128,11 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			if (m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null) {
 				showErrorMessage.setVisible(true);
 			}
+			if (m.getStatus() == Message.STATUS_RECEIVED) {
+				messageColor.setVisible(true);
+			} else {
+				messageColor.setVisible(false);
+			}
 		}
 	}
 
@@ -1161,9 +1172,34 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			case R.id.show_error_message:
 				showErrorMessage(selectedMessage);
 				return true;
+			case R.id.message_color:
+				showColorPickerDialog(selectedMessage);
+				return true;
 			default:
 				return super.onContextItemSelected(item);
 		}
+	}
+
+	private void showColorPickerDialog(Message selectedMessage) {
+		ColorPickerDialog colorPickerDialog = new ColorPickerDialog();
+		String[] colors = getResources().getStringArray(R.array.message_colors_array);
+		int[] parsedColors = new int[colors.length];
+		for (int i = 0; i < colors.length; ++i) {
+			parsedColors[i] = Color.parseColor(colors[i]);
+		}
+		int previousMessageColor = conversation.getMessageColor(selectedMessage);
+		int selectedColor = previousMessageColor != 0 ? previousMessageColor : parsedColors[0];
+		colorPickerDialog.initialize(R.string.message_color, parsedColors, selectedColor, Config.COLOR_PALETTE_NUM_COLUMNS, parsedColors.length);
+		colorPickerDialog.show(activity.getFragmentManager(), COLOR_PALETTE_DIALOG_TAG);
+		colorPickerDialog.setOnColorSelectedListener(new ColorPickerSwatch.OnColorSelectedListener() {
+			@Override
+			public void onColorSelected(int color) {
+				if (conversation.setMessageColor(selectedMessage, color)) {
+					activity.xmppConnectionService.updateConversation(conversation);
+					messageListAdapter.notifyDataSetChanged();
+				}
+			}
+		});
 	}
 
 	@Override

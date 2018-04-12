@@ -10,6 +10,8 @@ import android.content.pm.ResolveInfo;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Color;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
@@ -850,7 +852,15 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 				} else {
 					bubble = activity.getThemeResource(R.attr.message_bubble_received_green, R.drawable.message_bubble_received);
 				}
-				viewHolder.message_box.setBackgroundResource(bubble);
+				int color = conversation.getMessageColor(message);
+				if (color == 0) {
+					viewHolder.message_box.setBackgroundResource(bubble);
+				} else {
+					Drawable mDrawable = activity.getResources().getDrawable(bubble);
+					int parsedColor = Color.parseColor("#" + Integer.toHexString(color));
+					mDrawable.setColorFilter(new PorterDuffColorFilter(parsedColor, PorterDuff.Mode.SRC_ATOP));
+					viewHolder.message_box.setBackground(mDrawable);
+				}
 				viewHolder.encryption.setVisibility(View.GONE);
 			} else {
 				viewHolder.message_box.setBackgroundResource(R.drawable.message_bubble_received_warning);

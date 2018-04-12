@@ -56,6 +56,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private static final String ATTRIBUTE_NEXT_MESSAGE_TIMESTAMP = "next_message_timestamp";
 	private static final String ATTRIBUTE_CRYPTO_TARGETS = "crypto_targets";
 	private static final String ATTRIBUTE_NEXT_ENCRYPTION = "next_encryption";
+	private static final String MESSAGE_COLORS = "message_colors";
 	public static final String ATTRIBUTE_ALLOW_PM = "allow_pm";
 	public static final String ATTRIBUTE_MEMBERS_ONLY = "members_only";
 	public static final String ATTRIBUTE_MODERATED = "moderated";
@@ -765,6 +766,86 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				return false;
 			}
 		}
+	}
+
+	private boolean setAttribute(String key, String jid, int value) {
+		JSONArray array;
+		try {
+			array = this.attributes.getJSONArray(key);
+		} catch (JSONException e) {
+			e.printStackTrace();
+			array = new JSONArray();
+		}
+		JSONObject jsonObject = new JSONObject();
+		try {
+			jsonObject.put(jid, value);
+		} catch (JSONException e) {
+			e.printStackTrace();
+			return false;
+		}
+		int index = -1;
+		for (int i = 0; i < array.length(); ++i) {
+			try {
+				JSONObject object = array.getJSONObject(i);
+				int val = object.getInt(jid);
+				index = i;
+				break;
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+		}
+		synchronized (this.attributes) {
+			try {
+				if (index != -1) {
+					array.remove(index);
+				}
+				array.put(jsonObject);
+				this.attributes.put(key, array);
+				return true;
+			} catch (JSONException e) {
+				e.printStackTrace();
+				return false;
+			}
+		}
+	}
+
+	private int getAttribute(String key, String jid) {
+		synchronized (this.attributes) {
+			try {
+				JSONArray array = this.attributes.getJSONArray(key);
+				for (int i = 0; i < array.length(); ++i) {
+					JSONObject object = array.getJSONObject(i);
+					try {
+						return object.getInt(jid);
+					} catch (JSONException e) {
+						e.printStackTrace();
+					}
+				}
+			} catch (JSONException e) {
+				e.printStackTrace();
+				return 0;
+			}
+		}
+		return 0;
+	}
+
+	public int getMessageColor(Message message) {
+		int color = 0;
+		if (message.getContact() != null) {
+			color = getAttribute(MESSAGE_COLORS, message.getContact().getJid().toString());
+		} else if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
+			color = getAttribute(MESSAGE_COLORS, message.getCounterpart().toString());
+		}
+		return color;
+	}
+
+	public boolean setMessageColor(Message message, int color) {
+		if (message.getContact() != null) {
+			return setAttribute(MESSAGE_COLORS, message.getContact().getJid().toString(), color);
+		} else if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
+			return setAttribute(MESSAGE_COLORS, message.getCounterpart().toString(), color);
+		}
+		return false;
 	}
 
 	public String getAttribute(String key) {

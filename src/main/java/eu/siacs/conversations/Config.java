@@ -39,6 +39,7 @@ public final class Config {
 
 	public static final Jid BUG_REPORTS = Jid.of("bugs@conversations.im");
 
+	public static final int COLOR_PALETTE_NUM_COLUMNS = 4;
 
 	public static final String DOMAIN_LOCK = null; //only allow account creation for this domain
 	public static final String MAGIC_CREATE_DOMAIN = "conversations.im";
