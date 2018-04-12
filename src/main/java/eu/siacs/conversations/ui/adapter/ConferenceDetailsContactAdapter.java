@@ -48,7 +48,7 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
     private Conversation conversation;
     private boolean isOnline;
 
-    public ConferenceDetailsContactAdapter(ConferenceDetailsActivity activity,OnContactClickListener onContactClickListener) {
+    public ConferenceDetailsContactAdapter(ConferenceDetailsActivity activity, OnContactClickListener onContactClickListener) {
         this.activity = activity;
         this.onContactClickListener = onContactClickListener;
     }
@@ -59,7 +59,7 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             return TYPE_HEADER;
         } else if (position == users.size() + 1) {
             return TYPE_INVITE;
-        }else {
+        } else {
             return TYPE_NORMAL;
         }
     }
@@ -71,11 +71,11 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         switch (viewType) {
             case TYPE_INVITE:
-                ButtonInviteBinding buttonInviteBinding = DataBindingUtil.inflate(inflater,R.layout.button_invite, parent, false);
+                ButtonInviteBinding buttonInviteBinding = DataBindingUtil.inflate(inflater, R.layout.button_invite, parent, false);
                 holder = InviteViewHolder.get(buttonInviteBinding);
                 break;
             case TYPE_HEADER:
-                ConferenceDetailsHeaderBinding headerBinding = DataBindingUtil.inflate(inflater,R.layout.conference_details_header,parent,false);
+                ConferenceDetailsHeaderBinding headerBinding = DataBindingUtil.inflate(inflater, R.layout.conference_details_header, parent, false);
                 holder = HeaderViewHolder.get(headerBinding);
                 break;
             default:
@@ -91,42 +91,43 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
         setupBackgroundAndMargin(viewHolder, position);
         int type = getItemViewType(position);
-        if(type == TYPE_INVITE){
+        if (type == TYPE_INVITE) {
             ButtonInviteBinding binding = ((InviteViewHolder) viewHolder).binding;
             binding.invite.setOnClickListener(inviteListener);
-        }else if(type == TYPE_HEADER){
+        } else if (type == TYPE_HEADER) {
             bindHeader((HeaderViewHolder) viewHolder);
-        }else {
+        } else {
             bindContact((ContactViewHolder) viewHolder, position - 1);
         }
     }
 
     private void setupBackgroundAndMargin(@NonNull RecyclerView.ViewHolder viewHolder, int position) {
-        if(position == 0){
+        if (position == 0) {
             return;
         }
         ViewGroup.MarginLayoutParams layoutParams = (ViewGroup.MarginLayoutParams) viewHolder.itemView.getLayoutParams();
         int margin = (int) viewHolder.itemView.getResources().getDimension(R.dimen.activity_vertical_margin);
-        layoutParams.leftMargin =  margin;
-        layoutParams.rightMargin =  margin;
+        layoutParams.leftMargin = margin;
+        layoutParams.rightMargin = margin;
+        layoutParams.topMargin = 0;
+        layoutParams.bottomMargin = 0;
         int res;
         if (getItemCount() == 2 && position == 1) {
-            res = R.drawable.background_contact_only_one;
-            layoutParams.topMargin =  margin;
-            layoutParams.bottomMargin =  margin;
+            res = activity.getThemeResource(R.attr.background_contact_only_one, R.drawable.background_contact_only_one);
+            layoutParams.topMargin = margin;
+            layoutParams.bottomMargin = margin;
+            viewHolder.itemView.setPadding(margin, margin, margin, margin);
         } else if (isFirstView(position)) {
-            res = R.drawable.background_contact_first;
-            layoutParams.topMargin =  margin;
-            layoutParams.bottomMargin =  0;
+            res = activity.getThemeResource(R.attr.background_contact_first, R.drawable.background_contact_first);
+            layoutParams.topMargin = margin;
             viewHolder.itemView.setPadding(margin, margin, margin, 0);
         } else if (isLastView(position)) {
-            res = R.drawable.background_contact_last;
-            layoutParams.topMargin =  0;
-            layoutParams.bottomMargin =  margin;
+            res = activity.getThemeResource(R.attr.background_contact_last, R.drawable.background_contact_last);
+            layoutParams.bottomMargin = margin;
+            viewHolder.itemView.setPadding(margin, 0, margin, margin);
         } else {
-            layoutParams.topMargin =  0;
-            layoutParams.bottomMargin =  0;
-            res = R.drawable.background_contact_normal;
+            res = activity.getThemeResource(R.attr.background_contact_normal, R.drawable.background_contact_normal);
+            viewHolder.itemView.setPadding(margin, 0, margin, 0);
         }
         Drawable drawable = viewHolder.itemView.getResources().getDrawable(res);
         viewHolder.itemView.setBackground(drawable);
@@ -142,7 +143,7 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             account = conversation.getAccount().getJid().asBareJid().toString();
         }
         viewHolder.binding.detailsAccount.setText(activity.getString(R.string.using_account, account));
-        viewHolder.binding.yourPhoto.setImageBitmap(activity.avatarService().get(conversation.getAccount(),activity.getPixel(48)));
+        viewHolder.binding.yourPhoto.setImageBitmap(activity.avatarService().get(conversation.getAccount(), activity.getPixel(48)));
         viewHolder.binding.mucJabberid.setText(conversation.getJid().asBareJid().toString());
         viewHolder.binding.mucYourNick.setText(mucOptions.getActualNick());
         if (mucOptions.online()) {
@@ -199,7 +200,6 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             viewHolder.binding.notificationStatusText.setText(R.string.notify_only_when_highlighted);
             viewHolder.binding.notificationStatusButton.setImageResource(ic_notifications_none);
         }
-
     }
 
     public void setOnline(boolean online) {
@@ -207,7 +207,7 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
     }
 
     private boolean isLastView(int position) {
-        return position == getItemCount()-1;
+        return position == getItemCount() - 1;
     }
 
     private boolean isFirstView(int position) {
@@ -233,16 +233,18 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             contactViewHolder.binding.key.setVisibility(View.VISIBLE);
             contactViewHolder.binding.key.setOnClickListener(listener);
             contactViewHolder.binding.key.setText(OpenPgpUtils.convertKeyIdToHex(user.getPgpKeyId()));
+        }else {
+            contactViewHolder.binding.key.setVisibility(View.GONE);
         }
 
         Contact contact = user.getContact();
         String name = user.getName();
         if (contact != null) {
-           contactViewHolder.binding.contactDisplayName.setText(contact.getDisplayName());
-           contactViewHolder.binding.contactJid.setText((name != null ? name + " \u2022 " : "") + activity.getStatus(user));
+            contactViewHolder.binding.contactDisplayName.setText(contact.getDisplayName());
+            contactViewHolder.binding.contactJid.setText((name != null ? name + " \u2022 " : "") + activity.getStatus(user));
         } else {
-           contactViewHolder.binding.contactDisplayName.setText(name == null ? "" : name);
-           contactViewHolder.binding.contactJid.setText(activity.getStatus(user));
+            contactViewHolder.binding.contactDisplayName.setText(name == null ? "" : name);
+            contactViewHolder.binding.contactJid.setText(activity.getStatus(user));
         }
         activity.loadAvatar(user, contactViewHolder.binding.contactPhoto);
         if (user.getRole() == MucOptions.Role.NONE) {
@@ -261,7 +263,7 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             Drawable drawable = contactPhoto.getDrawable();
             if (drawable instanceof BitmapDrawable) {
                 Bitmap bitmap = ((BitmapDrawable) drawable).getBitmap();
-                if(bitmap != null){
+                if (bitmap != null) {
                     contactPhoto.setImageBitmap(null);
                     bitmap.recycle();
                 }
@@ -276,9 +278,9 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
         }
         int itemCount = isOnline ? users.size() : 0;
         if (isOnline && canInvite) {
-            itemCount++;
-        } else {
             itemCount += 2;
+        } else {
+            itemCount++;
         }
         return itemCount;
     }
@@ -312,13 +314,13 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
         this.notifyStatusClickListener = notifyStatusClickListener;
     }
 
-    public interface OnContactClickListener{
+    public interface OnContactClickListener {
         void onContactClick(MucOptions.User user);
 
         void onKeyClick(MucOptions.User user);
     }
 
-    public static class ContactViewHolder extends RecyclerView.ViewHolder{
+    public static class ContactViewHolder extends RecyclerView.ViewHolder {
 
         private ConferenceDetailsContactBinding binding;
 
@@ -326,14 +328,14 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             super(itemView);
         }
 
-        public static ContactViewHolder get(ConferenceDetailsContactBinding binding){
+        public static ContactViewHolder get(ConferenceDetailsContactBinding binding) {
             ContactViewHolder holder = new ContactViewHolder(binding.getRoot());
             holder.binding = binding;
             return holder;
         }
     }
 
-    public static class InviteViewHolder extends RecyclerView.ViewHolder{
+    public static class InviteViewHolder extends RecyclerView.ViewHolder {
 
         private ButtonInviteBinding binding;
 
@@ -341,21 +343,21 @@ public class ConferenceDetailsContactAdapter extends RecyclerView.Adapter<Recycl
             super(itemView);
         }
 
-        public static InviteViewHolder get(ButtonInviteBinding binding){
+        public static InviteViewHolder get(ButtonInviteBinding binding) {
             InviteViewHolder holder = new InviteViewHolder(binding.getRoot());
             holder.binding = binding;
             return holder;
         }
     }
 
-    public static class HeaderViewHolder extends RecyclerView.ViewHolder{
+    public static class HeaderViewHolder extends RecyclerView.ViewHolder {
         private ConferenceDetailsHeaderBinding binding;
 
         public HeaderViewHolder(View itemView) {
             super(itemView);
         }
 
-        public static HeaderViewHolder get(ConferenceDetailsHeaderBinding binding){
+        public static HeaderViewHolder get(ConferenceDetailsHeaderBinding binding) {
             HeaderViewHolder holder = new HeaderViewHolder(binding.getRoot());
             holder.binding = binding;
             return holder;

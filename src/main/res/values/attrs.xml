@@ -79,4 +79,8 @@
 
     <attr name="popupOverlayStyle" format="reference"/>
 
+    <attr name="background_contact_first" format="reference"/>
+    <attr name="background_contact_last" format="reference"/>
+    <attr name="background_contact_normal" format="reference"/>
+    <attr name="background_contact_only_one" format="reference"/>
 </resources>
