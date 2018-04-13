@@ -21,6 +21,7 @@ import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.ui.util.NotificationChannelHelper;
 import rocks.xmpp.addr.Jid;
 
 public class ExportLogsService extends Service {
@@ -59,7 +60,8 @@ public class ExportLogsService extends Service {
 		List<Conversation> conversations = mDatabaseBackend.getConversations(Conversation.STATUS_AVAILABLE);
 		conversations.addAll(mDatabaseBackend.getConversations(Conversation.STATUS_ARCHIVED));
 		NotificationManager mNotifyManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(getBaseContext());
+		NotificationCompat.Builder mBuilder = new NotificationCompat.Builder
+				(getBaseContext(), NotificationChannelHelper.EXPORT_LOGS_NOTIFICATION_CHANNEL_ID);
 		mBuilder.setContentTitle(getString(R.string.notification_export_logs_title))
 				.setSmallIcon(R.drawable.ic_import_export_white_24dp)
 				.setProgress(conversations.size(), 0, false);

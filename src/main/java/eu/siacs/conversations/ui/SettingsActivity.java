@@ -37,6 +37,7 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.services.ExportLogsService;
 import eu.siacs.conversations.services.MemorizingTrustManager;
 import eu.siacs.conversations.ui.util.Color;
+import eu.siacs.conversations.ui.util.NotificationChannelHelper;
 import eu.siacs.conversations.utils.TimeframeUtils;
 import rocks.xmpp.addr.Jid;
 
@@ -374,6 +375,11 @@ public class SettingsActivity extends XmppActivity implements
 				TREAT_VIBRATE_AS_SILENT,
 				MANUALLY_CHANGE_PRESENCE,
 				BROADCAST_LAST_ACTIVITY);
+		final List<String> recreateChannels = Arrays.asList(
+				"notification_ringtone",
+				"vibrate_on_notification",
+				"led",
+				"notification_headsup");
 		if (name.equals(OMEMO_SETTING)) {
 			OmemoSetting.load(this, preferences);
 			changeOmemoSettingSummary();
@@ -398,8 +404,9 @@ public class SettingsActivity extends XmppActivity implements
 			if (this.mTheme != theme) {
 				recreate();
 			}
+		} else if (recreateChannels.contains(name)) {
+			NotificationChannelHelper.createNotificationChannels(this, true);
 		}
-
 	}
 
 	@Override

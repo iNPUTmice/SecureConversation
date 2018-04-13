@@ -73,6 +73,7 @@ import eu.siacs.conversations.ui.interfaces.OnConversationsListItemUpdated;
 import eu.siacs.conversations.ui.service.EmojiService;
 import eu.siacs.conversations.ui.util.ActivityResult;
 import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
+import eu.siacs.conversations.ui.util.NotificationChannelHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.utils.ExceptionHelper;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
@@ -382,6 +383,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 			pendingViewIntent.push(intent);
 			setIntent(createLauncherIntent(this));
 		}
+		NotificationChannelHelper.createNotificationChannels(this, false);
 	}
 
 	@Override
