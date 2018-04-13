@@ -517,6 +517,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		this.binding.detailsAccount.setText(getString(R.string.using_account, account));
 		this.binding.yourPhoto.setImageBitmap(avatarService().get(mConversation.getAccount(), getPixel(48)));
 		setTitle(mConversation.getName());
+		this.binding.mucTopic.setText(mucOptions.getSubject());
 		this.binding.mucJabberid.setText(mConversation.getJid().asBareJid().toString());
 		this.binding.mucYourNick.setText(mucOptions.getActualNick());
 		if (mucOptions.online()) {
