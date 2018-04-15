@@ -231,6 +231,14 @@
                 <action android:name="android.intent.action.CREATE_SHORTCUT" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".ui.SolidColorActivity"
+            android:label="@string/solid_color">
+
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.ConversationsActivity" />
+        </activity>
     </application>
 
 </manifest>

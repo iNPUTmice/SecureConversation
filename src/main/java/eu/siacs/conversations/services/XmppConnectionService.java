@@ -2742,6 +2742,7 @@ public class XmppConnectionService extends Service {
 				return;
 			}
 			conversation.setHasWallpaper(true);
+			conversation.setColor(0);
 			updateConversation(conversation);
 			callback.success(null);
 		}).start();

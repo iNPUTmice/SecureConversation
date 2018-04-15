@@ -28,7 +28,8 @@
 	<color name="bubble">#ff4b9b4a</color>
 	<color name="unreadcountlight">#ff4b9b4a</color>
 	<color name="unreadcountdark">#ff326130</color>
-
+	<color name="solid_color_background">#fff3f3f3</color>
+	<color name="solid_color_text">#ff666666</color>
 	<!-- scanner -->
 	<color name="scan_result_dots">#c04CAF50</color>
 </resources>

@@ -358,7 +358,6 @@
 	<string name="pref_show_dynamic_tags_summary">Display read-only tags underneath contacts</string>
 	<string name="enable_notifications">Enable notifications</string>
 	<string name="wallpaper">Wallpaper</string>
-	<string name="add_wallpaper">Add Wallpaper</string>
 	<string name="no_conference_server_found">No group chat server found</string>
 	<string name="conference_creation_failed">Group chat creation failed!</string>
 	<string name="account_image_description">Account avatar</string>
@@ -600,6 +599,7 @@
 	<string name="pref_privacy">Privacy</string>
 	<string name="pref_theme_options">Theme</string>
 	<string name="pref_theme_options_summary">Select the color palette</string>
+	<string name="solid_color">Solid Color</string>
 	<string name="pref_theme_light">Light theme</string>
 	<string name="pref_theme_dark">Dark theme</string>
 	<string name="pref_use_green_background">Green Background</string>

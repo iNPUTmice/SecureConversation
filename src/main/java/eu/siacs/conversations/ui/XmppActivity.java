@@ -3,6 +3,7 @@ package eu.siacs.conversations.ui;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
+import android.content.res.Configuration;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AlertDialog.Builder;
@@ -442,6 +443,38 @@ public abstract class XmppActivity extends AppCompatActivity {
 		ta.recycle();
 
 		return res;
+	}
+
+	public int[] getScreenDimensions() {
+		DisplayMetrics displayMetrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+		int height = displayMetrics.heightPixels - getActionBarSize();
+		int width = displayMetrics.widthPixels;
+		return new int[]{width, height};
+	}
+
+	public int[] getChatWallpaperDimensions() {
+		DisplayMetrics displayMetrics = new DisplayMetrics();
+		getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+		int height;
+		int width;
+		if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+			height = displayMetrics.heightPixels - getActionBarSize();
+			width = displayMetrics.widthPixels;
+		} else {
+			height = displayMetrics.widthPixels - getActionBarSize();
+			width = displayMetrics.heightPixels;
+		}
+		return new int[]{width, height};
+	}
+
+	private int getActionBarSize() {
+		int[] actionBarSizeAttr = new int[] {R.attr.actionBarSize};
+		int indexOfAttrActionBarSize = 0;
+		TypedArray typedArray = this.getTheme().obtainStyledAttributes(actionBarSizeAttr);
+		int actionBarSize = typedArray.getDimensionPixelSize(indexOfAttrActionBarSize, -1);
+		typedArray.recycle();
+		return actionBarSize;
 	}
 
 	protected boolean isOptimizingBattery() {

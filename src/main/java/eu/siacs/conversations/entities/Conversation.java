@@ -47,6 +47,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	public static final String CREATED = "created";
 	public static final String MODE = "mode";
 	public static final String HASWALLPAPER = "hasWallpaper";
+	public static final String COLOR = "color";
 	public static final String ATTRIBUTES = "attributes";
 
 	public static final String ATTRIBUTE_MUTED_TILL = "muted_till";
@@ -81,18 +82,19 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	private String mFirstMamReference = null;
 	private Message correctingMessage;
 	private int wallpaper;
+	private int color;
 
 	public Conversation(final String name, final Account account, final Jid contactJid,
 	                    final int mode) {
 		this(java.util.UUID.randomUUID().toString(), name, null, account
 						.getUuid(), contactJid, System.currentTimeMillis(),
-				STATUS_AVAILABLE, mode, 0, "");
+				STATUS_AVAILABLE, mode, 0, 0, "");
 		this.account = account;
 	}
 
 	public Conversation(final String uuid, final String name, final String contactUuid,
 	                    final String accountUuid, final Jid contactJid, final long created, final int status,
-	                    final int mode, final int wallpaper, final String attributes) {
+	                    final int mode, final int wallpaper, final int color, final String attributes) {
 		this.uuid = uuid;
 		this.name = name;
 		this.contactUuid = contactUuid;
@@ -102,6 +104,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		this.status = status;
 		this.mode = mode;
 		this.wallpaper = wallpaper;
+		this.color = color;
 		try {
 			this.attributes = new JSONObject(attributes == null ? "" : attributes);
 		} catch (JSONException e) {
@@ -126,6 +129,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				cursor.getInt(cursor.getColumnIndex(STATUS)),
 				cursor.getInt(cursor.getColumnIndex(MODE)),
 				cursor.getInt(cursor.getColumnIndex(HASWALLPAPER)),
+				cursor.getInt(cursor.getColumnIndex(COLOR)),
 				cursor.getString(cursor.getColumnIndex(ATTRIBUTES)));
 	}
 
@@ -137,12 +141,20 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		return wallpaper == 1;
 	}
 
+	public int getColor() {
+		return color;
+	}
+
 	public void setHasMessagesLeftOnServer(boolean value) {
 		this.messagesLeftOnServer = value;
 	}
 
 	public void setHasWallpaper(boolean value) {
 		this.wallpaper = value ? 1 : 0;
+	}
+
+	public void setColor(int color) {
+		this.color = color;
 	}
 
 	public Message getFirstUnreadMessage() {
@@ -564,6 +576,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		values.put(STATUS, status);
 		values.put(MODE, mode);
 		values.put(HASWALLPAPER, wallpaper);
+		values.put(COLOR, color);
 		values.put(ATTRIBUTES, attributes.toString());
 		return values;
 	}
