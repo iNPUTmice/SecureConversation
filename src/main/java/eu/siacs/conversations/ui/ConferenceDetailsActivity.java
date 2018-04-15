@@ -279,7 +279,11 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 				saveAsBookmark();
 				break;
 			case R.id.action_delete_bookmark:
-				deleteBookmark();
+				new AlertDialog.Builder(this)
+						.setMessage(R.string.confirm_delete_bookmark)
+						.setNegativeButton(R.string.cancel, null)
+						.setPositiveButton(R.string.confirm, (dialog, which) -> deleteBookmark())
+						.show();
 				break;
 			case R.id.action_advanced_mode:
 				this.mAdvancedMode = !menuItem.isChecked();
