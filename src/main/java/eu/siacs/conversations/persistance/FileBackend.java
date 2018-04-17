@@ -48,6 +48,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
@@ -67,11 +68,9 @@ public class FileBackend {
 
 	private static final SimpleDateFormat IMAGE_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
 
-	public static final String FILE_PROVIDER = ".files";
+	private static final String FILE_PROVIDER = ".files";
 
 	private XmppConnectionService mXmppConnectionService;
-
-	private static final List<String> BLACKLISTED_PATH_ELEMENTS = Arrays.asList("org.mozilla.firefox");
 
 	public FileBackend(XmppConnectionService service) {
 		this.mXmppConnectionService = service;
@@ -221,7 +220,7 @@ public class FileBackend {
 		}
 	}
 
-	public static Bitmap rotate(Bitmap bitmap, int degree) {
+	private static Bitmap rotate(Bitmap bitmap, int degree) {
 		if (degree == 0) {
 			return bitmap;
 		}
@@ -235,8 +234,6 @@ public class FileBackend {
 		}
 		return result;
 	}
-
-
 
 
 	public boolean useImageAsIs(Uri uri) {
@@ -263,19 +260,16 @@ public class FileBackend {
 	}
 
 	public static boolean isPathBlacklisted(String path) {
-		for(String element : BLACKLISTED_PATH_ELEMENTS) {
-			if (path.contains(element)) {
-				return true;
-			}
-		}
-		return false;
+		Environment.getDataDirectory();
+		final String androidDataPath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/Android/data/";
+		return path.startsWith(androidDataPath);
 	}
 
 	public String getOriginalPath(Uri uri) {
 		return FileUtils.getPath(mXmppConnectionService, uri);
 	}
 
-	public void copyFileToPrivateStorage(File file, Uri uri) throws FileCopyException {
+	private void copyFileToPrivateStorage(File file, Uri uri) throws FileCopyException {
 		Log.d(Config.LOGTAG, "copy file (" + uri.toString() + ") to private storage " + file.getAbsolutePath());
 		file.getParentFile().mkdirs();
 		OutputStream os = null;
@@ -535,8 +529,7 @@ public class FileBackend {
 	public static Uri getUriForFile(Context context, File file) {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N || Config.ONLY_INTERNAL_STORAGE) {
 			try {
-				String packageId = context.getPackageName();
-				return FileProvider.getUriForFile(context, packageId + FILE_PROVIDER, file);
+				return FileProvider.getUriForFile(context, getAuthority(context), file);
 			} catch (IllegalArgumentException e) {
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
 					throw new SecurityException(e);
@@ -547,6 +540,10 @@ public class FileBackend {
 		} else {
 			return Uri.fromFile(file);
 		}
+	}
+
+	public static String getAuthority(Context context) {
+		return context.getPackageName() + FILE_PROVIDER;
 	}
 
 	public static Uri getIndexableTakePhotoUri(Uri original) {
@@ -564,7 +561,7 @@ public class FileBackend {
 			return null;
 		}
 		if (hasAlpha(bm)) {
-			Log.d(Config.LOGTAG,"alpha in avatar detected; uploading as PNG");
+			Log.d(Config.LOGTAG, "alpha in avatar detected; uploading as PNG");
 			bm.recycle();
 			bm = cropCenterSquare(image, 96);
 			return getPepAvatar(bm, Bitmap.CompressFormat.PNG, 100);
@@ -573,9 +570,9 @@ public class FileBackend {
 	}
 
 	private static boolean hasAlpha(final Bitmap bitmap) {
-		for(int x = 0; x < bitmap.getWidth(); ++x) {
-			for(int y = 0; y < bitmap.getWidth(); ++y) {
-				if (Color.alpha(bitmap.getPixel(x,y)) < 255) {
+		for (int x = 0; x < bitmap.getWidth(); ++x) {
+			for (int y = 0; y < bitmap.getWidth(); ++y) {
+				if (Color.alpha(bitmap.getPixel(x, y)) < 255) {
 					return true;
 				}
 			}
@@ -649,9 +646,7 @@ public class FileBackend {
 			avatar.width = options.outWidth;
 			avatar.type = options.outMimeType;
 			return avatar;
-		} catch (IOException e) {
-			return null;
-		} catch (NoSuchAlgorithmException e) {
+		} catch (NoSuchAlgorithmException | IOException e) {
 			return null;
 		} finally {
 			close(is);
@@ -663,14 +658,13 @@ public class FileBackend {
 		return file.exists();
 	}
 
-	public boolean save(Avatar avatar) {
+	public boolean save(final Avatar avatar) {
 		File file;
 		if (isAvatarCached(avatar)) {
 			file = new File(getAvatarPath(avatar.getFilename()));
 			avatar.size = file.length();
 		} else {
-			String filename = getAvatarPath(avatar.getFilename());
-			file = new File(filename + ".tmp");
+			file = new File(mXmppConnectionService.getCacheDir().getAbsolutePath() + "/" + UUID.randomUUID().toString());
 			file.getParentFile().mkdirs();
 			OutputStream os = null;
 			try {
@@ -685,6 +679,7 @@ public class FileBackend {
 				mDigestOutputStream.close();
 				String sha1sum = CryptoHelper.bytesToHex(digest.digest());
 				if (sha1sum.equals(avatar.sha1sum)) {
+					String filename = getAvatarPath(avatar.getFilename());
 					file.renameTo(new File(filename));
 				} else {
 					Log.d(Config.LOGTAG, "sha1sum mismatch for " + avatar.owner);
@@ -701,7 +696,7 @@ public class FileBackend {
 		return true;
 	}
 
-	public String getAvatarPath(String avatar) {
+	private String getAvatarPath(String avatar) {
 		return mXmppConnectionService.getFilesDir().getAbsolutePath() + "/avatars/" + avatar;
 	}
 
@@ -728,9 +723,7 @@ public class FileBackend {
 				input = rotate(input, getRotation(image));
 				return cropCenterSquare(input, size);
 			}
-		} catch (SecurityException e) {
-			return null; // happens for example on Android 6.0 if contacts permissions get revoked
-		} catch (FileNotFoundException e) {
+		} catch (FileNotFoundException | SecurityException e) {
 			return null;
 		} finally {
 			close(is);
