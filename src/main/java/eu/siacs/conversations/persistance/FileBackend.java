@@ -679,8 +679,10 @@ public class FileBackend {
 				mDigestOutputStream.close();
 				String sha1sum = CryptoHelper.bytesToHex(digest.digest());
 				if (sha1sum.equals(avatar.sha1sum)) {
-					String filename = getAvatarPath(avatar.getFilename());
-					file.renameTo(new File(filename));
+					final String filename = getAvatarPath(avatar.getFilename());
+					final File newFileName = new File(filename);
+					newFileName.getParentFile().mkdirs();
+					file.renameTo(newFileName);
 				} else {
 					Log.d(Config.LOGTAG, "sha1sum mismatch for " + avatar.owner);
 					file.delete();
