@@ -239,6 +239,13 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 						return getString(R.string.invalid_username);
 					}
 				}));
+		this.binding.editTopicButton.setOnClickListener(v -> {
+			if (mConversation != null && mConversation.getMucOptions().canChangeSubject()) {
+				quickEdit(mConversation.getMucOptions().getSubject(),
+						R.string.edit_subject_hint,
+						this.onSubjectEdited);
+			}
+		});
 		this.mAdvancedMode = getPreferences().getBoolean("advanced_muc_mode", false);
 		this.binding.mucInfoMore.setVisibility(this.mAdvancedMode ? View.VISIBLE : View.GONE);
 		this.binding.notificationStatusButton.setOnClickListener(this.mNotifyStatusClickListener);
@@ -261,13 +268,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		switch (menuItem.getItemId()) {
 			case android.R.id.home:
 				finish();
-				break;
-			case R.id.action_edit_subject:
-				if (mConversation != null) {
-					quickEdit(mConversation.getMucOptions().getSubject(),
-							R.string.edit_subject_hint,
-							this.onSubjectEdited);
-				}
 				break;
 			case R.id.action_share_http:
 				shareLink(true);
@@ -312,7 +312,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		MenuItem menuItemSaveBookmark = menu.findItem(R.id.action_save_as_bookmark);
 		MenuItem menuItemDeleteBookmark = menu.findItem(R.id.action_delete_bookmark);
 		MenuItem menuItemAdvancedMode = menu.findItem(R.id.action_advanced_mode);
-		MenuItem menuItemChangeSubject = menu.findItem(R.id.action_edit_subject);
 		menuItemAdvancedMode.setChecked(mAdvancedMode);
 		if (mConversation == null) {
 			return true;
@@ -324,7 +323,6 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 			menuItemDeleteBookmark.setVisible(false);
 			menuItemSaveBookmark.setVisible(true);
 		}
-		menuItemChangeSubject.setVisible(mConversation.getMucOptions().canChangeSubject());
 		return true;
 	}
 
@@ -518,6 +516,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		this.binding.yourPhoto.setImageBitmap(avatarService().get(mConversation.getAccount(), getPixel(48)));
 		setTitle(mConversation.getName());
 		this.binding.mucTopic.setText(mucOptions.getSubject());
+		this.binding.editTopicButton.setVisibility(mConversation.getMucOptions().canChangeSubject() ? View.VISIBLE : View.GONE);
 		this.binding.mucJabberid.setText(mConversation.getJid().asBareJid().toString());
 		this.binding.mucYourNick.setText(mucOptions.getActualNick());
 		if (mucOptions.online()) {

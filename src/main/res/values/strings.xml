@@ -690,4 +690,5 @@
     <string name="large">Large</string>
     <string name="not_encrypted_for_this_device">Message was not encrypted for this device.</string>
     <string name="undo">undo</string>
+    <string name="example_topic">This is a chat topic. Here is a link: http://example.com/</string>
 </resources>
