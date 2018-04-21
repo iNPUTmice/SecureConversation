@@ -825,11 +825,10 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		return db;
 	}
 
-	public void updateMessage(Message message) {
+	public boolean updateMessage(Message message) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		String[] args = {message.getUuid()};
-		db.update(Message.TABLENAME, message.getContentValues(), Message.UUID
-				+ "=?", args);
+		return db.update(Message.TABLENAME, message.getContentValues(), Message.UUID + "=?", args) == 1;
 	}
 
 	public void updateMessage(Message message, String uuid) {
@@ -889,7 +888,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		Cursor cursor = null;
 		try {
 			SQLiteDatabase db = this.getReadableDatabase();
-			String sql = "select messages.timeSent,messages.serverMsgId from accounts join conversations on accounts.uuid=conversations.accountUuid join messages on conversations.uuid=messages.conversationUuid where accounts.uuid=? and (messages.status=0 or messages.carbon=1 or messages.serverMsgId not null) and conversations.mode=0 order by messages.timesent desc limit 1";
+			String sql = "select messages.timeSent,messages.serverMsgId from accounts join conversations on accounts.uuid=conversations.accountUuid join messages on conversations.uuid=messages.conversationUuid where accounts.uuid=? and (messages.status=0 or messages.carbon=1 or messages.serverMsgId not null) and (conversations.mode=0 or (messages.serverMsgId not null and messages.type=4)) order by messages.timesent desc limit 1";
 			String[] args = {account.getUuid()};
 			cursor = db.rawQuery(sql, args);
 			if (cursor.getCount() == 0) {
