@@ -89,6 +89,11 @@
         <item type="reference" name="icon_notifications_paused">@drawable/ic_notifications_paused_black_24dp</item>
         <item type="reference" name="icon_notifications_none">@drawable/ic_notifications_none_black_24dp</item>
         <item type="reference" name="icon_enable_undecided_device">@drawable/ic_new_releases_black_24dp</item>
+
+        <item type="reference" name="background_contact_first">@drawable/background_contact_first</item>
+        <item type="reference" name="background_contact_last">@drawable/background_contact_last</item>
+        <item type="reference" name="background_contact_normal">@drawable/background_contact_normal</item>
+        <item type="reference" name="background_contact_only_one">@drawable/background_contact_only_one</item>
     </style>
 
     <style name="ConversationsTheme.Dark" parent="Theme.AppCompat.NoActionBar">
@@ -179,6 +184,11 @@
         <item type="reference" name="icon_notifications_paused">@drawable/ic_notifications_paused_white_24dp</item>
         <item type="reference" name="icon_notifications_none">@drawable/ic_notifications_none_white_24dp</item>
         <item type="reference" name="icon_enable_undecided_device">@drawable/ic_new_releases_white_24dp</item>
+
+        <item type="reference" name="background_contact_first">@drawable/background_contact_first_dark</item>
+        <item type="reference" name="background_contact_last">@drawable/background_contact_last_dark</item>
+        <item type="reference" name="background_contact_normal">@drawable/background_contact_normal_dark</item>
+        <item type="reference" name="background_contact_only_one">@drawable/background_contact_only_one_dark</item>
     </style>
 
     <style name="ConversationsTheme.Medium" parent="ConversationsTheme">
