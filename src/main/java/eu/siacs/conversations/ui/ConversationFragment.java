@@ -180,7 +180,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			if (password == null) {
 				password = "";
 			}
-			activity.quickPasswordEdit(password, value -> {
+			activity.quickPasswordEdit(password, getView(), value -> {
 				activity.xmppConnectionService.providePasswordForMuc(conversation, value);
 				return null;
 			});

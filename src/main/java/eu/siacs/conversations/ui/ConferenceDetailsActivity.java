@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -232,6 +233,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 		configureActionBar(getSupportActionBar());
 		this.binding.editNickButton.setOnClickListener(v -> quickEdit(mConversation.getMucOptions().getActualNick(),
 				0,
+				((ViewGroup) findViewById(android.R.id.content)).getChildAt(0),
 				value -> {
 					if (xmppConnectionService.renameInMuc(mConversation, value, renameCallback)) {
 						return null;
@@ -266,6 +268,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
 				if (mConversation != null) {
 					quickEdit(mConversation.getMucOptions().getSubject(),
 							R.string.edit_subject_hint,
+							((ViewGroup) findViewById(android.R.id.content)).getChildAt(0),
 							this.onSubjectEdited);
 				}
 				break;

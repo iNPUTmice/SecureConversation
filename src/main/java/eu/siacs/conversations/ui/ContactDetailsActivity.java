@@ -18,6 +18,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.TextView;
@@ -242,7 +243,7 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
 			case R.id.action_edit_contact:
 				Uri systemAccount = contact.getSystemAccount();
 				if (systemAccount == null) {
-					quickEdit(contact.getDisplayName(), 0, new OnValueEdited() {
+					quickEdit(contact.getDisplayName(), 0, ((ViewGroup) findViewById(android.R.id.content)).getChildAt(0), new OnValueEdited() {
 
 						@Override
 						public String onValueEdited(String value) {
