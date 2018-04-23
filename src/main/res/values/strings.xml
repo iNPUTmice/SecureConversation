@@ -296,7 +296,7 @@
     <string name="copy_original_url">Copy original URL</string>
     <string name="send_again">Send again</string>
     <string name="file_url">File URL</string>
-    <string name="url_copied_to_clipboard">URL copied to clipboard</string>
+    <string name="url_copied_to_clipboard">Copied URL to clipboard</string>
     <string name="scan_qr_code">Scan 2D Barcode</string>
     <string name="show_qr_code">Show 2D Barcode</string>
     <string name="show_block_list">Show block list</string>
@@ -690,5 +690,17 @@
     <string name="large">Large</string>
     <string name="not_encrypted_for_this_device">Message was not encrypted for this device.</string>
     <string name="undo">undo</string>
+    <string name="location_disabled">Location sharing is disabled</string>
+    <string name="action_fix_to_location">Fix position</string>
+    <string name="action_unfix_from_location">Unfix position</string>
+    <string name="action_copy_location">Copy Location</string>
+    <string name="action_share_location">Share Location</string>
+    <string name="action_directions">Directions</string>
+    <string name="title_activity_share_location">Share location</string>
+    <string name="title_activity_show_location">Show location</string>
+    <string name="share">Share</string>
+    <string name="unable_to_start_recording">Unable to start recording</string>
+    <string name="please_wait">Please wait…</string>
+    <string name="no_microphone_permission">Conversations needs access to the microphone</string>
     <string name="turn_light_on">Tap to turn light on</string>
 </resources>
