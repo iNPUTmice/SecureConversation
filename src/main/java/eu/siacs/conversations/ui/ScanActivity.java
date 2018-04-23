@@ -17,62 +17,84 @@
 
 package eu.siacs.conversations.ui;
 
-import java.util.EnumMap;
-import java.util.Map;
-
-import com.google.zxing.BinaryBitmap;
-import com.google.zxing.DecodeHintType;
-import com.google.zxing.PlanarYUVLuminanceSource;
-import com.google.zxing.ReaderException;
-import com.google.zxing.Result;
-import com.google.zxing.ResultPointCallback;
-import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.qrcode.QRCodeReader;
-
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Process;
 import android.os.Vibrator;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.Surface;
 import android.view.TextureView;
 import android.view.TextureView.SurfaceTextureListener;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.Toast;
+
+import com.google.zxing.BinaryBitmap;
+import com.google.zxing.DecodeHintType;
+import com.google.zxing.LuminanceSource;
+import com.google.zxing.PlanarYUVLuminanceSource;
+import com.google.zxing.RGBLuminanceSource;
+import com.google.zxing.ReaderException;
+import com.google.zxing.Result;
+import com.google.zxing.ResultPointCallback;
+import com.google.zxing.common.HybridBinarizer;
+import com.google.zxing.qrcode.QRCodeReader;
+
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.service.CameraManager;
+import eu.siacs.conversations.ui.util.AttachmentTool;
 import eu.siacs.conversations.ui.widget.ScannerView;
+import eu.siacs.conversations.utils.FileUtils;
 
 /**
  * @author Andreas Schildbach
  */
 @SuppressWarnings("deprecation")
-public final class ScanActivity extends Activity implements SurfaceTextureListener, ActivityCompat.OnRequestPermissionsResultCallback {
+public final class ScanActivity extends AppCompatActivity implements SurfaceTextureListener, ActivityCompat.OnRequestPermissionsResultCallback, CompoundButton.OnCheckedChangeListener {
 	public static final String INTENT_EXTRA_RESULT = "result";
 
 	public static final int REQUEST_SCAN_QR_CODE = 0x0987;
 	private static final int REQUEST_CAMERA_PERMISSIONS_TO_SCAN = 0x6789;
+	private static final int REQUEST_READ_EXTERNAL_STORAGE_PERMISSIONS = 0x1234;
 
 	private static final long VIBRATE_DURATION = 50L;
 	private static final long AUTO_FOCUS_INTERVAL_MS = 2500L;
+	private static final int REQUEST_CODE_CHOOSE_PICTURE = 0x01;
+
 	private static boolean DISABLE_CONTINUOUS_AUTOFOCUS = Build.MODEL.equals("GT-I9100") // Galaxy S2
 			|| Build.MODEL.equals("SGH-T989") // Galaxy S2
 			|| Build.MODEL.equals("SGH-T989D") // Galaxy S2 X
@@ -86,6 +108,10 @@ public final class ScanActivity extends Activity implements SurfaceTextureListen
 	private Vibrator vibrator;
 	private HandlerThread cameraThread;
 	private volatile Handler cameraHandler;
+	private final QRCodeReader reader = new QRCodeReader();
+	private final Map<DecodeHintType, Object> hints = new EnumMap<>(DecodeHintType.class);
+	private CheckBox highlightToggle;
+
 	private final Runnable closeRunnable = new Runnable() {
 		@Override
 		public void run() {
@@ -93,32 +119,11 @@ public final class ScanActivity extends Activity implements SurfaceTextureListen
 			cameraManager.close();
 		}
 	};
-	private final Runnable fetchAndDecodeRunnable = new Runnable() {
-		private final QRCodeReader reader = new QRCodeReader();
-		private final Map<DecodeHintType, Object> hints = new EnumMap<DecodeHintType, Object>(DecodeHintType.class);
+	private final Runnable fetchAndDecodeRunnable = () -> cameraManager.requestPreviewFrame((data, camera) ->{
+		final PlanarYUVLuminanceSource source = cameraManager.buildLuminanceSource(data);
+		decode(source);
+	} );
 
-		@Override
-		public void run() {
-			cameraManager.requestPreviewFrame((data, camera) -> decode(data));
-		}
-
-		private void decode(final byte[] data) {
-			final PlanarYUVLuminanceSource source = cameraManager.buildLuminanceSource(data);
-			final BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
-
-			try {
-				hints.put(DecodeHintType.NEED_RESULT_POINT_CALLBACK, (ResultPointCallback) dot -> runOnUiThread(() -> scannerView.addDot(dot)));
-				final Result scanResult = reader.decode(bitmap, hints);
-
-				runOnUiThread(() -> handleResult(scanResult));
-			} catch (final ReaderException x) {
-				// retry
-				cameraHandler.post(fetchAndDecodeRunnable);
-			} finally {
-				reader.reset();
-			}
-		}
-	};
 	private final Runnable openRunnable = new Runnable() {
 		@Override
 		public void run() {
@@ -161,6 +166,23 @@ public final class ScanActivity extends Activity implements SurfaceTextureListen
 		}
 	};
 
+	private SensorEventListener sensorEventListener = new SensorEventListener() {
+		@Override
+		public void onSensorChanged(SensorEvent event) {
+			float lux = event.values[0];
+			if(Float.compare(lux, 10.0f) > 0){
+				highlightToggle.setVisibility(View.GONE);
+			}else {
+				highlightToggle.setVisibility(View.VISIBLE);
+			}
+		}
+
+		@Override
+		public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+		}
+	};
+
 	@Override
 	public void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -175,6 +197,18 @@ public final class ScanActivity extends Activity implements SurfaceTextureListen
 		cameraThread = new HandlerThread("cameraThread", Process.THREAD_PRIORITY_BACKGROUND);
 		cameraThread.start();
 		cameraHandler = new Handler(cameraThread.getLooper());
+
+		highlightToggle = findViewById(R.id.highlight_toggle);
+		highlightToggle.setOnCheckedChangeListener(this);
+		setSupportActionBar(findViewById(R.id.toolbar));
+		ActionBar actionBar = getSupportActionBar();
+		actionBar.setHomeButtonEnabled(true);
+		actionBar.setDisplayHomeAsUpEnabled(true);
+		actionBar.setDisplayShowTitleEnabled(false);
+
+		SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+		Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+		sensorManager.registerListener(sensorEventListener,sensor,SensorManager.SENSOR_DELAY_NORMAL);
 	}
 
 	@Override
@@ -197,8 +231,90 @@ public final class ScanActivity extends Activity implements SurfaceTextureListen
 		cameraThread.quit();
 
 		previewView.setSurfaceTextureListener(null);
-
+		SensorManager sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+		Sensor sensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
+		sensorManager.unregisterListener(sensorEventListener,sensor);
 		super.onDestroy();
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.activity_scan,menu);
+		return super.onCreateOptionsMenu(menu);
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+			case R.id.action_choose_picture:
+				if (ContextCompat.checkSelfPermission(this,
+					Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED){
+					choosePicture();
+				}else {
+					ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, REQUEST_READ_EXTERNAL_STORAGE_PERMISSIONS);
+				}
+				break;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	private void choosePicture() {
+		Intent intent = new Intent();
+		intent.setAction(Intent.ACTION_GET_CONTENT);
+		intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+		intent.setType("image/*");
+		startActivityForResult(
+                Intent.createChooser(intent, getString(R.string.perform_action_with)),
+                REQUEST_CODE_CHOOSE_PICTURE);
+	}
+
+	@Override
+	public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+		if(requestCode == REQUEST_READ_EXTERNAL_STORAGE_PERMISSIONS){
+			if(grantResults.length > 0){
+				if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+					choosePicture();
+				}else {
+					Toast.makeText(this,R.string.no_storage_permission,Toast.LENGTH_SHORT).show();
+				}
+			}
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if(requestCode == REQUEST_CODE_CHOOSE_PICTURE && resultCode == RESULT_OK){
+			List<Uri> imageUris = AttachmentTool.extractUriFromIntent(data);
+			if(!imageUris.isEmpty()){
+				Uri uri = imageUris.get(0);
+				String path = FileUtils.getPath(this, uri);
+				Bitmap bitmap = BitmapFactory.decodeFile(path);
+				int width = bitmap.getWidth();
+				int height = bitmap.getHeight();
+				int[] pixels = new int[width * height];
+				bitmap.getPixels(pixels, 0, width, 0, 0, width, height);
+				RGBLuminanceSource source = new RGBLuminanceSource(width
+						, height, pixels);
+				decode(source);
+			}
+		}
+	}
+
+	private void decode(LuminanceSource source) {
+		final BinaryBitmap bitmap = new BinaryBitmap(new HybridBinarizer(source));
+
+		try {
+			hints.put(DecodeHintType.NEED_RESULT_POINT_CALLBACK, (ResultPointCallback) dot -> runOnUiThread(() -> scannerView.addDot(dot)));
+			final Result scanResult = reader.decode(bitmap, hints);
+
+			runOnUiThread(() -> handleResult(scanResult));
+		} catch (final ReaderException x) {
+			// retry
+			cameraHandler.post(fetchAndDecodeRunnable);
+		} finally {
+			reader.reset();
+		}
 	}
 
 	private void maybeOpenCamera() {
@@ -290,6 +406,15 @@ public final class ScanActivity extends Activity implements SurfaceTextureListen
 			} else {
 				Toast.makeText(activity, R.string.qr_code_scanner_needs_access_to_camera, Toast.LENGTH_SHORT).show();
 			}
+		}
+	}
+
+	@Override
+	public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+		if(isChecked){
+			cameraManager.openFlash();
+		}else {
+			cameraManager.closeFlash();
 		}
 	}
 

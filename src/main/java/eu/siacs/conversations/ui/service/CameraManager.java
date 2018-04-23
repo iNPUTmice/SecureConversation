@@ -17,15 +17,6 @@
 
 package eu.siacs.conversations.ui.service;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-
-import com.google.zxing.PlanarYUVLuminanceSource;
-
 import android.annotation.SuppressLint;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -34,6 +25,15 @@ import android.hardware.Camera.CameraInfo;
 import android.hardware.Camera.PreviewCallback;
 import android.util.Log;
 import android.view.TextureView;
+
+import com.google.zxing.PlanarYUVLuminanceSource;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import eu.siacs.conversations.Config;
 
@@ -273,6 +273,18 @@ public final class CameraManager {
         return new PlanarYUVLuminanceSource(data, cameraResolution.width, cameraResolution.height,
                 (int) framePreview.left, (int) framePreview.top, (int) framePreview.width(),
                 (int) framePreview.height(), false);
+    }
+
+    public void openFlash(){
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
+        camera.setParameters(parameters);
+    }
+
+    public void closeFlash(){
+        Camera.Parameters parameters = camera.getParameters();
+        parameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+        camera.setParameters(parameters);
     }
 
     public void setTorch(final boolean enabled) {

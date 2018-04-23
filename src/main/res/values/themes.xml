@@ -215,7 +215,7 @@
         <item name="IconSize">22sp</item>
     </style>
 
-    <style name="ConversationsTheme.FullScreen" parent="@style/Theme.AppCompat.Light">
+    <style name="ConversationsTheme.FullScreen" parent="@style/Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/primary500</item>
         <item name="colorPrimaryDark">@color/primary700</item>
         <item name="android:windowNoTitle">true</item>

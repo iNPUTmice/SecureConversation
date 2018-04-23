@@ -690,4 +690,5 @@
     <string name="large">Large</string>
     <string name="not_encrypted_for_this_device">Message was not encrypted for this device.</string>
     <string name="undo">undo</string>
+    <string name="turn_light_on">Tap to turn light on</string>
 </resources>

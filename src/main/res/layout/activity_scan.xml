@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" >
-
+    android:layout_height="match_parent"
+>
     <TextureView
         android:id="@+id/scan_activity_preview"
         android:layout_width="match_parent"
@@ -14,4 +14,20 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-</merge>
+    <CheckBox
+        android:layout_gravity="center"
+        android:button="@null"
+        android:text="@string/turn_light_on"
+        android:layout_marginTop="168dp"
+        android:drawableTop="@drawable/highlight_toggle"
+        android:id="@+id/highlight_toggle"
+        android:textColor="@color/white70"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"></android.support.v7.widget.Toolbar>
+</FrameLayout>
