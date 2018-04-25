@@ -177,5 +177,6 @@ public final class Config {
 		public final static long LOCATION_FIX_TIME_DELTA = 1000 * 10; // ms
 		public final static float LOCATION_FIX_SPACE_DELTA = 10; // m
 		public final static int LOCATION_FIX_SIGNIFICANT_TIME_DELTA = 1000 * 60 * 2; // ms
+		public final static boolean SHOW_ZOOM_CONTROLS = false;
 	}
 }
