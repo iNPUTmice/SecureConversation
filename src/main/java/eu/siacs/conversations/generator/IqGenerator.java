@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -34,6 +35,8 @@ import eu.siacs.conversations.xmpp.forms.Data;
 import eu.siacs.conversations.xmpp.pep.Avatar;
 import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import rocks.xmpp.addr.Jid;
+
+import static eu.siacs.conversations.Config.PING_MAX_INTERVAL;
 
 public class IqGenerator extends AbstractGenerator {
 
@@ -165,6 +168,34 @@ public class IqGenerator extends AbstractGenerator {
 		packet.setTo(avatar.owner);
 		packet.addChild("vCard", "vcard-temp");
 		return packet;
+	}
+
+	public IqPacket registerEjabberdSaaSPush(final String pushToken, final String applicationId) {
+		final IqPacket iq = new IqPacket(IqPacket.TYPE.SET);
+		final Element push = iq.addChild("push", Namespace.EJABBERD_SAAS_PUSH);
+
+		Hashtable<String, String> bodyAttributes = new Hashtable<>();
+
+		bodyAttributes.put("send", "first-per-user");
+		bodyAttributes.put("groupchat", "true");
+		bodyAttributes.put("from", "name");
+
+		push.addChild("keepalive").setAttribute("max", PING_MAX_INTERVAL);
+		push.addChild("session").setAttribute("duration", "60");
+		push.addChild("body").setAttributes(bodyAttributes);
+		push.addChild("offline").setContent("true");
+		push.addChild("appid").setContent(applicationId);
+
+		final Element notification = push.addChild("notification");
+
+		notification.addChild("type").setContent("gcm");
+		notification.addChild("id").setContent(pushToken);
+
+		iq.setId(String.valueOf(System.currentTimeMillis()));
+
+		Log.d(Config.LOGTAG, iq.toString());
+
+		return iq;
 	}
 
 	public IqPacket retrieveAvatarMetaData(final Jid to) {

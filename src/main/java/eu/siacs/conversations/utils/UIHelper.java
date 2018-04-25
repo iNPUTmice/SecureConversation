@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -137,6 +138,27 @@ public class UIHelper {
 		return readableTimeDifference(context, time, true);
 	}
 
+	public static String readableDateFormat(Context context, long time) {
+		final Locale locale = context.getResources().getConfiguration().locale;
+
+		String format = "EEE, dd MMM yyyy";
+
+		if (time == 0) {
+			return context.getString(R.string.today);
+		}
+
+		final Date date = new Date(time);
+
+		if (sameYear(date)) {
+			format = "EEE, dd MMM";
+		}
+
+		final SimpleDateFormat df = new SimpleDateFormat(format, locale);
+		final String dateText = df.format(date);
+
+		return dateText;
+	}
+
 	private static String readableTimeDifference(Context context, long time,
 	                                             boolean fullDate) {
 		if (time == 0) {
@@ -184,6 +206,15 @@ public class UIHelper {
 
 	public static boolean sameDay(long a, long b) {
 		return sameDay(new Date(a), new Date(b));
+	}
+	
+	private static boolean sameYear(Date a) {
+		Calendar cal1 = Calendar.getInstance();
+		Calendar cal2 = Calendar.getInstance();
+		cal1.setTime(a);
+		cal2.setTime(new Date(System.currentTimeMillis()));
+
+		return cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR);
 	}
 
 	private static boolean sameDay(Date a, Date b) {

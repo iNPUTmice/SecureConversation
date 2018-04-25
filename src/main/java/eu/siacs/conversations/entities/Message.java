@@ -878,6 +878,16 @@ public class Message extends AbstractEntity {
 		return inUnencryptedSession || getCleanedEncryption(this.getEncryption()) == pastEncryption;
 	}
 
+	public String getFileMessage() {
+		final String partsWithMessage[] = body.split("~~~");
+
+		if (partsWithMessage.length == 2) {
+			return partsWithMessage[0];
+		} else {
+			return "";
+		}
+	}
+
 	private static int getCleanedEncryption(int encryption) {
 		if (encryption == ENCRYPTION_DECRYPTED || encryption == ENCRYPTION_DECRYPTION_FAILED) {
 			return ENCRYPTION_PGP;
