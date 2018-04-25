@@ -484,7 +484,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 	}
 
-	public CharSequence getName() {
+	public @NonNull CharSequence getName() {
 		if (getMode() == MODE_MULTI) {
 			final String subject = getMucOptions().getSubject();
 			final Bookmark bookmark = getBookmark();
@@ -498,7 +498,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				if (printableValue(generatedName)) {
 					return generatedName;
 				} else {
-					return getJid().getLocal();
+					return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;
 				}
 			}
 		} else if (isWithStranger()) {
@@ -620,6 +620,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	private static boolean suitableForOmemoByDefault(final Conversation conversation) {
 		if (conversation.getJid().asBareJid().equals(Config.BUG_REPORTS)) {
+			return false;
+		}
+		if (conversation.getContact().isOwnServer()) {
 			return false;
 		}
 		final String contact = conversation.getJid().getDomain();
@@ -920,9 +923,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	}
 
 	public boolean isWithStranger() {
+		final Contact contact = getContact();
 		return mode == MODE_SINGLE
-				&& !getJid().equals(Jid.ofDomain(account.getJid().getDomain()))
-				&& !getContact().showInRoster()
+				&& !contact.isOwnServer()
+				&& !contact.showInRoster()
+				&& !contact.isSelf()
 				&& sentMessagesCount() == 0;
 	}
 

@@ -6,7 +6,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.1.0'
+        classpath 'com.android.tools.build:gradle:3.1.1'
     }
 }
 
@@ -33,7 +33,7 @@ ext {
 }
 
 dependencies {
-    playstoreImplementation 'com.google.android.gms:play-services-gcm:12.0.1'
+    playstoreImplementation 'com.google.android.gms:play-services-gcm:15.0.0'
     implementation 'org.sufficientlysecure:openpgp-api:10.0'
     implementation 'com.soundcloud.android:android-crop:1.0.1@aar'
     implementation "com.android.support:support-v13:$supportLibVersion"
@@ -52,6 +52,7 @@ dependencies {
     implementation "com.wefika:flowlayout:0.4.1"
     implementation 'net.ypresto.androidtranscoder:android-transcoder:0.2.0'
     implementation 'rocks.xmpp:xmpp-addr:0.8.0-SNAPSHOT'
+    implementation 'org.osmdroid:osmdroid-android:6.0.1'
 }
 
 ext {
@@ -65,8 +66,8 @@ android {
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 25
-        versionCode 264
-        versionName "2.1.0"
+        versionCode 266
+        versionName "2.1.2"
         archivesBaseName += "-$versionName"
         applicationId "eu.siacs.conversations"
         resValue "string", "applicationId", applicationId

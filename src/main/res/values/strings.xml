@@ -296,7 +296,7 @@
     <string name="copy_original_url">Copy original URL</string>
     <string name="send_again">Send again</string>
     <string name="file_url">File URL</string>
-    <string name="url_copied_to_clipboard">URL copied to clipboard</string>
+    <string name="url_copied_to_clipboard">Copied URL to clipboard</string>
     <string name="scan_qr_code">Scan 2D Barcode</string>
     <string name="show_qr_code">Show 2D Barcode</string>
     <string name="show_block_list">Show block list</string>
@@ -388,7 +388,6 @@
     <string name="pdf_document">PDF document</string>
     <string name="apk">Android App</string>
     <string name="vcard">Contact</string>
-    <string name="received_x_file">Received %s</string>
     <string name="touch_to_open_conversations">Touch to open Conversations</string>
     <string name="avatar_has_been_published">Avatar has been published!</string>
     <string name="sending_x_file">Sending %s</string>
@@ -404,7 +403,6 @@
     <string name="show_location">Show location</string>
     <string name="no_application_found_to_display_location">No application found to display location</string>
     <string name="location">Location</string>
-    <string name="received_location">Received location</string>
     <string name="title_undo_swipe_out_conversation">Conversation closed</string>
     <string name="title_undo_swipe_out_muc">Left group chat</string>
     <string name="pref_dont_trust_system_cas_title">Don’t trust system CAs</string>
@@ -428,7 +426,8 @@
     <string name="none">None</string>
     <string name="recently_used">Most recently used</string>
     <string name="choose_quick_action">Choose quick action</string>
-    <string name="search_for_contacts_or_groups">Search for contacts or groups</string>
+    <string name="search_contacts">Search contacts</string>
+    <string name="search_groups">Search group chats</string>
     <string name="send_private_message">Send private message</string>
     <string name="user_has_left_conference">%1$s has left the group chat!</string>
     <string name="username">Username</string>
@@ -692,4 +691,16 @@
     <string name="large">Large</string>
     <string name="not_encrypted_for_this_device">Message was not encrypted for this device.</string>
     <string name="undo">undo</string>
+    <string name="location_disabled">Location sharing is disabled</string>
+    <string name="action_fix_to_location">Fix position</string>
+    <string name="action_unfix_from_location">Unfix position</string>
+    <string name="action_copy_location">Copy Location</string>
+    <string name="action_share_location">Share Location</string>
+    <string name="action_directions">Directions</string>
+    <string name="title_activity_share_location">Share location</string>
+    <string name="title_activity_show_location">Show location</string>
+    <string name="share">Share</string>
+    <string name="unable_to_start_recording">Unable to start recording</string>
+    <string name="please_wait">Please wait…</string>
+    <string name="no_microphone_permission">Conversations needs access to the microphone</string>
 </resources>
