@@ -21,6 +21,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
@@ -434,11 +435,13 @@ public class UIHelper {
 			return context.getString(R.string.audio);
 		} else if (mime.startsWith("video/")) {
 			return context.getString(R.string.video);
+		} else if (mime.equals("image/gif")) {
+			return context.getString(R.string.gif);
 		} else if (mime.startsWith("image/")) {
 			return context.getString(R.string.image);
 		} else if (mime.contains("pdf")) {
 			return context.getString(R.string.pdf_document);
-		} else if (mime.contains("application/vnd.android.package-archive")) {
+		} else if (mime.equals("application/vnd.android.package-archive")) {
 			return context.getString(R.string.apk);
 		} else if (mime.contains("vcard")) {
 			return context.getString(R.string.vcard);
@@ -448,7 +451,7 @@ public class UIHelper {
 	}
 
 	public static String getMessageDisplayName(final Message message) {
-		final Conversation conversation = message.getConversation();
+		final Conversational conversation = message.getConversation();
 		if (message.getStatus() == Message.STATUS_RECEIVED) {
 			final Contact contact = message.getContact();
 			if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -461,8 +464,8 @@ public class UIHelper {
 				return contact != null ? contact.getDisplayName() : "";
 			}
 		} else {
-			if (conversation.getMode() == Conversation.MODE_MULTI) {
-				return conversation.getMucOptions().getSelf().getName();
+			if (conversation instanceof Conversation && conversation.getMode() == Conversation.MODE_MULTI) {
+				return ((Conversation) conversation).getMucOptions().getSelf().getName();
 			} else {
 				final Jid jid = conversation.getAccount().getJid();
 				return jid.getLocal() != null ? jid.getLocal() : Jid.ofDomain(jid.getDomain()).toString();

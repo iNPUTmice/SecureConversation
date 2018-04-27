@@ -31,6 +31,7 @@ package eu.siacs.conversations.ui;
 
 import android.app.Activity;
 import android.app.Fragment;
+import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -41,6 +42,9 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -55,6 +59,7 @@ import eu.siacs.conversations.ui.adapter.ConversationAdapter;
 import eu.siacs.conversations.ui.interfaces.OnConversationArchived;
 import eu.siacs.conversations.ui.interfaces.OnConversationSelected;
 import eu.siacs.conversations.ui.util.Color;
+import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
 import eu.siacs.conversations.ui.util.PendingActionHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.util.ScrollState;
@@ -73,6 +78,7 @@ public class ConversationsOverviewFragment extends XmppFragment {
 	private FragmentConversationsOverviewBinding binding;
 	private ConversationAdapter conversationsAdapter;
 	private XmppActivity activity;
+	private float mSwipeEscapeVelocity = 0f;
 	private PendingActionHelper pendingActionHelper = new PendingActionHelper();
 
 	private ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(0,LEFT|RIGHT) {
@@ -80,6 +86,11 @@ public class ConversationsOverviewFragment extends XmppFragment {
 		public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
 			//todo maybe we can manually changing the position of the conversation
 			return false;
+		}
+
+		@Override
+		public float getSwipeEscapeVelocity (float defaultValue) {
+			return mSwipeEscapeVelocity;
 		}
 
 		@Override
@@ -230,8 +241,14 @@ public class ConversationsOverviewFragment extends XmppFragment {
 	}
 
 	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setHasOptionsMenu(true);
+	}
+
+	@Override
 	public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		Log.d(Config.LOGTAG, "onCreateView");
+		this.mSwipeEscapeVelocity = getResources().getDimension(R.dimen.swipe_escape_velocity);
 		this.binding = DataBindingUtil.inflate(inflater, R.layout.fragment_conversations_overview, container, false);
 		this.binding.fab.setOnClickListener((view) -> StartConversationActivity.launch(getActivity()));
 
@@ -247,6 +264,11 @@ public class ConversationsOverviewFragment extends XmppFragment {
 		this.binding.list.setLayoutManager(new LinearLayoutManager(getActivity(),LinearLayoutManager.VERTICAL,false));
 		this.touchHelper.attachToRecyclerView(this.binding.list);
 		return binding.getRoot();
+	}
+
+	@Override
+	public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
+		menuInflater.inflate(R.menu.fragment_conversations_overview, menu);
 	}
 
 	@Override
@@ -290,6 +312,19 @@ public class ConversationsOverviewFragment extends XmppFragment {
 	public void onResume() {
 		super.onResume();
 		Log.d(Config.LOGTAG, "ConversationsOverviewFragment.onResume()");
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(final MenuItem item) {
+		if (MenuDoubleTabUtil.shouldIgnoreTap()) {
+			return false;
+		}
+		switch (item.getItemId()) {
+			case R.id.action_search:
+				startActivity(new Intent(getActivity(), SearchActivity.class));
+				return true;
+		}
+		return super.onOptionsItemSelected(item);
 	}
 
 	@Override

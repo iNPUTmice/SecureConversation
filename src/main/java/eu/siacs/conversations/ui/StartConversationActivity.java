@@ -72,6 +72,7 @@ import eu.siacs.conversations.ui.interfaces.OnBackendConnected;
 import eu.siacs.conversations.ui.service.EmojiService;
 import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
 import eu.siacs.conversations.ui.util.PendingItem;
+import eu.siacs.conversations.ui.util.SoftKeyboardUtils;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.OnUpdateBlocklist;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -100,6 +101,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 		@Override
 		public boolean onMenuItemActionExpand(MenuItem item) {
 			mSearchEditText.post(() -> {
+				updateSearchViewHint();
 				mSearchEditText.requestFocus();
 				if (oneShotKeyboardSuppress.compareAndSet(true, false)) {
 					return;
@@ -115,7 +117,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 
 		@Override
 		public boolean onMenuItemActionCollapse(MenuItem item) {
-			hideKeyboard();
+			SoftKeyboardUtils.hideSoftKeyboard(StartConversationActivity.this);
 			mSearchEditText.setText("");
 			filter(null);
 			return true;
@@ -185,7 +187,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 					return true;
 				}
 			}
-			hideKeyboard();
+			SoftKeyboardUtils.hideSoftKeyboard(StartConversationActivity.this);
 			mListPagerAdapter.requestFocus(pos);
 			return true;
 		}
@@ -342,6 +344,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 
 	protected void openConversationForContact(Contact contact) {
 		Conversation conversation = xmppConnectionService.findOrCreateConversation(contact.getAccount(), contact.getJid(), false, true);
+		SoftKeyboardUtils.hideSoftKeyboard(this);
 		switchToConversation(conversation);
 	}
 
@@ -383,6 +386,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 			bookmark.setAutojoin(true);
 			xmppConnectionService.pushBookmarks(bookmark.getAccount());
 		}
+		SoftKeyboardUtils.hideSoftKeyboard(this);
 		switchToConversation(conversation);
 	}
 
@@ -543,6 +547,17 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 		super.invalidateOptionsMenu();
 	}
 
+	private void updateSearchViewHint() {
+		if (binding == null || mSearchEditText == null) {
+			return;
+		}
+		if (binding.startConversationViewPager.getCurrentItem() == 0) {
+			mSearchEditText.setHint(R.string.search_contacts);
+		} else {
+			mSearchEditText.setHint(R.string.search_groups);
+		}
+	}
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.start_conversation, menu);
@@ -564,6 +579,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 			mSearchEditText.append(initialSearchValue);
 			filter(initialSearchValue);
 		}
+		updateSearchViewHint();
 		return super.onCreateOptionsMenu(menu);
 	}
 
