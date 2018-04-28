@@ -18,7 +18,10 @@ import android.support.annotation.BoolRes;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
+import android.view.SubMenu;
+import android.view.View;
 
 import org.osmdroid.api.IGeoPoint;
 import org.osmdroid.api.IMapController;
@@ -31,6 +34,7 @@ import org.osmdroid.views.overlay.Overlay;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 
 import eu.siacs.conversations.BuildConfig;
 import eu.siacs.conversations.Config;
@@ -51,6 +55,14 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 
 	protected static final String KEY_LOCATION = "loc";
 	protected static final String KEY_ZOOM_LEVEL = "zoom";
+	protected XYTileSource tileSource = Config.Map.TILE_SOURCES[0];
+	protected final static LinkedHashMap<Integer, XYTileSource> TILE_SOURCES_MAP = new LinkedHashMap<Integer, XYTileSource>() {
+		{
+			for (int i = 0; i < Config.Map.TILE_SOURCES.length; i++) {
+				put(View.generateViewId(), Config.Map.TILE_SOURCES[i]);
+			}
+		}
+	};
 
 	protected Location myLoc = null;
 	private MapView map = null;
@@ -70,14 +82,6 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 
 	protected void updateLocationMarkers() {
 		clearMarkers();
-	}
-
-	protected XYTileSource tileSource() {
-		return new XYTileSource("OpenStreetMap",
-				0, 19, 256, ".png", new String[] {
-				"https://a.tile.openstreetmap.org/",
-				"https://b.tile.openstreetmap.org/",
-				"https://c.tile.openstreetmap.org/" },"© OpenStreetMap contributors");
 	}
 
 	@Override
@@ -149,7 +153,7 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 
 	protected void setupMapView(MapView mapView, final GeoPoint pos) {
 		map = mapView;
-		map.setTileSource(tileSource());
+		map.setTileSource(tileSource);
 		map.setBuiltInZoomControls(false);
 		map.setMultiTouchControls(true);
 		map.setTilesScaledToDpi(true);
@@ -165,6 +169,13 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 	protected abstract void gotoLoc(final boolean setZoomLevel);
 
 	protected abstract void setMyLoc(final Location location);
+
+	protected void changeTileSource(XYTileSource tileSource) {
+		if (this.tileSource != tileSource) {
+				this.tileSource = tileSource;
+				map.setTileSource(tileSource);
+		}
+	}
 
 	protected void requestLocationUpdates() {
 		if (!hasLocationFeature || locationManager == null) {
@@ -220,8 +231,28 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 			case android.R.id.home:
 				finish();
 				return true;
+			default:
+				if (TILE_SOURCES_MAP.get(item.getItemId()) != null) {
+					changeTileSource(TILE_SOURCES_MAP.get(item.getItemId()));
+					return true;
+				}
 		}
 		return super.onOptionsItemSelected(item);
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu(final Menu menu) {
+		if (TILE_SOURCES_MAP.size() > 1) {
+			final SubMenu subMenu = menu.findItem(R.id.action_change_tile_source).getSubMenu();
+			for (LinkedHashMap.Entry<Integer, XYTileSource> entry : TILE_SOURCES_MAP.entrySet()) {
+				subMenu.add(0, entry.getKey(), Menu.NONE, entry.getValue().name());
+			}
+		} else {
+			menu.findItem(R.id.action_change_tile_source).setVisible(false);
+		}
+
+		updateUi();
+		return true;
 	}
 
 	@Override
@@ -250,7 +281,7 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 		requestLocationUpdates();
 		updateLocationMarkers();
 		updateUi();
-		map.setTileSource(tileSource());
+		map.setTileSource(tileSource);
 		map.setTilesScaledToDpi(true);
 
 		if (mapAtInitialLoc()) {

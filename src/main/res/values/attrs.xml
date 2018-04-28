@@ -81,6 +81,7 @@
     <attr name="icon_gps_fixed" format="reference"/>
     <attr name="icon_directions" format="reference"/>
     <attr name="icon_copy_bar" format="reference"/>
+    <attr name="icon_change_tile_source" format="reference"/>
 
     <attr name="icon_notifications" format="reference"/>
     <attr name="icon_notifications_off" format="reference"/>

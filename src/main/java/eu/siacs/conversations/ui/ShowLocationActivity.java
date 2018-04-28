@@ -144,8 +144,8 @@ public class ShowLocationActivity extends LocationActivity implements LocationLi
 	public boolean onCreateOptionsMenu(final Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
 		getMenuInflater().inflate(R.menu.menu_show_location, menu);
-		updateUi();
-		return true;
+
+		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override

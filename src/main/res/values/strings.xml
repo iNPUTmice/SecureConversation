@@ -695,6 +695,7 @@
     <string name="action_fix_to_location">Fix position</string>
     <string name="action_unfix_from_location">Unfix position</string>
     <string name="action_copy_location">Copy Location</string>
+    <string name="action_change_tile_source">Change Map</string>
     <string name="action_share_location">Share Location</string>
     <string name="action_directions">Directions</string>
     <string name="title_activity_share_location">Share location</string>

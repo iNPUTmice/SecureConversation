@@ -11,4 +11,11 @@
         android:icon="?attr/icon_copy_bar"
         app:showAsAction="ifRoom"
         android:showAsAction="ifRoom"/>
+    <item android:id="@+id/action_change_tile_source"
+        android:title="@string/action_change_tile_source"
+        android:icon="?attr/icon_change_tile_source"
+        app:showAsAction="ifRoom"
+        android:showAsAction="ifRoom">
+        <menu/>
+    </item>
 </menu>

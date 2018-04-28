@@ -3,6 +3,7 @@ package eu.siacs.conversations;
 import android.graphics.Bitmap;
 
 import org.osmdroid.util.GeoPoint;
+import org.osmdroid.tileprovider.tilesource.XYTileSource;
 
 import java.util.Collections;
 import java.util.List;
@@ -177,5 +178,13 @@ public final class Config {
 		public final static long LOCATION_FIX_TIME_DELTA = 1000 * 10; // ms
 		public final static float LOCATION_FIX_SPACE_DELTA = 10; // m
 		public final static int LOCATION_FIX_SIGNIFICANT_TIME_DELTA = 1000 * 60 * 2; // ms
+
+		public final static XYTileSource TILE_SOURCES[] = {
+			new XYTileSource("OpenStreetMap",
+				0, 19, 256, ".png", new String[] {
+				"https://a.tile.openstreetmap.org/",
+				"https://b.tile.openstreetmap.org/",
+				"https://c.tile.openstreetmap.org/" },"© OpenStreetMap contributors")
+		};
 	}
 }

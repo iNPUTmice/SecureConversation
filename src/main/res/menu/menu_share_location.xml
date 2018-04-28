@@ -1,0 +1,11 @@
+<menu
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/action_change_tile_source"
+        android:title="@string/action_change_tile_source"
+        android:icon="?attr/icon_change_tile_source"
+        app:showAsAction="ifRoom"
+        android:showAsAction="ifRoom">
+        <menu/>
+    </item>
+</menu>
