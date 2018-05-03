@@ -132,6 +132,8 @@ For Prosody you need a couple of so called [community modules](https://modules.p
 
 If you pick ejabberd make sure you use the latest version. Linux Distributions might bundle some very old versions of it.
 
+There's an [Ansible role](https://github.com/Rudd-O/ansible-samples/tree/master/roles/prosodyxmpp) maintained by a third-party that can get you a Prosody server, plus Conversations-compatible modules and configuration, with minimal effort.
+
 #### Where can I set up a custom hostname / port
 Conversations will automatically look up the SRV records for your domain name
 which can point to any hostname port combination. If your server doesn’t provide
