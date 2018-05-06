@@ -109,6 +109,8 @@ public final class Config {
 
 	public static final boolean IGNORE_ID_REWRITE_IN_MUC = true;
 
+	public static final boolean PEP_BOOKMARKS = false; // store and retrieve bookmarks to/from pep instead of private storage
+
 	public static final long MAM_MAX_CATCHUP =  MILLISECONDS_IN_DAY * 5;
 	public static final int MAM_MAX_MESSAGES = 750;
 
