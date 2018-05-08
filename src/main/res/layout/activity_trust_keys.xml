@@ -75,14 +75,14 @@
 
                         <Button
                             android:id="@+id/disable_button"
-                            style="?android:attr/borderlessButtonStyle"
+                            style="@style/Widget.Conversations.Button.Borderless"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:minWidth="0dp"
                             android:paddingLeft="16dp"
                             android:paddingRight="16dp"
                             android:text="@string/disable_encryption"
-                            android:textColor="@color/accent"/>
+                            android:textColor="?colorAccent"/>
                     </LinearLayout>
                     </LinearLayout>
 
@@ -144,7 +144,7 @@
 
             <Button
                 android:id="@+id/cancel_button"
-                style="?android:attr/borderlessButtonStyle"
+                style="@style/Widget.Conversations.Button.Borderless"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -159,7 +159,7 @@
 
             <Button
                 android:id="@+id/save_button"
-                style="?android:attr/borderlessButtonStyle"
+                style="@style/Widget.Conversations.Button.Borderless"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"

@@ -1,8 +1,12 @@
 package eu.siacs.conversations.utils;
 
 import android.content.Context;
+import android.support.annotation.ColorInt;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.text.format.DateFormat;
 import android.text.format.DateUtils;
+import android.util.Log;
 import android.util.Pair;
 import android.widget.PopupMenu;
 
@@ -10,6 +14,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigInteger;
 import java.security.MessageDigest;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -21,6 +26,7 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
@@ -243,7 +249,11 @@ public class UIHelper {
 		}
 	}
 
-	public static Pair<String, Boolean> getMessagePreview(final Context context, final Message message) {
+	public static Pair<CharSequence, Boolean> getMessagePreview(final Context context, final Message message) {
+		return getMessagePreview(context, message, 0);
+	}
+
+	public static Pair<CharSequence, Boolean> getMessagePreview(final Context context, final Message message, @ColorInt int textColor) {
 		final Transferable d = message.getTransferable();
 		if (d != null) {
 			switch (d.getStatus()) {
@@ -277,36 +287,32 @@ public class UIHelper {
 			return new Pair<>(context.getString(R.string.pgp_message), true);
 		} else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
 			return new Pair<>(context.getString(R.string.decryption_failed), true);
+		} else if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE) {
+			return new Pair<>(context.getString(R.string.not_encrypted_for_this_device), true);
 		} else if (message.getType() == Message.TYPE_FILE || message.getType() == Message.TYPE_IMAGE) {
-			if (message.getStatus() == Message.STATUS_RECEIVED) {
-				return new Pair<>(context.getString(R.string.received_x_file,
-						getFileDescriptionString(context, message)), true);
-			} else {
-				return new Pair<>(getFileDescriptionString(context, message), true);
-			}
+			return new Pair<>(getFileDescriptionString(context, message), true);
 		} else {
-			final String body = message.getBody();
+			final String body = MessageUtils.filterLtrRtl(message.getBody());
 			if (body.startsWith(Message.ME_COMMAND)) {
 				return new Pair<>(body.replaceAll("^" + Message.ME_COMMAND,
 						UIHelper.getMessageDisplayName(message) + " "), false);
 			} else if (message.isGeoUri()) {
-				if (message.getStatus() == Message.STATUS_RECEIVED) {
-					return new Pair<>(context.getString(R.string.received_location), true);
-				} else {
-					return new Pair<>(context.getString(R.string.location), true);
-				}
+				return new Pair<>(context.getString(R.string.location), true);
 			} else if (message.treatAsDownloadable()) {
 				return new Pair<>(context.getString(R.string.x_file_offered_for_download,
 						getFileDescriptionString(context, message)), true);
 			} else {
-				String[] lines = body.split("\n");
-				StringBuilder builder = new StringBuilder();
-				for (String l : lines) {
+				SpannableStringBuilder styledBody = new SpannableStringBuilder(body);
+				if (textColor != 0) {
+					StylingHelper.format(styledBody, 0, styledBody.length() - 1, textColor);
+				}
+				SpannableStringBuilder builder = new SpannableStringBuilder();
+				for (CharSequence l : CharSequenceUtils.split(styledBody, '\n')) {
 					if (l.length() > 0) {
 						char first = l.charAt(0);
 						if ((first != '>' || !isPositionFollowedByQuoteableCharacter(l, 0)) && first != '\u00bb') {
-							String line = l.trim();
-							if (line.isEmpty()) {
+							CharSequence line = CharSequenceUtils.trim(l);
+							if (line.length() == 0) {
 								continue;
 							}
 							char last = line.charAt(line.length() - 1);
@@ -323,9 +329,13 @@ public class UIHelper {
 				if (builder.length() == 0) {
 					builder.append(body.trim());
 				}
-				return new Pair<>(builder.length() > 256 ? builder.substring(0, 256) : builder.toString(), false);
+				return new Pair<>(builder, false);
 			}
 		}
+	}
+
+	public static CharSequence shorten(CharSequence input) {
+		return input.length() > 256 ? StylingHelper.subSequence(input, 0, 256) : input;
 	}
 
 	public static boolean isPositionFollowedByQuoteableCharacter(CharSequence body, int pos) {
@@ -441,11 +451,13 @@ public class UIHelper {
 			return context.getString(R.string.audio);
 		} else if (mime.startsWith("video/")) {
 			return context.getString(R.string.video);
+		} else if (mime.equals("image/gif")) {
+			return context.getString(R.string.gif);
 		} else if (mime.startsWith("image/")) {
 			return context.getString(R.string.image);
 		} else if (mime.contains("pdf")) {
 			return context.getString(R.string.pdf_document);
-		} else if (mime.contains("application/vnd.android.package-archive")) {
+		} else if (mime.equals("application/vnd.android.package-archive")) {
 			return context.getString(R.string.apk);
 		} else if (mime.contains("vcard")) {
 			return context.getString(R.string.vcard);
@@ -455,7 +467,7 @@ public class UIHelper {
 	}
 
 	public static String getMessageDisplayName(final Message message) {
-		final Conversation conversation = message.getConversation();
+		final Conversational conversation = message.getConversation();
 		if (message.getStatus() == Message.STATUS_RECEIVED) {
 			final Contact contact = message.getContact();
 			if (conversation.getMode() == Conversation.MODE_MULTI) {
@@ -468,8 +480,8 @@ public class UIHelper {
 				return contact != null ? contact.getDisplayName() : "";
 			}
 		} else {
-			if (conversation.getMode() == Conversation.MODE_MULTI) {
-				return conversation.getMucOptions().getSelf().getName();
+			if (conversation instanceof Conversation && conversation.getMode() == Conversation.MODE_MULTI) {
+				return ((Conversation) conversation).getMucOptions().getSelf().getName();
 			} else {
 				final Jid jid = conversation.getAccount().getJid();
 				return jid.getLocal() != null ? jid.getLocal() : Jid.ofDomain(jid.getDomain()).toString();

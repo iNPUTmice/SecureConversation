@@ -29,6 +29,7 @@
 
 package eu.siacs.conversations.ui.util;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.provider.MediaStore;
@@ -45,13 +46,13 @@ import eu.siacs.conversations.entities.Message;
 
 public class ConversationMenuConfigurator {
 
-	private static boolean showSoundRecorderAttachment = false;
-	private static boolean showLocationAttachment = false;
+	private static boolean microphoneAvailable = false;
 
+	public static void reloadFeatures(Context context) {
+		microphoneAvailable = context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_MICROPHONE);
+	}
 
 	public static void configureAttachmentMenu(@NonNull Conversation conversation, Menu menu) {
-		final MenuItem menuAttachSoundRecorder = menu.findItem(R.id.attach_record_voice);
-		final MenuItem menuAttachLocation = menu.findItem(R.id.attach_location);
 		final MenuItem menuAttach = menu.findItem(R.id.action_attach_file);
 
 		final boolean visible;
@@ -60,15 +61,11 @@ public class ConversationMenuConfigurator {
 		} else {
 			visible = true;
 		}
-
 		menuAttach.setVisible(visible);
-
 		if (!visible) {
 			return;
 		}
-
-		menuAttachLocation.setVisible(showLocationAttachment);
-		menuAttachSoundRecorder.setVisible(showSoundRecorderAttachment);
+		menu.findItem(R.id.attach_record_voice).setVisible(microphoneAvailable);
 	}
 
 	public static void configureEncryptionMenu(@NonNull Conversation conversation, Menu menu) {
@@ -117,10 +114,5 @@ public class ConversationMenuConfigurator {
 				none.setChecked(true);
 				break;
 		}
-	}
-
-	public static void updateAttachmentAvailability(PackageManager packageManager) {
-		showSoundRecorderAttachment = new Intent(MediaStore.Audio.Media.RECORD_SOUND_ACTION).resolveActivity(packageManager) != null;
-		showLocationAttachment = new Intent("eu.siacs.conversations.location.request").resolveActivity(packageManager) != null;
 	}
 }

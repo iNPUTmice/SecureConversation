@@ -32,7 +32,13 @@ package eu.siacs.conversations.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.preference.PreferenceManager;
+import android.support.annotation.StyleRes;
+import android.support.design.widget.Snackbar;
+import android.support.v4.content.ContextCompat;
+import android.util.TypedValue;
+import android.widget.TextView;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.SettingsActivity;
@@ -51,6 +57,48 @@ public class ThemeHelper {
 				return dark ? R.style.ConversationsTheme_Dark_Large : R.style.ConversationsTheme_Large;
 			default:
 				return dark ? R.style.ConversationsTheme_Dark : R.style.ConversationsTheme;
+		}
+	}
+
+	public static int findDialog(Context context) {
+		final SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+		final Resources resources = context.getResources();
+		final boolean dark = sharedPreferences.getString(SettingsActivity.THEME, resources.getString(R.string.theme)).equals("dark");
+		final String fontSize = sharedPreferences.getString("font_size", resources.getString(R.string.default_font_size));
+		switch (fontSize) {
+			case "medium":
+				return dark ? R.style.ConversationsTheme_Dark_Dialog_Medium : R.style.ConversationsTheme_Dialog_Medium;
+			case "large":
+				return dark ? R.style.ConversationsTheme_Dark_Dialog_Large : R.style.ConversationsTheme_Dialog_Large;
+			default:
+				return dark ? R.style.ConversationsTheme_Dark_Dialog : R.style.ConversationsTheme_Dialog;
+		}
+	}
+
+	public static boolean isDark(@StyleRes int id) {
+		switch (id) {
+			case R.style.ConversationsTheme_Dark:
+			case R.style.ConversationsTheme_Dark_Large:
+			case R.style.ConversationsTheme_Dark_Medium:
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	public static void fix(Snackbar snackbar) {
+		final Context context = snackbar.getContext();
+		TypedArray typedArray = context.obtainStyledAttributes(new int[]{R.attr.TextSizeBody1});
+		final float size = typedArray.getDimension(0,0f);
+		typedArray.recycle();
+		if (size != 0f) {
+			final TextView text = snackbar.getView().findViewById(android.support.design.R.id.snackbar_text);
+			final TextView action = snackbar.getView().findViewById(android.support.design.R.id.snackbar_action);
+			if (text != null && action != null) {
+				text.setTextSize(TypedValue.COMPLEX_UNIT_PX, size);
+				action.setTextSize(TypedValue.COMPLEX_UNIT_PX, size);
+				action.setTextColor(ContextCompat.getColor(context, R.color.blue_a100));
+			}
 		}
 	}
 }

@@ -72,6 +72,7 @@ import eu.siacs.conversations.ui.interfaces.OnConversationSelected;
 import eu.siacs.conversations.ui.interfaces.OnConversationsListItemUpdated;
 import eu.siacs.conversations.ui.service.EmojiService;
 import eu.siacs.conversations.ui.util.ActivityResult;
+import eu.siacs.conversations.ui.util.ConversationMenuConfigurator;
 import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.utils.ExceptionHelper;
@@ -85,6 +86,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 	public static final String EXTRA_CONVERSATION = "conversationUuid";
 	public static final String EXTRA_DOWNLOAD_UUID = "eu.siacs.conversations.download_uuid";
 	public static final String EXTRA_TEXT = "text";
+	public static final String EXTRA_AS_QUOTE = "as_quote";
 	public static final String EXTRA_NICK = "nick";
 	public static final String EXTRA_IS_PRIVATE_MESSAGE = "pm";
 
@@ -363,6 +365,7 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 	@Override
 	protected void onCreate(final Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		ConversationMenuConfigurator.reloadFeatures(this);
 		OmemoSetting.load(this);
 		new EmojiService(this).init();
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_conversations);
@@ -424,7 +427,13 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 				FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
 				fragmentTransaction.replace(R.id.main_fragment, conversationFragment);
 				fragmentTransaction.addToBackStack(null);
-				fragmentTransaction.commitAllowingStateLoss(); //allowing state loss is probably fine since view intents et all are already stored and a click can probably be 'ignored'
+				try {
+					fragmentTransaction.commit();
+				} catch (IllegalStateException e) {
+					Log.w(Config.LOGTAG,"sate loss while opening conversation",e);
+					//allowing state loss is probably fine since view intents et all are already stored and a click can probably be 'ignored'
+					return;
+				}
 			}
 		} else {
 			mainNeedsRefresh = true;
@@ -563,7 +572,12 @@ public class ConversationsActivity extends XmppActivity implements OnConversatio
 		}
 		Fragment mainFragment = getFragmentManager().findFragmentById(R.id.main_fragment);
 		if (mainFragment != null && mainFragment instanceof ConversationFragment) {
-			getFragmentManager().popBackStack();
+			try {
+				getFragmentManager().popBackStack();
+			} catch (IllegalStateException e) {
+				Log.w(Config.LOGTAG,"state loss while popping back state after archiving conversation",e);
+				//this usually means activity is no longer active; meaning on the next open we will run through this again
+			}
 			return;
 		}
 		Fragment secondaryFragment = getFragmentManager().findFragmentById(R.id.secondary_fragment);

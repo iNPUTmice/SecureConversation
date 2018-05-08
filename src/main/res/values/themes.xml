@@ -2,17 +2,24 @@
 <resources>
 
     <style name="ConversationsTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="colorPrimary">@color/primary500</item>
-        <item name="colorPrimaryDark">@color/primary700</item>
-        <item name="colorAccent">@color/accent</item>
+        <item name="colorPrimary">@color/green600</item>
+        <item name="colorPrimaryDark">@color/green800</item>
+        <item name="colorAccent">@color/blue_a200</item>
         <item name="popupOverlayStyle">@style/ThemeOverlay.AppCompat.Light</item>
 
         <item name="color_background_primary">@color/grey50</item>
         <item name="color_background_secondary">@color/grey200</item>
         <item name="color_warning">@color/red_a700</item>
+        <item name="TextColorOnline">@color/green600</item>
+        <item name="TextColorError">@color/red800</item>
+
+        <item name="activity_background_search">@drawable/search_background_light</item>
+        <item name="activity_background_no_results">@drawable/no_results_background_light</item>
+
+        <item name="EmojiColor">@color/black</item>
 
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionModeBackground">@color/accent</item>
+        <item name="android:actionModeBackground">@color/blue_a200</item>
 
         <item name="TextSizeCaption">12sp</item>
         <item name="TextSizeBody1">14sp</item>
@@ -44,9 +51,9 @@
         <item type="reference" name="message_bubble_sent">@drawable/message_bubble_sent</item>
         <item type="reference" name="message_bubble_received_green">@drawable/message_bubble_received</item>
 
-        <item name="unread_count">@color/unreadcountlight</item>
+        <item name="unread_count">@color/green700_desaturated</item>
 
-        <item name="conversations_overview_background">@color/primary700</item>
+        <item name="conversations_overview_background">@color/green700</item>
 
         <item type="float" name="icon_alpha">0.54</item>
 
@@ -77,6 +84,11 @@
         <item type="reference" name="icon_scan_qr_code">@drawable/ic_qr_code_scan_white_24dp</item>
         <item type="reference" name="icon_scroll_down">@drawable/ic_scroll_to_end_black</item>
 
+        <item type="reference" name="icon_gps_not_fixed">@drawable/ic_gps_not_fixed_black_24dp</item>
+        <item type="reference" name="icon_gps_fixed">@drawable/ic_gps_fixed_black_24dp</item>
+        <item type="reference" name="icon_directions">@drawable/ic_directions_black_24dp</item>
+        <item type="reference" name="icon_copy_bar">@drawable/ic_content_copy_white_24dp</item>
+
         <item type="reference" name="icon_notifications">@drawable/ic_notifications_black_24dp</item>
         <item type="reference" name="icon_notifications_off">@drawable/ic_notifications_off_black_24dp</item>
         <item type="reference" name="icon_notifications_paused">@drawable/ic_notifications_paused_black_24dp</item>
@@ -85,17 +97,24 @@
     </style>
 
     <style name="ConversationsTheme.Dark" parent="Theme.AppCompat.NoActionBar">
-        <item name="colorPrimary">@color/primary800</item>
-        <item name="colorPrimaryDark">@color/primary900</item>
-        <item name="colorAccent">@color/accent</item>
+        <item name="colorPrimary">@color/green800</item>
+        <item name="colorPrimaryDark">@color/green900</item>
+        <item name="colorAccent">@color/blue_a100</item>
         <item name="popupOverlayStyle">@style/ThemeOverlay.AppCompat.Dark</item>
 
         <item name="color_background_primary">@color/grey800</item>
         <item name="color_background_secondary">@color/grey900</item>
+        <item name="activity_background_search">@drawable/search_background_dark</item>
+        <item name="activity_background_no_results">@drawable/no_results_background_dark</item>
         <item name="color_warning">@color/red_a100</item>
 
+        <item name="TextColorOnline">@color/green500</item>
+        <item name="TextColorError">@color/red500</item>
+
+        <item name="EmojiColor">@color/white</item>
+
         <item name="windowActionModeOverlay">true</item>
-        <item name="android:actionModeBackground">@color/accent</item>
+        <item name="android:actionModeBackground">@color/blue_a100</item>
 
         <item name="TextSizeCaption">12sp</item>
         <item name="TextSizeBody1">14sp</item>
@@ -127,9 +146,9 @@
         <item type="reference" name="message_bubble_sent">@drawable/message_bubble_sent_grey</item>
         <item type="reference" name="message_bubble_received_green">@drawable/message_bubble_received_dark</item>
 
-        <item name="unread_count">@color/unreadcountdark</item>
+        <item name="unread_count">@color/green900_desaturated</item>
 
-        <item name="conversations_overview_background">@color/primary900</item>
+        <item name="conversations_overview_background">@color/green900</item>
 
         <item type="float" name="icon_alpha">0.7</item>
 
@@ -159,6 +178,11 @@
         <item type="reference" name="icon_share">@drawable/ic_share_white_24dp</item>
         <item type="reference" name="icon_scan_qr_code">@drawable/ic_qr_code_scan_white_24dp</item>
         <item type="reference" name="icon_scroll_down">@drawable/ic_scroll_to_end_white</item>
+
+        <item type="reference" name="icon_gps_not_fixed">@drawable/ic_gps_not_fixed_white_24dp</item>
+        <item type="reference" name="icon_gps_fixed">@drawable/ic_gps_fixed_white_24dp</item>
+        <item type="reference" name="icon_directions">@drawable/ic_directions_white_24dp</item>
+        <item type="reference" name="icon_copy_bar">@drawable/ic_content_copy_white_24dp</item>
 
         <item type="reference" name="icon_notifications">@drawable/ic_notifications_white_24dp</item>
         <item type="reference" name="icon_notifications_off">@drawable/ic_notifications_off_white_24dp</item>
@@ -212,8 +236,8 @@
     </style>
 
     <style name="ConversationsTheme.FullScreen" parent="@style/Theme.AppCompat.Light">
-        <item name="colorPrimary">@color/primary500</item>
-        <item name="colorPrimaryDark">@color/primary700</item>
+        <item name="colorPrimary">@color/green600</item>
+        <item name="colorPrimaryDark">@color/green700</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowFullscreen">true</item>
@@ -225,4 +249,47 @@
         <item name="colorPrimaryDark">@color/grey300</item>
         <item name="android:windowBackground">@drawable/background</item>
     </style>
+
+    <style name="ConversationsTheme.Dialog" parent="@style/Theme.AppCompat.Light.Dialog">
+        <item name="colorPrimary">@color/green600</item>
+        <item name="colorPrimaryDark">@color/green700</item>
+        <item name="colorAccent">@color/blue_a200</item>
+        <item name="color_background_primary">@color/grey50</item>
+        <item name="divider">@color/black12</item>
+        <item name="TextSizeBody2">14sp</item>
+        <item name="TextSizeDisplay2">45sp</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="ConversationsTheme.Dark.Dialog" parent="@style/Theme.AppCompat.Dialog">
+        <item name="colorPrimary">@color/green800</item>
+        <item name="colorPrimaryDark">@color/green900</item>
+        <item name="colorAccent">@color/blue_a100</item>
+        <item name="color_background_primary">@color/grey800</item>
+        <item name="divider">@color/white12</item>
+        <item name="TextSizeBody2">14sp</item>
+        <item name="TextSizeDisplay2">45sp</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+
+    <style name="ConversationsTheme.Dialog.Medium" parent="ConversationsTheme.Dialog">
+        <item name="TextSizeBody2">16sp</item>
+        <item name="TextSizeDisplay2">51sp</item>
+    </style>
+
+    <style name="ConversationsTheme.Dark.Dialog.Medium" parent="ConversationsTheme.Dark.Dialog">
+        <item name="TextSizeBody2">16sp</item>
+        <item name="TextSizeDisplay2">51sp</item>
+    </style>
+
+    <style name="ConversationsTheme.Dialog.Large" parent="ConversationsTheme.Dialog">
+        <item name="TextSizeBody2">18sp</item>
+        <item name="TextSizeDisplay2">56sp</item>
+    </style>
+
+    <style name="ConversationsTheme.Dark.Dialog.Large" parent="ConversationsTheme.Dark.Dialog">
+        <item name="TextSizeBody2">18sp</item>
+        <item name="TextSizeTitle">56sp</item>
+    </style>
+
 </resources>

@@ -28,6 +28,7 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
+import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
@@ -258,14 +259,21 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		if (bitmap != null || cachedOnly) {
 			return bitmap;
 		}
-		final List<MucOptions.User> users = mucOptions.getUsersRelevantForNameAndAvatar();
-		if (users.size() == 0) {
-			Conversation c = mucOptions.getConversation();
-			bitmap = getImpl(c.getName().toString(), c.getJid().asBareJid().toString(), size);
-		} else {
-			bitmap = getImpl(users, size);
+
+		bitmap = mXmppConnectionService.getFileBackend().getAvatar(mucOptions.getAvatar(), size);
+
+		if (bitmap == null) {
+			final List<MucOptions.User> users = mucOptions.getUsersRelevantForNameAndAvatar();
+			if (users.size() == 0) {
+				Conversation c = mucOptions.getConversation();
+				bitmap = getImpl(c.getName().toString(), c.getJid().asBareJid().toString(), size);
+			} else {
+				bitmap = getImpl(users, size);
+			}
 		}
+
 		this.mXmppConnectionService.getBitmapCache().put(KEY, bitmap);
+
 		return bitmap;
 	}
 
@@ -314,7 +322,10 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		return bitmap;
 	}
 
-	public void clear(MucOptions options) {
+	public void clear(final MucOptions options) {
+		if (options == null) {
+			return;
+		}
 		synchronized (this.sizes) {
 			for (Integer size : sizes) {
 				this.mXmppConnectionService.getBitmapCache().remove(key(options, size));
@@ -322,7 +333,7 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		}
 	}
 
-	private String key(MucOptions options, int size) {
+	private String key(final MucOptions options, int size) {
 		synchronized (this.sizes) {
 			if (!this.sizes.contains(size)) {
 				this.sizes.add(size);
@@ -378,20 +389,21 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 	}
 
 	public Bitmap get(Message message, int size, boolean cachedOnly) {
-		final Conversation conversation = message.getConversation();
+		final Conversational conversation = message.getConversation();
 		if (message.getType() == Message.TYPE_STATUS && message.getCounterparts() != null && message.getCounterparts().size() > 1) {
 			return get(message.getCounterparts(), size, cachedOnly);
 		} else if (message.getStatus() == Message.STATUS_RECEIVED) {
 			Contact c = message.getContact();
 			if (c != null && (c.getProfilePhoto() != null || c.getAvatar() != null)) {
 				return get(c, size, cachedOnly);
-			} else if (message.getConversation().getMode() == Conversation.MODE_MULTI) {
+			} else if (conversation instanceof Conversation && message.getConversation().getMode() == Conversation.MODE_MULTI) {
 				final Jid trueCounterpart = message.getTrueCounterpart();
+				final MucOptions mucOptions = ((Conversation) conversation).getMucOptions();
 				MucOptions.User user;
 				if (trueCounterpart != null) {
-					user = conversation.getMucOptions().findUserByRealJid(trueCounterpart);
+					user = mucOptions.findUserByRealJid(trueCounterpart);
 				} else {
-					user = conversation.getMucOptions().findUserByFullJid(message.getCounterpart());
+					user = mucOptions.findUserByFullJid(message.getCounterpart());
 				}
 				if (user != null) {
 					return getImpl(user, size, cachedOnly);

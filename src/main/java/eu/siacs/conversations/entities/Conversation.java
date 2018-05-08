@@ -30,14 +30,11 @@ import rocks.xmpp.addr.Jid;
 import static eu.siacs.conversations.entities.Bookmark.printableValue;
 
 
-public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation> {
+public class Conversation extends AbstractEntity implements Blockable, Comparable<Conversation>, Conversational {
 	public static final String TABLENAME = "conversations";
 
 	public static final int STATUS_AVAILABLE = 0;
 	public static final int STATUS_ARCHIVED = 1;
-
-	public static final int MODE_MULTI = 1;
-	public static final int MODE_SINGLE = 0;
 
 	public static final String NAME = "name";
 	public static final String ACCOUNT = "accountUuid";
@@ -484,7 +481,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 		}
 	}
 
-	public CharSequence getName() {
+	public @NonNull CharSequence getName() {
 		if (getMode() == MODE_MULTI) {
 			final String subject = getMucOptions().getSubject();
 			final Bookmark bookmark = getBookmark();
@@ -498,7 +495,7 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 				if (printableValue(generatedName)) {
 					return generatedName;
 				} else {
-					return getJid().getLocal();
+					return contactJid.getLocal() != null ? contactJid.getLocal() : contactJid;
 				}
 			}
 		} else if (isWithStranger()) {
@@ -620,6 +617,9 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 
 	private static boolean suitableForOmemoByDefault(final Conversation conversation) {
 		if (conversation.getJid().asBareJid().equals(Config.BUG_REPORTS)) {
+			return false;
+		}
+		if (conversation.getContact().isOwnServer()) {
 			return false;
 		}
 		final String contact = conversation.getJid().getDomain();
@@ -920,9 +920,11 @@ public class Conversation extends AbstractEntity implements Blockable, Comparabl
 	}
 
 	public boolean isWithStranger() {
+		final Contact contact = getContact();
 		return mode == MODE_SINGLE
-				&& !getJid().equals(Jid.ofDomain(account.getJid().getDomain()))
-				&& !getContact().showInRoster()
+				&& !contact.isOwnServer()
+				&& !contact.showInRoster()
+				&& !contact.isSelf()
 				&& sentMessagesCount() == 0;
 	}
 
