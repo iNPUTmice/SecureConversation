@@ -53,6 +53,7 @@ import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.FtsUtils;
 import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.utils.Resolver;
+import eu.siacs.conversations.xmpp.InvalidJid;
 import eu.siacs.conversations.xmpp.mam.MamReference;
 import rocks.xmpp.addr.Jid;
 
@@ -164,7 +165,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	private static String CREATE_MESSAGE_TIME_INDEX = "create INDEX message_time_index ON "+Message.TABLENAME+"("+Message.TIME_SENT+")";
 	private static String CREATE_MESSAGE_CONVERSATION_INDEX = "create INDEX message_conversation_index ON "+Message.TABLENAME+"("+Message.CONVERSATION+")";
 
-	private static String CREATE_MESSAGE_INDEX_TABLE = "CREATE VIRTUAL TABLE messages_index USING FTS4(uuid, body)";
+	private static String CREATE_MESSAGE_INDEX_TABLE = "CREATE VIRTUAL TABLE messages_index USING FTS4(uuid TEXT PRIMARY KEY, body TEXT)";
 	private static String CREATE_MESSAGE_INSERT_TRIGGER = "CREATE TRIGGER after_message_insert AFTER INSERT ON "+Message.TABLENAME+ " BEGIN INSERT INTO messages_index (uuid,body) VALUES (new.uuid,new.body); END;";
 	private static String CREATE_MESSAGE_UPDATE_TRIGGER = "CREATE TRIGGER after_message_update UPDATE of uuid,body ON "+Message.TABLENAME+" BEGIN update messages_index set body=new.body,uuid=new.uuid WHERE uuid=old.uuid; END;";
 	private static String CREATE_MESSAGE_DELETE_TRIGGER = "CREATE TRIGGER after_message_delete AFTER DELETE ON "+Message.TABLENAME+ " BEGIN DELETE from messages_index where uuid=old.uuid; END;";
@@ -680,10 +681,14 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		SQLiteDatabase db = this.getReadableDatabase();
 		String[] selectionArgs = {Integer.toString(status)};
 		Cursor cursor = db.rawQuery("select * from " + Conversation.TABLENAME
-				+ " where " + Conversation.STATUS + " = ? order by "
+				+ " where " + Conversation.STATUS + " = ? and "+Conversation.CONTACTJID+" is not null order by "
 				+ Conversation.CREATED + " desc", selectionArgs);
 		while (cursor.moveToNext()) {
-			list.add(Conversation.fromCursor(cursor));
+			final Conversation conversation = Conversation.fromCursor(cursor);
+			if (conversation.getJid() instanceof InvalidJid) {
+				continue;
+			}
+			list.add(conversation);
 		}
 		cursor.close();
 		return list;
@@ -780,6 +785,9 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		cursor.moveToFirst();
 		Conversation conversation = Conversation.fromCursor(cursor);
 		cursor.close();
+		if (conversation.getJid() instanceof InvalidJid) {
+			return null;
+		}
 		return conversation;
 	}
 
@@ -847,9 +855,14 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 		return db;
 	}
 
-	public boolean updateMessage(Message message) {
+	public boolean updateMessage(Message message, boolean includeBody) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		String[] args = {message.getUuid()};
+		ContentValues contentValues = message.getContentValues();
+		contentValues.remove(Message.UUID);
+		if (!includeBody) {
+			contentValues.remove(Message.BODY);
+		}
 		return db.update(Message.TABLENAME, message.getContentValues(), Message.UUID + "=?", args) == 1;
 	}
 
@@ -894,10 +907,11 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	}
 
 	public void deleteMessagesInConversation(Conversation conversation) {
+		long start = SystemClock.elapsedRealtime();
 		final SQLiteDatabase db = this.getWritableDatabase();
 		String[] args = {conversation.getUuid()};
 		int num = db.delete(Message.TABLENAME, Message.CONVERSATION + "=?", args);
-		Log.d(Config.LOGTAG,"deleted "+num+" messages for "+conversation.getJid().asBareJid());
+		Log.d(Config.LOGTAG,"deleted "+num+" messages for "+conversation.getJid().asBareJid()+" in "+(SystemClock.elapsedRealtime() - start)+"ms");
 	}
 
 	public boolean expireOldMessages(long timestamp) {

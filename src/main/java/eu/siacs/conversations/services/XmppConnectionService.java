@@ -919,7 +919,7 @@ public class XmppConnectionService extends Service {
 	public boolean hasInternetConnection() {
 		final ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 		try {
-			final NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+			final NetworkInfo activeNetwork = cm == null ? null : cm.getActiveNetworkInfo();
 			return activeNetwork != null && activeNetwork.isConnected();
 		} catch (RuntimeException e) {
 			Log.d(Config.LOGTAG, "unable to check for internet connection", e);
@@ -2616,7 +2616,11 @@ public class XmppConnectionService extends Service {
 	}
 
 	public void updateMessage(Message message) {
-		databaseBackend.updateMessage(message);
+		updateMessage(message, true);
+	}
+
+	public void updateMessage(Message message, boolean includeBody) {
+		databaseBackend.updateMessage(message, includeBody);
 		updateConversationUi();
 	}
 
@@ -3056,7 +3060,7 @@ public class XmppConnectionService extends Service {
 		}
 		message.setErrorMessage(errorMessage);
 		message.setStatus(status);
-		databaseBackend.updateMessage(message);
+		databaseBackend.updateMessage(message, false);
 		updateConversationUi();
 	}
 
@@ -3221,7 +3225,7 @@ public class XmppConnectionService extends Service {
 		if (readMessages.size() > 0) {
 			Runnable runnable = () -> {
 				for (Message message : readMessages) {
-					databaseBackend.updateMessage(message);
+					databaseBackend.updateMessage(message, false);
 				}
 			};
 			mDatabaseWriterExecutor.execute(runnable);
