@@ -153,9 +153,8 @@ public class PgpDecryptionService {
 							message.setBody(body);
 							message.setEncryption(Message.ENCRYPTION_DECRYPTED);
 							final HttpConnectionManager manager = mXmppConnectionService.getHttpConnectionManager();
-							if (message.trusted()
-									&& message.treatAsDownloadable()
-									&& manager.getAutoAcceptFileSize() > 0) {
+							if (message.treatAsDownloadable() && (Config.AUTO_ACCEPT_ALL_FILES
+									|| (message.trusted() && manager.getAutoAcceptFileSize() > 0))) {
 								manager.createNewDownloadConnection(message);
 							}
 						} catch (IOException e) {

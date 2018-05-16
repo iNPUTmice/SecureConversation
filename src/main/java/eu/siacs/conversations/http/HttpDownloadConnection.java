@@ -259,7 +259,7 @@ public class HttpDownloadConnection implements Transferable {
 			file.setExpectedSize(size);
 			message.resetFileParams();
 			if (mHttpConnectionManager.hasStoragePermission()
-					&& size <= mHttpConnectionManager.getAutoAcceptFileSize()
+					&& (Config.AUTO_ACCEPT_ALL_FILES || size <= mHttpConnectionManager.getAutoAcceptFileSize())
 					&& mXmppConnectionService.isDataSaverDisabled()) {
 				HttpDownloadConnection.this.acceptedAutomatically = true;
 				download(interactive);

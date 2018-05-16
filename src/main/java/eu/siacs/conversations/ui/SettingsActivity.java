@@ -244,6 +244,13 @@ public class SettingsActivity extends XmppActivity implements
 		if (deleteOmemoPreference != null) {
 			deleteOmemoPreference.setOnPreferenceClickListener(preference -> deleteOmemoIdentities());
 		}
+
+		if (Config.AUTO_ACCEPT_ALL_FILES) {
+			final Preference autoAcceptFileSizePreference = mSettingsFragment.findPreference("auto_accept_file_size");
+			if (autoAcceptFileSizePreference != null) {
+				attachmentsCategory.removePreference(autoAcceptFileSizePreference);
+			}
+		}
 	}
 
 	private void changeOmemoSettingSummary() {
