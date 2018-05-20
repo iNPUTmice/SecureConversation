@@ -53,7 +53,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -148,8 +147,8 @@ public class XmppConnectionService extends Service {
 	public static final String ACTION_DISMISS_ERROR_NOTIFICATIONS = "dismiss_error";
 	public static final String ACTION_TRY_AGAIN = "try_again";
 	public static final String ACTION_IDLE_PING = "idle_ping";
-	public static final String ACTION_GCM_TOKEN_REFRESH = "gcm_token_refresh";
-	public static final String ACTION_GCM_MESSAGE_RECEIVED = "gcm_message_received";
+	public static final String ACTION_FCM_TOKEN_REFRESH = "fcm_token_refresh";
+	public static final String ACTION_FCM_MESSAGE_RECEIVED = "fcm_message_received";
 	private static final String ACTION_MERGE_PHONE_CONTACTS = "merge_phone_contacts";
 
 	static {
@@ -639,17 +638,17 @@ public class XmppConnectionService extends Service {
 						refreshAllPresences();
 					}
 					break;
-				case ACTION_GCM_TOKEN_REFRESH:
-					refreshAllGcmTokens();
+				case ACTION_FCM_TOKEN_REFRESH:
+					refreshAllFcmTokens();
 					break;
 				case ACTION_IDLE_PING:
 					if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 						scheduleNextIdlePing();
 					}
 					break;
-				case ACTION_GCM_MESSAGE_RECEIVED:
-					Log.d(Config.LOGTAG, "gcm push message arrived in service. extras=" + intent.getExtras());
+				case ACTION_FCM_MESSAGE_RECEIVED:
 					pushedAccountHash = intent.getStringExtra("account");
+					Log.d(Config.LOGTAG, "push message arrived in service. account=" + pushedAccountHash);
 					break;
 				case Intent.ACTION_SEND:
 					Uri uri = intent.getData();
@@ -667,7 +666,7 @@ public class XmppConnectionService extends Service {
 				pingNow |= processAccountState(account,
 						interactive,
 						"ui".equals(action),
-						CryptoHelper.getAccountFingerprint(account).equals(pushedAccountHash),
+						CryptoHelper.getAccountFingerprint(account,PhoneHelper.getAndroidId(this)).equals(pushedAccountHash),
 						pingCandidates);
 			}
 			if (pingNow) {
@@ -2182,7 +2181,7 @@ public class XmppConnectionService extends Service {
 
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
-
+				final boolean omemoEnabled = conversation.getNextEncryption() == Message.ENCRYPTION_AXOLOTL;
 				Element query = packet.query("http://jabber.org/protocol/muc#admin");
 				if (packet.getType() == IqPacket.TYPE.RESULT && query != null) {
 					for (Element child : query.getChildren()) {
@@ -2191,7 +2190,8 @@ public class XmppConnectionService extends Service {
 							if (!user.realJidMatchesAccount()) {
 								boolean isNew = conversation.getMucOptions().updateUser(user);
 								Contact contact = user.getContact();
-								if (isNew
+								if (omemoEnabled
+										&& isNew
 										&& user.getRealJid() != null
 										&& (contact == null || !contact.mutualPresenceSubscription())
 										&& axolotlService.hasEmptyDeviceList(user.getRealJid())) {
@@ -3402,7 +3402,7 @@ public class XmppConnectionService extends Service {
 		}
 	}
 
-	private void refreshAllGcmTokens() {
+	private void refreshAllFcmTokens() {
 		for (Account account : getAccounts()) {
 			if (account.isOnlineAndConnected() && mPushManagementService.available(account)) {
 				mPushManagementService.registerPushTokenOnServer(account);
