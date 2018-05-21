@@ -190,6 +190,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
 	@Override
 	public void onConfigure(SQLiteDatabase db) {
 		db.execSQL("PRAGMA foreign_keys=ON");
+		db.rawQuery("PRAGMA secure_delete=ON",null);
 	}
 
 	@Override
