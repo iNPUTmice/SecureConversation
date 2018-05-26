@@ -124,11 +124,12 @@ public final class CryptoHelper {
 		return builder.toString();
 	}
 
-	public static String[] getOrderedCipherSuites(final String[] platformSupportedCipherSuites) {
+	public static String[] getOrderedCipherSuites(final String[] platformSupportedCipherSuites, final String[] platformEnabledCipherSuites) {
 		final Collection<String> cipherSuites = new LinkedHashSet<>(Arrays.asList(Config.ENABLED_CIPHERS));
-		final List<String> platformCiphers = Arrays.asList(platformSupportedCipherSuites);
-		cipherSuites.retainAll(platformCiphers);
-		cipherSuites.addAll(platformCiphers);
+		final List<String> platformSupportedCiphers = Arrays.asList(platformSupportedCipherSuites);
+		final List<String> platformEnabledCiphers = Arrays.asList(platformEnabledCipherSuites);
+		cipherSuites.retainAll(platformSupportedCiphers);
+		cipherSuites.addAll(platformEnabledCiphers);
 		filterWeakCipherSuites(cipherSuites);
 		return cipherSuites.toArray(new String[cipherSuites.size()]);
 	}

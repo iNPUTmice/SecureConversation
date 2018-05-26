@@ -23,7 +23,9 @@ public class TLSSocketFactory extends SSLSocketFactory {
 
     @Override
     public String[] getDefaultCipherSuites() {
-        return CryptoHelper.getOrderedCipherSuites(internalSSLSocketFactory.getDefaultCipherSuites());
+        return CryptoHelper.getOrderedCipherSuites(
+                internalSSLSocketFactory.getSupportedCipherSuites(),
+                internalSSLSocketFactory.getDefaultCipherSuites());
     }
 
     @Override

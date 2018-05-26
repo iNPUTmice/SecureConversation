@@ -24,7 +24,8 @@ public class SSLSocketHelper {
 		sslSocket.setEnabledProtocols(supportProtocols);
 
 		final String[] cipherSuites = CryptoHelper.getOrderedCipherSuites(
-				sslSocket.getSupportedCipherSuites());
+				sslSocket.getSupportedCipherSuites(),
+				sslSocket.getEnabledCipherSuites());
 		if (cipherSuites.length > 0) {
 			sslSocket.setEnabledCipherSuites(cipherSuites);
 		}
