@@ -62,9 +62,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 
 import eu.siacs.conversations.Config;
@@ -1392,6 +1395,53 @@ public class XmppConnectionService extends Service {
             }
         }
         account.setBookmarks(new CopyOnWriteArrayList<>(bookmarks.values()));
+        fetchRooms(account);
+    }
+
+    public void fetchRooms(final Account account) {
+        final CopyOnWriteArraySet<Jid> muc_services =
+            new  CopyOnWriteArraySet<> (Arrays.asList(Config.MUC_SERVICES_FOR_DISCO));
+        if (Config.MUC_DISCO_OWN_SERVER) {
+            for(String muc : account.getXmppConnection().getMucServers()) {
+                muc_services.add(Jid.of(muc));
+            }
+        }
+        for (Jid muc_service : muc_services) {
+            final IqPacket iqPacket = new IqPacket(IqPacket.TYPE.GET);
+            iqPacket.setTo(muc_service);
+            final Element query = iqPacket.query("http://jabber.org/protocol/disco#items");
+            final OnIqPacketReceived callback = new OnIqPacketReceived() {
+                @Override
+                public void onIqPacketReceived(final Account account, final IqPacket packet) {
+                    final Element query = packet.query();
+                    if (packet.getType() == IqPacket.TYPE.RESULT && query != null) {
+                        for (Element child : query.getChildren()) {
+                            if ("item".equals(child.getName())) {
+                                final Jid jid = child.getAttributeAsJid("jid");
+                                if (!account.hasBookmarkFor(jid)) {
+                                    final Bookmark bookmark = new Bookmark(account, jid, false);
+                                    bookmark.setAutojoin(false);
+                                    final String name = child.getAttribute("name");
+                                    if (name != null) {
+                                        final Pattern roomNameP = Pattern.compile("^(.*)\\(.*\\)$");
+                                        Matcher m = roomNameP.matcher(name);
+                                        if (m.find()) {
+                                            bookmark.setBookmarkName(m.group(1).trim());
+                                        } else{
+                                            bookmark.setBookmarkName(name);
+                                        }
+                                    }
+                                    account.getBookmarks().add(bookmark);
+                                }
+                            }
+                        }
+                    } else {
+                        Log.d(Config.LOGTAG, muc_service.toString() + ": could not fetch rooms");
+                    }
+                }
+            };
+            sendIqPacket(account, iqPacket, callback);
+        }
     }
 
     public void pushBookmarks(Account account) {
@@ -1407,7 +1457,7 @@ public class XmppConnectionService extends Service {
         IqPacket iqPacket = new IqPacket(IqPacket.TYPE.SET);
         Element query = iqPacket.query("jabber:iq:private");
         Element storage = query.addChild("storage", "storage:bookmarks");
-        for (Bookmark bookmark : account.getBookmarks()) {
+        for (Bookmark bookmark : account.getBookmarksToBePushed()) {
             storage.addChild(bookmark);
         }
         sendIqPacket(account, iqPacket, mDefaultIqHandler);
@@ -1416,7 +1466,7 @@ public class XmppConnectionService extends Service {
     private void pushBookmarksPep(Account account) {
         Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": pushing bookmarks via pep");
         Element storage = new Element("storage", "storage:bookmarks");
-        for (Bookmark bookmark : account.getBookmarks()) {
+        for (Bookmark bookmark : account.getBookmarksToBePushed()) {
             storage.addChild(bookmark);
         }
         pushNodeAndEnforcePublishOptions(account,Namespace.BOOKMARKS,storage, PublishOptions.persistentWhitelistAccess());
@@ -1815,6 +1865,7 @@ public class XmppConnectionService extends Service {
 					Bookmark bookmark = conversation.getBookmark();
 					if (bookmark != null && bookmark.autojoin() && respectAutojoin()) {
 						bookmark.setAutojoin(false);
+						bookmark.flagPush();
 						pushBookmarks(bookmark.getAccount());
 					}
 				}
@@ -2401,6 +2452,7 @@ public class XmppConnectionService extends Service {
 			if (conversation.getBookmark() != null) {
 				if (respectAutojoin()) {
 					conversation.getBookmark().setAutojoin(true);
+					conversation.getBookmark().flagPush();
 				}
 				pushBookmarks(conversation.getAccount());
 			}
@@ -2430,6 +2482,7 @@ public class XmppConnectionService extends Service {
 		Bookmark bookmark = conversation.getBookmark();
 		if (bookmark != null && !full.getResource().equals(bookmark.getNick())) {
 			bookmark.setNick(full.getResource());
+			bookmark.flagPush();
 			pushBookmarks(bookmark.getAccount());
 		}
 	}
@@ -2472,6 +2525,7 @@ public class XmppConnectionService extends Service {
 				Bookmark bookmark = conversation.getBookmark();
 				if (bookmark != null) {
 					bookmark.setNick(nick);
+					bookmark.flagPush();
 					pushBookmarks(bookmark.getAccount());
 				}
 				joinMuc(conversation);
@@ -3929,6 +3983,7 @@ public class XmppConnectionService extends Service {
 			bookmark.setBookmarkName(name);
 		}
 		bookmark.setAutojoin(getPreferences().getBoolean("autojoin", getResources().getBoolean(R.bool.autojoin)));
+		bookmark.flagPush();
 		account.getBookmarks().add(bookmark);
 		pushBookmarks(account);
 		bookmark.setConversation(conversation);

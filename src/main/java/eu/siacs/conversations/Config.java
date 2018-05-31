@@ -111,6 +111,12 @@ public final class Config {
 
 	public static final boolean IGNORE_ID_REWRITE_IN_MUC = true;
 
+	public static final Jid MUC_SERVICES_FOR_DISCO[] = {
+		/// Jid.of("conference.mydomain.org")   // List all confernce services you want to query
+	};
+
+	public static final boolean MUC_DISCO_OWN_SERVER = false; // whether to query the MUC services on the account's own server
+
 	public static final long MAM_MAX_CATCHUP =  MILLISECONDS_IN_DAY * 5;
 	public static final int MAM_MAX_MESSAGES = 750;
 

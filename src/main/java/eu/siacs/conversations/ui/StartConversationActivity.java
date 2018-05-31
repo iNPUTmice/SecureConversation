@@ -398,6 +398,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 		bookmark.setConversation(conversation);
 		if (!bookmark.autojoin() && getPreferences().getBoolean("autojoin", getResources().getBoolean(R.bool.autojoin))) {
 			bookmark.setAutojoin(true);
+			bookmark.flagPush();
 			xmppConnectionService.pushBookmarks(bookmark.getAccount());
 		}
 		SoftKeyboardUtils.hideSoftKeyboard(this);
