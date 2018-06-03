@@ -123,7 +123,11 @@ public class ShowLocationActivity extends LocationActivity implements LocationLi
 			if (setZoomLevel) {
 				mapController.setZoom(Config.Map.FINAL_ZOOM_LEVEL);
 			}
-			mapController.animateTo(new GeoPoint(this.loc));
+			if (Config.Map.ANIMATE_MAP) {
+				mapController.animateTo(new GeoPoint(this.loc));
+			} else {
+				mapController.setCenter(new GeoPoint(this.loc));
+			}
 		}
 	}
 

@@ -137,7 +137,11 @@ public class ShareLocationActivity extends LocationActivity implements LocationL
 			if (setZoomLevel) {
 				mapController.setZoom(Config.Map.FINAL_ZOOM_LEVEL);
 			}
-			mapController.animateTo(new GeoPoint(this.myLoc));
+			if (Config.Map.ANIMATE_MAP) {
+				mapController.animateTo(new GeoPoint(this.myLoc));
+			} else {
+				mapController.setCenter(new GeoPoint(this.myLoc));
+			}
 		}
 	}
 
