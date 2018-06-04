@@ -539,7 +539,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             } else {
                 this.binding.mucInfoMam.setText(R.string.server_info_unavailable);
             }
-            if (self.getAffiliation().ranks(MucOptions.Affiliation.OWNER)) {
+            if ((self.getAffiliation().ranks(MucOptions.Affiliation.OWNER)) && !Config.HIDE_CONFERENCE_SETTINGS) {
                 this.binding.changeConferenceButton.setVisibility(View.VISIBLE);
             } else {
                 this.binding.changeConferenceButton.setVisibility(View.INVISIBLE);
