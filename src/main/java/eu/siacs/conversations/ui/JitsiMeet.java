@@ -43,12 +43,9 @@ public class JitsiMeet extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         JitsiMeetView.onHostDestroy(this);
-        //finish();
-
         view.dispose();
         view = null;
-
-
+        finish();
     }
 
     @Override
@@ -65,9 +62,7 @@ public class JitsiMeet extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
-        JitsiMeetView.onHostDestroy(this);
-        //finish();
-
-        //JitsiMeetView.onHostPause(this);
+        JitsiMeetView.onHostPause(this);
+        finish();
     }
 }

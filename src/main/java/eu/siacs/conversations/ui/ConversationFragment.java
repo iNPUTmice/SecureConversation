@@ -50,6 +50,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1199,12 +1200,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				startActivity(intent);
 				break;
 			case R.id.action_jitsi_meet:
-				Intent intentJitsiMeet = new Intent(getActivity(), JitsiMeet.class);
-				intentJitsiMeet.putExtra("room",conversation.getMucOptions().getSubject());
-				String JitsiMeetUrl = Config.JITSIMEET_BASEURL +conversation.getMucOptions().getSubject();
-				JitsiMeetUrl = JitsiMeetUrl.replace(" ","");
+				String JitsiMeetUrl = Config.JITSIMEET_BASEURL + conversation.getJid().asBareJid().toEscapedString();
+				JitsiMeetUrl = JitsiMeetUrl.replace("@","");
 				Message message = new Message(conversation, getString(R.string.JitsiMeetTextMessage)+ " " + JitsiMeetUrl, conversation.getNextEncryption());
 				sendMessage(message);
+				Intent intentJitsiMeet = new Intent(getActivity(), JitsiMeet.class);
+				intentJitsiMeet.putExtra("room",  conversation.getJid().asBareJid().toEscapedString());
 				startActivity(intentJitsiMeet);
 				break;
 			case R.id.action_invite:
