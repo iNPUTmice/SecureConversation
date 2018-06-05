@@ -712,4 +712,5 @@
   <string name="copy_link">Internetadresse kopieren</string>
   <string name="copy_jabber_id">Jabber-ID kopieren</string>
   <string name="p1_s3_filetransfer">HTTP-Dateifreigabe für S3</string>
+    <string name="JitsiMeetTextMessage">Videokonferenz: Klicke auf das Videosymbol oder diesen Link:</string>
 </resources>

@@ -21,6 +21,9 @@ repositories {
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
+    maven {
+        url "https://github.com/jitsi/jitsi-maven-repository/raw/master/releases"
+    }
 }
 
 configurations {
@@ -51,10 +54,11 @@ dependencies {
     implementation 'me.leolin:ShortcutBadger:1.1.21@aar'
     implementation 'org.whispersystems:signal-protocol-java:2.6.2'
     implementation 'com.makeramen:roundedimageview:2.3.0'
-    implementation "com.wefika:flowlayout:0.4.1"
+    implementation 'com.wefika:flowlayout:0.4.1'
     implementation 'net.ypresto.androidtranscoder:android-transcoder:0.2.0'
     implementation 'rocks.xmpp:xmpp-addr:0.8.0-SNAPSHOT'
     implementation 'org.osmdroid:osmdroid-android:6.0.1'
+    implementation ('org.jitsi.react:jitsi-meet-sdk:+') { transitive = true }
 }
 
 ext {
@@ -64,7 +68,6 @@ ext {
 
 android {
     compileSdkVersion 27
-
     defaultConfig {
         minSdkVersion 19
         targetSdkVersion 25
@@ -74,25 +77,28 @@ android {
         applicationId "eu.siacs.conversations"
         resValue "string", "applicationId", applicationId
         resValue "string", "app_name", "Conversations"
-    }
 
+        ndk {
+            abiFilters "armeabi-v7a", "x86", 'armeabi', 'arm64-v8a'
+        }
+
+        packagingOptions {
+            exclude "lib/arm64-v8a/libgnustl_shared.so"
+        }
+    }
     dataBinding {
         enabled true
     }
-
     dexOptions {
         // Skip pre-dexing when running on Travis CI or when disabled via -Dpre-dex=false.
         preDexLibraries = preDexEnabled && !travisBuild
         jumboMode true
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
     flavorDimensions("distribution")
-
     productFlavors {
         playstore {
             dimension "distribution"
@@ -101,7 +107,6 @@ android {
             dimension "distribution"
         }
     }
-
     buildTypes {
         release {
             shrinkResources true
@@ -114,10 +119,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
-
-
-
-    if(new File("signing.properties").exists()) {
+    if (new File("signing.properties").exists()) {
         Properties props = new Properties()
         props.load(new FileInputStream(file("signing.properties")))
 
@@ -131,11 +133,9 @@ android {
         }
         buildTypes.release.signingConfig = signingConfigs.release
     }
-
     lintOptions {
         disable 'MissingTranslation', 'InvalidPackage', 'MissingQuantity', 'AppCompatResource'
     }
-
     subprojects {
 
         afterEvaluate {
@@ -149,9 +149,9 @@ android {
 
         }
     }
-
     packagingOptions {
         exclude 'META-INF/BCKEY.DSA'
         exclude 'META-INF/BCKEY.SF'
     }
+    buildToolsVersion '27.0.3'
 }

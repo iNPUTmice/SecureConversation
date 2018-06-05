@@ -16,7 +16,6 @@ import android.support.annotation.StringRes;
 import android.support.v7.app.AlertDialog;
 import android.app.Fragment;
 import android.app.PendingIntent;
-import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -51,6 +50,7 @@ import android.widget.PopupMenu;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -178,6 +178,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 		}
 	};
 	private OnClickListener enterPassword = new OnClickListener() {
+
 
 		@Override
 		public void onClick(View v) {
@@ -891,6 +892,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 	public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
 		menuInflater.inflate(R.menu.fragment_conversation, menu);
 		final MenuItem menuMucDetails = menu.findItem(R.id.action_muc_details);
+		final MenuItem menuJitsiMeet = menu.findItem(R.id.action_jitsi_meet);
 		final MenuItem menuContactDetails = menu.findItem(R.id.action_contact_details);
 		final MenuItem menuInviteContact = menu.findItem(R.id.action_invite);
 		final MenuItem menuMute = menu.findItem(R.id.action_mute);
@@ -904,6 +906,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 			} else {
 				menuContactDetails.setVisible(!this.conversation.withSelf());
 				menuMucDetails.setVisible(false);
+				menuJitsiMeet.setVisible(false);
 				final XmppConnectionService service = activity.xmppConnectionService;
 				menuInviteContact.setVisible(service != null && service.findConferenceServer(conversation.getAccount()) != null);
 			}
@@ -1195,6 +1198,15 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 				intent.setAction(ConferenceDetailsActivity.ACTION_VIEW_MUC);
 				intent.putExtra("uuid", conversation.getUuid());
 				startActivity(intent);
+				break;
+			case R.id.action_jitsi_meet:
+				String JitsiMeetUrl = Config.JITSIMEET_BASEURL + conversation.getJid().asBareJid().toEscapedString();
+				JitsiMeetUrl = JitsiMeetUrl.replace("@","");
+				Message message = new Message(conversation, getString(R.string.JitsiMeetTextMessage)+ " " + JitsiMeetUrl, conversation.getNextEncryption());
+				sendMessage(message);
+				Intent intentJitsiMeet = new Intent(getActivity(), JitsiMeet.class);
+				intentJitsiMeet.putExtra("room",  conversation.getJid().asBareJid().toEscapedString());
+				startActivity(intentJitsiMeet);
 				break;
 			case R.id.action_invite:
 				startActivityForResult(ChooseContactActivity.create(activity, conversation), REQUEST_INVITE_TO_CONVERSATION);
