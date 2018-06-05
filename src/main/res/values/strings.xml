@@ -713,4 +713,5 @@
     <string name="copy_link">Copy web address</string>
     <string name="copy_jabber_id">Copy Jabber ID</string>
     <string name="p1_s3_filetransfer">HTTP File Sharing for S3</string>
+    <string name="JitsiMeetTextMessage">video conference click this link to join:</string>
 </resources>

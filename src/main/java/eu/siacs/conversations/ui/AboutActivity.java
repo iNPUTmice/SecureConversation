@@ -1,8 +1,11 @@
 package eu.siacs.conversations.ui;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
+import org.jitsi.meet.sdk.JitsiMeetView;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.utils.ThemeHelper;

@@ -112,6 +112,9 @@ public final class Config {
 	public static final ChatState DEFAULT_CHATSTATE = ChatState.ACTIVE;
 	public static final int TYPING_TIMEOUT = 8;
 
+	//Jitsi Meet
+	public static final String JITSIMEET_BASEURL = "https://meet.jit.si/";
+
 	public static final int EXPIRY_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
 	public static final String ENABLED_CIPHERS[] = {
