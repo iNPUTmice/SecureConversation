@@ -336,6 +336,7 @@ public class Account extends AbstractEntity {
 		return next != null && !next.equals(previousFull);
 	}
 
+
 	public String getServer() {
 		return jid.getDomain();
 	}
@@ -589,6 +590,10 @@ public class Account extends AbstractEntity {
 			}
 		}
 		return null;
+	}
+
+	public void removeAvatar() {
+		this.avatar = null;
 	}
 
 	public boolean setAvatar(final String filename) {

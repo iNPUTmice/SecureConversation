@@ -717,4 +717,7 @@
     <string name="p1_s3_filetransfer">HTTP File Sharing for S3</string>
     <string name="pref_start_search">Direct Search</string>
     <string name="pref_start_search_summary">At ‘Start Conversation’ screen open keyboard and place cursor in search field</string>
+    <string name="error_disable_avatar_server_reject">The server rejected your request</string>
+    <string name="avatar_has_been_disabled">Avatar has been disabled!</string>
+    <string name="remove_image">Remove Image</string>
 </resources>
