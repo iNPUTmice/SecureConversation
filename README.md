@@ -368,9 +368,9 @@ Make sure to have ANDROID_HOME point to your Android SDK. Use the Android SDK Ma
 
     git clone https://github.com/siacs/Conversations.git
     cd Conversations
-    ./gradlew assembleFreeDebug
+    ./gradlew assembleFreeCompatDebug
 
-There are two build flavors available. *free* and *playstore*. Unless you know what you are doing you only need *free*.
+There are three build flavors available. *freeSystem*, *freeCompat" and *playstoreCompat*. Unless you know what you are doing you only need *freeCompat*.
 
 
 [![Build Status](https://travis-ci.org/siacs/Conversations.svg?branch=development)](https://travis-ci.org/siacs/Conversations)
