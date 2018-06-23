@@ -646,7 +646,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 							mXmppConnectionService.updateConversation(conversation);
 						}
 						final Bookmark bookmark = conversation.getBookmark();
-						if (bookmark != null && bookmark.getBookmarkName() == null) {
+						if (bookmark != null) {
 							if (bookmark.setBookmarkName(subject)) {
 								mXmppConnectionService.pushBookmarks(account);
 							}
