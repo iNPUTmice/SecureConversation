@@ -101,8 +101,8 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 	private OnQuoteListener onQuoteListener;
 	public MessageAdapter(XmppActivity activity, List<Message> messages) {
 		super(activity, 0, messages);
-		this.audioPlayer = new AudioPlayer(this);
 		this.activity = activity;
+		this.audioPlayer = new AudioPlayer(this);
 		metrics = getContext().getResources().getDisplayMetrics();
 		updatePreferences();
 	}
