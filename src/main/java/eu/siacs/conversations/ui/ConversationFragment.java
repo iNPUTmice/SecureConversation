@@ -643,14 +643,14 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         });
     }
 
-    private void attachFileToConversation(Conversation conversation, Uri uri, String type) {
+    private void attachFileToConversation(Conversation conversation, Uri uri, String type, Attachment.Type attachmentType) {
         if (conversation == null) {
             return;
         }
         final Toast prepareFileToast = Toast.makeText(getActivity(), getText(R.string.preparing_file), Toast.LENGTH_LONG);
         prepareFileToast.show();
         activity.delegateUriPermissionsToService(uri);
-        activity.xmppConnectionService.attachFileToConversation(conversation, uri, type, new UiInformableCallback<Message>() {
+        activity.xmppConnectionService.attachFileToConversation(conversation, uri, type, attachmentType, new UiInformableCallback<Message>() {
             @Override
             public void inform(final String text) {
                 hidePrepareFileToast(prepareFileToast);
@@ -877,7 +877,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                     attachImageToConversation(conversation, attachment.getUri());
                 } else {
                     Log.d(Config.LOGTAG, "ConversationsActivity.commitAttachments() - attaching file to conversations. CHOOSE_FILE/RECORD_VOICE/RECORD_VIDEO");
-                    attachFileToConversation(conversation, attachment.getUri(), attachment.getMime());
+                    attachFileToConversation(conversation, attachment.getUri(), attachment.getMime(), attachment.getType());
                 }
             }
             mediaPreviewAdapter.notifyDataSetChanged();

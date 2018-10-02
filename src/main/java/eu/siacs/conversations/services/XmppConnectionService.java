@@ -110,6 +110,7 @@ import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.ui.interfaces.OnAvatarPublication;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
 import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
+import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -470,8 +471,8 @@ public class XmppConnectionService extends Service {
         }
     }
 
-    public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final UiCallback<Message> callback) {
-        if (FileBackend.weOwnFile(this, uri)) {
+    public void attachFileToConversation(final Conversation conversation, final Uri uri, final String type, final Attachment.Type attachmentType, final UiCallback<Message> callback) {
+        if (attachmentType != Attachment.Type.RECORDING && FileBackend.weOwnFile(this, uri)) {
             Log.d(Config.LOGTAG, "trying to attach file that belonged to us");
             callback.error(R.string.security_error_invalid_file_access, null);
             return;
@@ -507,7 +508,7 @@ public class XmppConnectionService extends Service {
                 || (mimeType != null && mimeType.endsWith("/gif"))
                 || getFileBackend().unusualBounds(uri)) {
             Log.d(Config.LOGTAG, conversation.getAccount().getJid().asBareJid() + ": not compressing picture. sending as file");
-            attachFileToConversation(conversation, uri, mimeType, callback);
+            attachFileToConversation(conversation, uri, mimeType, Attachment.Type.IMAGE, callback);
             return;
         }
         final Message message;
