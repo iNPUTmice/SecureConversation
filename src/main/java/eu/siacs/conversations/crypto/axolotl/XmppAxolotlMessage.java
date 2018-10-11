@@ -163,9 +163,13 @@ public class XmppAxolotlMessage {
 		}
 	}
 
-	private static byte[] generateIv() {
+	private static byte[] generateIv(){
+		return generateIv(16); // Default value is 16 But in some device it require length 12
+	}
+
+	private static byte[] generateIv(int length) {
 		SecureRandom random = new SecureRandom();
-		byte[] iv = new byte[16];
+		byte[] iv = new byte[length];
 		random.nextBytes(iv);
 		return iv;
 	}
@@ -178,7 +182,7 @@ public class XmppAxolotlMessage {
 		try {
 			SecretKey secretKey = new SecretKeySpec(innerKey, KEYTYPE);
 			IvParameterSpec ivSpec = new IvParameterSpec(iv);
-			Cipher cipher = Compatibility.twentyEight() ? Cipher.getInstance(CIPHERMODE) : Cipher.getInstance(CIPHERMODE, PROVIDER);
+			Cipher cipher = Compatibility.twentyTwo() ? Cipher.getInstance(CIPHERMODE) : Cipher.getInstance(CIPHERMODE, PROVIDER);
 			cipher.init(Cipher.ENCRYPT_MODE, secretKey, ivSpec);
 			this.ciphertext = cipher.doFinal(Config.OMEMO_PADDING ? getPaddedBytes(plaintext) : plaintext.getBytes());
 			if (Config.PUT_AUTH_TAG_INTO_KEY && this.ciphertext != null) {
@@ -190,9 +194,16 @@ public class XmppAxolotlMessage {
 				this.ciphertext = ciphertext;
 			}
 		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
-				| IllegalBlockSizeException | BadPaddingException | NoSuchProviderException
-				| InvalidAlgorithmParameterException e) {
+				| IllegalBlockSizeException | BadPaddingException | NoSuchProviderException e) {
 			throw new CryptoFailedException(e);
+		} catch (InvalidAlgorithmParameterException e){
+			// Check if the error is due to AES length replace it with 12 and try again
+			if (iv.length == 16){
+				this.iv = generateIv(12); // Replace it with 12
+				encrypt(plaintext);	// Try again
+			}else{
+				throw new CryptoFailedException(e); // Not a AES length problem, throw exception
+			}
 		}
 	}
 
@@ -294,7 +305,7 @@ public class XmppAxolotlMessage {
 					key = newKey;
 				}
 
-				Cipher cipher = Compatibility.twentyEight() ? Cipher.getInstance(CIPHERMODE) : Cipher.getInstance(CIPHERMODE, PROVIDER);
+				Cipher cipher = Compatibility.twentyTwo() ? Cipher.getInstance(CIPHERMODE) : Cipher.getInstance(CIPHERMODE, PROVIDER);
 				SecretKeySpec keySpec = new SecretKeySpec(key, KEYTYPE);
 				IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
