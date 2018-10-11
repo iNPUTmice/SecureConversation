@@ -240,6 +240,10 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
             case R.id.action_share_uri:
                 shareLink(false);
                 break;
+            case R.id.action_hide_contact:
+                contact.setHideContact(!menuItem.isChecked());
+                invalidateOptionsMenu();
+                break;
             case R.id.action_delete_contact:
                 builder.setTitle(getString(R.string.action_delete_contact))
                         .setMessage(JidDialog.style(this, R.string.remove_contact_text, contact.getJid().toEscapedString()))
@@ -284,6 +288,10 @@ public class ContactDetailsActivity extends OmemoActivity implements OnAccountUp
         MenuItem unblock = menu.findItem(R.id.action_unblock);
         MenuItem edit = menu.findItem(R.id.action_edit_contact);
         MenuItem delete = menu.findItem(R.id.action_delete_contact);
+        MenuItem hide = menu.findItem(R.id.action_hide_contact);
+
+        hide.setChecked(contact.getHideContact());
+
         if (contact == null) {
             return true;
         }

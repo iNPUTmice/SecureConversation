@@ -98,6 +98,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 	private EditText mSearchEditText;
 	private AtomicBoolean mRequestedContactsPermission = new AtomicBoolean(false);
 	private boolean mHideOfflineContacts = false;
+	private boolean mShowHideContacts = true;
 	private MenuItem.OnActionExpandListener mOnActionExpandListener = new MenuItem.OnActionExpandListener() {
 
 		@Override
@@ -295,6 +296,7 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 		final SharedPreferences preferences = getPreferences();
 
 		this.mHideOfflineContacts = preferences.getBoolean("hide_offline", false);
+		this.mShowHideContacts = preferences.getBoolean("show_hide_contacts", true);
 
 		final boolean startSearching = preferences.getBoolean("start_searching",getResources().getBoolean(R.bool.start_searching));
 
@@ -576,11 +578,13 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.start_conversation, menu);
 		MenuItem menuHideOffline = menu.findItem(R.id.action_hide_offline);
+		MenuItem menuShowHideContacts = menu.findItem(R.id.action_show_hide_contact);
 		MenuItem joinGroupChat = menu.findItem(R.id.action_join_conference);
 		MenuItem qrCodeScanMenuItem = menu.findItem(R.id.action_scan_qr_code);
 		joinGroupChat.setVisible(binding.startConversationViewPager.getCurrentItem() == 1);
 		qrCodeScanMenuItem.setVisible(isCameraFeatureAvailable());
 		menuHideOffline.setChecked(this.mHideOfflineContacts);
+		menuShowHideContacts.setChecked(this.mShowHideContacts);
 		mMenuSearchView = menu.findItem(R.id.action_search);
 		mMenuSearchView.setOnActionExpandListener(mOnActionExpandListener);
 		View mSearchView = mMenuSearchView.getActionView();
@@ -612,6 +616,14 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 			case R.id.action_scan_qr_code:
 				UriHandlerActivity.scan(this);
 				return true;
+			case R.id.action_show_hide_contact:
+				mShowHideContacts = !item.isChecked();
+				getPreferences().edit().putBoolean("show_hide_contacts", mShowHideContacts).commit();
+				if (mSearchEditText != null) {
+					filter(mSearchEditText.getText().toString());
+				}
+				invalidateOptionsMenu();
+				break;
 			case R.id.action_hide_offline:
 				mHideOfflineContacts = !item.isChecked();
 				getPreferences().edit().putBoolean("hide_offline", mHideOfflineContacts).commit();
@@ -855,7 +867,11 @@ public class StartConversationActivity extends XmppActivity implements XmppConne
 							&& (!this.mHideOfflineContacts
 							|| (needle != null && !needle.trim().isEmpty())
 							|| s.compareTo(Presence.Status.OFFLINE) < 0)) {
-						this.contacts.add(contact);
+						if(this.mShowHideContacts) {
+							this.contacts.add(contact);
+						}else if(!contact.getHideContact()){
+							this.contacts.add(contact);
+						}
 					}
 				}
 			}

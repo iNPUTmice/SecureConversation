@@ -10,6 +10,7 @@
     <string name="action_add_account">Add account</string>
     <string name="action_edit_contact">Edit name</string>
     <string name="action_add_phone_book">Add to address book</string>
+    <string name="action_hide_contact">Hide Contact</string>
     <string name="action_delete_contact">Delete from roster</string>
     <string name="action_block_contact">Block contact</string>
     <string name="action_unblock_contact">Unblock contact</string>
@@ -398,6 +399,7 @@
     <string name="sending_x_file">Sending %s</string>
     <string name="offering_x_file">Offering %s</string>
     <string name="hide_offline">Hide offline</string>
+    <string name="show_hide_contact">Show hide contacts</string>
     <string name="contact_is_typing">%s is typing…</string>
     <string name="contact_has_stopped_typing">%s has stopped typing</string>
     <string name="contacts_are_typing">%s are typing…</string>

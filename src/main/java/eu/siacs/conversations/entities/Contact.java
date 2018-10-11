@@ -2,8 +2,10 @@ package eu.siacs.conversations.entities;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.provider.ContactsContract;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
@@ -41,6 +43,7 @@ public class Contact implements ListItem, Blockable {
 	public static final String LAST_PRESENCE = "last_presence";
 	public static final String LAST_TIME = "last_time";
 	public static final String GROUPS = "groups";
+
 	private String accountUuid;
 	private String systemName;
 	private String serverName;
@@ -59,6 +62,8 @@ public class Contact implements ListItem, Blockable {
 	private boolean mActive = false;
 	private long mLastseen = 0;
 	private String mLastPresence = null;
+
+	private boolean mHideContact = false;
 
 	public Contact(final String account, final String systemName, final String serverName,
 	               final Jid jid, final int subscription, final String photoUri,
@@ -90,7 +95,18 @@ public class Contact implements ListItem, Blockable {
 		}
 		this.mLastseen = lastseen;
 		this.mLastPresence = presence;
+		this.mHideContact = false;
 	}
+
+	public void setHideContact(boolean hide)
+    {
+        mHideContact = hide;
+    }
+
+    public boolean getHideContact()
+    {
+        return mHideContact;
+    }
 
 	public Contact(final Jid jid) {
 		this.jid = jid;
