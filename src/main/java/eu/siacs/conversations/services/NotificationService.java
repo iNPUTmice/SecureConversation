@@ -640,7 +640,12 @@ public class NotificationService {
         } else {
             if (messages.get(0).getConversation().getMode() == Conversation.MODE_SINGLE) {
                 builder.setStyle(new NotificationCompat.BigTextStyle().bigText(getMergedBodies(messages)));
-                builder.setContentText(UIHelper.getMessagePreview(mXmppConnectionService, messages.get(0)).first);
+//                builder.setContentText(UIHelper.getMessagePreview(mXmppConnectionService, messages.get(0)).first);
+
+                //set the newest message as notification content text and display the number of messages received
+                builder.setContentText(UIHelper.getMessagePreview(mXmppConnectionService, messages.get(messages.size()-1)).first);
+                builder.setNumber(messages.size());
+
             } else {
                 final NotificationCompat.InboxStyle style = new NotificationCompat.InboxStyle();
                 SpannableString styledString;
