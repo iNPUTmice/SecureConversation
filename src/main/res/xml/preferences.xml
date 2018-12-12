@@ -232,6 +232,11 @@
                     android:summary="@string/pref_remove_trusted_certificates_summary"
                     android:title="@string/pref_remove_trusted_certificates_title" />
                 <CheckBoxPreference
+                    android:defaultValue="@bool/screen_security"
+                    android:key="screen_security"
+                    android:summary="@string/pref_screen_security_summary"
+                    android:title="@string/pref_screen_security" />
+                <CheckBoxPreference
                     android:defaultValue="@bool/allow_message_correction"
                     android:key="allow_message_correction"
                     android:summary="@string/pref_allow_message_correction_summary"

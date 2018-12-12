@@ -820,6 +820,7 @@ public abstract class XmppActivity extends ActionBarActivity {
 	@Override
 	public void onResume() {
 		super.onResume();
+		initializeScreenshotSecurity();
 	}
 
 	protected int findTheme() {
