@@ -111,6 +111,7 @@ import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.ui.interfaces.OnAvatarPublication;
 import eu.siacs.conversations.ui.interfaces.OnMediaLoaded;
 import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
+import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.ConversationsFileObserver;
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -2493,8 +2494,7 @@ public class XmppConnectionService extends Service {
 		return false;
 	}
 
-
-	public void getAttachments(final Conversation conversation, int limit, final OnMediaLoaded onMediaLoaded) {
+    public void getAttachments(final Conversation conversation, int limit, final OnMediaLoaded onMediaLoaded) {
         getAttachments(conversation.getAccount(), conversation.getJid().asBareJid(), limit, onMediaLoaded);
     }
 
@@ -2502,9 +2502,35 @@ public class XmppConnectionService extends Service {
         getAttachments(account.getUuid(),jid.asBareJid(),limit, onMediaLoaded);
     }
 
-
-	public void getAttachments(final String account, final Jid jid, final int limit, final OnMediaLoaded onMediaLoaded) {
-        new Thread(() -> onMediaLoaded.onMediaLoaded(fileBackend.convertToAttachments(databaseBackend.getRelativeFilePaths(account, jid, limit)))).start();
+    public void getAttachments(final String account, final Jid jid, final int limit, final OnMediaLoaded onMediaLoaded) {
+        new Thread(() -> {
+            List<Attachment> attachments;
+            if (limit > 0) {
+                attachments = new ArrayList<>(limit);
+            } else {
+                attachments = new ArrayList<>();
+            }
+            // Fetch more paths than requested in each iteration to increase the chance of getting
+            // enough attachments whose files still exist and reduce the amount of queries that way
+            final int fetchLimit = 3 * limit;
+            int fetchOffset = 0;
+            List<DatabaseBackend.FilePath> paths;
+            do {
+                Log.d(Config.LOGTAG, "fetching attachment paths with limit "+String.valueOf(fetchLimit)+" and offset "+String.valueOf(fetchOffset));
+                paths = databaseBackend.getRelativeFilePaths(account, jid, fetchLimit, fetchOffset);
+                for (DatabaseBackend.FilePath path : paths) {
+                    Attachment attachment = fileBackend.convertToAttachment(path);
+                    if (attachment != null) {
+                        attachments.add(attachment);
+                        if (limit > 0 && attachments.size() == limit) {
+                            break;
+                        }
+                    }
+                }
+                fetchOffset += fetchLimit;
+            } while(paths.size() == fetchLimit && attachments.size() < limit);
+            onMediaLoaded.onMediaLoaded(attachments);
+        }).start();
     }
 
 	public void persistSelfNick(MucOptions.User self) {
