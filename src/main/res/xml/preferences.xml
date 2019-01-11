@@ -237,10 +237,6 @@
                     android:summary="@string/pref_allow_message_correction_summary"
                     android:title="@string/pref_allow_message_correction" />
                 <Preference
-                    android:key="clean_cache"
-                    android:summary="@string/pref_clean_cache_summary"
-                    android:title="@string/pref_clean_cache" />
-                <Preference
                     android:key="clean_private_storage"
                     android:summary="@string/pref_clean_private_storage_summary"
                     android:title="@string/pref_clean_private_storage" />
@@ -333,6 +329,10 @@
                     android:key="create_backup"
                     android:summary="@string/pref_create_backup_summary"
                     android:title="@string/pref_create_backup" />
+                <Preference
+                    android:key="clean_cache"
+                    android:summary="@string/pref_clean_cache_summary"
+                    android:title="@string/pref_clean_cache" />
             </PreferenceCategory>
         </PreferenceScreen>
 
