@@ -1,5 +1,16 @@
 # Changelog
 
+### Version 2.3.12
+* Fixed rare crash on start up
+* Fixed avatar not being refreshed in group chats
+
+### Version 2.3.11
+* Support for Android 9 'message style' notifications
+* OMEMO stability improvements
+* Added ability to destroy group chats
+* Do not show deleted files in media browser
+* Added 'Keep Original' as video quality choice
+
 ### Version 2.3.10
 * lower minimum required Android version to 4.1
 * Synchronize group chat join/leaves across multiple clients

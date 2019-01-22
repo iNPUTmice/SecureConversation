@@ -8,6 +8,7 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -104,6 +105,7 @@ import eu.siacs.conversations.parser.MessageParser;
 import eu.siacs.conversations.parser.PresenceParser;
 import eu.siacs.conversations.persistance.DatabaseBackend;
 import eu.siacs.conversations.persistance.FileBackend;
+import eu.siacs.conversations.ui.ChooseAccountForProfilePictureActivity;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.UiCallback;
 import eu.siacs.conversations.ui.interfaces.OnAvatarPublication;
@@ -178,7 +180,8 @@ public class XmppConnectionService extends Service {
     private final IBinder mBinder = new XmppConnectionBinder();
     private final List<Conversation> conversations = new CopyOnWriteArrayList<>();
     private final IqGenerator mIqGenerator = new IqGenerator(this);
-    private final List<String> mInProgressAvatarFetches = new ArrayList<>();
+    private final Set<String> mInProgressAvatarFetches = new HashSet<>();
+    private final Set<String> mOmittedPepAvatarFetches = new HashSet<>();
     private final HashSet<Jid> mLowPingTimeoutMode = new HashSet<>();
     private final OnIqPacketReceived mDefaultIqHandler = (account, packet) -> {
         if (packet.getType() != IqPacket.TYPE.RESULT) {
@@ -198,6 +201,7 @@ public class XmppConnectionService extends Service {
     private ShortcutService mShortcutService = new ShortcutService(this);
     private AtomicBoolean mInitialAddressbookSyncCompleted = new AtomicBoolean(false);
     private AtomicBoolean mForceForegroundService = new AtomicBoolean(false);
+    private AtomicBoolean mForceDuringOnCreate = new AtomicBoolean(false);
     private OnMessagePacketReceived mMessageParser = new MessageParser(this);
     private OnPresencePacketReceived mPresenceParser = new PresenceParser(this);
     private IqParser mIqParser = new IqParser(this);
@@ -964,6 +968,11 @@ public class XmppConnectionService extends Service {
     @SuppressLint("TrulyRandom")
     @Override
     public void onCreate() {
+        if (Compatibility.runsTwentySix()) {
+            mNotificationService.initializeChannels();
+        }
+        mForceDuringOnCreate.set(Compatibility.runsAndTargetsTwentySix(this));
+        toggleForegroundService();
         this.destroyed = false;
         OmemoSetting.load(this);
         ExceptionHelper.init(getApplicationContext());
@@ -975,9 +984,6 @@ public class XmppConnectionService extends Service {
         Resolver.init(this);
         this.mRandom = new SecureRandom();
         updateMemorizingTrustmanager();
-        if (Compatibility.runsTwentySix()) {
-            mNotificationService.initializeChannels();
-        }
         final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
         final int cacheSize = maxMemory / 8;
         this.mBitmapCache = new LruCache<String, Bitmap>(cacheSize) {
@@ -999,8 +1005,10 @@ public class XmppConnectionService extends Service {
             editor.putBoolean(SettingsActivity.KEEP_FOREGROUND_SERVICE, true);
             Log.d(Config.LOGTAG, Build.MANUFACTURER + " is on blacklist. enabling foreground service");
         }
-        editor.putBoolean(EventReceiver.SETTING_ENABLED_ACCOUNTS, hasEnabledAccounts()).apply();
+        final boolean hasEnabledAccounts = hasEnabledAccounts();
+        editor.putBoolean(EventReceiver.SETTING_ENABLED_ACCOUNTS, hasEnabledAccounts).apply();
         editor.apply();
+        toggleSetProfilePictureActivity(hasEnabledAccounts);
 
         restoreFromDatabase();
 
@@ -1046,6 +1054,8 @@ public class XmppConnectionService extends Service {
             intentFilter.addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED);
             registerReceiver(this.mInternalEventReceiver, intentFilter);
         }
+        mForceDuringOnCreate.set(false);
+        toggleForegroundService();
     }
 
     private void checkForDeletedFiles() {
@@ -1100,6 +1110,7 @@ public class XmppConnectionService extends Service {
         } catch (IllegalArgumentException e) {
             //ignored
         }
+        destroyed = false;
         fileObserver.stopWatching();
         super.onDestroy();
     }
@@ -1131,7 +1142,7 @@ public class XmppConnectionService extends Service {
 
     private void toggleForegroundService(boolean force) {
         final boolean status;
-        if (force || mForceForegroundService.get() || (Compatibility.keepForegroundService(this) && hasEnabledAccounts())) {
+        if (force || mForceDuringOnCreate.get() || mForceForegroundService.get() || (Compatibility.keepForegroundService(this) && hasEnabledAccounts())) {
             startForeground(NotificationService.FOREGROUND_NOTIFICATION_ID, this.mNotificationService.createForegroundNotification());
             status = true;
         } else {
@@ -1936,8 +1947,20 @@ public class XmppConnectionService extends Service {
 	}
 
 	private void syncEnabledAccountSetting() {
-		getPreferences().edit().putBoolean(EventReceiver.SETTING_ENABLED_ACCOUNTS, hasEnabledAccounts()).apply();
+	    final boolean hasEnabledAccounts = hasEnabledAccounts();
+		getPreferences().edit().putBoolean(EventReceiver.SETTING_ENABLED_ACCOUNTS, hasEnabledAccounts).apply();
+		toggleSetProfilePictureActivity(hasEnabledAccounts);
 	}
+
+	private void toggleSetProfilePictureActivity(final boolean enabled) {
+	    try {
+	        final ComponentName name = new ComponentName(this, ChooseAccountForProfilePictureActivity.class);
+	        final int targetState =  enabled ? PackageManager.COMPONENT_ENABLED_STATE_ENABLED : PackageManager.COMPONENT_ENABLED_STATE_DISABLED;
+            getPackageManager().setComponentEnabledSetting(name, targetState, PackageManager.DONT_KILL_APP);
+        } catch (IllegalStateException e) {
+	        Log.d(Config.LOGTAG,"unable to toggle profile picture actvitiy");
+        }
+    }
 
 	public void createAccountFromKey(final String alias, final OnAccountCreated callback) {
 		new Thread(() -> {
@@ -2516,12 +2539,15 @@ public class XmppConnectionService extends Service {
 	}
 
 	private boolean hasEnabledAccounts() {
-		for (Account account : this.accounts) {
-			if (account.isEnabled()) {
-				return true;
-			}
-		}
-		return false;
+	    if (this.accounts == null) {
+	        return false;
+	    }
+	    for (Account account : this.accounts) {
+	        if (account.isEnabled()) {
+	            return true;
+	        }
+	    }
+	    return false;
 	}
 
 
@@ -3097,6 +3123,7 @@ public class XmppConnectionService extends Service {
                     if (account.setAvatar(avatar.getFilename())) {
                         getAvatarService().clear(account);
                         databaseBackend.updateAccount(account);
+                        notifyAccountAvatarHasChanged(account);
                     }
                     Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": published avatar " + (avatar.size / 1024) + "KiB");
                     if (callback != null) {
@@ -3176,18 +3203,22 @@ public class XmppConnectionService extends Service {
 	public void fetchAvatar(Account account, final Avatar avatar, final UiCallback<Avatar> callback) {
 		final String KEY = generateFetchKey(account, avatar);
 		synchronized (this.mInProgressAvatarFetches) {
-			if (!this.mInProgressAvatarFetches.contains(KEY)) {
-				switch (avatar.origin) {
-					case PEP:
-						this.mInProgressAvatarFetches.add(KEY);
-						fetchAvatarPep(account, avatar, callback);
-						break;
-					case VCARD:
-						this.mInProgressAvatarFetches.add(KEY);
-						fetchAvatarVcard(account, avatar, callback);
-						break;
-				}
-			}
+		    if (mInProgressAvatarFetches.add(KEY)) {
+                switch (avatar.origin) {
+                    case PEP:
+                        this.mInProgressAvatarFetches.add(KEY);
+                        fetchAvatarPep(account, avatar, callback);
+                        break;
+                    case VCARD:
+                        this.mInProgressAvatarFetches.add(KEY);
+                        fetchAvatarVcard(account, avatar, callback);
+                        break;
+                }
+            } else if (avatar.origin == Avatar.Origin.PEP) {
+		        mOmittedPepAvatarFetches.add(KEY);
+            } else {
+		        Log.d(Config.LOGTAG,account.getJid().asBareJid()+": already fetching "+avatar.origin+" avatar for "+avatar.owner);
+            }
 		}
 	}
 
@@ -3249,8 +3280,11 @@ public class XmppConnectionService extends Service {
 		this.sendIqPacket(account, packet, new OnIqPacketReceived() {
 			@Override
 			public void onIqPacketReceived(Account account, IqPacket packet) {
+			    final boolean previouslyOmittedPepFetch;
 				synchronized (mInProgressAvatarFetches) {
-					mInProgressAvatarFetches.remove(generateFetchKey(account, avatar));
+				    final String KEY = generateFetchKey(account, avatar);
+					mInProgressAvatarFetches.remove(KEY);
+					previouslyOmittedPepFetch = mOmittedPepAvatarFetches.remove(KEY);
 				}
 				if (packet.getType() == IqPacket.TYPE.RESULT) {
 					Element vCard = packet.findChild("vCard", "vcard-temp");
@@ -3260,7 +3294,7 @@ public class XmppConnectionService extends Service {
 						avatar.image = image;
 						if (getFileBackend().save(avatar)) {
 							Log.d(Config.LOGTAG, account.getJid().asBareJid()
-									+ ": successfully fetched vCard avatar for " + avatar.owner);
+									+ ": successfully fetched vCard avatar for " + avatar.owner+" omittedPep="+previouslyOmittedPepFetch);
 							if (avatar.owner.isBareJid()) {
 								if (account.getJid().asBareJid().equals(avatar.owner) && account.getAvatar() == null) {
 									Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": had no avatar. replacing with vcard");
@@ -3270,7 +3304,7 @@ public class XmppConnectionService extends Service {
 									updateAccountUi();
 								} else {
 									Contact contact = account.getRoster().getContact(avatar.owner);
-									if (contact.setAvatar(avatar)) {
+									if (contact.setAvatar(avatar, previouslyOmittedPepFetch)) {
 										syncRoster(account);
 										getAvatarService().clear(contact);
 										updateRosterUi();
@@ -3337,6 +3371,23 @@ public class XmppConnectionService extends Service {
 			}
 		});
 	}
+
+	public void notifyAccountAvatarHasChanged(final Account account) {
+	    final XmppConnection connection = account.getXmppConnection();
+	    if (connection != null && connection.getFeatures().bookmarksConversion()) {
+            Log.d(Config.LOGTAG,account.getJid().asBareJid()+": avatar changed. resending presence to online group chats");
+            for(Conversation conversation : conversations) {
+                if (conversation.getAccount() == account && conversation.getMode() == Conversational.MODE_MULTI) {
+                    final MucOptions mucOptions = conversation.getMucOptions();
+                    if (mucOptions.online()) {
+                        PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, mucOptions.nonanonymous());
+                        packet.setTo(mucOptions.getSelf().getFullJid());
+                        connection.sendPresencePacket(packet);
+                    }
+                }
+            }
+        }
+    }
 
 	public void deleteContactOnServer(Contact contact) {
 		contact.resetOption(Contact.Options.PREEMPTIVE_GRANT);
