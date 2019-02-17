@@ -190,7 +190,7 @@ public class CreatePublicChannelDialog extends DialogFragment implements OnBacke
         if (nameEntered) {
             binding.nameLayout.setError(null);
             if (address.isEmpty()) {
-                binding.xmppAddressLayout.setError(context.getText(R.string.please_enter_xmpp_address));
+                binding.xmppAddressLayout.setError(context.getText(R.string.please_enter_jabber_id));
             } else {
                 final Jid jid;
                 try {
@@ -216,7 +216,7 @@ public class CreatePublicChannelDialog extends DialogFragment implements OnBacke
             if (name.isEmpty()) {
                 binding.nameLayout.setError(context.getText(R.string.please_enter_name));
             } else if (StartConversationActivity.isValidJid(name)){
-                binding.nameLayout.setError(context.getText(R.string.this_is_an_xmpp_address));
+                binding.nameLayout.setError(context.getText(R.string.this_is_a_jabber_id));
             } else {
                 binding.nameLayout.setError(null);
                 nameEntered = true;
