@@ -35,7 +35,7 @@
                 android:imeOptions="actionNext|flagNoExtractUi"/>
         </android.support.design.widget.TextInputLayout>
         <android.support.design.widget.TextInputLayout
-            android:id="@+id/jabber_id_layout"
+            android:id="@+id/xmpp_address_layout"
             android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
