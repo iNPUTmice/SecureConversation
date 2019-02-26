@@ -288,10 +288,13 @@ other clients.
 #### Translations
 Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/)
 
-#### How do I backup / move Conversations to a new device?
+#### How do I backup / move Conversations 2.4.0 or later to a new device?
 On the one hand Conversations supports Message Archive Management to keep a server side history of your messages so when migrating to a new device that device can display your entire history. However that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
 
-If you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) (needs root access on the device) or ```adb backup``` (no root access needed) from your computer.  It is important that you disable (NOT delete) your account before backup and enable it only after a successful restore, otherwise OMEMO might not work afterwards. Also, remember that you can **only** transfer the backup to either the same version of Android or to a newer one (eg. 5.1.1 -> 5.1.1 or 5.1.1 -> 6.0.1).
+As of version 2.4.0 an integrated Backup & Restore function will help with with this, you just disable (NOT delete) your accounts, go to Settings - Expert - last option: Backup. A notification will pop-up during the creation process that will announce you when its ready. After the files, one for each account, are created, you can move the Conversations folder *(if you want your old media files too)* or only the Conversations/Backup folder *(for OMEMO keys and history only)* to your new device (or to a storage place) where a freshly installed Conversations can restore each account. **WARNING**: Be sure to know your account password or find ways to reset it **before** doing the backup as the files are encrypted using that password and the Restore process will ask for it.
+
+#### How do I backup / move Conversations 2.3.12 or older and Conversations Legacy to a new device?
+For users that can't update to 2.4.0, if you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) (needs root access on the device) or ```adb backup``` (no root access needed) from your computer.  It is important that you disable (NOT delete) your account before backup and enable it only after a successful restore, otherwise OMEMO might not work afterwards. Also, remember that you can **only** transfer the backup to either the same version of Android or to a newer one (eg. 5.1.1 -> 5.1.1 or 5.1.1 -> 6.0.1).
 
 #### Conversations is missing a certain feature
 
