@@ -14,9 +14,9 @@ apply plugin: 'com.android.application'
 
 repositories {
     jcenter()
-    mavenCentral()
-    maven {
-        url 'https://maven.google.com'
+    seccomnCentral()
+    seccomn {
+        url 'https://seccomn.com'
     }
     maven {
         url "https://jitpack.io"
