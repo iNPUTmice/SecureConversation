@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.ActivityChannelDiscoveryBinding;
 import eu.siacs.conversations.entities.Account;
@@ -200,7 +201,12 @@ public class ChannelDiscoveryActivity extends XmppActivity implements MenuItem.O
 
     public void joinChannelSearchResult(String accountJid, MuclumbusService.Room result) {
         final boolean syncAutojoin = getBooleanPreference("autojoin", R.bool.autojoin);
-        Account account = xmppConnectionService.findAccountByJid(Jid.of(accountJid));
+        Account account;
+        if (Config.DOMAIN_LOCK != null) {
+            account = xmppConnectionService.findAccountByJid(Jid.of(accountJid, Config.DOMAIN_LOCK, null));
+        } else {
+            account = xmppConnectionService.findAccountByJid(Jid.of(accountJid));
+        }
         final Conversation conversation = xmppConnectionService.findOrCreateConversation(account, result.getRoom(), true, true, true);
         if (conversation.getBookmark() != null) {
             if (!conversation.getBookmark().autojoin() && syncAutojoin) {
