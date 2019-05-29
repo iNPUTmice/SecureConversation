@@ -117,7 +117,7 @@ public abstract class AbstractGenerator {
 		if (Config.supportOmemo()) {
 			features.add(AxolotlService.PEP_DEVICE_LIST_NOTIFY);
 		}
-		if (!mXmppConnectionService.useTorToConnect() && !account.isOnion()) {
+		if (!mXmppConnectionService.useProxyToConnect() && !mXmppConnectionService.useTorToConnect() && !account.isOnion()) {
 			features.addAll(Arrays.asList(PRIVACY_SENSITIVE));
 		}
 		if (mXmppConnectionService.broadcastLastActivity()) {

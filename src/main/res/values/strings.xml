@@ -453,6 +453,7 @@
     <string name="download_failed_could_not_connect">Download failed: Could not connect to host</string>
     <string name="download_failed_could_not_write_file">Download failed: Could not write file</string>
     <string name="account_status_tor_unavailable">Tor network unavailable</string>
+    <string name="account_status_proxy_unavailable">Proxy unavailable</string>
     <string name="account_status_bind_failure">Bind failure</string>
     <string name="account_status_host_unknown">Server not responsible for domain</string>
     <string name="server_info_broken">Broken</string>
@@ -484,6 +485,15 @@
     <string name="pref_connection_options">Connection</string>
     <string name="pref_use_tor">Connect via Tor</string>
     <string name="pref_use_tor_summary">Tunnel all connections through the Tor network. Requires Orbot</string>
+    <string name="proxy_settings_summary">Configure proxy server settings</string>
+    <string name="proxy_settings">Proxy settings</string>
+    <string name="pref_use_proxy">Use proxy</string>
+    <string name="pref_use_proxy_summary">Use SOCKS proxy for connections</string>
+    <string name="pref_socks_config">Proxy configuration</string>
+    <string name="pref_socks_addr">Server</string>
+    <string name="pref_socks_port">Port</string>
+    <string name="pref_socks_addr_summary">SOCKS proxy IP or hostname</string>
+    <string name="pref_socks_port_summary">SOCKS Port</string>
     <string name="account_settings_hostname">Hostname</string>
     <string name="account_settings_port">Port</string>
     <string name="hostname_or_onion">Server- or .onion-Address</string>

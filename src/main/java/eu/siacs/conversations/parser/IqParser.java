@@ -373,7 +373,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
 			mXmppConnectionService.sendIqPacket(account, response, null);
 		} else if (packet.hasChild("time","urn:xmpp:time") && isGet) {
 			final IqPacket response;
-			if (mXmppConnectionService.useTorToConnect() || account.isOnion()) {
+			if (mXmppConnectionService.useProxyToConnect() || mXmppConnectionService.useTorToConnect() || account.isOnion()) {
 				response = packet.generateResponse(IqPacket.TYPE.ERROR);
 				final Element error = response.addChild("error");
 				error.setAttribute("type","cancel");

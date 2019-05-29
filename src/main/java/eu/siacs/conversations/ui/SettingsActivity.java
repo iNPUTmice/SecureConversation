@@ -245,6 +245,20 @@ public class SettingsActivity extends XmppActivity implements
 		if (deleteOmemoPreference != null) {
 			deleteOmemoPreference.setOnPreferenceClickListener(preference -> deleteOmemoIdentities());
 		}
+
+		final Preference torPreference = mSettingsFragment.findPreference("use_tor");
+		final Preference proxyAddressPreference = mSettingsFragment.findPreference("proxy_addr");
+		final Preference proxyPortPreference = mSettingsFragment.findPreference("proxy_port");
+		if (torPreference != null) {
+			torPreference.setOnPreferenceChangeListener((preference, newValue) -> {
+				boolean isEnabled = (Boolean) newValue;
+				proxyAddressPreference.setEnabled(!isEnabled);
+				proxyPortPreference.setEnabled(!isEnabled);
+				return true;
+
+			});
+		}
+
 	}
 
 	private void changeOmemoSettingSummary() {
@@ -382,7 +396,7 @@ public class SettingsActivity extends XmppActivity implements
 		} else if (name.equals("dont_trust_system_cas")) {
 			xmppConnectionService.updateMemorizingTrustmanager();
 			reconnectAccounts();
-		} else if (name.equals("use_tor")) {
+		} else if (name.equals("use_tor") || name.equals("use_proxy") || name.equals("proxy_addr") || name.equals("proxy_port")) {
 			reconnectAccounts();
 			xmppConnectionService.reinitializeMuclumbusService();
 		} else if (name.equals(AUTOMATIC_MESSAGE_DELETION)) {

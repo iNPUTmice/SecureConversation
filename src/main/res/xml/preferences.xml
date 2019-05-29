@@ -252,11 +252,42 @@
             <PreferenceCategory
                 android:key="connection_options"
                 android:title="@string/pref_connection_options">
-                <CheckBoxPreference
-                    android:defaultValue="@bool/use_tor"
-                    android:key="use_tor"
-                    android:summary="@string/pref_use_tor_summary"
-                    android:title="@string/pref_use_tor" />
+                <PreferenceScreen
+                    android:key="proxy_settings"
+                    android:summary="@string/proxy_settings_summary"
+                    android:title="@string/proxy_settings">
+                    <intent
+                        android:action="android.intent.action.VIEW"
+                        android:targetClass="eu.siacs.conversations.ui.SettingsActivity"
+                        android:targetPackage="@string/applicationId">
+                        <extra
+                            android:name="page"
+                            android:value="proxy_settings" />
+                    </intent>
+                    <CheckBoxPreference
+                        android:defaultValue="@bool/use_proxy"
+                        android:key="use_proxy"
+                        android:summary="@string/pref_use_proxy_summary"
+                        android:title="@string/pref_use_proxy" />
+                    <PreferenceCategory android:title="@string/pref_socks_config">
+                        <CheckBoxPreference
+                            android:defaultValue="@bool/use_tor"
+                            android:key="use_tor"
+                            android:dependency="use_proxy"
+                            android:summary="@string/pref_use_tor_summary"
+                            android:title="@string/pref_use_tor" />
+                        <EditTextPreference
+                            android:key="proxy_addr"
+                            android:dependency="use_proxy"
+                            android:summary="@string/pref_socks_addr_summary"
+                            android:title="@string/pref_socks_addr" />
+                        <EditTextPreference
+                            android:key="proxy_port"
+                            android:dependency="use_proxy"
+                            android:summary="@string/pref_socks_port_summary"
+                            android:title="@string/pref_socks_port" />
+                    </PreferenceCategory>
+                </PreferenceScreen>
                 <CheckBoxPreference
                     android:defaultValue="@bool/show_connection_options"
                     android:key="show_connection_options"

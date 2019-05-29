@@ -39,13 +39,26 @@ public class ChannelDiscoveryService {
 
     public void initializeMuclumbusService() {
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
-        if (service.useTorToConnect()) {
-            try {
-                builder.proxy(HttpConnectionManager.getProxy());
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to use Tor proxy", e);
+
+        if (service.useProxyToConnect()) {
+            if (service.useTorToConnect()) {
+                try {
+                    builder.proxy(HttpConnectionManager.getTorProxy());
+                } catch (IOException e) {
+                    throw new RuntimeException("Unable to use Tor proxy", e);
+                }
+            } else  {
+                try {
+                    String addr  = service.proxyAddress();
+                    int port = service.proxyPort();
+                    builder.proxy(HttpConnectionManager.getSocksProxy(addr,port));
+                } catch (IOException e) {
+                    throw new RuntimeException("Unable to use Socks proxy", e);
+                }
             }
+
         }
+
         Retrofit retrofit = new Retrofit.Builder()
                 .client(builder.build())
                 .baseUrl(Config.CHANNEL_DISCOVERY)

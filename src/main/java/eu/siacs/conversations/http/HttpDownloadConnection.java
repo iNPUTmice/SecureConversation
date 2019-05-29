@@ -45,6 +45,7 @@ public class HttpDownloadConnection implements Transferable {
 	private boolean acceptedAutomatically = false;
 	private int mProgress = 0;
 	private final boolean mUseTor;
+	private final boolean mUseProxy;
 	private boolean canceled = false;
 	private Method method = Method.HTTP_UPLOAD;
 
@@ -53,6 +54,7 @@ public class HttpDownloadConnection implements Transferable {
 		this.mHttpConnectionManager = manager;
 		this.mXmppConnectionService = manager.getXmppConnectionService();
 		this.mUseTor = mXmppConnectionService.useTorToConnect();
+		this.mUseProxy = mXmppConnectionService.useProxyToConnect();
 	}
 
 	@Override
@@ -122,6 +124,16 @@ public class HttpDownloadConnection implements Transferable {
 	private void checkFileSize(boolean interactive) {
 		new Thread(new FileSizeChecker(interactive)).start();
 	}
+
+    private HttpURLConnection proxifyConnection() throws IOException{
+        if (mUseTor || message.getConversation().getAccount().isOnion()) {
+            return (HttpURLConnection) mUrl.openConnection(HttpConnectionManager.getTorProxy());
+        } else {
+			String addr  = mXmppConnectionService.proxyAddress();
+			int port = mXmppConnectionService.proxyPort();
+            return (HttpURLConnection) mUrl.openConnection(HttpConnectionManager.getSocksProxy(addr,port));
+        }
+    }
 
 	@Override
 	public void cancel() {
@@ -276,11 +288,13 @@ public class HttpDownloadConnection implements Transferable {
 				Log.d(Config.LOGTAG, "retrieve file size. interactive:" + String.valueOf(interactive));
 				changeStatus(STATUS_CHECKING);
 				HttpURLConnection connection;
-				if (mUseTor || message.getConversation().getAccount().isOnion()) {
-					connection = (HttpURLConnection) mUrl.openConnection(HttpConnectionManager.getProxy());
-				} else {
-					connection = (HttpURLConnection) mUrl.openConnection();
-				}
+
+				if (mUseProxy) {
+				    connection = proxifyConnection();
+                } else {
+                    connection = (HttpURLConnection) mUrl.openConnection();
+                }
+
 				if (method == Method.P1_S3) {
 					connection.setRequestMethod("GET");
 					connection.addRequestProperty("Range","bytes=0-0");
@@ -359,11 +373,13 @@ public class HttpDownloadConnection implements Transferable {
 			PowerManager.WakeLock wakeLock = mHttpConnectionManager.createWakeLock("http_download_" + message.getUuid());
 			try {
 				wakeLock.acquire();
-				if (mUseTor || message.getConversation().getAccount().isOnion()) {
-					connection = (HttpURLConnection) mUrl.openConnection(HttpConnectionManager.getProxy());
-				} else {
-					connection = (HttpURLConnection) mUrl.openConnection();
-				}
+
+                if (mUseProxy) {
+                    connection = proxifyConnection();
+                } else {
+                    connection = (HttpURLConnection) mUrl.openConnection();
+                }
+
 				if (connection instanceof HttpsURLConnection) {
 					mHttpConnectionManager.setupTrustManager((HttpsURLConnection) connection, interactive);
 				}

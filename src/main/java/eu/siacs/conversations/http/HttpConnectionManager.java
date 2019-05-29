@@ -35,8 +35,12 @@ public class HttpConnectionManager extends AbstractConnectionManager {
         super(service);
     }
 
-    public static Proxy getProxy() throws IOException {
+    public static Proxy getTorProxy() throws IOException {
         return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(InetAddress.getByAddress(new byte[]{127, 0, 0, 1}), 8118));
+    }
+
+    public static Proxy getSocksProxy(String address, int port) throws IOException {
+        return new Proxy(Proxy.Type.SOCKS, new InetSocketAddress(InetAddress.getByName(address), port));
     }
 
     public void createNewDownloadConnection(Message message) {

@@ -104,9 +104,16 @@ public abstract class LocationActivity extends ActionBarActivity implements Loca
 		final IConfigurationProvider config = Configuration.getInstance();
 		config.load(ctx, getPreferences());
 		config.setUserAgentValue(BuildConfig.APPLICATION_ID + "_" + BuildConfig.VERSION_CODE);
-		if (QuickConversationsService.isConversations() && getBooleanPreference("use_tor", R.bool.use_tor)) {
+		if (QuickConversationsService.isConversations() && getBooleanPreference("use_proxy", R.bool.use_proxy)) {
 			try {
-				config.setHttpProxy(HttpConnectionManager.getProxy());
+				if (getBooleanPreference("use_tor", R.bool.use_tor)) {
+					config.setHttpProxy(HttpConnectionManager.getTorProxy());
+				}
+				else {
+					String addr = getPreferences().getString("proxy_addr","");
+					int port = Integer.parseInt(getPreferences().getString("proxy_port","0"));
+					config.setHttpProxy(HttpConnectionManager.getSocksProxy(addr,port));
+				}
 			} catch (IOException e) {
 				throw new RuntimeException("Unable to configure proxy");
 			}

@@ -3669,6 +3669,18 @@ public class XmppConnectionService extends Service {
 		return QuickConversationsService.isConversations() && getBooleanPreference("use_tor", R.bool.use_tor);
 	}
 
+	public boolean useProxyToConnect() {
+		return QuickConversationsService.isConversations() && getBooleanPreference("use_proxy", R.bool.use_proxy);
+	}
+
+    public String proxyAddress() {
+        return getPreferences().getString("proxy_addr","");
+    }
+
+    public int proxyPort() {
+        return Integer.parseInt(getPreferences().getString("proxy_port","0"));
+    }
+
 	public boolean showExtendedConnectionOptions() {
 		return QuickConversationsService.isConversations() && getBooleanPreference("show_connection_options", R.bool.show_connection_options);
 	}

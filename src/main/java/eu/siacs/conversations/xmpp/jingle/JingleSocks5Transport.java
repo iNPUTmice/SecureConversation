@@ -62,8 +62,15 @@ public class JingleSocks5Transport extends JingleTransport {
 		new Thread(() -> {
 			try {
 				final boolean useTor = connection.getAccount().isOnion() || connection.getConnectionManager().getXmppConnectionService().useTorToConnect();
-				if (useTor) {
-					socket = SocksSocketFactory.createSocketOverTor(candidate.getHost(), candidate.getPort());
+				final boolean useProxy = connection.getConnectionManager().getXmppConnectionService().useProxyToConnect();
+				if (useProxy) {
+					if (useTor) {
+						socket = SocksSocketFactory.createSocketOverTor(candidate.getHost(), candidate.getPort());
+					} else {
+						String proxyAddress = connection.getConnectionManager().getXmppConnectionService().proxyAddress();
+						int proxyPort = connection.getConnectionManager().getXmppConnectionService().proxyPort();
+						socket = SocksSocketFactory.createSocketOverProxy(candidate.getHost(), candidate.getPort(), proxyAddress, proxyPort);
+					}
 				} else {
 					socket = new Socket();
 					SocketAddress address = new InetSocketAddress(candidate.getHost(), candidate.getPort());

@@ -40,6 +40,7 @@ public class HttpUploadConnection implements Transferable {
 	private final SlotRequester mSlotRequester;
 	private final Method method;
 	private final boolean mUseTor;
+	private final boolean mUseProxy;
 	private boolean cancelled = false;
 	private boolean delayed = false;
 	private DownloadableFile file;
@@ -57,6 +58,7 @@ public class HttpUploadConnection implements Transferable {
 		this.mXmppConnectionService = httpConnectionManager.getXmppConnectionService();
 		this.mSlotRequester = new SlotRequester(this.mXmppConnectionService);
 		this.mUseTor = mXmppConnectionService.useTorToConnect();
+		this.mUseProxy = mXmppConnectionService.useProxyToConnect();
 	}
 
 	@Override
@@ -80,6 +82,16 @@ public class HttpUploadConnection implements Transferable {
 			return 0;
 		}
 		return (int) ((((double) transmitted) / file.getExpectedSize()) * 100);
+	}
+
+	private HttpURLConnection proxifyConnection() throws Exception{
+		if (mUseTor || message.getConversation().getAccount().isOnion()) {
+			return (HttpURLConnection) slot.getPutUrl().openConnection(HttpConnectionManager.getTorProxy());
+		} else {
+			String addr  = mXmppConnectionService.proxyAddress();
+			int port = mXmppConnectionService.proxyPort();
+			return (HttpURLConnection) slot.getPutUrl().openConnection(HttpConnectionManager.getSocksProxy(addr,port));
+		}
 	}
 
 	@Override
@@ -159,11 +171,13 @@ public class HttpUploadConnection implements Transferable {
 			final int readTimeout = (expectedFileSize / 2048) + Config.SOCKET_TIMEOUT; //assuming a minimum transfer speed of 16kbit/s
 			wakeLock.acquire(readTimeout);
 			Log.d(Config.LOGTAG, "uploading to " + slot.getPutUrl().toString()+ " w/ read timeout of "+readTimeout+"s");
-			if (mUseTor || message.getConversation().getAccount().isOnion()) {
-				connection = (HttpURLConnection) slot.getPutUrl().openConnection(HttpConnectionManager.getProxy());
+
+			if (mUseProxy) {
+				connection = proxifyConnection();
 			} else {
 				connection = (HttpURLConnection) slot.getPutUrl().openConnection();
 			}
+
 			if (connection instanceof HttpsURLConnection) {
 				mHttpConnectionManager.setupTrustManager((HttpsURLConnection) connection, true);
 			}

@@ -45,15 +45,28 @@ public class SocksSocketFactory {
 		return socket;
 	}
 
-	public static Socket createSocketOverTor(String destination, int port) throws IOException {
-		return createSocket(new InetSocketAddress(InetAddress.getByAddress(LOCALHOST), 9050), destination, port);
+	public static Socket createSocketOverTor(String destination, int port) throws  TorProxyNotFoundException {
+		try {
+			return createSocket(new InetSocketAddress(InetAddress.getByAddress(LOCALHOST), 9050), destination, port);
+		} catch (IOException e) {
+			throw new TorProxyNotFoundException();
+		}
 	}
+
+	public static Socket createSocketOverProxy(String destination, int port,String socks5_addr, int socks5_port) throws IOException {
+		return createSocket(new InetSocketAddress(InetAddress.getByName(socks5_addr), socks5_port), destination, port);
+	}
+
 
 	static class SocksConnectionException extends IOException {
 
 	}
 
 	public static class SocksProxyNotFoundException extends IOException {
+
+	}
+
+	public static class TorProxyNotFoundException extends IOException {
 
 	}
 }
