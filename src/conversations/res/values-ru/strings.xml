@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="create_new_account">Создать новый аккаунт</string>
+    <string name="do_you_have_an_account">У вас уже есть учетная запись XMPP? Это может быть в том случае, если вы уже используете другой клиент XMPP или уже использовали Conversations. Если нет, вы можете создать новую учетную запись XMPP прямо сейчас. Подсказка: некоторые провайдеры электронной почты также предоставляют учетные записи XMPP.</string>
+    <string name="use_conversations.im">Использовать conversations.im</string>
+</resources>
