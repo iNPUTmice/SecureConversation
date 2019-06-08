@@ -63,7 +63,7 @@ import rocks.xmpp.addr.Jid;
 public class DatabaseBackend extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "history";
-    private static final int DATABASE_VERSION = 46;
+    private static final int DATABASE_VERSION = 47;
     private static DatabaseBackend instance = null;
     private static String CREATE_CONTATCS_STATEMENT = "create table "
             + Contact.TABLENAME + "(" + Contact.ACCOUNT + " TEXT, "
@@ -160,6 +160,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             + Resolver.Result.DIRECT_TLS + " NUMBER,"
             + Resolver.Result.AUTHENTICATED + " NUMBER,"
             + Resolver.Result.PORT + " NUMBER,"
+            + Resolver.Result.TIME_REQUESTED + " NUMBER,"
             + "UNIQUE(" + Resolver.Result.DOMAIN + ") ON CONFLICT REPLACE"
             + ");";
 
@@ -513,10 +514,6 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE " + Message.TABLENAME + " ADD COLUMN " + Message.MARKABLE + " NUMBER DEFAULT 0");
         }
 
-        if (oldVersion < 39 && newVersion >= 39) {
-            db.execSQL(CREATE_RESOLVER_RESULTS_TABLE);
-        }
-
         if (oldVersion < 41 && newVersion >= 41) {
             db.execSQL(CREATE_MESSAGE_INDEX_TABLE);
             db.execSQL(CREATE_MESSAGE_INSERT_TRIGGER);
@@ -555,6 +552,13 @@ public class DatabaseBackend extends SQLiteOpenHelper {
             final long diff = SystemClock.elapsedRealtime() - start;
             Log.d(Config.LOGTAG,"deleted old edit information in "+diff+"ms");
         }
+
+	if (oldVersion < 47 && newVersion >= 47) {
+          // values in resolver_result are cache and not worth to store 
+          db.execSQL("DROP TABLE IF EXISTS " + RESOLVER_RESULTS_TABLENAME);
+          db.execSQL(CREATE_RESOLVER_RESULTS_TABLE);
+        }
+
     }
 
     private void canonicalizeJids(SQLiteDatabase db) {
