@@ -3757,6 +3757,11 @@ public class XmppConnectionService extends Service {
 		if (status == Message.STATUS_SEND_RECEIVED && c == Message.STATUS_SEND_DISPLAYED) {
 			return;
 		}
+
+		if (status == Message.STATUS_SEND_FAILED) {
+			mNotificationService.createDeliveryFailedNotification(message.getConversation(), errorMessage);
+        	}
+
 		message.setErrorMessage(errorMessage);
 		message.setStatus(status);
 		databaseBackend.updateMessage(message, false);

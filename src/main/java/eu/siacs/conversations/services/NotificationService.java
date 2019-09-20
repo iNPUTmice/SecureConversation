@@ -11,7 +11,6 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Typeface;
-import android.graphics.drawable.Icon;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
@@ -23,7 +22,6 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationCompat.BigPictureStyle;
 import android.support.v4.app.NotificationCompat.Builder;
 import android.support.v4.app.NotificationManagerCompat;
-import android.support.v4.app.NotificationCompat.CarExtender.UnreadConversation;
 import android.support.v4.app.Person;
 import android.support.v4.app.RemoteInput;
 import android.support.v4.content.ContextCompat;
@@ -32,7 +30,6 @@ import android.text.SpannableString;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.Pair;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,7 +61,6 @@ import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.XmppConnection;
-import rocks.xmpp.addr.Jid;
 
 public class NotificationService {
 
@@ -77,6 +73,8 @@ public class NotificationService {
     private static final int NOTIFICATION_ID = 2 * NOTIFICATION_ID_MULTIPLIER;
     static final int FOREGROUND_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 4;
     private static final int ERROR_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 6;
+    private static final int DELIVERY_FAILED_NOTIFICATION_ID = NOTIFICATION_ID_MULTIPLIER * 8;
+    private static final String DELIVERY_FAILED_NOTITIFICATION_GROUP = CONVERSATIONS_GROUP + ".delivery_failed";
     private final XmppConnectionService mXmppConnectionService;
     private final LinkedHashMap<String, ArrayList<Message>> notifications = new LinkedHashMap<>();
     private final HashMap<Conversation, AtomicInteger> mBacklogMessageCounter = new HashMap<>();
@@ -792,6 +790,10 @@ public class NotificationService {
         return (actionId * NOTIFICATION_ID_MULTIPLIER) + (uuid.hashCode() % NOTIFICATION_ID_MULTIPLIER);
     }
 
+    private int deliveryFailedNotificationId(Conversational conversation) {
+        return generateRequestCode(conversation, 0) + DELIVERY_FAILED_NOTIFICATION_ID;
+    }
+
     private int generateRequestCode(Conversational conversation, int actionId) {
         return generateRequestCode(conversation.getUuid(), actionId);
     }
@@ -922,6 +924,34 @@ public class NotificationService {
 
     private PendingIntent createOpenConversationsIntent() {
         return PendingIntent.getActivity(mXmppConnectionService, 0, new Intent(mXmppConnectionService, ConversationsActivity.class), 0);
+    }
+
+    void createDeliveryFailedNotification(Conversational conversation, String errorMessage) {
+        final PendingIntent pendingIntent = createContentIntent(conversation);
+        int notificationId = deliveryFailedNotificationId(conversation);
+        final String contentTitle = mXmppConnectionService.getString(R.string.send_failed_notif);
+
+        Notification notification =
+                new Builder(mXmppConnectionService, "messages")
+                        .setContentTitle(contentTitle)
+                        .setAutoCancel(true)
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setContentText(errorMessage)
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(errorMessage))
+                        .setGroup(DELIVERY_FAILED_NOTITIFICATION_GROUP)
+                        .setContentIntent(pendingIntent).build();
+
+        Notification summaryNotification =
+                new Builder(mXmppConnectionService, "messages")
+                        .setContentTitle(contentTitle)
+                        .setContentText(contentTitle) // for compat with API <24
+                        .setSmallIcon(R.drawable.ic_notification)
+                        .setGroup(DELIVERY_FAILED_NOTITIFICATION_GROUP)
+                        .setGroupSummary(true)
+                        .build();
+
+        notify(notificationId, notification);
+        notify(DELIVERY_FAILED_NOTIFICATION_ID, summaryNotification);
     }
 
     void updateErrorNotification() {
