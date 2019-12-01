@@ -754,17 +754,40 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                     null, null, Message.TIME_SENT + " DESC",
                     String.valueOf(limit));
         }
-        while (cursor.moveToNext()) {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            CursorWindow cw = new CursorWindow("test", 5000000);
+            AbstractWindowedCursor ac = (AbstractWindowedCursor) cursor;
+            ac.setWindow(cw);
             try {
-                final Message message = Message.fromCursor(cursor, conversation);
-                if (message != null) {
-                    list.add(0, message);
+                while (ac.moveToNext()) {
+                    try {
+                        final Message message = Message.fromCursor(ac, conversation);
+                        if (message != null) {
+                            list.add(0, message);
+                        }
+                    } catch (Exception e) {
+                        Log.e(Config.LOGTAG, "unable to restore message");
+                    }
                 }
-            } catch (Exception e) {
-                Log.e(Config.LOGTAG,"unable to restore message");
+            }catch (android.database.sqlite.SQLiteBlobTooBigException e){
+                Log.e(Config.LOGTAG, "Exception", e);
             }
+            ac.close();
         }
-        cursor.close();
+        else
+        {
+            while (cursor.moveToNext()) {
+                try {
+                    final Message message = Message.fromCursor(cursor, conversation);
+                    if (message != null) {
+                        list.add(0, message);
+                    }
+                } catch (Exception e) {
+                    Log.e(Config.LOGTAG,"unable to restore message");
+                }
+            }
+            cursor.close();
+        }
         return list;
     }
 
