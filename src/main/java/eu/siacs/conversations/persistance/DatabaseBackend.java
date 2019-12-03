@@ -52,6 +52,7 @@ import eu.siacs.conversations.entities.ServiceDiscoveryResult;
 import eu.siacs.conversations.services.QuickConversationsService;
 import eu.siacs.conversations.services.ShortcutService;
 import eu.siacs.conversations.utils.CryptoHelper;
+import eu.siacs.conversations.utils.CursorUtils;
 import eu.siacs.conversations.utils.FtsUtils;
 import eu.siacs.conversations.utils.MimeUtils;
 import eu.siacs.conversations.utils.Resolver;
@@ -754,23 +755,13 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                     null, null, Message.TIME_SENT + " DESC",
                     String.valueOf(limit));
         }
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            CursorWindow cw = new CursorWindow("test", 5000000);
-            AbstractWindowedCursor ac = (AbstractWindowedCursor) cursor;
-            ac.setWindow(cw);
+
+        CursorUtils.upgradeCursorWindowSize(cursor);
+        while (cursor.moveToNext()) {
             try {
-                while (ac.moveToNext()) {
-                    try {
-                        final Message message = Message.fromCursor(ac, conversation);
-                        if (message != null) {
-                            list.add(0, message);
-                        }
-                    } catch (Exception e) {
-                        Log.e(Config.LOGTAG, "unable to restore message");
-                    }
-                }
-            }catch (android.database.sqlite.SQLiteBlobTooBigException e){
-                Log.e(Config.LOGTAG, "Exception", e);
+                list.add(0, Message.fromCursor(cursor, conversation));
+            } catch (Exception e) {
+                Log.e(Config.LOGTAG,"unable to restore message");
             }
             ac.close();
         }
