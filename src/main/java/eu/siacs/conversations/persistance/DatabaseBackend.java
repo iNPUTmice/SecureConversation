@@ -756,18 +756,34 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                     String.valueOf(limit));
         }
 
-        CursorUtils.upgradeCursorWindowSize(cursor);
-        try {
-            while (cursor.moveToNext()) {
-                try {
-                    list.add(0, Message.fromCursor(cursor, conversation));
-                } catch (Exception e) {
-                    Log.e(Config.LOGTAG,"unable to restore message");
+        int kilobyte = 1;
+        boolean nochmal = true;
+
+        do {
+            CursorUtils.upgradeCursorWindowSize(cursor, kilobyte);
+            try {
+                while (cursor.moveToNext()) {
+                    try {
+                        list.add(0, Message.fromCursor(cursor, conversation));
+                    } catch (Exception e) {
+                        Log.e(Config.LOGTAG, "unable to restore message");
+                    }
+                }
+                nochmal = false;
+                Log.d(Config.LOGTAG, "======= Cursorgröße in kilobyte: " + kilobyte);
+            } catch (android.database.sqlite.SQLiteBlobTooBigException e) {
+                Log.e(Config.LOGTAG, "unable to restore message: Blob too big", e);
+                if(kilobyte > 1000){
+                    // If a cursor size of 1M does not work, everything is FUBAR.
+                    nochmal = false;
+                }else{
+                    // Make the cursor window 1k bigger and try again.
+                    kilobyte += 1;
+                    Log.d(Config.LOGTAG, "--- Cursorgröße in kilobyte: " + kilobyte);
                 }
             }
-        }catch(android.database.sqlite.SQLiteBlobTooBigException e){
-            Log.e(Config.LOGTAG,"unable to restore message: Blob too big", e);
-        }
+        } while (nochmal);
+        
         cursor.close();
         return list;
     }
