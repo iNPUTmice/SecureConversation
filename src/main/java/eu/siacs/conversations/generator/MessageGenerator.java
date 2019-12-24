@@ -1,7 +1,5 @@
 package eu.siacs.conversations.generator;
 
-import android.util.Log;
-
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -13,7 +11,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlMessage;
 import eu.siacs.conversations.entities.Account;
-import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.http.P1S3UrlStreamHandler;
@@ -40,28 +37,26 @@ public class MessageGenerator extends AbstractGenerator {
 		if (conversation.getMode() == Conversation.MODE_SINGLE) {
 			packet.setTo(message.getCounterpart());
 			packet.setType(MessagePacket.TYPE_CHAT);
-			if (this.mXmppConnectionService.indicateReceived() && !isWithSelf) {
+			if (!isWithSelf) {
 				packet.addChild("request", "urn:xmpp:receipts");
 			}
-		} else if (message.getType() == Message.TYPE_PRIVATE) { //TODO files and images might be private as well
+		} else if (message.isPrivateMessage()) {
 			packet.setTo(message.getCounterpart());
 			packet.setType(MessagePacket.TYPE_CHAT);
 			packet.addChild("x", "http://jabber.org/protocol/muc#user");
-			if (this.mXmppConnectionService.indicateReceived()) {
-				packet.addChild("request", "urn:xmpp:receipts");
-			}
+			packet.addChild("request", "urn:xmpp:receipts");
 		} else {
 			packet.setTo(message.getCounterpart().asBareJid());
 			packet.setType(MessagePacket.TYPE_GROUPCHAT);
 		}
-		if (conversation.isSingleOrPrivateAndNonAnonymous() && message.getType() != Message.TYPE_PRIVATE) {
+		if (conversation.isSingleOrPrivateAndNonAnonymous() && !message.isPrivateMessage()) {
 			packet.addChild("markable", "urn:xmpp:chat-markers:0");
 		}
 		packet.setFrom(account.getJid());
 		packet.setId(message.getUuid());
 		packet.addChild("origin-id", Namespace.STANZA_IDS).setAttribute("id", message.getUuid());
 		if (message.edited()) {
-			packet.addChild("replace", "urn:xmpp:message-correct:0").setAttribute("id", message.getEditedId());
+			packet.addChild("replace", "urn:xmpp:message-correct:0").setAttribute("id", message.getEditedIdWireFormat());
 		}
 		return packet;
 	}
@@ -195,6 +190,10 @@ public class MessageGenerator extends AbstractGenerator {
 		String password = conversation.getMucOptions().getPassword();
 		if (password != null) {
 			x.setAttribute("password", password);
+		}
+		if (contact.isFullJid()) {
+			packet.addChild("no-store", "urn:xmpp:hints");
+			packet.addChild("no-copy", "urn:xmpp:hints");
 		}
 		return packet;
 	}

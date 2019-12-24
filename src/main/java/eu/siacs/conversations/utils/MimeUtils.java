@@ -16,6 +16,7 @@
 package eu.siacs.conversations.utils;
 import android.content.Context;
 import android.net.Uri;
+import android.os.Build;
 import android.util.Log;
 
 import java.io.File;
@@ -29,6 +30,7 @@ import java.util.Properties;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.entities.Transferable;
+import eu.siacs.conversations.services.ExportBackupService;
 
 /**
  * Utilities for dealing with MIME types.
@@ -72,6 +74,7 @@ public final class MimeUtils {
         add("application/vnd.amazon.mobi8-ebook","kfx");
         add("application/vnd.android.package-archive", "apk");
         add("application/vnd.cinderella", "cdy");
+        add(ExportBackupService.MIME_TYPE, "ceb");
         add("application/vnd.ms-pki.stl", "stl");
         add("application/vnd.oasis.opendocument.database", "odb");
         add("application/vnd.oasis.opendocument.formula", "odf");
@@ -266,6 +269,7 @@ public final class MimeUtils {
         add("image/ico", "cur");
         add("image/ico", "ico");
         add("image/ief", "ief");
+        add("image/heic","heic");
         // add ".jpg" first so it will be the default for guessExtensionFromMimeType
         add("image/jpeg", "jpg");
         add("image/jpeg", "jpeg");

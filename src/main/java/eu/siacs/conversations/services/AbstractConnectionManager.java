@@ -26,6 +26,7 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.utils.Compatibility;
+import eu.siacs.conversations.utils.CryptoHelper;
 
 public class AbstractConnectionManager {
 
@@ -52,20 +53,11 @@ public class AbstractConnectionManager {
         }
     }
 
-
-    public static OutputStream createAppendedOutputStream(DownloadableFile file) {
-        return createOutputStream(file, true);
-    }
-
-    public static OutputStream createOutputStream(DownloadableFile file) {
-        return createOutputStream(file, false);
-    }
-
-    private static OutputStream createOutputStream(DownloadableFile file, boolean append) {
+    public static OutputStream createOutputStream(DownloadableFile file, boolean append, boolean decrypt) {
         FileOutputStream os;
         try {
             os = new FileOutputStream(file, append);
-            if (file.getKey() == null) {
+            if (file.getKey() == null || !decrypt) {
                 return os;
             }
         } catch (FileNotFoundException e) {
@@ -108,5 +100,24 @@ public class AbstractConnectionManager {
     public PowerManager.WakeLock createWakeLock(String name) {
         PowerManager powerManager = (PowerManager) mXmppConnectionService.getSystemService(Context.POWER_SERVICE);
         return powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, name);
+    }
+
+    public static class Extension {
+        public final String main;
+        public final String secondary;
+
+        private Extension(String main, String secondary) {
+            this.main = main;
+            this.secondary = secondary;
+        }
+
+        public static Extension of(String path) {
+            final int pos = path.lastIndexOf('/');
+            final String filename = path.substring(pos + 1).toLowerCase();
+            final String[] parts = filename.split("\\.");
+            final String main = parts.length >= 2 ? parts[parts.length - 1] : null;
+            final String secondary = parts.length >= 3 ? parts[parts.length - 2] : null;
+            return new Extension(main, secondary);
+        }
     }
 }

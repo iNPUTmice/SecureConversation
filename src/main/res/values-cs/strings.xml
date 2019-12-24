@@ -21,7 +21,6 @@
   <string name="just_now">právě teď</string>
   <string name="minute_ago">před minutou</string>
   <string name="minutes_ago">před %d minutami</string>
-  <string name="unread_conversations">nepřečtené konverzace</string>
   <string name="sending">odesílám…</string>
   <string name="message_decrypting">Dešifrování zprávy. Chvíli strpení...</string>
   <string name="pgp_message">OpenPGP šifrovaná zpráva</string>
@@ -99,7 +98,6 @@
   <string name="pref_sound">Tón upozornění</string>
   <string name="pref_sound_summary">Přehrát zvuk při přijetí nové zprávy</string>
   <string name="pref_notification_grace_period">Časová lhůta</string>
-  <string name="pref_notification_grace_period_summary">Časová lhůta po kterou bude Conversations v tichém režimu při zaznamenání aktivity na jiném přístroji</string>
   <string name="pref_advanced_options">Rozšířené</string>
   <string name="pref_never_send_crash">Neodesílat detaily o pádu aplikace</string>
   <string name="pref_never_send_crash_summary">Zasláním detailů o důvodu selhání pomůžete dalšímu vývoji aplikace Konverzace</string>
@@ -146,10 +144,8 @@
   <string name="mgmt_account_enable">Povolit účet</string>
   <string name="mgmt_account_are_you_sure">Jste si jisti?</string>
   <string name="attach_record_voice">Nahrát hlas</string>
-  <string name="account_settings_jabber_id">Jabber ID</string>
   <string name="account_settings_example_jabber_id">jmeno@server.cz</string>
   <string name="password">Heslo</string>
-  <string name="invalid_jid">Toto není platné Jabber ID</string>
   <string name="error_out_of_memory">Nedostatek paměti. Obrázek je příliš velký</string>
   <string name="add_phone_book_text">Chcete přidat %s do svého adresáře?</string>
   <string name="server_info_show_more">Údaje serveru</string>
@@ -193,7 +189,6 @@
   <string name="select">Vybrat</string>
   <string name="contact_already_exists">Kontakt již existuje</string>
   <string name="join">Vstoupit</string>
-  <string name="conference_address_example">room@conference.example.com/nick</string>
   <string name="save_as_bookmark">Uložit jako záložku</string>
   <string name="delete_bookmark">Smazat záložku</string>
   <string name="bookmark_already_exists">Tato záložka již existuje</string>
@@ -234,10 +229,6 @@
   <string name="title_pref_quiet_hours_end_time">Dokdy</string>
   <string name="title_pref_enable_quiet_hours">Povolit tichý režim</string>
   <string name="pref_quiet_hours_summary">Upozornění budou během tichého režimu ztlumena</string>
-  <string name="pref_use_send_button_to_indicate_status">Tlačítko pro odeslání zobrazuje stav</string>
-  <string name="pref_use_indicate_received">Požadovat oznámení o přijetí</string>
-  <string name="pref_use_indicate_received_summary">Přijaté zprávy budou označeny zeleně, pokud je funkce podporována</string>
-  <string name="pref_use_send_button_to_indicate_status_summary">Obarvit tlačítko odesílání barvou indikující stavu kontaktu</string>
   <string name="pref_expert_options_other">Další</string>
   <string name="toast_message_omemo_fingerprint">OMEMO otisk zkopírován do schránky!</string>
   <string name="using_account">za použití účtu %s</string>
@@ -253,12 +244,8 @@
   <string name="account_details">Detaily účtu</string>
   <string name="confirm">Potvrdit</string>
   <string name="try_again">Zkusit znovu</string>
-  <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Ponechat službu v popředí</string>
   <string name="pref_keep_foreground_service_summary">Zamezit operačnímu systému v ukončení připojení</string>
-  <string name="pref_export_logs">Exportovat historii</string>
-  <string name="pref_export_logs_summary">Zapsat logy konverzací na SD kartu</string>
-  <string name="notification_export_logs_title">Zapisování logů na SD kartu</string>
   <string name="choose_file">Vybrat soubor</string>
   <string name="receiving_x_file">Přijímám %1$s (%2$d%% dokončeno)</string>
   <string name="download_x_file">Stáhnout %s</string>
@@ -296,16 +283,12 @@
   <string name="outcast">Vyloučený</string>
   <string name="member">Člen</string>
   <string name="advanced_mode">Pokročilý mód</string>
-  <string name="grant_membership">Povolit členství</string>
-  <string name="remove_membership">Odebrat členství</string>
   <string name="grant_admin_privileges">Povolit administrátorská oprávnění</string>
   <string name="remove_admin_privileges">Odebrat administrátorská oprávnění</string>
   <string name="could_not_change_affiliation">Nelze změnit připojení uživatele %s</string>
   <string name="ban_now">Vypovědět</string>
   <string name="could_not_change_role">Nelze změnit roli uživatele %s</string>
   <string name="members_only">Soukromé, pouze pro členy</string>
-  <string name="non_anonymous">Neanonymní</string>
-  <string name="moderated">Moderováno</string>
   <string name="you_are_not_participating">Neúčastníte se</string>
   <string name="never">Nikdy</string>
   <string name="until_further_notice">Než opět změním</string>
@@ -320,7 +303,6 @@
   <string name="pdf_document">dokument PDF</string>
   <string name="apk">Aplikace pro Android</string>
   <string name="vcard">Kontakt</string>
-  <string name="touch_to_open_conversations">Ťuknout pro otevření Konverzace</string>
   <string name="avatar_has_been_published">Avatar byl zveřejněn!</string>
   <string name="sending_x_file">Odesílám %s</string>
   <string name="offering_x_file">Nabízím %s</string>
@@ -380,7 +362,6 @@
   <string name="captcha_required">Captcha vyžadována</string>
   <string name="captcha_hint">Zadejte text z obrázku výše</string>
   <string name="certificate_chain_is_not_trusted">Řetězec certifikátů není důvěryhodný</string>
-  <string name="jid_does_not_match_certificate">Jabber ID neodpovídá certifikátu</string>
   <string name="action_renew_certificate">Obnovit certifikát</string>
   <string name="error_fetching_omemo_key">Chyba získání OMEMO klíče!</string>
   <string name="verified_omemo_key_with_certificate">OMEMO klíč ověřen certifikátem!</string>
@@ -410,7 +391,6 @@
   <string name="notify_never">Upozornění vypnuta</string>
   <string name="notify_paused">Upozornění pozastavena</string>
   <string name="always">Vždy</string>
-  <string name="automatically">Automaticky</string>
   <string name="battery_optimizations_enabled">Povolena optimalizace využití baterie</string>
   <string name="battery_optimizations_enabled_explained">Tento přístroj provádí agresivní optimalizace využití baterie pro aplikaci Conversations. Ty mohou způsobit zpoždění upozornění nebo ztrátu zpráv.\nJe doporučeno tyto vypnout.</string>
   <string name="battery_optimizations_enabled_dialog">Tento přístroj provádí agresivní optimalizace využití baterie pro aplikaci Conversations. Ty mohou způsobit zpoždění upozornění nebo ztrátu zpráv.\nnyní budete vyzváni k jejich vypnutí.</string>
@@ -424,8 +404,6 @@
   <string name="security_error_invalid_file_access">Chyba zabezpečení: Neplatný přístup k souboru</string>
   <string name="no_application_to_share_uri">Nebyla nalezena aplikace pro sdílení URI</string>
   <string name="share_uri_with">Sdílet URI s...</string>
-  <string name="magic_create_text">Provedeme vás procesem založení uživatelského účtu u conversations.im.¹\nVybráním conversations.im za svého poskytovatele budete moci komunikovat s uživateli u jiných poskytovatelů, poté co jim sdělíte své Jabber ID.</string>
-  <string name="your_full_jid_will_be">Vaše celé Jabber ID bude: %s</string>
   <string name="create_account">Vytvořit účet</string>
   <string name="use_own_provider">Použít vlastního provozovatele</string>
   <string name="pick_your_username">Zadejte své uživatelské jméno</string>

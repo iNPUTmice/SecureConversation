@@ -9,14 +9,23 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.EditAccountActivity;
 import eu.siacs.conversations.ui.ManageAccountActivity;
+import eu.siacs.conversations.ui.PickServerActivity;
 import eu.siacs.conversations.ui.StartConversationActivity;
 import eu.siacs.conversations.ui.WelcomeActivity;
 
 public class SignupUtils {
 
     public static Intent getSignUpIntent(final Activity activity) {
-        Intent intent = new Intent(activity, WelcomeActivity.class);
-        StartConversationActivity.addInviteUri(intent, activity.getIntent());
+        return getSignUpIntent(activity, false);
+    }
+
+    public static Intent getSignUpIntent(final Activity activity, final boolean toServerChooser) {
+        final Intent intent;
+        if (toServerChooser) {
+            intent = new Intent(activity, PickServerActivity.class);
+        } else {
+            intent = new Intent(activity, WelcomeActivity.class);
+        }
         return intent;
     }
 
@@ -27,6 +36,9 @@ public class SignupUtils {
         if (pendingAccount != null) {
             intent = new Intent(activity, EditAccountActivity.class);
             intent.putExtra("jid", pendingAccount.getJid().asBareJid().toString());
+            if (!pendingAccount.isOptionSet(Account.OPTION_MAGIC_CREATE)) {
+                intent.putExtra(EditAccountActivity.EXTRA_FORCE_REGISTER, pendingAccount.isOptionSet(Account.OPTION_REGISTER));
+            }
         } else {
             if (service.getAccounts().size() == 0) {
                 if (Config.X509_VERIFICATION) {

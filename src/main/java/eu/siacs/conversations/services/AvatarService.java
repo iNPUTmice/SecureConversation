@@ -1,8 +1,8 @@
 package eu.siacs.conversations.services;
 
+import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
@@ -12,7 +12,7 @@ import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.support.annotation.DrawableRes;
+import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 import android.support.v4.content.res.ResourcesCompat;
 import android.text.TextUtils;
@@ -37,6 +37,9 @@ import eu.siacs.conversations.entities.Conversational;
 import eu.siacs.conversations.entities.ListItem;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.MucOptions;
+import eu.siacs.conversations.entities.RawBlockable;
+import eu.siacs.conversations.entities.Room;
+import eu.siacs.conversations.http.services.MuclumbusService;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.OnAdvancedStreamFeaturesLoaded;
 import eu.siacs.conversations.xmpp.XmppConnection;
@@ -48,10 +51,14 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 	private static final int TRANSPARENT = 0x00000000;
 	private static final int PLACEHOLDER_COLOR = 0xFF202020;
 
+	public static final int SYSTEM_UI_AVATAR_SIZE = 48;
+
 	private static final String PREFIX_CONTACT = "contact";
 	private static final String PREFIX_CONVERSATION = "conversation";
 	private static final String PREFIX_ACCOUNT = "account";
 	private static final String PREFIX_GENERIC = "generic";
+
+	private static final String CHANNEL_SYMBOL = "#";
 
 	final private ArrayList<Integer> sizes = new ArrayList<>();
 	final private HashMap<String, Set<String>> conversationDependentKeys = new HashMap<>();
@@ -60,6 +67,37 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 
 	AvatarService(XmppConnectionService service) {
 		this.mXmppConnectionService = service;
+	}
+
+	public static int getSystemUiAvatarSize(final Context context) {
+		return (int) (SYSTEM_UI_AVATAR_SIZE * context.getResources().getDisplayMetrics().density);
+	}
+
+	public Bitmap get(final Avatarable avatarable, final int size, final boolean cachedOnly) {
+		if (avatarable instanceof Account) {
+			return get((Account) avatarable,size,cachedOnly);
+		} else if (avatarable instanceof Conversation) {
+			return get((Conversation) avatarable, size, cachedOnly);
+		} else if (avatarable instanceof Message) {
+			return get((Message) avatarable, size, cachedOnly);
+		} else if (avatarable instanceof ListItem) {
+			return get((ListItem) avatarable, size, cachedOnly);
+		} else if (avatarable instanceof MucOptions.User) {
+			return get((MucOptions.User) avatarable, size, cachedOnly);
+		} else if (avatarable instanceof Room) {
+			return get((Room) avatarable, size, cachedOnly);
+		}
+		throw new AssertionError("AvatarService does not know how to generate avatar from "+avatarable.getClass().getName());
+
+	}
+
+	private Bitmap get(final Room result, final int size, boolean cacheOnly) {
+		final Jid room = result.getRoom();
+		Conversation conversation = room != null ? mXmppConnectionService.findFirstMuc(room) : null;
+		if (conversation != null) {
+			return get(conversation,size,cacheOnly);
+		}
+		return get(CHANNEL_SYMBOL, room != null ? room.asBareJid().toEscapedString() : result.getName(), size, cacheOnly);
 	}
 
 	private Bitmap get(final Contact contact, final int size, boolean cachedOnly) {
@@ -238,7 +276,9 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 	}
 
 	public Bitmap get(ListItem item, int size, boolean cachedOnly) {
-		if (item instanceof Contact) {
+		if (item instanceof RawBlockable) {
+			return get(item.getDisplayName(), item.getJid().toEscapedString(), size, cachedOnly);
+		} else if (item instanceof Contact) {
 			return get((Contact) item, size, cachedOnly);
 		} else if (item instanceof Bookmark) {
 			Bookmark bookmark = (Bookmark) item;
@@ -301,12 +341,16 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		bitmap = mXmppConnectionService.getFileBackend().getAvatar(mucOptions.getAvatar(), size);
 
 		if (bitmap == null) {
-			final List<MucOptions.User> users = mucOptions.getUsersRelevantForNameAndAvatar();
-			if (users.size() == 0) {
-				Conversation c = mucOptions.getConversation();
-				bitmap = getImpl(c.getName().toString(), c.getJid().asBareJid().toString(), size);
+			Conversation c = mucOptions.getConversation();
+			if (mucOptions.isPrivateAndNonAnonymous()) {
+				final List<MucOptions.User> users = mucOptions.getUsersRelevantForNameAndAvatar();
+				if (users.size() == 0) {
+					bitmap = getImpl(c.getName().toString(), c.getJid().asBareJid().toString(), size);
+				} else {
+					bitmap = getImpl(users, size);
+				}
 			} else {
-				bitmap = getImpl(users, size);
+				bitmap = getImpl(CHANNEL_SYMBOL, c.getJid().asBareJid().toString(), size);
 			}
 		}
 
@@ -504,7 +548,11 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		return bitmap;
 	}
 
-	private Bitmap getImpl(final String name, final String seed, final int size) {
+	public static Bitmap get(final Jid jid, final int size) {
+		return getImpl(jid.asBareJid().toEscapedString(), null, size);
+	}
+
+	private static Bitmap getImpl(final String name, final String seed, final int size) {
 		Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
 		Canvas canvas = new Canvas(bitmap);
 		final String trimmedName = name == null ? "" : name.trim();
@@ -521,7 +569,7 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		return PREFIX_GENERIC + "_" + name + "_" + String.valueOf(size);
 	}
 
-	private boolean drawTile(Canvas canvas, String letter, int tileColor, int left, int top, int right, int bottom) {
+	private static boolean drawTile(Canvas canvas, String letter, int tileColor, int left, int top, int right, int bottom) {
 		letter = letter.toUpperCase(Locale.getDefault());
 		Paint tilePaint = new Paint(), textPaint = new Paint();
 		tilePaint.setColor(tileColor);
@@ -584,9 +632,9 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 		return drawTile(canvas, name, name, left, top, right, bottom);
 	}
 
-	private boolean drawTile(Canvas canvas, String name, String seed, int left, int top, int right, int bottom) {
+	private static boolean drawTile(Canvas canvas, String name, String seed, int left, int top, int right, int bottom) {
 		if (name != null) {
-			final String letter = getFirstLetter(name);
+			final String letter = name.equals(CHANNEL_SYMBOL) ? name : getFirstLetter(name);
 			final int color = UIHelper.getColorForName(seed == null ? name : seed);
 			drawTile(canvas, letter, color, left, top, right, bottom);
 			return true;
@@ -634,5 +682,9 @@ public class AvatarService implements OnAdvancedStreamFeaturesLoaded {
 
 	private static String emptyOnNull(@Nullable Jid value) {
 		return value == null ? "" : value.toString();
+	}
+
+	public interface Avatarable {
+		@ColorInt int getAvatarBackgroundColor();
 	}
 }

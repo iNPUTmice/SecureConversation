@@ -25,7 +25,6 @@
   <string name="just_now">هم اکنون</string>
   <string name="minute_ago">1 دقیقه قبل</string>
   <string name="minutes_ago">%d  دقیقه قبل</string>
-  <string name="unread_conversations">گفتگو های خوانده نشده</string>
   <string name="sending">در حال ارسال...</string>
   <string name="message_decrypting">در حال رمزگشایی پیام. لطفا صبور باشید...</string>
   <string name="pgp_message">پیام رمز شده به وسیله OpenPGP</string>
@@ -155,10 +154,7 @@
   <string name="fetching_keys">در حال دریافت کلید ها...</string>
   <string name="decrypt">رمز گشایی</string>
   <string name="search">جستجو</string>
-  <string name="dialog_title_create_contact">افزودن مخاطب</string>
   <string name="enter_contact">وارد کردن مخاطب</string>
-  <string name="join_conference">پیوستن به چت گروهی</string>
-  <string name="dialog_title_join_conference">پیوستن به چت گروهی</string>
   <string name="delete_contact">حذف مخاطب</string>
   <string name="view_contact_details">مشاهده جزییات مخاطب</string>
   <string name="block_contact">بلاک مخاطب</string>

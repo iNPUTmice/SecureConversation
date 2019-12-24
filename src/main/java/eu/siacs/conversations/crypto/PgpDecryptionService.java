@@ -135,6 +135,7 @@ public class PgpDecryptionService {
 	}
 
 	private void executeApi(Message message) {
+		boolean skipNotificationPush = false;
 		synchronized (message) {
 			Intent params = userInteractionResult != null ? userInteractionResult : new Intent();
 			params.setAction(OpenPgpApi.ACTION_DECRYPT_VERIFY);
@@ -176,7 +177,7 @@ public class PgpDecryptionService {
 						mXmppConnectionService.updateMessage(message);
 						break;
 				}
-			} else if (message.getType() == Message.TYPE_IMAGE || message.getType() == Message.TYPE_FILE) {
+			} else if (message.isFileOrImage()) {
 				try {
 					final DownloadableFile inputFile = mXmppConnectionService.getFileBackend().getFile(message, false);
 					final DownloadableFile outputFile = mXmppConnectionService.getFileBackend().getFile(message, true);
@@ -200,6 +201,9 @@ public class PgpDecryptionService {
 								if (fixedFile.getParentFile().mkdirs()) {
 									Log.d(Config.LOGTAG,"created parent directories for "+fixedFile.getAbsolutePath());
 								}
+								synchronized (mXmppConnectionService.FILENAMES_TO_IGNORE_DELETION) {
+									mXmppConnectionService.FILENAMES_TO_IGNORE_DELETION.add(outputFile.getAbsolutePath());
+								}
 								if (outputFile.renameTo(fixedFile)) {
 									Log.d(Config.LOGTAG, "renamed " + outputFile.getAbsolutePath() + " to " + fixedFile.getAbsolutePath());
 									message.setRelativeFilePath(path);
@@ -208,9 +212,12 @@ public class PgpDecryptionService {
 							URL url = message.getFileParams().url;
 							mXmppConnectionService.getFileBackend().updateFileParams(message, url);
 							message.setEncryption(Message.ENCRYPTION_DECRYPTED);
-							inputFile.delete();
-							mXmppConnectionService.getFileBackend().updateMediaScanner(outputFile);
 							mXmppConnectionService.updateMessage(message);
+							if (!inputFile.delete()) {
+								Log.w(Config.LOGTAG,"unable to delete pgp encrypted source file "+inputFile.getAbsolutePath());
+							}
+							skipNotificationPush = true;
+							mXmppConnectionService.getFileBackend().updateMediaScanner(outputFile, () -> notifyIfPending(message));
 							break;
 						case OpenPgpApi.RESULT_CODE_USER_INTERACTION_REQUIRED:
 							synchronized (PgpDecryptionService.this) {
@@ -231,7 +238,9 @@ public class PgpDecryptionService {
 				}
 			}
 		}
-		notifyIfPending(message);
+		if (!skipNotificationPush) {
+			notifyIfPending(message);
+		}
 	}
 
 	private synchronized void notifyIfPending(Message message) {

@@ -2,7 +2,6 @@ package eu.siacs.conversations.parser;
 
 import android.util.Log;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +10,6 @@ import eu.siacs.conversations.Config;
 import eu.siacs.conversations.crypto.PgpEngine;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.entities.Account;
-import eu.siacs.conversations.entities.Bookmark;
 import eu.siacs.conversations.entities.Contact;
 import eu.siacs.conversations.entities.Conversation;
 import eu.siacs.conversations.entities.Message;
@@ -62,7 +60,7 @@ public class PresenceParser extends AbstractParser implements
 		final Jid from = packet.getFrom();
 		if (!from.isBareJid()) {
 			final String type = packet.getAttribute("type");
-			final Element x = packet.findChild("x", "http://jabber.org/protocol/muc#user");
+			final Element x = packet.findChild("x", Namespace.MUC_USER);
 			Avatar avatar = Avatar.parsePresence(packet.findChild("x", "vcard-temp:x:update"));
 			final List<String> codes = getStatusCodes(x);
 			if (type == null) {
@@ -99,7 +97,7 @@ public class PresenceParser extends AbstractParser implements
 									+mucOptions.getConversation().getJid().asBareJid()
 									+"' created. pushing default configuration");
 							mXmppConnectionService.pushConferenceConfiguration(mucOptions.getConversation(),
-									IqGenerator.defaultRoomConfiguration(),
+									IqGenerator.defaultChannelConfiguration(),
 									null);
 						}
 						if (mXmppConnectionService.getPgpEngine() != null) {
@@ -366,7 +364,7 @@ public class PresenceParser extends AbstractParser implements
 
 	@Override
 	public void onPresencePacketReceived(Account account, PresencePacket packet) {
-		if (packet.hasChild("x", "http://jabber.org/protocol/muc#user")) {
+		if (packet.hasChild("x", Namespace.MUC_USER)) {
 			this.parseConferencePresence(packet, account);
 		} else if (packet.hasChild("x", "http://jabber.org/protocol/muc")) {
 			this.parseConferencePresence(packet, account);

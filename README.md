@@ -18,12 +18,7 @@
 
 <p align="center">
     <a href="https://play.google.com/store/apps/details?id=eu.siacs.conversations&amp;referrer=utm_source%3Dgithub">
-       <img src="https://conversations.im/images/en-play-badge.png"
-            alt="Google Play">
-            </a>
-    <a href="http://www.amazon.com/dp/B00WD35AAC/">
-        <img src="https://images-na.ssl-images-amazon.com/images/G/01/AmazonMobileApps/amazon-apps-store-us-black.png"
-             alt="Amazon App Store">
+       <img src="https://conversations.im/images/en-play-badge.png" alt="Google Play">
     </a>
 </p>
 
@@ -40,12 +35,12 @@
 
 * End-to-end encryption with [OMEMO](http://conversations.im/omemo/) or [OpenPGP](http://openpgp.org/about/)
 * Send and receive images as well as other kind of files
-* Share your location via an external [plug-in](https://play.google.com/store/apps/details?id=eu.siacs.conversations.sharelocation&referrer=utm_source%3Dgithub)
-* Send voice messages via an external [plug-in](https://play.google.com/store/apps/details?id=eu.siacs.conversations.voicerecorder&referrer=utm_source%3Dgithub)
+* Share your location
+* Send voice messages
 * Indication when your contact has read your message
 * Intuitive UI that follows Android Design guidelines
 * Pictures / Avatars for your Contacts
-* Syncs with desktop client
+* Synchronizes with desktop client
 * Conferences (with support for bookmarks)
 * Address book integration
 * Multiple accounts / unified inbox
@@ -100,10 +95,9 @@ Buying the App from the Play Store will also give you access to our [beta test](
 
 #### I don't have a Google Account but I would still like to make a contribution
 
-I accept donations over PayPal, bank transfer and various crypto currencies. For donations via PayPal you
-can use the email address `donate@siacs.eu` or the button below.
+I accept donations over PayPal, bank transfer and various crypto currencies. For donations via PayPal use the button below:
 
-[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CW3SYT3KG5PDL)
+[![Donate with PayPal](https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif)](https://www.paypal.me/ConversationsIM)
 
 **Disclaimer:** I'm not a huge fan of PayPal and their business policies. For
 larger contributions please get in touch with me beforehand and we can talk
@@ -111,7 +105,7 @@ about bank transfer (SEPA).
 
 ##### Crypto currencies
 
-Bitcoin: `1AeqNAcg85APAZj9BZfAjdFCC5zesqXp2B`
+Bitcoin: `3KAD8vew6tPZDjiUJNnZ3YUoUxrCEVNwFL`
 
 Bitcoin Cash: `16ABkXzYAwWz8Y5DcWFfbBRqL63g3hzEaU`
 
@@ -126,11 +120,13 @@ Using your own domain not only gives you a more recognizable Jabber ID, it also 
 Learn more about [conversations.im Jabber/XMPP domain hosting](https://account.conversations.im/domain/). 
 
 ##### Running your own
-If you already have a server somewhere and are willing and able to put the necessary work in, one alternative-in the spirit of federation-is to run your own. We recommend either [Prosody](https://prosody.im/) or [ejabberd](https://www.ejabberd.im/). Both of which have their own strengths. Ejabberd is slightly more mature nowadays but Prosody is arguably easier to set up.
+If you already have a server somewhere and are willing and able to put the necessary work in you can run your own XMPP server.
 
-For Prosody you need a couple of so called [community modules](https://modules.prosody.im/) most of which are maintained by the same people that develop Prosody.
+As of 2019 we recommend you use [ejabberd](https://ejabberd.im). The default configuration file already enables everything you need to pass the [Conversations Compliance Suite](https://compliance.conversations.im). Make sure your Linux distribution ships a fairly recent version.
 
-If you pick ejabberd make sure you use the latest version. Linux Distributions might bundle some very old versions of it.
+With a little bit of effort [Prosody](https://prosody.im) can be configured to support all necessary extensions as well. However you will have to rely on so called [Community Modules](https://modules.prosody.im/) of varying quality. Prosody can be interesting to people who like to modify their server and create / prototype own modules.
+
+Performance wise - for small deployments - both ejabberd and Prosody should be fine. 
 
 #### Where can I set up a custom hostname / port
 Conversations will automatically look up the SRV records for your domain name
@@ -169,22 +165,35 @@ In most cases this error is caused by ejabberd advertising support for TLSv1.3 b
 
 
 #### I’m getting this annoying permanent notification
-Starting with Conversations 2.3.6 Conversations releases distributed over the Google Play Store will display a permanent notification if you are running it on Android 8 and above. This is a rule that it is essentially enforced by the Google Play Store (you won’t have the problem if you are getting your app from F-Droid).
+Starting with Conversations 2.3.6 Conversations releases distributed over the Google Play Store will display a permanent notification if you are running it on Android 8 and above. This is a rule that it is essentially enforced by the Google Play Store. (You won’t have the problem  of a *forced* foreground notification if you are getting your app from F-Droid.)
 
-However you can disable the notification via settings of the operating system. (Not settings in Conversations.). For that you can long press the permanent notification and disable that particular type of notification by moving the slider to the left. This will make the notification disappear but create another notification (this time created by the operating system itself.) that will complain about Conversations (and other apps) using battery. Starting with Android 8.1 you can disable that notification again with the same method described above.
+However you can disable the notification via settings of the operating system. (Not settings in Conversations.)
 
-The battery consumption and the entire behaviour of Conversations will remain the same (as good or as bad as it was before). Why is Google doing this to you? We have no idea.
+**The battery consumption and the entire behaviour of Conversations will remain the same (as good or as bad as it was before). Why is Google doing this to you? We have no idea.**
 
-P.S.: For Android version up to and including 7.1 the foreground notification is still controlled over the expert settings within Conversations as it always has been.
+##### Android &lt;= 7.1
+The foreground notification is still controlled over the expert settings within Conversations as it always has been. Whether or not you need to enable it depends on how aggressive the non-standard 'power saving' features are that your phone vendor has built into the operating system.
+
+##### Android 8.x
+Long press the permanent notification and disable that particular type of notification by moving the slider to the left. This will make the notification disappear but create another notification (this time created by the operating system itself.) that will complain about Conversations (and other apps) using battery. Starting with Android 8.1 you can disable that notification again with the same method described above.
+
+##### Android 9.0+
+Long press the permanent notification and press the info `(i)` button to get into the App info screen. In that screen touch the 'Notification' entry. In the next screen remove the checkbox for the 'Foreground service' entry. 
 
 #### How do XEP-0357: Push Notifications work?
-You need to be running the Play Store version of Conversations and your server needs to support push notifications.¹ Because *Google Cloud Notifications (GCM)* are tied with an API key to a specific app your server can not initiate the push message directly. Instead your server will send the push notification to the Conversations App server (operated by us) which then acts as a proxy and initiates the push message for you. The push message sent from our App server through GCM doesn’t contain any personal information. It is just an empty message which will wake up your device and tell Conversations to reconnect to your server. The information sent from your server to our App server depends on the configuration of your server but can be limited to your account name. (In any case the Conversations App server won't redirect any information through GCM even if your server sends this information.)
+You need to be running the Play Store version of Conversations and your server needs to support push notifications.¹ Because *Google’s Firebase Cloud Messaging (FCM)* are tied with an API key to a specific app your server can not initiate the push message directly. Instead your server will send the push notification to the [Conversations App server](https://github.com/iNPUTmice/p2) (operated by us) which then acts as a proxy and initiates the push message for you. The push message sent from our App server through FCM doesn’t contain any personal information. It is just an empty message which will wake up your device and tell Conversations to reconnect to your server. The information sent from your server to our App server depends on the configuration of your server but can be limited to your account name. (In any case the Conversations App server won't redirect any information through FCM even if your server sends this information.)
 
 In summary Google will never get hold of any personal information besides that *something* happened. (Which doesn’t even have to be a message but can be some automated event as well.) We - as the operator of the App server - will just get hold of your account name (without being able to tie this to your specific device).
 
 If you don’t want this simply pick a server which does not offer Push Notifications or build Conversations yourself without support for push notifications. (This is available via a gradle build flavor.) Non-play store source of Conversations like the Amazon App store will also offer a version without push notifications. Conversations will just work as before and maintain its own TCP connection in the background.
 
+You can find a detailed description of how your server, the app server and FCM are interacting with each other in the [README](https://github.com/iNPUTmice/p2/blob/master/README.md) of the Conversations App Server.
+
  ¹ Your server only needs to support the server side of [XEP-0357: Push Notifications](http://xmpp.org/extensions/xep-0357.html). If you use the Play Store version you do **not** need to run your own app server. The server modules are called *mod_cloud_notify* on Prosody and *mod_push* on ejabberd.
+
+
+#### But why do I need a permanent notification if I use Google Push?
+FCM (Google Push) allows an app to wake up from *Doze* which is (as the name suggests) a hibernation feature of the Android operating system that cuts the network connection and also reduces the number of times the app is allowed to wake up (to ping the server for example). The app can ask to be excluded from doze. Non push variants of the app (from F-Droid or if the server doesn’t support it) will do this on first start up. So if you get exemption from *Doze*, or if you get regular push events sent to you, Doze should not pose a threat to Conversatons working properly. But even with *Doze* the app is still open in the background (kept in memory); it is just limited in the actions it can do. Conversations needs to stay in memory to hold certain session state (online status of contacts, join status of group chats, …). However with Android 8 Google changed all of this again and now an App that wants to stay in memory needs to have a foreground service which is visible to the user via the annoying notification. But why does Conversations need to hold that state? XMPP is a stateful protocol that has a lot of per-session information; packets need to be counted, presence information needs to be held, some features like Message Carbons get activated once per session, MAM catchup happens once, service discovery happens only once; the list goes on. When Conversations was created in early 2014 none of this was a problem because apps were just allowed to stay in memory. Basically every XMPP client out there holds that information in memory because it would be a lot more complicated trying to persist it to disk. An entire rewrite of Conversations in the year 2019 would attempt to do that and would probably succeed however it would require exactly that; a complete rewrite which is not feasible right now. That’s by the way also the reason why it is difficult to write an XMPP client on iOS. Or more broadly put this is also the reason why other protocols are designed as or migrated to stateless protocols (often based on HTTP); take for example the migration of IMAP to [JMAP](https://jmap.io/).
 
 #### Conversations doesn’t work for me. Where can I get help?
 
@@ -196,7 +205,7 @@ section of this document.
 
 #### I need professional support with Conversations or setting up my server
 
-I'm available for hire. Contact me at `inputmice@siacs.eu`.
+I'm available for hire. Contact information can be found on [my website](https://gultsch.de).
 
 #### How does the address book integration work?
 
@@ -273,12 +282,23 @@ Conversations is trying to get rid of old behaviours and set an example for
 other clients.
 
 #### Translations
-Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/)
+Translations are managed on [Transifex](https://www.transifex.com/projects/p/conversations/).
+If you want to become a translator  Please register on transifex, apply to join
+the translation team and then step by our group chat on
+[conversations@conference.siacs.eu](https://conversations.im/j/conversations@conference.siacs.eu)
+and introduce yourself to `iNPUTmice` so he can approve your join request.
 
 #### How do I backup / move Conversations to a new device?
 On the one hand Conversations supports Message Archive Management to keep a server side history of your messages so when migrating to a new device that device can display your entire history. However that does not work if you enable OMEMO due to its forward secrecy. (Read [The State of Mobile XMPP in 2016](https://gultsch.de/xmpp_2016.html) especially the section on encryption.)
 
-If you migrate to a new device and would still like to keep your history please use a third party backup tool like [oandbackup](https://github.com/jensstein/oandbackup) (needs root access on the device) or ```adb backup``` (no root access needed) from your computer.  It is important that you disable (NOT delete) your account before backup and enable it only after a successful restore, otherwise OMEMO might not work afterwards. Also, remember that you can **only** transfer the backup to either the same version of Android or to a newer one (eg. 5.1.1 -> 5.1.1 or 5.1.1 -> 6.0.1).
+As of version 2.4.0 an integrated Backup & Restore function will help with this, go to Settings &#8594; Expert settings &#8594; Create backup. A notification will pop-up during the creation process that will announce you when it's ready. After the files, one for each account, are created, you can move the **Conversations** folder *(if you want your old media files too)* or only the **Conversations/Backup** folder *(for OMEMO keys and history only)* to your new device (or to a storage place) where a freshly installed Conversations can restore each account. Don't forget to enable the accounts after a succesful restore.
+
+This backup method will include your OMEMO keys. Due to forward secrecy you will not be able to recover messages sent and received between creating the backup and restoring it. If you have a server side archive (MAM) those messages will be retrieved but displayed as *unable to decrypt*. For technical reasons you might also lose the first message you either sent or receive after the restore; for each conversation you have. This message will then also show up as *unable to decrypt*, but this will automatically recover itself as long as both participants are on Conversations 2.3.11+. Note that this doesn’t happen if you just transfer to a new phone and no messages have been exchanged between backup and restore.
+
+In the vast, vast majority of cases you won’t have to manually delete OMEMO keys or do anything like that. Conversations only introduced the offical backup feature in 2.4.0 after making sure the *OMEMO self healing* mechanism introduced in 2.3.11 works fine.
+
+**WARNING**: Be sure to know your accounts passwords or find ways to reset them **before** doing the backup as the files are encrypted using those passwords and the Restore process will ask for them.  
+**WARNING**: Do not use the restore backup feature in an attempt to clone (run simultaneously) an installation. Restoring a backup is only meant for migrations or in case you’ve lost the original device.
 
 #### Conversations is missing a certain feature
 
@@ -323,25 +343,25 @@ To use OpenPGP you have to install the open source app
 manage accounts and choose renew PGP announcement from the contextual menu.
 
 #### OMEMO is grayed out. What do I do?
-OMEMO has two requirements: Your server and the server of your contact need to support PEP. Both of you can verify that individually by opening your account details and selecting ```Server info``` from the menu. The appearing table should list PEP as available. The second requirement is mutual presence subscription. You can verify that by opening the contact details and see if both check boxes *Send presence updates* and *Receive presence updates* are checked.
+OMEMO is only available in 1:1 chats and private (members-only, non-anonymous) group chats. Encrypting public group chats makes little to no sense since anyone (including a hypothetical attacker) can join and a user couldn’t possibily verify all participants anyway. Furthermore for a lot of public group chat it is desirable to give new comers access to the full history.
 
-#### How does the encryption for conferences work?
+#### OMEMO doesn’t work. I get a 'Something went wrong' message in the 'Trust OMEMO Fingerprints' screen.
+OMEMO has two requirements: Your server and the server of your contact need to support PEP. Both of you can verify that individually by opening your account details and selecting ```Server info``` from the menu. The appearing table should list PEP as available. The second requirement is that the initial sender needs to have access to the published key material. This can either be achieved by having mutual presence subscription (you can verify that by opening the contact details and see if both check boxes *Send presence updates* and *Receive presence updates* are checked) or by using a server that makes the public key material accessible to anyone. In the [Compliance Tester](https://compliance.conversations.im) this is indicated by the 'OMEMO' feature. Since it is very common that the first messages are exchanged *before* adding each other to the contact list it is desirable to use servers that have 'OMEMO support'.
 
-For conferences only OMEMO and OpenPGP are supported as encryption method..
+#### How does the encryption for group chats work?
 
 ##### OMEMO
 
-OMEMO encryption works only in private (members only) conferences that are non-anonymous.
+OMEMO encryption works only in private (members only) conferences that are non-anonymous. Non-anonymous (being able to discover the real JID of other participants) is a technical requirement to discover the key material. Members only is a sort of arbitrary requirement imposed by Conversations. (see 'OMEMO is grayed out')
 
 The server of all participants need to pass the OMEMO [Compliance Test](https://conversations.im/compliance/).
-In other words they either need to run version 18.01+ of ejabberd or have the `omemo_all_access` module installed on Prosody.
+In other words they either need to run Ejabberd 18.01+ or Prosody 0.11+.
+
+(Alternatively it would also work if all participants had each other in their contact list; But that rarely is the case in larger group chats.)
 
 The owner of a conference can make a public conference private by going into the conference
 details and hit the settings button (the one with the gears) and select both *private* and
 *members only*.
-
-If OMEMO is grayed out long pressing the lock icon will reveal some quick hints on why OMEMO
-is disabled.
 
 ##### OpenPGP
 
@@ -360,6 +380,9 @@ this.)
 #### What is Blind Trust Before Verification / why are messages marked with a red lock?
 
 Read more about the concept on https://gultsch.de/trust.html
+
+#### What happened to OTR support?
+OTR was removed because it was highly unreliable. It didn’t work with multiple devices and was never really specified to work with XMPP. The codebase was a mess (There was an HTML parser in there for crying out loud to deal with the garbage some OTR clients would send.) Verification was implemented in a non-blocking way. It would tell you if the current session was using an unknown fingerprint but it didn’t actively stopped you from sending messages until you have confirmed the new fingerprint. (Like Conversations would do now with BTBV after verification or when BTBV is turned off.) Considering the previous points there was little to no desire from my point to fix this potential security issue or clean up the code base. Another reason for the removal was that people would use it *accidentally* even to communicate between two Conversations clients because they read somewhere that OTR is good.
 
 ### What clients do I use on other platforms
 There are XMPP Clients available for all major platforms.

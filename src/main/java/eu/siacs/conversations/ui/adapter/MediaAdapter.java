@@ -23,6 +23,7 @@ import java.util.concurrent.RejectedExecutionException;
 
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.databinding.MediaBinding;
+import eu.siacs.conversations.services.ExportBackupService;
 import eu.siacs.conversations.ui.XmppActivity;
 import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.ui.util.StyledAttributes;
@@ -79,6 +80,8 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
                 attr = R.attr.media_preview_archive;
             } else if (mime.equals("application/epub+zip") || mime.equals("application/vnd.amazon.mobi8-ebook")) {
                 attr = R.attr.media_preview_ebook;
+            } else if (mime.equals(ExportBackupService.MIME_TYPE)) {
+                attr = R.attr.media_preview_backup;
             } else if (DOCUMENT_MIMES.contains(mime)) {
                 attr = R.attr.media_preview_document;
             } else {
@@ -88,7 +91,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
         return attr;
     }
 
-    public static void renderPreview(Context context, Attachment attachment, ImageView imageView) {
+    static void renderPreview(Context context, Attachment attachment, ImageView imageView) {
         imageView.setBackgroundColor(StyledAttributes.getColor(context, R.attr.color_background_tertiary));
         imageView.setImageAlpha(Math.round(StyledAttributes.getFloat(context, R.attr.icon_alpha) * 255));
         imageView.setImageDrawable(StyledAttributes.getDrawable(context, getImageAttr(attachment)));
@@ -137,7 +140,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
             cancelPotentialWork(attachment, holder.binding.media);
             renderPreview(activity, attachment, holder.binding.media);
         }
-        holder.binding.media.setOnClickListener(v -> ViewUtil.view(activity, attachment));
+        holder.binding.getRoot().setOnClickListener(v -> ViewUtil.view(activity, attachment));
     }
 
     public void setAttachments(List<Attachment> attachments) {
@@ -160,7 +163,7 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
             } else {
                 imageView.setBackgroundColor(0xff333333);
                 imageView.setImageDrawable(null);
-                final BitmapWorkerTask task = new BitmapWorkerTask(imageView);
+                final BitmapWorkerTask task = new BitmapWorkerTask(mediaSize, imageView);
                 final AsyncDrawable asyncDrawable = new AsyncDrawable(activity.getResources(), null, task);
                 imageView.setImageDrawable(asyncDrawable);
                 try {
@@ -199,17 +202,23 @@ public class MediaAdapter extends RecyclerView.Adapter<MediaAdapter.MediaViewHol
         }
     }
 
-    class BitmapWorkerTask extends AsyncTask<Attachment, Void, Bitmap> {
+    private static class BitmapWorkerTask extends AsyncTask<Attachment, Void, Bitmap> {
         private final WeakReference<ImageView> imageViewReference;
         private Attachment attachment = null;
+        private final int mediaSize;
 
-        BitmapWorkerTask(ImageView imageView) {
+        BitmapWorkerTask(int mediaSize, ImageView imageView) {
+            this.mediaSize = mediaSize;
             imageViewReference = new WeakReference<>(imageView);
         }
 
         @Override
         protected Bitmap doInBackground(Attachment... params) {
             this.attachment = params[0];
+            final XmppActivity activity = XmppActivity.find(imageViewReference);
+            if (activity == null) {
+                return null;
+            }
             return activity.xmppConnectionService.getFileBackend().getPreviewForUri(this.attachment, mediaSize, false);
         }
 

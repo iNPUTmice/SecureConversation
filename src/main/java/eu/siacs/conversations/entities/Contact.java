@@ -338,7 +338,9 @@ public class Contact implements ListItem, Blockable {
 	}
 
 	public boolean showInContactList() {
-		return showInRoster() || getOption(Options.SYNCED_VIA_OTHER);
+		return showInRoster()
+				|| getOption(Options.SYNCED_VIA_OTHER)
+				|| (QuickConversationsService.isQuicksy() && systemAccount != null);
 	}
 
 	public void parseSubscriptionFromElement(Element item) {
@@ -415,10 +417,14 @@ public class Contact implements ListItem, Blockable {
 	}
 
 	public boolean setAvatar(Avatar avatar) {
+		return setAvatar(avatar, false);
+	}
+
+	public boolean setAvatar(Avatar avatar, boolean previouslyOmittedPepFetch) {
 		if (this.avatar != null && this.avatar.equals(avatar)) {
 			return false;
 		} else {
-			if (this.avatar != null && this.avatar.origin == Avatar.Origin.PEP && avatar.origin == Avatar.Origin.VCARD) {
+			if (!previouslyOmittedPepFetch && this.avatar != null && this.avatar.origin == Avatar.Origin.PEP && avatar.origin == Avatar.Origin.VCARD) {
 				return false;
 			}
 			this.avatar = avatar;
@@ -533,7 +539,12 @@ public class Contact implements ListItem, Blockable {
 		}
 	}
 
-    public final class Options {
+	@Override
+	public int getAvatarBackgroundColor() {
+		return UIHelper.getColorForName(jid != null ? jid.asBareJid().toString() : getDisplayName());
+	}
+
+	public final class Options {
 		public static final int TO = 0;
 		public static final int FROM = 1;
 		public static final int ASKING = 2;

@@ -11,8 +11,10 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -22,12 +24,14 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.PgpDecryptionService;
 import eu.siacs.conversations.crypto.axolotl.AxolotlService;
 import eu.siacs.conversations.crypto.axolotl.XmppAxolotlSession;
+import eu.siacs.conversations.services.AvatarService;
 import eu.siacs.conversations.services.XmppConnectionService;
+import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.utils.XmppUri;
 import eu.siacs.conversations.xmpp.XmppConnection;
 import rocks.xmpp.addr.Jid;
 
-public class Account extends AbstractEntity {
+public class Account extends AbstractEntity implements AvatarService.Avatarable {
 
     public static final String TABLENAME = "accounts";
 
@@ -62,8 +66,10 @@ public class Account extends AbstractEntity {
     protected final JSONObject keys;
     private final Roster roster = new Roster(this);
     private final Collection<Jid> blocklist = new CopyOnWriteArraySet<>();
-    public List<Conversation> pendingConferenceJoins = new CopyOnWriteArrayList<>();
-    public List<Conversation> pendingConferenceLeaves = new CopyOnWriteArrayList<>();
+    public final Set<Conversation> pendingConferenceJoins = new HashSet<>();
+    public final Set<Conversation> pendingConferenceLeaves = new HashSet<>();
+    public final Set<Conversation> inProgressConferenceJoins = new HashSet<>();
+    public final Set<Conversation> inProgressConferencePings = new HashSet<>();
     protected Jid jid;
     protected String password;
     protected int options = 0;
@@ -80,7 +86,7 @@ public class Account extends AbstractEntity {
     private PgpDecryptionService pgpDecryptionService = null;
     private XmppConnection xmppConnection = null;
     private long mEndGracePeriod = 0L;
-    private List<Bookmark> bookmarks = new CopyOnWriteArrayList<>();
+    private final Map<Jid, Bookmark> bookmarks = new HashMap<>();
     private Presence.Status presenceStatus = Presence.Status.ONLINE;
     private String presenceStatusMessage = null;
 
@@ -465,36 +471,51 @@ public class Account extends AbstractEntity {
         return this.roster;
     }
 
-    public List<Bookmark> getBookmarks() {
-        return this.bookmarks;
+    public Collection<Bookmark> getBookmarks() {
+        return this.bookmarks.values();
     }
 
-    public void setBookmarks(final CopyOnWriteArrayList<Bookmark> bookmarks) {
-        this.bookmarks = bookmarks;
+    public void setBookmarks(Map<Jid, Bookmark> bookmarks) {
+        synchronized (this.bookmarks) {
+            this.bookmarks.clear();
+            this.bookmarks.putAll(bookmarks);
+        }
+    }
+
+    public void putBookmark(Bookmark bookmark) {
+        synchronized (this.bookmarks) {
+            this.bookmarks.put(bookmark.getJid(), bookmark);
+        }
+    }
+
+    public void removeBookmark(Bookmark bookmark) {
+        synchronized (this.bookmarks) {
+            this.bookmarks.remove(bookmark.getJid());
+        }
+    }
+
+    public void removeBookmark(Jid jid) {
+        synchronized (this.bookmarks) {
+            this.bookmarks.remove(jid);
+        }
     }
 
     public Set<Jid> getBookmarkedJids() {
-        final Set<Jid> jids = new HashSet<>();
-        for(final Bookmark bookmark : this.bookmarks) {
-            final Jid jid = bookmark.getJid();
-            if (jid != null) {
-                jids.add(jid.asBareJid());
-            }
+        synchronized (this.bookmarks) {
+            return new HashSet<>(this.bookmarks.keySet());
         }
-        return jids;
     }
 
-    public boolean hasBookmarkFor(final Jid conferenceJid) {
-        return getBookmark(conferenceJid) != null;
+    public boolean hasBookmarkFor(final Jid jid) {
+        synchronized (this.bookmarks) {
+            return this.bookmarks.containsKey(jid.asBareJid());
+        }
     }
 
     Bookmark getBookmark(final Jid jid) {
-        for (final Bookmark bookmark : this.bookmarks) {
-            if (bookmark.getJid() != null && jid.asBareJid().equals(bookmark.getJid().asBareJid())) {
-                return bookmark;
-            }
+        synchronized (this.bookmarks) {
+            return this.bookmarks.get(jid.asBareJid());
         }
-        return null;
     }
 
     public boolean setAvatar(final String filename) {
@@ -577,6 +598,11 @@ public class Account extends AbstractEntity {
 
     public boolean isOnlineAndConnected() {
         return this.getStatus() == State.ONLINE && this.getXmppConnection() != null;
+    }
+
+    @Override
+    public int getAvatarBackgroundColor() {
+        return UIHelper.getColorForName(jid.asBareJid().toString());
     }
 
     public enum State {

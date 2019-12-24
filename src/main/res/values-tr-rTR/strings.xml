@@ -21,7 +21,6 @@
   <string name="just_now">şimdi</string>
   <string name="minute_ago">1 dakika önce</string>
   <string name="minutes_ago">%d dakika önc</string>
-  <string name="unread_conversations">okunmamış konuşmalar</string>
   <string name="sending">gönderiyor…</string>
   <string name="message_decrypting">İleti deşifre ediliyor. Lütfen bekleyin…</string>
   <string name="pgp_message">OpenPGP şifreli ileti</string>
@@ -99,7 +98,6 @@
   <string name="pref_sound">Zil sesi</string>
   <string name="pref_sound_summary">Yeni bir ileti geldiğinde sesli bildir</string>
   <string name="pref_notification_grace_period">Mühlet</string>
-  <string name="pref_notification_grace_period_summary">Başka bir aygıt üstünde etkinlik algılandığında Conversations\'ın sessiz kalma süresi</string>
   <string name="pref_advanced_options">Gelişmiş</string>
   <string name="pref_never_send_crash">Asla çöküş raporu gönderme</string>
   <string name="pref_never_send_crash_summary">Çöküş raporu göndermeniz Conversations’ın geliştirilmesine katkıda bulunacaktır.</string>
@@ -147,11 +145,8 @@
   <string name="mgmt_account_enable">Hesabı etkinleştir</string>
   <string name="mgmt_account_are_you_sure">Emin misiniz?</string>
   <string name="attach_record_voice">Ses kaydet</string>
-  <string name="account_settings_jabber_id">Jabber ID</string>
-  <string name="block_jabber_id">Jabber ID engelle</string>
   <string name="account_settings_example_jabber_id">kullanıcıadı@ornek.com</string>
   <string name="password">parola</string>
-  <string name="invalid_jid">Jabber ID geçersiz</string>
   <string name="error_out_of_memory">Yetersiz bellek. Görüntü dosyası çok büyük.</string>
   <string name="add_phone_book_text">%s kişisini listenize eklemek ister misiniz?</string>
   <string name="server_info_show_more">Sunucu bilgisi</string>
@@ -195,7 +190,6 @@
   <string name="select">Seç</string>
   <string name="contact_already_exists">Kişi zaten mevcut</string>
   <string name="join">Katıl</string>
-  <string name="conference_address_example">oda@toplanti.ornek.com/nick</string>
   <string name="save_as_bookmark">Yer imi olarak kaydet</string>
   <string name="delete_bookmark">Yer imini sil</string>
   <string name="bookmark_already_exists">Bu yer imi zaten mevcut</string>
@@ -236,10 +230,6 @@
   <string name="title_pref_quiet_hours_end_time">Bitiş zamanı</string>
   <string name="title_pref_enable_quiet_hours">Sessiz saatleri etkinleştir</string>
   <string name="pref_quiet_hours_summary">Bildirimler sessiz saatler boyunca sessize alınacaktır</string>
-  <string name="pref_use_send_button_to_indicate_status">Gönder düğmesi durum bildirsin</string>
-  <string name="pref_use_indicate_received">İleti alındısı iste</string>
-  <string name="pref_use_indicate_received_summary">Alınan iletiler, eğer destekleniyorsa, yeşil bir tikle işaretlenecektir.</string>
-  <string name="pref_use_send_button_to_indicate_status_summary">Gönder butonunu kişinin durumuna göre renklendir</string>
   <string name="pref_expert_options_other">Diğer</string>
   <string name="toast_message_omemo_fingerprint">OMEMO parmak izi panoya kopyalandı!</string>
   <string name="using_account">%s hesabını kullanarak</string>
@@ -258,12 +248,8 @@
   <string name="account_details">Hesap bilgileri</string>
   <string name="confirm">Doğrula</string>
   <string name="try_again">Yeniden deneyin</string>
-  <string name="conversations_foreground_service">Conversations</string>
   <string name="pref_keep_foreground_service">Ön planda çalışmaya devam etsin</string>
   <string name="pref_keep_foreground_service_summary">İşletim sisteminin bağlantınızı koparmasına engel olur</string>
-  <string name="pref_export_logs">Geçmişi dışarı aktar</string>
-  <string name="pref_export_logs_summary">Conversations geçmiş kayıtlarını SD karta yaz</string>
-  <string name="notification_export_logs_title">Kayıtları SD karta yazıyor</string>
   <string name="choose_file">Dosya seç</string>
   <string name="receiving_x_file">%1$s alıyor/(%2$d%% tamamlandı)</string>
   <string name="download_x_file">%s indir</string>
@@ -301,16 +287,12 @@
   <string name="outcast">Bağlantısız</string>
   <string name="member">Üye</string>
   <string name="advanced_mode">Gelişmiş kip</string>
-  <string name="grant_membership">Üyeliğe onay ver</string>
-  <string name="remove_membership">Üyeliği geri çevir</string>
   <string name="grant_admin_privileges">Yönetici imtiyazlarını kabul et</string>
   <string name="remove_admin_privileges">Yönetici imtiyazlarını geri çevir</string>
   <string name="could_not_change_affiliation">%s kişisinin ortaklığı değiştirilemedi</string>
   <string name="ban_now">Şimdi men et</string>
   <string name="could_not_change_role">%s kişisinin rolü değiştirilemedi</string>
   <string name="members_only">Özel, yalnızca üyeler</string>
-  <string name="non_anonymous">Anonim olmayan</string>
-  <string name="moderated">Denetli</string>
   <string name="you_are_not_participating">Katılımcı değilsiniz</string>
   <string name="never">Hiçbir zaman</string>
   <string name="until_further_notice">İkinci bildirime kadar</string>
@@ -325,7 +307,6 @@
   <string name="pdf_document">PDF belgesi</string>
   <string name="apk">Android uygulaması</string>
   <string name="vcard">Kişi</string>
-  <string name="touch_to_open_conversations">Conversations’ı başlatmak için dokunun</string>
   <string name="avatar_has_been_published">Avatar yayımlandı!</string>
   <string name="sending_x_file">%s gönderiliyor</string>
   <string name="offering_x_file">%s sunuluyor</string>
@@ -386,7 +367,6 @@
   <string name="captcha_required">Captcha gerekli</string>
   <string name="captcha_hint">Resimdeki yazıyı girin</string>
   <string name="certificate_chain_is_not_trusted">Sertifika zinciri güvenilir değil</string>
-  <string name="jid_does_not_match_certificate">Jabber ID sertifikayla eşleşmiyor</string>
   <string name="action_renew_certificate">Sertifikayı yenile</string>
   <string name="error_fetching_omemo_key">OMEMO anahtarı alınırken hata oluştu!</string>
   <string name="verified_omemo_key_with_certificate">Sertifikalı OMEMO anahtarı onaylandı!</string>
@@ -414,7 +394,6 @@
   <string name="notify_never">Uyarılar devre dışı</string>
   <string name="notify_paused">Uyarılar geçici olarak durduruldu</string>
   <string name="always">Her zaman</string>
-  <string name="automatically">Kendiliğinden</string>
   <string name="battery_optimizations_enabled">Pil optimizasyonu devrede</string>
   <string name="battery_optimizations_enabled_explained">Aygıtınız Conversations üzerinde yoğun pil iyileştirmesi yaptığı için bildirimlerde gecikmeler olabilir üstelik bazı ileti kayıpları yaşanabilir.\nBu durumla karşılaşamamak için devre dışı bırakmanız önerilir. </string>
   <string name="battery_optimizations_enabled_dialog">Aygıtınız Conversations üzerinde yoğun pil iyileştirmesi yaptığı için bildirimlerde gecikmeler olabilir üstelik bazı ileti kayıpları yaşanabilir.\n Şimdi bunları devre dışı bırakmanız istenecek.</string>
@@ -428,8 +407,6 @@
   <string name="security_error_invalid_file_access">Güvenlik hatası: Geçersiz dosya erişimi</string>
   <string name="no_application_to_share_uri">URI paylaşmak için uygulama bulunamadı</string>
   <string name="share_uri_with">URI paylaş ile...</string>
-  <string name="magic_create_text">conversation.im sağlayıcısında hesap açma sürecinde size yol göstereceğiz.\nconversation.im\'i bir servis sağlayıcı olarak kullandığınızda diğer sağlayıcıları kullananlarla tam Jabber kimliğinizi vererek iletişim kurabilirsiniz.</string>
-  <string name="your_full_jid_will_be">Tam Jabber kimliğiniz %s olacak</string>
   <string name="create_account">Hesap Oluştur</string>
   <string name="use_own_provider">Kendi sağlayıcımı kullan</string>
   <string name="pick_your_username">Kullanıcı adınızı seçin</string>

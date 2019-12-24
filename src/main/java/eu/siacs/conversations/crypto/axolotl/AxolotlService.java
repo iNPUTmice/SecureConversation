@@ -48,7 +48,6 @@ import eu.siacs.conversations.services.XmppConnectionService;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.SerialSingleThreadExecutor;
 import eu.siacs.conversations.xml.Element;
-import eu.siacs.conversations.xml.Namespace;
 import eu.siacs.conversations.xmpp.OnAdvancedStreamFeaturesLoaded;
 import eu.siacs.conversations.xmpp.OnIqPacketReceived;
 import eu.siacs.conversations.xmpp.pep.PublishOptions;
@@ -67,8 +66,8 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 
 	public static final String LOGPREFIX = "AxolotlService";
 
-	public static final int NUM_KEYS_TO_PUBLISH = 100;
-	public static final int publishTriesThreshold = 3;
+	private static final int NUM_KEYS_TO_PUBLISH = 100;
+	private static final int publishTriesThreshold = 3;
 
 	private final Account account;
 	private final XmppConnectionService mXmppConnectionService;
@@ -840,38 +839,12 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 		});
 	}
 
-	public enum AxolotlCapability {
-		FULL,
-		MISSING_PRESENCE,
-		MISSING_KEYS,
-		WRONG_CONFIGURATION,
-		NO_MEMBERS
-	}
-
-	public boolean isConversationAxolotlCapable(Conversation conversation) {
-		return conversation.isSingleOrPrivateAndNonAnonymous();
-	}
-
-	public Pair<AxolotlCapability, Jid> isConversationAxolotlCapableDetailed(Conversation conversation) {
-		if (conversation.isSingleOrPrivateAndNonAnonymous()) {
-			final List<Jid> jids = getCryptoTargets(conversation);
-			for (Jid jid : jids) {
-				if (!hasAny(jid) && (!deviceIds.containsKey(jid) || deviceIds.get(jid).isEmpty())) {
-					if (conversation.getAccount().getRoster().getContact(jid).mutualPresenceSubscription()) {
-						return new Pair<>(AxolotlCapability.MISSING_KEYS, jid);
-					} else {
-						return new Pair<>(AxolotlCapability.MISSING_PRESENCE, jid);
-					}
-				}
-			}
-			if (jids.size() > 0) {
-				return new Pair<>(AxolotlCapability.FULL, null);
-			} else {
-				return new Pair<>(AxolotlCapability.NO_MEMBERS, null);
-			}
-		} else {
-			return new Pair<>(AxolotlCapability.WRONG_CONFIGURATION, null);
-		}
+	public void deleteOmemoIdentity() {
+		final String node = AxolotlService.PEP_BUNDLES + ":" + getOwnDeviceId();
+		final IqPacket deleteBundleNode = mXmppConnectionService.getIqGenerator().deleteNode(node);
+		mXmppConnectionService.sendIqPacket(account, deleteBundleNode, null);
+		final Set<Integer> ownDeviceIds = getOwnDeviceIds();
+		publishDeviceIdsAndRefineAccessModel(ownDeviceIds == null ? Collections.emptySet() : ownDeviceIds);
 	}
 
 	public List<Jid> getCryptoTargets(Conversation conversation) {
@@ -1360,7 +1333,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 		}
 
 		final boolean success;
-		if (message.getType() == Message.TYPE_PRIVATE) {
+		if (message.isPrivateMessage()) {
 			success = buildHeader(axolotlMessage, message.getTrueCounterpart());
 		} else {
 			success = buildHeader(axolotlMessage, (Conversation) message.getConversation());
@@ -1503,7 +1476,9 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 			} else {
 				Log.d(Config.LOGTAG,account.getJid().asBareJid()+": nothing to flush. Not republishing key");
 			}
-			completeSession(session);
+			if (trustedOrPreviouslyResponded(session)) {
+				completeSession(session);
+			}
 		}
 	}
 
@@ -1513,23 +1488,44 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 				publishBundlesIfNeeded(false, false);
 			}
 		}
-		Iterator<XmppAxolotlSession> iterator = postponedSessions.iterator();
+		final Iterator<XmppAxolotlSession> iterator = postponedSessions.iterator();
 		while (iterator.hasNext()) {
-			completeSession(iterator.next());
+			final XmppAxolotlSession session = iterator.next();
+			if (trustedOrPreviouslyResponded(session)) {
+				completeSession(session);
+			}
 			iterator.remove();
 		}
-		Iterator<SignalProtocolAddress> postponedHealingAttemptsIterator = postponedHealing.iterator();
+		final Iterator<SignalProtocolAddress> postponedHealingAttemptsIterator = postponedHealing.iterator();
 		while (postponedHealingAttemptsIterator.hasNext()) {
 			notifyRequiresHealing(postponedHealingAttemptsIterator.next());
 			postponedHealingAttemptsIterator.remove();
 		}
 	}
 
+
+	private boolean trustedOrPreviouslyResponded(XmppAxolotlSession session) {
+		try {
+			return trustedOrPreviouslyResponded(Jid.of(session.getRemoteAddress().getName()));
+		} catch (IllegalArgumentException e) {
+			return false;
+		}
+	}
+
+	public boolean trustedOrPreviouslyResponded(Jid jid) {
+		final Contact contact = account.getRoster().getContact(jid);
+		if (contact.showInRoster() || contact.isSelf()) {
+			return true;
+		}
+		final Conversation conversation = mXmppConnectionService.find(account, jid);
+		return conversation != null && conversation.sentMessagesCount() > 0;
+	}
+
 	private void completeSession(XmppAxolotlSession session) {
 		final XmppAxolotlMessage axolotlMessage = new XmppAxolotlMessage(account.getJid().asBareJid(), getOwnDeviceId());
 		axolotlMessage.addDevice(session, true);
 		try {
-			Jid jid = Jid.of(session.getRemoteAddress().getName());
+			final Jid jid = Jid.of(session.getRemoteAddress().getName());
 			MessagePacket packet = mXmppConnectionService.getMessageGenerator().generateKeyTransportMessage(jid, axolotlMessage);
 			mXmppConnectionService.sendMessagePacket(account, packet);
 		} catch (IllegalArgumentException e) {
@@ -1539,9 +1535,8 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 
 
 	public XmppAxolotlMessage.XmppAxolotlKeyTransportMessage processReceivingKeyTransportMessage(XmppAxolotlMessage message, final boolean postponePreKeyMessageHandling) {
-		XmppAxolotlMessage.XmppAxolotlKeyTransportMessage keyTransportMessage;
-
-		XmppAxolotlSession session = getReceivingSession(message);
+		final XmppAxolotlMessage.XmppAxolotlKeyTransportMessage keyTransportMessage;
+		final XmppAxolotlSession session = getReceivingSession(message);
 		try {
 			keyTransportMessage = message.getParameters(session, getOwnDeviceId());
 			Integer preKeyId = session.getPreKeyIdAndReset();
@@ -1550,7 +1545,7 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 			}
 		} catch (CryptoFailedException e) {
 			Log.d(Config.LOGTAG, "could not decrypt keyTransport message " + e.getMessage());
-			keyTransportMessage = null;
+			return null;
 		}
 
 		if (session.isFresh() && keyTransportMessage != null) {
@@ -1561,7 +1556,6 @@ public class AxolotlService implements OnAdvancedStreamFeaturesLoaded {
 	}
 
 	private void putFreshSession(XmppAxolotlSession session) {
-		Log.d(Config.LOGTAG, "put fresh session");
 		sessions.put(session);
 		if (Config.X509_VERIFICATION) {
 			if (session.getIdentityKey() != null) {

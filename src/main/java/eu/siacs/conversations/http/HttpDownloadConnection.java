@@ -4,7 +4,10 @@ import android.os.PowerManager;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
+import com.google.common.io.ByteStreams;
+
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,7 +25,6 @@ import eu.siacs.conversations.entities.Account;
 import eu.siacs.conversations.entities.DownloadableFile;
 import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Transferable;
-import eu.siacs.conversations.entities.TransferablePlaceholder;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.AbstractConnectionManager;
 import eu.siacs.conversations.services.XmppConnectionService;
@@ -39,7 +41,7 @@ public class HttpDownloadConnection implements Transferable {
 	private XmppConnectionService mXmppConnectionService;
 
 	private URL mUrl;
-	private Message message;
+	private final Message message;
 	private DownloadableFile file;
 	private int mStatus = Transferable.STATUS_UNKNOWN;
 	private boolean acceptedAutomatically = false;
@@ -48,7 +50,8 @@ public class HttpDownloadConnection implements Transferable {
 	private boolean canceled = false;
 	private Method method = Method.HTTP_UPLOAD;
 
-	HttpDownloadConnection(HttpConnectionManager manager) {
+	HttpDownloadConnection(Message message, HttpConnectionManager manager) {
+		this.message = message;
 		this.mHttpConnectionManager = manager;
 		this.mXmppConnectionService = manager.getXmppConnectionService();
 		this.mUseTor = mXmppConnectionService.useTorToConnect();
@@ -68,12 +71,7 @@ public class HttpDownloadConnection implements Transferable {
 		}
 	}
 
-	public void init(Message message) {
-		init(message, false);
-	}
-
-	public void init(Message message, boolean interactive) {
-		this.message = message;
+	public void init(boolean interactive) {
 		this.message.setTransferable(this);
 		try {
 			if (message.hasFileOnRemoteHost()) {
@@ -81,23 +79,26 @@ public class HttpDownloadConnection implements Transferable {
 			} else {
 				mUrl = CryptoHelper.toHttpsUrl(new URL(message.getBody().split("\n")[0]));
 			}
-			String[] parts = mUrl.getPath().toLowerCase().split("\\.");
-			String lastPart = parts.length >= 1 ? parts[parts.length - 1] : null;
-			String secondToLast = parts.length >= 2 ? parts[parts.length - 2] : null;
-			if ("pgp".equals(lastPart) || "gpg".equals(lastPart)) {
+			final AbstractConnectionManager.Extension extension = AbstractConnectionManager.Extension.of(mUrl.getPath());
+			if (VALID_CRYPTO_EXTENSIONS.contains(extension.main)) {
 				this.message.setEncryption(Message.ENCRYPTION_PGP);
 			} else if (message.getEncryption() != Message.ENCRYPTION_OTR
 					&& message.getEncryption() != Message.ENCRYPTION_AXOLOTL) {
 				this.message.setEncryption(Message.ENCRYPTION_NONE);
 			}
-			String extension;
-			if (VALID_CRYPTO_EXTENSIONS.contains(lastPart)) {
-				extension = secondToLast;
+			final String ext;
+			if (VALID_CRYPTO_EXTENSIONS.contains(extension.main)) {
+				ext = extension.secondary;
 			} else {
-				extension = lastPart;
+				ext = extension.main;
 			}
-			message.setRelativeFilePath(message.getUuid() + (extension != null ? ("." + extension) : ""));
-			this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
+			message.setRelativeFilePath(message.getUuid() + (ext != null ? ("." + ext) : ""));
+			if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL) {
+				this.file = new DownloadableFile(mXmppConnectionService.getCacheDir().getAbsolutePath() + "/" + message.getUuid());
+				Log.d(Config.LOGTAG, "create temporary OMEMO encrypted file: " + this.file.getAbsolutePath() + "(" + message.getMimeType() + ")");
+			} else {
+				this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
+			}
 			final String reference = mUrl.getRef();
 			if (reference != null && AesGcmURLStreamHandler.IV_KEY.matcher(reference).matches()) {
 				this.file.setKeyAndIv(CryptoHelper.hexToBytes(reference));
@@ -131,16 +132,48 @@ public class HttpDownloadConnection implements Transferable {
 	public void cancel() {
 		this.canceled = true;
 		mHttpConnectionManager.finishConnection(this);
+		message.setTransferable(null);
 		if (message.isFileOrImage()) {
-			message.setTransferable(new TransferablePlaceholder(Transferable.STATUS_DELETED));
-		} else {
-			message.setTransferable(null);
+			message.setDeleted(true);
 		}
 		mHttpConnectionManager.updateConversationUi(true);
 	}
 
-	private void finish() {
-		mXmppConnectionService.getFileBackend().updateMediaScanner(file);
+	private void decryptOmemoFile() throws Exception {
+		final DownloadableFile outputFile = mXmppConnectionService.getFileBackend().getFile(message, true);
+
+		if (outputFile.getParentFile().mkdirs()) {
+			Log.d(Config.LOGTAG, "created parent directories for " + outputFile.getAbsolutePath());
+		}
+
+		try {
+			outputFile.createNewFile();
+			final InputStream is = new FileInputStream(this.file);
+
+			outputFile.setKey(this.file.getKey());
+			outputFile.setIv(this.file.getIv());
+			final OutputStream os = AbstractConnectionManager.createOutputStream(outputFile, false, true);
+
+			ByteStreams.copy(is, os);
+
+			FileBackend.close(is);
+			FileBackend.close(os);
+
+			if (!file.delete()) {
+				Log.w(Config.LOGTAG,"unable to delete temporary OMEMO encrypted file " + file.getAbsolutePath());
+			}
+
+			message.setRelativeFilePath(outputFile.getPath());
+		} catch (IOException e) {
+			message.setEncryption(Message.ENCRYPTION_DECRYPTION_FAILED);
+			mXmppConnectionService.updateMessage(message);
+		}
+	}
+
+	private void finish() throws Exception {
+		if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL)	{
+			decryptOmemoFile();
+		}
 		message.setTransferable(null);
 		mHttpConnectionManager.finishConnection(this);
 		boolean notify = acceptedAutomatically && !message.isRead();
@@ -148,9 +181,12 @@ public class HttpDownloadConnection implements Transferable {
 			notify = message.getConversation().getAccount().getPgpDecryptionService().decrypt(message, notify);
 		}
 		mHttpConnectionManager.updateConversationUi(true);
-		if (notify) {
-			mXmppConnectionService.getNotificationService().push(message);
-		}
+		final boolean notifyAfterScan = notify;
+		mXmppConnectionService.getFileBackend().updateMediaScanner(file, () -> {
+			if (notifyAfterScan) {
+				mXmppConnectionService.getNotificationService().push(message);
+			}
+		});
 	}
 
 	private void changeStatus(int status) {
@@ -192,6 +228,10 @@ public class HttpDownloadConnection implements Transferable {
 	@Override
 	public int getProgress() {
 		return this.mProgress;
+	}
+
+	public Message getMessage() {
+		return message;
 	}
 
 	private class FileSizeChecker implements Runnable {
@@ -256,6 +296,10 @@ public class HttpDownloadConnection implements Transferable {
 				retrieveFailed(e);
 				return;
 			}
+			//TODO at this stage we probably also want to persist the file size in the body of the
+			// message via a similar mechansim as updateFileParams() - essentially body needs to read
+			// "url|filesize"
+			// afterwards a file that failed to download mid way will not display 'check file size' anymore
 			file.setExpectedSize(size);
 			message.resetFileParams();
 			if (mHttpConnectionManager.hasStoragePermission()
@@ -275,7 +319,9 @@ public class HttpDownloadConnection implements Transferable {
 				Log.d(Config.LOGTAG, "retrieve file size. interactive:" + String.valueOf(interactive));
 				changeStatus(STATUS_CHECKING);
 				HttpURLConnection connection;
-				if (mUseTor || message.getConversation().getAccount().isOnion()) {
+				final String hostname = mUrl.getHost();
+				final boolean onion = hostname != null && hostname.endsWith(".onion");
+				if (mUseTor || message.getConversation().getAccount().isOnion() || onion) {
 					connection = (HttpURLConnection) mUrl.openConnection(HttpConnectionManager.getProxy());
 				} else {
 					connection = (HttpURLConnection) mUrl.openConnection();
@@ -337,8 +383,8 @@ public class HttpDownloadConnection implements Transferable {
 			try {
 				changeStatus(STATUS_DOWNLOADING);
 				download();
-				updateImageBounds();
 				finish();
+				updateImageBounds();
 			} catch (SSLHandshakeException e) {
 				changeStatus(STATUS_OFFER);
 			} catch (Exception e) {
@@ -368,12 +414,13 @@ public class HttpDownloadConnection implements Transferable {
 				}
 				connection.setUseCaches(false);
 				connection.setRequestProperty("User-Agent", mXmppConnectionService.getIqGenerator().getUserAgent());
-				final boolean tryResume = file.exists() && file.getKey() == null && file.getSize() > 0;
+				final long expected = file.getExpectedSize();
+				final boolean tryResume = file.exists() && file.getSize() > 0 && file.getSize() < expected;
 				long resumeSize = 0;
-				long expected = file.getExpectedSize();
+
 				if (tryResume) {
 					resumeSize = file.getSize();
-					Log.d(Config.LOGTAG, "http download trying resume after" + resumeSize + " of " + expected);
+					Log.d(Config.LOGTAG, "http download trying resume after " + resumeSize + " of " + expected);
 					connection.setRequestProperty("Range", "bytes=" + resumeSize + "-");
 				}
 				connection.setConnectTimeout(Config.SOCKET_TIMEOUT * 1000);
@@ -387,7 +434,7 @@ public class HttpDownloadConnection implements Transferable {
 					Log.d(Config.LOGTAG, "server resumed");
 					transmitted = file.getSize();
 					updateProgress(Math.round(((double) transmitted / expected) * 100));
-					os = AbstractConnectionManager.createAppendedOutputStream(file);
+					os = AbstractConnectionManager.createOutputStream(file, true, false);
 					if (os == null) {
 						throw new FileWriterException();
 					}
@@ -405,7 +452,7 @@ public class HttpDownloadConnection implements Transferable {
 					if (!file.exists() && !file.createNewFile()) {
 						throw new FileWriterException();
 					}
-					os = AbstractConnectionManager.createOutputStream(file);
+					os = AbstractConnectionManager.createOutputStream(file, false, false);
 				}
 				int count;
 				byte[] buffer = new byte[4096];
@@ -440,7 +487,8 @@ public class HttpDownloadConnection implements Transferable {
 		}
 
 		private void updateImageBounds() {
-			message.setType(Message.TYPE_FILE);
+			final boolean privateMessage = message.isPrivateMessage();
+			message.setType(privateMessage ? Message.TYPE_PRIVATE_FILE : Message.TYPE_FILE);
 			final URL url;
 			final String ref = mUrl.getRef();
 			if (method == Method.P1_S3) {

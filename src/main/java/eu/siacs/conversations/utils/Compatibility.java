@@ -1,6 +1,7 @@
 package eu.siacs.conversations.utils;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
@@ -10,14 +11,18 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.support.annotation.BoolRes;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.SettingsActivity;
 import eu.siacs.conversations.ui.SettingsFragment;
+
+import static eu.siacs.conversations.services.EventReceiver.EXTRA_NEEDS_FOREGROUND_SERVICE;
 
 public class Compatibility {
 
@@ -35,6 +40,10 @@ public class Compatibility {
 
     public static boolean runsTwentySix() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
+    }
+
+    public static boolean runsTwentyFour() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.N;
     }
 
     public static boolean twentyEight() {
@@ -59,8 +68,22 @@ public class Compatibility {
         }
     }
 
+    private static boolean targetsTwentyFour(Context context) {
+        try {
+            final PackageManager packageManager = context.getPackageManager();
+            final ApplicationInfo applicationInfo = packageManager.getApplicationInfo(context.getPackageName(), 0);
+            return applicationInfo == null || applicationInfo.targetSdkVersion >= 24;
+        } catch (PackageManager.NameNotFoundException | RuntimeException e) {
+            return true; //when in doubt…
+        }
+    }
+
     public static boolean runsAndTargetsTwentySix(Context context) {
         return runsTwentySix() && targetsTwentySix(context);
+    }
+
+    public static boolean runsAndTargetsTwentyFour(Context context) {
+        return runsTwentyFour() && targetsTwentyFour(context);
     }
 
     public static boolean keepForegroundService(Context context) {
@@ -70,7 +93,7 @@ public class Compatibility {
     public static void removeUnusedPreferences(SettingsFragment settingsFragment) {
         List<PreferenceCategory> categories = Arrays.asList(
                 (PreferenceCategory) settingsFragment.findPreference("notification_category"),
-                (PreferenceCategory) settingsFragment.findPreference("other_expert_category"));
+                (PreferenceCategory) settingsFragment.findPreference("advanced"));
         for (String key : (runsTwentySix() ? UNUSED_SETTINGS_POST_TWENTYSIX : UNUESD_SETTINGS_PRE_TWENTYSIX)) {
             Preference preference = settingsFragment.findPreference(key);
             if (preference != null) {
@@ -92,6 +115,19 @@ public class Compatibility {
                     }
                 }
             }
+        }
+    }
+
+    public static void startService(Context context, Intent intent) {
+        try {
+            if (Compatibility.runsAndTargetsTwentySix(context)) {
+                intent.putExtra(EXTRA_NEEDS_FOREGROUND_SERVICE, true);
+                ContextCompat.startForegroundService(context, intent);
+            } else {
+                context.startService(intent);
+            }
+        } catch (RuntimeException e) {
+            Log.d(Config.LOGTAG, context.getClass().getSimpleName()+" was unable to start service");
         }
     }
 }

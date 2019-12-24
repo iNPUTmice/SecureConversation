@@ -1,5 +1,94 @@
 # Changelog
 
+### Version 2.6.1
+* fixes for Jingle IBB file transfer
+* fixes for repeated corrections filling up the database
+* switched to Last Message Correction v1.1
+
+### Version 2.6.0
+* Introduce expert setting to perform channel discovery on local server instead of [search.jabber.network](https://search.jabber.network)
+* Enable delivery check marks by default and remove setting
+* Enable ‘Send button indicates status’ by default and remove setting
+* Move Backup and Foreground Service settings to main screen
+
+### Version 2.5.12
+* Jingle file transfer fixes
+* Fixed OMEMO self healing (after backup restore) on servers w/o MAM
+
+### Version 2.5.11
+* Fixed crash on Android <5.0
+
+### Version 2.5.10
+* Fixed crash on Xiaomi devices running Android 8.0 + 8.1
+
+### Version 2.5.9
+* fixed minor security issues
+* Share XMPP uri from channel search by long pressing a result
+
+### Version 2.5.8
+* fixed connection issues over Tor
+* P2P file transfer (Jingle) now offers direct candidates
+* Support XEP-0396: Jingle Encrypted Transports - OMEMO
+
+### Version 2.5.7
+* fixed crash when scanning QR codes on Android 6 and lower
+* when sharing a message from and to Conversations insert it as quote
+
+### Version 2.5.6
+* fixes for Jingle file transfer
+* fixed some rare crashes
+
+### Version 2.5.5
+* allow backups to be restored from anywhere
+* bug fixes
+
+### Version 2.5.4
+* stability improvements for group chats and channels
+
+### Version 2.5.3
+* bug fixes for peer to peer file transfer (Jingle)
+* fixed server info for unlimited/unknown max file size
+
+### Version 2.5.2
+* bug fixes
+
+### Version 2.5.1
+* minor bug fixes
+* Set own OMEMO devices to inactive after not seeing them for 14 days. (was 7 days)
+
+### Version 2.5.0
+* Added channel search via search.jabbercat.org
+* Reworked onboarding screens
+* Warn when trying to enter domain address or channel address in Add Contact dialog
+
+### Version 2.4.3
+* Fixed display of private messages sent from another client
+* Fixed backup creation on long time installations
+
+### Version 2.4.2
+* Fix image preview on older Android version
+
+### Version 2.4.1
+* Fixed crash in message view
+
+### Version 2.4.0
+* New Backup / Restore feature
+* Clearly distinguish between (private) group chats and (public) channels
+* Redesigned participants view for group chats and channels
+* Redesigned create new contact/group chat/channel flow in Start Conversation screen
+
+
+### Version 2.3.12
+* Fixed rare crash on start up
+* Fixed avatar not being refreshed in group chats
+
+### Version 2.3.11
+* Support for Android 9 'message style' notifications
+* OMEMO stability improvements
+* Added ability to destroy group chats
+* Do not show deleted files in media browser
+* Added 'Keep Original' as video quality choice
+
 ### Version 2.3.10
 * lower minimum required Android version to 4.1
 * Synchronize group chat join/leaves across multiple clients
@@ -490,7 +579,7 @@
 ### Version 1.7.2
 * decode PGP messages in background
 
-####Versrion 1.7.1
+### Version 1.7.1
 * performance improvements when opening a conversation
 
 ### Version 1.7.0

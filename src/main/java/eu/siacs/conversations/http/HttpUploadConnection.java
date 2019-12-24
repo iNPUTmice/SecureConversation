@@ -43,14 +43,15 @@ public class HttpUploadConnection implements Transferable {
 	private boolean cancelled = false;
 	private boolean delayed = false;
 	private DownloadableFile file;
-	private Message message;
+	private final Message message;
 	private String mime;
 	private SlotRequester.Slot slot;
 	private byte[] key = null;
 
 	private long transmitted = 0;
 
-	public HttpUploadConnection(Method method, HttpConnectionManager httpConnectionManager) {
+	public HttpUploadConnection(Message message, Method method, HttpConnectionManager httpConnectionManager) {
+		this.message = message;
 		this.method = method;
 		this.mHttpConnectionManager = httpConnectionManager;
 		this.mXmppConnectionService = httpConnectionManager.getXmppConnectionService();
@@ -87,13 +88,16 @@ public class HttpUploadConnection implements Transferable {
 	}
 
 	private void fail(String errorMessage) {
-		mHttpConnectionManager.finishUploadConnection(this);
-		message.setTransferable(null);
+		finish();
 		mXmppConnectionService.markMessage(message, Message.STATUS_SEND_FAILED, cancelled ? Message.ERROR_MESSAGE_CANCELLED : errorMessage);
 	}
 
-	public void init(Message message, boolean delay) {
-		this.message = message;
+	private void finish() {
+		mHttpConnectionManager.finishUploadConnection(this);
+		message.setTransferable(null);
+	}
+
+	public void init(boolean delay) {
 		final Account account = message.getConversation().getAccount();
 		this.file = mXmppConnectionService.getFileBackend().getFile(message, false);
 		if (message.getEncryption() == Message.ENCRYPTION_PGP || message.getEncryption() == Message.ENCRYPTION_DECRYPTED) {
@@ -151,11 +155,14 @@ public class HttpUploadConnection implements Transferable {
 		PowerManager.WakeLock wakeLock = mHttpConnectionManager.createWakeLock("http_upload_"+message.getUuid());
 		try {
 			fileInputStream = new FileInputStream(file);
+			final String slotHostname = slot.getPutUrl().getHost();
+			final boolean onionSlot = slotHostname != null && slotHostname.endsWith(".onion");
 			final int expectedFileSize = (int) file.getExpectedSize();
 			final int readTimeout = (expectedFileSize / 2048) + Config.SOCKET_TIMEOUT; //assuming a minimum transfer speed of 16kbit/s
 			wakeLock.acquire(readTimeout);
 			Log.d(Config.LOGTAG, "uploading to " + slot.getPutUrl().toString()+ " w/ read timeout of "+readTimeout+"s");
-			if (mUseTor || message.getConversation().getAccount().isOnion()) {
+
+			if (mUseTor || message.getConversation().getAccount().isOnion() || onionSlot) {
 				connection = (HttpURLConnection) slot.getPutUrl().openConnection(HttpConnectionManager.getProxy());
 			} else {
 				connection = (HttpURLConnection) slot.getPutUrl().openConnection();
@@ -211,8 +218,10 @@ public class HttpUploadConnection implements Transferable {
 				}
 				mXmppConnectionService.getFileBackend().updateFileParams(message, get);
 				mXmppConnectionService.getFileBackend().updateMediaScanner(file);
-				message.setTransferable(null);
-				message.setCounterpart(message.getConversation().getJid().asBareJid());
+				finish();
+				if (!message.isPrivateMessage()) {
+					message.setCounterpart(message.getConversation().getJid().asBareJid());
+				}
 				mXmppConnectionService.resendMessage(message, delayed);
 			} else {
 				Log.d(Config.LOGTAG,"http upload failed because response code was "+code);
@@ -230,5 +239,9 @@ public class HttpUploadConnection implements Transferable {
 			}
 			WakeLockHelper.release(wakeLock);
 		}
+	}
+
+	public Message getMessage() {
+		return message;
 	}
 }
