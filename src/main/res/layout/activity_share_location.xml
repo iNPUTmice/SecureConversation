@@ -33,7 +33,9 @@
                 android:layout_gravity="bottom|start"
                 android:layout_margin="4dp"
                 android:text="@string/openstreetmap_credit"
-                android:background="#80FFFFFF"
+                android:background="@color/white50"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
                 app:elevation="4dp" />
 
             <android.support.design.widget.FloatingActionButton
