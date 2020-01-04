@@ -34,6 +34,21 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="@string/attach"/>
+            <View
+                android:id="@+id/pause_div"
+                android:layout_width="1dp"
+                android:layout_height="fill_parent"
+                android:layout_marginBottom="7dp"
+                android:layout_marginTop="7dp"
+                android:background="?attr/divider"/>
+
+            <Button
+                android:id="@+id/pause_button"
+                style="@style/Widget.Conversations.Button.Borderless"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/pause"/>
         </LinearLayout>
 
         <TextView

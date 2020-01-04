@@ -7,10 +7,12 @@ import android.content.Intent;
 import android.databinding.DataBindingUtil;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.FileObserver;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -38,6 +40,7 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
 
     private MediaRecorder mRecorder;
     private long mStartTime = 0;
+    private long totalElapsed = 0;
 
     private CountDownLatch outputFileWrittenLatch = new CountDownLatch(1);
 
@@ -45,7 +48,9 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
     private Runnable mTickExecutor = new Runnable() {
         @Override
         public void run() {
-            tick();
+            if (recording) {
+                tick();
+            }
             mHandler.postDelayed(mTickExecutor, 100);
         }
     };
@@ -54,6 +59,8 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
 
     private FileObserver mFileObserver;
 
+    private boolean recording;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(ThemeHelper.findDialog(this));
@@ -61,8 +68,18 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
         this.binding = DataBindingUtil.setContentView(this, R.layout.activity_recording);
         this.binding.cancelButton.setOnClickListener(this);
         this.binding.shareButton.setOnClickListener(this);
+
+        // Pausing mRecorder is not supported on android sdk < 16
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.JELLY_BEAN) {
+            this.binding.pauseButton.setVisibility(View.GONE);
+            this.binding.pauseDiv.setVisibility(View.GONE);
+        }
+
+        this.binding.pauseButton.setOnClickListener(this);
         this.setFinishOnTouchOutside(false);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
+        recording = true;
     }
 
     @Override
@@ -184,7 +201,7 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
 
     @SuppressLint("SetTextI18n")
     private void tick() {
-        long time = (mStartTime < 0) ? 0 : (SystemClock.elapsedRealtime() - mStartTime);
+        long time = (mStartTime < 0) ? 0 : totalElapsed + SystemClock.elapsedRealtime() - mStartTime;
         int minutes = (int) (time / 60000);
         int seconds = (int) (time / 1000) % 60;
         int milliseconds = (int) (time / 100) % 10;
@@ -206,6 +223,20 @@ public class RecordingActivity extends Activity implements View.OnClickListener 
                 mHandler.removeCallbacks(mTickExecutor);
                 mHandler.postDelayed(() -> stopRecording(true), 500);
                 break;
+            case R.id.pause_button:
+                mHandler.removeCallbacks(mTickExecutor);
+                if (recording){
+                    this.binding.pauseButton.setText(R.string.resume);
+                    mHandler.post(mTickExecutor);
+                    totalElapsed += SystemClock.elapsedRealtime() - mStartTime;
+                    mRecorder.pause();
+                } else {
+                    this.binding.pauseButton.setText(R.string.pause);
+                    mHandler.post(mTickExecutor);
+                    mStartTime = SystemClock.elapsedRealtime();
+                    mRecorder.resume();
+                }
+                recording = !recording;
         }
     }
 }
