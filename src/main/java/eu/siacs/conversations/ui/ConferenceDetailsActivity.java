@@ -555,7 +555,10 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
         if (users.size() == 0) {
             this.binding.noUsersHints.setText(mucOptions.isPrivateAndNonAnonymous() ? R.string.no_users_hint_group_chat : R.string.no_users_hint_channel);
             this.binding.noUsersHints.setVisibility(View.VISIBLE);
+            this.binding.participantsHints.setVisibility(View.GONE);
         } else {
+            this.binding.participantsHints.setText(getString(R.string.participants, users.size()));
+            this.binding.participantsHints.setVisibility(View.VISIBLE);
             this.binding.noUsersHints.setVisibility(View.GONE);
         }
 

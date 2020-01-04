@@ -241,6 +241,17 @@
                             android:text="@string/no_users_hint_channel"
                             android:textAppearance="@style/TextAppearance.Conversations.Body2"/>
 
+                        <TextView
+                            android:id="@+id/participants_hints"
+                            android:paddingTop="@dimen/card_padding_regular"
+                            android:paddingEnd="@dimen/card_padding_regular"
+                            android:paddingStart="@dimen/card_padding_regular"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/participants"
+                            android:textAppearance="@style/TextAppearance.Conversations.Body2" />
+
+
                         <android.support.v7.widget.RecyclerView
                             android:id="@+id/users"
                             android:layout_width="match_parent"
