@@ -557,7 +557,7 @@ public class ConferenceDetailsActivity extends XmppActivity implements OnConvers
             this.binding.noUsersHints.setVisibility(View.VISIBLE);
             this.binding.participantsHints.setVisibility(View.GONE);
         } else {
-            this.binding.participantsHints.setText(getString(R.string.participants, users.size()));
+            this.binding.participantsHints.setText(getResources().getQuantityString(R.plurals.participants, users.size(), users.size()));
             this.binding.participantsHints.setVisibility(View.VISIBLE);
             this.binding.noUsersHints.setVisibility(View.GONE);
         }

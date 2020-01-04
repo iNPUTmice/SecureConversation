@@ -248,7 +248,7 @@
                             android:paddingStart="@dimen/card_padding_regular"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/participants"
+                            android:text="@string/participant"
                             android:textAppearance="@style/TextAppearance.Conversations.Body2" />
 
 
