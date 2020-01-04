@@ -108,8 +108,7 @@ public class ShareLocationActivity extends LocationActivity implements LocationL
 			toggleFixedLocation();
 		});
 
-		TextView openStreetMap_copyright = findViewById(R.id.openstreetmap_credit);
-		openStreetMap_copyright.setMovementMethod(LinkMovementMethod.getInstance());
+		binding.openstreetmapCredit.setMovementMethod(LinkMovementMethod.getInstance());
 	}
 
 	@Override
