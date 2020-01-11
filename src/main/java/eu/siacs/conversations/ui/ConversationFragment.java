@@ -219,6 +219,54 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
             });
         }
     };
+
+    private void moveToMsg(int oldPosition) {
+        int childPos = findFirstNonStatus(oldPosition);
+
+        Message message = messageList.get(oldPosition + childPos);
+
+        final String uuid = message != null ? message.getUuid() : null;
+
+        View v = binding.messagesView.getChildAt(childPos);
+        final int pxOffset = (v == null) ? 0 : v.getTop();
+        ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
+        try {
+            updateStatusMessages();
+        } catch (IllegalStateException e) {
+            Log.d(Config.LOGTAG, "caught illegal state exception while updating status messages");
+        }
+        messageListAdapter.notifyDataSetChanged();
+        int pos = Math.max(getIndexOf(uuid, messageList), 0);
+        binding.messagesView.smoothScrollToPositionFromTop(pos, pxOffset);
+        if (messageLoaderToast != null) {
+            messageLoaderToast.cancel();
+        }
+
+    }
+
+    private int findFirstNonStatus(int numToGoUpFrom) {
+        Message message;
+
+        int childPos;
+        for (childPos = 0; childPos + numToGoUpFrom < messageList.size(); ++childPos) {
+
+            message = messageList.get(numToGoUpFrom + childPos);
+            if (message.getType() != Message.TYPE_STATUS) {
+                break;
+            }
+        }
+        return childPos;
+    }
+
+    private long getOldestTimestamp() {
+        if (messageList.get(0).getType() == Message.TYPE_STATUS && messageList.size() >= 2) {
+            return messageList.get(1).getTimeSent();
+        }
+
+        return messageList.get(0).getTimeSent();
+
+    }
+
     private OnScrollListener mOnScrollListener = new OnScrollListener() {
 
         @Override
@@ -233,13 +281,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
             toggleScrollDownButton(view);
             synchronized (ConversationFragment.this.messageList) {
                 if (firstVisibleItem < 5 && conversation != null && conversation.messagesLoaded.compareAndSet(true, false) && messageList.size() > 0) {
-                    long timestamp;
-                    if (messageList.get(0).getType() == Message.TYPE_STATUS && messageList.size() >= 2) {
-                        timestamp = messageList.get(1).getTimeSent();
-                    } else {
-                        timestamp = messageList.get(0).getTimeSent();
-                    }
-                    activity.xmppConnectionService.loadMoreMessages(conversation, timestamp, new XmppConnectionService.OnMoreMessagesLoaded() {
+
+                    activity.xmppConnectionService.loadMoreMessages(conversation, getOldestTimestamp(), new XmppConnectionService.OnMoreMessagesLoaded() {
                         @Override
                         public void onMoreMessagesLoaded(final int c, final Conversation conversation) {
                             if (ConversationFragment.this.conversation != conversation) {
@@ -248,30 +291,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                             }
                             runOnUiThread(() -> {
                                 synchronized (messageList) {
-                                    final int oldPosition = binding.messagesView.getFirstVisiblePosition();
-                                    Message message = null;
-                                    int childPos;
-                                    for (childPos = 0; childPos + oldPosition < messageList.size(); ++childPos) {
-                                        message = messageList.get(oldPosition + childPos);
-                                        if (message.getType() != Message.TYPE_STATUS) {
-                                            break;
-                                        }
-                                    }
-                                    final String uuid = message != null ? message.getUuid() : null;
-                                    View v = binding.messagesView.getChildAt(childPos);
-                                    final int pxOffset = (v == null) ? 0 : v.getTop();
-                                    ConversationFragment.this.conversation.populateWithMessages(ConversationFragment.this.messageList);
-                                    try {
-                                        updateStatusMessages();
-                                    } catch (IllegalStateException e) {
-                                        Log.d(Config.LOGTAG, "caught illegal state exception while updating status messages");
-                                    }
-                                    messageListAdapter.notifyDataSetChanged();
-                                    int pos = Math.max(getIndexOf(uuid, messageList), 0);
-                                    binding.messagesView.setSelectionFromTop(pos, pxOffset);
-                                    if (messageLoaderToast != null) {
-                                        messageLoaderToast.cancel();
-                                    }
+
+                                    moveToMsg(binding.messagesView.getFirstVisiblePosition());
                                     conversation.messagesLoaded.set(true);
                                 }
                             });
@@ -575,11 +596,19 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                 return i;
             } else {
                 Message next = messages.get(i);
-                while (next != null && next.wasMergedIntoPrevious()) {
-                    if (uuid.equals(next.getUuid())) {
-                        return i;
+                // found a bug here with merged messages
+                next = next.next();
+                if (next != null) {
+                    while (next.wasMergedIntoPrevious()) {
+                        if (uuid.equals(next.getUuid())) {
+                            return i;
+                        }
+                        next = next.next();
+
+                        if (next == null) {
+                            break;
+                        }
                     }
-                    next = next.next();
                 }
 
             }
@@ -2040,6 +2069,15 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         if (message != null) {
             startDownloadable(message);
         }
+
+        final String uuid = extras.getString(ConversationsActivity.EXTRA_UUID);
+        if (uuid != null) {
+            // I need to write code here to load older messages if getIndexOf(uuid, this.messageList) > 0
+
+            moveToMsg(getIndexOf(uuid, this.messageList));
+            extras.putString(ConversationsActivity.EXTRA_UUID, null);
+        }
+
     }
 
     private List<Uri> extractUris(Bundle extras) {

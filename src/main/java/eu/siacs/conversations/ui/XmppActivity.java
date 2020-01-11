@@ -457,26 +457,31 @@ public abstract class XmppActivity extends ActionBarActivity {
 	}
 
 	public void switchToConversationAndQuote(Conversation conversation, String text) {
-		switchToConversation(conversation, text, true, null, false, false);
+		switchToConversation(conversation, text, true, null, false, false, null);
 	}
 
 	public void switchToConversation(Conversation conversation, String text) {
-		switchToConversation(conversation, text, false, null, false, false);
+		switchToConversation(conversation, text, false, null, false, false, null);
 	}
 
 	public void switchToConversationDoNotAppend(Conversation conversation, String text) {
-		switchToConversation(conversation, text, false, null, false, true);
+		switchToConversation(conversation, text, false, null, false, true, null);
 	}
 
 	public void highlightInMuc(Conversation conversation, String nick) {
-		switchToConversation(conversation, null, false, nick, false, false);
+		switchToConversation(conversation, null, false, nick, false, false, null);
 	}
 
 	public void privateMsgInMuc(Conversation conversation, String nick) {
-		switchToConversation(conversation, null, false, nick, true, false);
+		switchToConversation(conversation, null, false, nick, true, false, null);
 	}
 
-	private void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend) {
+	public void switchToConversationAndGo(Conversation conversation, String uuid) {
+		switchToConversation(conversation, null, false, null, false, true, uuid);
+	}
+
+
+	private void switchToConversation(Conversation conversation, String text, boolean asQuote, String nick, boolean pm, boolean doNotAppend, String uuid) {
 		Intent intent = new Intent(this, ConversationsActivity.class);
 		intent.setAction(ConversationsActivity.ACTION_VIEW_CONVERSATION);
 		intent.putExtra(ConversationsActivity.EXTRA_CONVERSATION, conversation.getUuid());
@@ -492,6 +497,9 @@ public abstract class XmppActivity extends ActionBarActivity {
 		}
 		if (doNotAppend) {
 			intent.putExtra(ConversationsActivity.EXTRA_DO_NOT_APPEND, true);
+		}
+		if (uuid != null) {
+			intent.putExtra(ConversationsActivity.EXTRA_UUID, uuid);
 		}
 		intent.setFlags(intent.getFlags() | Intent.FLAG_ACTIVITY_CLEAR_TOP);
 		startActivity(intent);

@@ -153,7 +153,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
 		if (message != null) {
 			switch (item.getItemId()) {
 				case R.id.open_conversation:
-					switchToConversation(wrap(message.getConversation()));
+					switchToConversationAndGo(wrap(message.getConversation()), message.getUuid());
 					break;
 				case R.id.share_with:
 					ShareUtil.share(this, message);
