@@ -206,9 +206,13 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 			case Message.STATUS_OFFERED:
 				info = getContext().getString(R.string.offering);
 				break;
-			case Message.STATUS_SEND_RECEIVED:
 			case Message.STATUS_SEND_DISPLAYED:
-				viewHolder.indicatorReceived.setImageResource(darkBackground ? R.drawable.ic_done_white_18dp : R.drawable.ic_done_black_18dp);
+			case Message.STATUS_SEND_RECEIVED:
+				viewHolder.indicatorReceived.setImageResource(
+						(message.getMergedStatus() == Message.STATUS_SEND_RECEIVED) ?
+							(darkBackground ? R.drawable.ic_done_white_18dp : R.drawable.ic_done_black_18dp) :
+							(darkBackground ? R.drawable.ic_done_read_white : R.drawable.ic_done_read_black));
+
 				viewHolder.indicatorReceived.setAlpha(darkBackground ? 0.7f : 0.57f);
 				viewHolder.indicatorReceived.setVisibility(View.VISIBLE);
 				break;
