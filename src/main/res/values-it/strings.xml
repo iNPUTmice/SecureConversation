@@ -90,7 +90,7 @@
   <string name="send_unencrypted_message">Invia messaggio non cifrato</string>
   <string name="send_message">Invia messaggio</string>
   <string name="send_message_to_x">Invia messaggio a %s</string>
-  <string name="send_omemo_message">Invia messaggio cifrato OMEMO</string>
+  <string name="send_omemo_message">Invia messaggio cifrato</string>
   <string name="send_omemo_x509_message">Invia messaggio cifrato v\\OMEMO</string>
   <string name="send_pgp_message">Messaggio OpenPGP</string>
   <string name="your_nick_has_been_changed">Il tuo nome utente è stato cambiato</string>
