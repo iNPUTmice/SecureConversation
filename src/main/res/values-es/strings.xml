@@ -28,8 +28,8 @@
   <string name="title_activity_share_via_account">Compartir via cuenta</string>
   <string name="title_activity_block_list">Lista contactos bloqueados</string>
   <string name="just_now">ahora</string>
-  <string name="minute_ago">hace 1 min</string>
-  <string name="minutes_ago">hace %d min</string>
+  <string name="minute_ago">1 m</string>
+  <string name="minutes_ago">%d m</string>
   <string name="x_unread_conversations">%dconversaciones sin leer</string>
   <string name="sending">enviando…</string>
   <string name="message_decrypting">Descifrando mensaje. Por favor, espera...</string>
