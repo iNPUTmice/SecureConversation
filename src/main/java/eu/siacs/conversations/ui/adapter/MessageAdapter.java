@@ -66,6 +66,7 @@ import eu.siacs.conversations.ui.util.ViewUtil;
 import eu.siacs.conversations.ui.widget.ClickableMovementMethod;
 import eu.siacs.conversations.ui.widget.CopyTextView;
 import eu.siacs.conversations.ui.widget.ListSelectionManager;
+import static eu.siacs.conversations.utils.Compatibility.runsTwentyOne;
 import eu.siacs.conversations.utils.CryptoHelper;
 import eu.siacs.conversations.utils.EmojiWrapper;
 import eu.siacs.conversations.utils.Emoticons;
@@ -514,11 +515,15 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 
 	private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
 		toggleWhisperInfo(viewHolder, message, darkBackground);
-		viewHolder.image.setVisibility(View.GONE);
-		viewHolder.audioPlayer.setVisibility(View.GONE);
-		viewHolder.download_button.setVisibility(View.VISIBLE);
-		viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
-		viewHolder.download_button.setOnClickListener(v -> openDownloadable(message));
+		final String mimeType = message.getMimeType();
+		if (mimeType != null && message.getMimeType().contains("pdf")) {
+			try {
+				showPDF(message, viewHolder, false);
+			} catch (Exception e) {
+			    e.printStackTrace();
+			    showPDF(message, viewHolder, true);
+			}
+		}
 	}
 
 	private void displayLocationMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
@@ -568,6 +573,22 @@ public class MessageAdapter extends ArrayAdapter<Message> implements CopyTextVie
 		activity.loadBitmap(message, viewHolder.image);
 		viewHolder.image.setOnClickListener(v -> openDownloadable(message));
 	}
+
+    private void showPDF(final Message message, final ViewHolder viewHolder, boolean compat) {
+    if (runsTwentyOne() && !compat) {
+            viewHolder.audioPlayer.setVisibility(View.GONE);
+            viewHolder.image.setVisibility(View.VISIBLE);
+            viewHolder.download_button.setVisibility(View.GONE);
+            activity.loadBitmap(message, viewHolder.image);
+            viewHolder.image.setOnClickListener(v -> openDownloadable(message));
+        } else {
+            viewHolder.audioPlayer.setVisibility(View.GONE);
+            viewHolder.image.setVisibility(View.GONE);
+            viewHolder.download_button.setVisibility(View.VISIBLE);
+            viewHolder.download_button.setText(activity.getString(R.string.open_x_file, UIHelper.getFileDescriptionString(activity, message)));
+            viewHolder.download_button.setOnClickListener(v -> openDownloadable(message));
+        }
+    }
 
 	private void toggleWhisperInfo(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
 		if (message.isPrivateMessage()) {

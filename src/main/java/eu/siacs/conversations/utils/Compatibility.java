@@ -78,6 +78,10 @@ public class Compatibility {
         }
     }
 
+    public static boolean runsTwentyOne() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    }
+
     public static boolean runsAndTargetsTwentySix(Context context) {
         return runsTwentySix() && targetsTwentySix(context);
     }
