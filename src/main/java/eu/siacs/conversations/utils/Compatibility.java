@@ -38,6 +38,10 @@ public class Compatibility {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || ContextCompat.checkSelfPermission(context, android.Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED;
     }
 
+    public static boolean runsTwentyOne() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    }
+
     public static boolean runsTwentySix() {
         return Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
     }
@@ -76,10 +80,6 @@ public class Compatibility {
         } catch (PackageManager.NameNotFoundException | RuntimeException e) {
             return true; //when in doubt…
         }
-    }
-
-    public static boolean runsTwentyOne() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
     }
 
     public static boolean runsAndTargetsTwentySix(Context context) {
