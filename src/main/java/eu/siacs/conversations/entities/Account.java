@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import eu.siacs.conversations.Config;
@@ -324,6 +323,20 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public Jid getJid() {
         return jid;
+    }
+
+    public String getLogJid() {
+        StringBuilder logJidBuilder = new StringBuilder();
+        logJidBuilder.append(jid.getLocal().charAt(0));
+        for (int i = 1; i < jid.getLocal().length(); i++) {
+            logJidBuilder.append("*");
+        }
+        logJidBuilder.append("@");
+        logJidBuilder.append(jid.getDomain().charAt(0));
+        for (int i = 1; i < jid.getDomain().length(); i++) {
+            logJidBuilder.append("*");
+        }
+        return logJidBuilder.toString();
     }
 
     public JSONObject getKeys() {

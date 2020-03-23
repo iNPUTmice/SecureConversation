@@ -214,7 +214,7 @@ public class JingleSocks5Transport extends JingleTransport {
                 }
             } catch (Exception e) {
                 final Account account = connection.getAccount();
-                Log.d(Config.LOGTAG, account.getJid().asBareJid()+": failed sending file after "+transmitted+"/"+file.getExpectedSize()+" ("+ socket.getInetAddress()+":"+socket.getPort()+")", e);
+                Log.d(Config.LOGTAG, account.getLogJid()+": failed sending file after "+transmitted+"/"+file.getExpectedSize()+" ("+ socket.getInetAddress()+":"+socket.getPort()+")", e);
                 callback.onFileTransferAborted();
             } finally {
                 FileBackend.close(fileInputStream);

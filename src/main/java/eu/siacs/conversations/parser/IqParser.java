@@ -76,7 +76,7 @@ public class IqParser extends AbstractParser implements OnIqPacketReceived {
                 }
                 boolean both = contact.getOption(Contact.Options.TO) && contact.getOption(Contact.Options.FROM);
                 if ((both != bothPre) && both) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": gained mutual presence subscription with " + contact.getJid());
+                    Log.d(Config.LOGTAG, account.getLogJid() + ": gained mutual presence subscription with " + contact.getJid());
                     AxolotlService axolotlService = account.getAxolotlService();
                     if (axolotlService != null) {
                         axolotlService.clearErrorsInFetchStatusMap(contact.getJid());

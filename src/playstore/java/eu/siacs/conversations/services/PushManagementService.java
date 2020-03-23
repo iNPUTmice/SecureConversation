@@ -39,7 +39,7 @@ public class PushManagementService {
     }
 
     void registerPushTokenOnServer(final Account account) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": has push support");
+        Log.d(Config.LOGTAG, account.getLogJid() + ": has push support");
         retrieveFcmInstanceToken(token -> {
             final String androidId = PhoneHelper.getAndroidId(mXmppConnectionService);
             final IqPacket packet = mXmppConnectionService.getIqGenerator().pushTokenToAppServer(getAppServer(), token, androidId);

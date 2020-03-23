@@ -269,7 +269,7 @@ public class NotificationService {
                 it.remove();
             }
         }
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": backlog message count=" + count);
+        Log.d(Config.LOGTAG, account.getLogJid() + ": backlog message count=" + count);
         return count;
     }
 

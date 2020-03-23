@@ -88,7 +88,7 @@ public class SlotRequester {
 					}
 				}
 			}
-			Log.d(Config.LOGTAG, account.getJid().toString() + ": invalid response to slot request " + packet);
+			Log.d(Config.LOGTAG, account.getLogJid() + ": invalid response to slot request " + packet);
 			callback.failure(IqParser.extractErrorMessage(packet));
 		});
 
@@ -127,7 +127,7 @@ public class SlotRequester {
 					}
 				}
 			}
-			Log.d(Config.LOGTAG, account.getJid().toString() + ": invalid response to slot request " + packet);
+			Log.d(Config.LOGTAG, account.getLogJid() + ": invalid response to slot request " + packet);
 			callback.failure(IqParser.extractErrorMessage(packet));
 		});
 
