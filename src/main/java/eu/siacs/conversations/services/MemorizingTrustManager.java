@@ -44,6 +44,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -74,6 +75,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509TrustManager;
 
+import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.crypto.DomainHostnameVerifier;
 import eu.siacs.conversations.entities.MTMDecision;
@@ -303,6 +305,16 @@ public class MemorizingTrustManager {
 		
 		return new MemorizingHostnameVerifier(defaultVerifier, interactive);
 	}
+
+	public static void close(final Closeable stream) {
+		if (stream != null) {
+			try {
+				stream.close();
+			} catch (Exception e) {
+				Log.d(Config.LOGTAG, "unable to close stream", e);
+			}
+		}
+	}
 	
 	X509TrustManager getTrustManager(KeyStore ks) {
 		try {
@@ -330,13 +342,17 @@ public class MemorizingTrustManager {
 			LOGGER.log(Level.SEVERE, "getAppKeyStore()", e);
 			return null;
 		}
+		FileInputStream is = null;
 		try {
 			ks.load(null, null);
-			ks.load(new java.io.FileInputStream(keyStoreFile), "MTM".toCharArray());
-		} catch (java.io.FileNotFoundException e) {
+			is = new FileInputStream(keyStoreFile);
+			ks.load(is, "MTM".toCharArray());
+		} catch (FileNotFoundException e) {
 			LOGGER.log(Level.INFO, "getAppKeyStore(" + keyStoreFile + ") - file does not exist");
 		} catch (Exception e) {
 			LOGGER.log(Level.SEVERE, "getAppKeyStore(" + keyStoreFile + ")", e);
+		} finally {
+			close(is);
 		}
 		return ks;
 	}
