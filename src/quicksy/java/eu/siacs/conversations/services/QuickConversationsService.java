@@ -217,7 +217,7 @@ public class QuickConversationsService extends AbstractQuickConversationsService
                         try {
                             awaitingAccountStateChange.await(5, TimeUnit.SECONDS);
                         } catch (InterruptedException e) {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": timer expired while waiting for account to connect");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": timer expired while waiting for account to connect");
                         }
                         synchronized (mOnVerification) {
                             for (OnVerification onVerification : mOnVerification) {
@@ -355,14 +355,14 @@ public class QuickConversationsService extends AbstractQuickConversationsService
 
     private boolean considerSync(Account account, final Map<String, PhoneNumberContact> contacts, final boolean forced) {
         final int hash = contacts.keySet().hashCode();
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": consider sync of " + hash);
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": consider sync of " + hash);
         if (!mLastSyncAttempt.retry(hash) && !forced) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": do not attempt sync");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": do not attempt sync");
             return false;
         }
         mRunningSyncJobs.incrementAndGet();
         final Jid syncServer = Jid.of(API_DOMAIN);
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending phone list to " + syncServer);
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": sending phone list to " + syncServer);
         List<Element> entries = new ArrayList<>();
         for (PhoneNumberContact c : contacts.values()) {
             entries.add(new Element("entry").setAttribute("number", c.getPhoneNumber()));
@@ -400,12 +400,12 @@ public class QuickConversationsService extends AbstractQuickConversationsService
                         }
                     }
                 } else {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": phone number contact list remains unchanged");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": phone number contact list remains unchanged");
                 }
             } else if (response.getType() == IqPacket.TYPE.TIMEOUT) {
                 mLastSyncAttempt = Attempt.NULL;
             } else {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": failed to sync contact list with api server");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": failed to sync contact list with api server");
             }
             mRunningSyncJobs.decrementAndGet();
             service.syncRoster(account);

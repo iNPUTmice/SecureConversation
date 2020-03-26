@@ -230,9 +230,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 final Element storage = i == null ? null : i.findChild("storage", Namespace.BOOKMARKS);
                 Map<Jid, Bookmark> bookmarks = Bookmark.parseFromStorage(storage, account);
                 mXmppConnectionService.processBookmarksInitial(account, bookmarks, true);
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": processing bookmark PEP event");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": processing bookmark PEP event");
             } else {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": ignoring bookmark PEP event because bookmark conversion was not detected");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": ignoring bookmark PEP event because bookmark conversion was not detected");
             }
         } else if (Namespace.BOOKMARKS2.equals(node) && account.getJid().asBareJid().equals(from)) {
             final Element item = items.findChild("item");
@@ -348,7 +348,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             serverMsgId = result.getAttribute("id");
             query.incrementMessageCount();
         } else if (query != null) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received mam result from invalid sender");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": received mam result from invalid sender");
             return;
         } else if (original.fromServer(account)) {
             Pair<MessagePacket, Long> f;
@@ -421,7 +421,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
             if (isTypeGroupChat) {
                 Log.d(Config.LOGTAG,account.getJid().asBareJid()+": ignoring invite to "+invite.jid+" because type=groupchat");
             } else if (invite.direct && (mucUserElement != null || invite.inviter == null || mXmppConnectionService.isMuc(account, invite.inviter))) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid()+": ignoring direct invite to "+invite.jid+" because it was received in MUC");
+                Log.d(Config.LOGTAG, account.getScrambledJid()+": ignoring direct invite to "+invite.jid+" because it was received in MUC");
             } else {
                 invite.execute(account);
                 return;
@@ -510,7 +510,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                     for (Jid fallback : fallbacksBySourceId) {
                         trial = parseAxolotlChat(axolotlEncrypted, fallback, conversation, status, checkedForDuplicates && fallbacksBySourceId.size() == 1, query != null);
                         if (trial != null) {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": decoded muc message using fallback");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": decoded muc message using fallback");
                             origin = fallback;
                             break;
                         }
@@ -526,7 +526,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         if (previouslySent != null && previouslySent.getServerMsgId() == null && serverMsgId != null) {
                             previouslySent.setServerMsgId(serverMsgId);
                             mXmppConnectionService.databaseBackend.updateMessage(previouslySent, false);
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": encountered previously sent OMEMO message without serverId. updating...");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": encountered previously sent OMEMO message without serverId. updating...");
                         }
                     }
                     return;
@@ -633,14 +633,14 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         mXmppConnectionService.getNotificationService().updateNotification();
                         return;
                     } else {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received message correction but verification didn't check out");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": received message correction but verification didn't check out");
                     }
                 }
             }
 
             long deletionDate = mXmppConnectionService.getAutomaticMessageDeletionDate();
             if (deletionDate != 0 && message.getTimeSent() < deletionDate) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skipping message from " + message.getCounterpart().toString() + " because it was sent prior to our deletion date");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": skipping message from " + message.getCounterpart().toString() + " because it was sent prior to our deletion date");
                 return;
             }
 
@@ -743,9 +743,9 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                 try {
                     final XmppAxolotlMessage xmppAxolotlMessage = XmppAxolotlMessage.fromElement(axolotlEncrypted, origin.asBareJid());
                     account.getAxolotlService().processReceivingKeyTransportMessage(xmppAxolotlMessage, query != null);
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": omemo key transport message received from " + origin);
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": omemo key transport message received from " + origin);
                 } catch (Exception e) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": invalid omemo key transport message received " + e.getMessage());
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": invalid omemo key transport message received " + e.getMessage());
                     return;
                 }
             }
@@ -781,7 +781,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                         }
                     } else if ("item".equals(child.getName())) {
                         MucOptions.User user = AbstractParser.parseItem(conversation, child);
-                        Log.d(Config.LOGTAG, account.getJid() + ": changing affiliation for "
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": changing affiliation for "
                                 + user.getRealJid() + " to " + user.getAffiliation() + " in "
                                 + conversation.getJid().asBareJid());
                         if (!user.realJidMatchesAccount()) {
@@ -794,7 +794,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
                                 Jid jid = user.getRealJid();
                                 List<Jid> cryptoTargets = conversation.getAcceptedCryptoTargets();
                                 if (cryptoTargets.remove(user.getRealJid())) {
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": removed " + jid + " from crypto targets of " + conversation.getName());
+                                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": removed " + jid + " from crypto targets of " + conversation.getName());
                                     conversation.setAcceptedCryptoTargets(cryptoTargets);
                                     mXmppConnectionService.updateConversation(conversation);
                                 }
@@ -923,7 +923,7 @@ public class MessageParser extends AbstractParser implements OnMessagePacketRece
 
     private void activateGracePeriod(Account account) {
         long duration = mXmppConnectionService.getLongPreference("grace_period_length", R.integer.grace_period) * 1000;
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": activating grace period till " + TIME_FORMAT.format(new Date(System.currentTimeMillis() + duration)));
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": activating grace period till " + TIME_FORMAT.format(new Date(System.currentTimeMillis() + duration)));
         account.activateGracePeriod(duration);
     }
 

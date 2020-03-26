@@ -121,7 +121,7 @@ public class HttpUploadConnection implements Transferable {
 			try {
 				md5 = Checksum.md5(AbstractConnectionManager.upgrade(file, new FileInputStream(file)));
 			} catch (Exception e) {
-				Log.d(Config.LOGTAG, account.getJid().asBareJid()+": unable to calculate md5()", e);
+				Log.d(Config.LOGTAG, account.getScrambledJid()+": unable to calculate md5()", e);
 				fail(e.getMessage());
 				return;
 			}

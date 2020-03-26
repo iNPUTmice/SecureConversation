@@ -6,6 +6,8 @@ import android.os.SystemClock;
 import android.util.Log;
 import android.util.Pair;
 
+import com.google.common.base.Strings;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -16,7 +18,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import eu.siacs.conversations.Config;
@@ -73,6 +74,7 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
     public final Set<Conversation> inProgressConferenceJoins = new HashSet<>();
     public final Set<Conversation> inProgressConferencePings = new HashSet<>();
     protected Jid jid;
+    protected String scrambledJid;
     protected String password;
     protected int options = 0;
     protected State status = State.OFFLINE;
@@ -103,6 +105,7 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
                     final Presence.Status status, String statusMessage) {
         this.uuid = uuid;
         this.jid = jid;
+        this.scrambledJid = scrambleJid(jid);
         this.password = password;
         this.options = options;
         this.rosterVersion = rosterVersion;
@@ -229,7 +232,13 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
             }
         }
         this.jid = next;
+        this.scrambledJid = scrambleJid(jid);
         return next != null && !next.equals(previousFull);
+    }
+
+    private String scrambleJid(Jid jid) {
+        if (jid == null) return null;
+        return jid.getLocal().charAt(0) + Strings.repeat("*", jid.getLocal().length() - 1) + "@" + jid.getDomain().charAt(0) + Strings.repeat("*", jid.getDomain().length() - 1);
     }
 
     public String getServer() {
@@ -324,6 +333,10 @@ public class Account extends AbstractEntity implements AvatarService.Avatarable 
 
     public Jid getJid() {
         return jid;
+    }
+
+    public String getScrambledJid() {
+        return scrambledJid;
     }
 
     public JSONObject getKeys() {

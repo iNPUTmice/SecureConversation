@@ -371,7 +371,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
                                     + SQLiteAxolotlStore.FINGERPRINT + " = ? ",
                             selectionArgs);
                 } else {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": could not load own identity key pair");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": could not load own identity key pair");
                 }
             }
         }
@@ -1015,7 +1015,7 @@ public class DatabaseBackend extends SQLiteOpenHelper {
         account.setRosterVersion(roster.getVersion());
         updateAccount(account);
         long duration = SystemClock.elapsedRealtime() - start;
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": persisted roster in " + duration + "ms");
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": persisted roster in " + duration + "ms");
     }
 
     public void deleteMessagesInConversation(Conversation conversation) {

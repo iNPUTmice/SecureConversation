@@ -190,7 +190,7 @@ public class XmppConnectionService extends Service {
             Element error = packet.findChild("error");
             String text = error != null ? error.findChildContent("text") : null;
             if (text != null) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received iq error - " + text);
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": received iq error - " + text);
             }
         }
     };
@@ -302,7 +302,7 @@ public class XmppConnectionService extends Service {
 
             if (loggedInSuccessfully) {
                 if (!TextUtils.isEmpty(account.getDisplayName())) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": display name wasn't empty on first log in. publishing");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": display name wasn't empty on first log in. publishing");
                     publishDisplayName(account);
                 }
             }
@@ -359,7 +359,7 @@ public class XmppConnectionService extends Service {
             if (account.getStatus() == Account.State.ONLINE) {
                 synchronized (mLowPingTimeoutMode) {
                     if (mLowPingTimeoutMode.remove(account.getJid().asBareJid())) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": leaving low ping timeout mode");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": leaving low ping timeout mode");
                     }
                 }
                 if (account.setShowErrorNotification(true)) {
@@ -368,10 +368,10 @@ public class XmppConnectionService extends Service {
                 mMessageArchiveService.executePendingQueries(account);
                 if (connection != null && connection.getFeatures().csi()) {
                     if (checkListeners()) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + " sending csi//inactive");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + " sending csi//inactive");
                         connection.sendInactive();
                     } else {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + " sending csi//active");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + " sending csi//active");
                         connection.sendActive();
                     }
                 }
@@ -412,7 +412,7 @@ public class XmppConnectionService extends Service {
             } else if (account.getStatus() == Account.State.OFFLINE || account.getStatus() == Account.State.DISABLED) {
                 resetSendingToWaiting(account);
                 if (account.isEnabled() && isInLowPingTimeoutMode(account)) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": went into offline state during low ping mode. reconnecting now");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": went into offline state during low ping mode. reconnecting now");
                     reconnectAccount(account, true, false);
                 } else {
                     int timeToReconnect = mRandom.nextInt(10) + 2;
@@ -427,11 +427,11 @@ public class XmppConnectionService extends Service {
                     final int next = connection.getTimeToNextAttempt();
                     final boolean lowPingTimeoutMode = isInLowPingTimeoutMode(account);
                     if (next <= 0) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": error connecting account. reconnecting now. lowPingTimeout=" + lowPingTimeoutMode);
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": error connecting account. reconnecting now. lowPingTimeout=" + lowPingTimeoutMode);
                         reconnectAccount(account, true, false);
                     } else {
                         final int attempt = connection.getAttempt() + 1;
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": error connecting account. try again in " + next + "s for the " + attempt + " time. lowPingTimeout=" + lowPingTimeoutMode);
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": error connecting account. try again in " + next + "s for the " + attempt + " time. lowPingTimeout=" + lowPingTimeoutMode);
                         scheduleWakeUpCall(next, account.getUuid().hashCode());
                     }
                 }
@@ -754,7 +754,7 @@ public class XmppConnectionService extends Service {
                 for (Account account : pingCandidates) {
                     final boolean lowTimeout = isInLowPingTimeoutMode(account);
                     account.getXmppConnection().sendPing();
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + " send ping (action=" + action + ",lowTimeout=" + Boolean.toString(lowTimeout) + ")");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + " send ping (action=" + action + ",lowTimeout=" + Boolean.toString(lowTimeout) + ")");
                     scheduleWakeUpCall(lowTimeout ? Config.LOW_PING_TIMEOUT : Config.PING_TIMEOUT, account.getUuid().hashCode());
                 }
             }
@@ -791,7 +791,7 @@ public class XmppConnectionService extends Service {
                         long pingTimeoutIn = (lastSent + pingTimeout) - SystemClock.elapsedRealtime();
                         if (lastSent > lastReceived) {
                             if (pingTimeoutIn < 0) {
-                                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": ping timeout");
+                                Log.d(Config.LOGTAG, account.getScrambledJid() + ": ping timeout");
                                 this.reconnectAccount(account, true, interactive);
                             } else {
                                 int secs = (int) (pingTimeoutIn / 1000);
@@ -802,14 +802,14 @@ public class XmppConnectionService extends Service {
                             if (isAccountPushed) {
                                 pingNow = true;
                                 if (mLowPingTimeoutMode.add(account.getJid().asBareJid())) {
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": entering low ping timeout mode");
+                                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": entering low ping timeout mode");
                                 }
                             } else if (msToNextPing <= 0) {
                                 pingNow = true;
                             } else {
                                 this.scheduleWakeUpCall((int) (msToNextPing / 1000), account.getUuid().hashCode());
                                 if (mLowPingTimeoutMode.remove(account.getJid().asBareJid())) {
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": leaving low ping timeout mode");
+                                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": leaving low ping timeout mode");
                                 }
                             }
                         }
@@ -822,7 +822,7 @@ public class XmppConnectionService extends Service {
                     long discoTimeout = Config.CONNECT_DISCO_TIMEOUT - secondsSinceLastDisco;
                     long timeout = Config.CONNECT_TIMEOUT - secondsSinceLastConnect;
                     if (timeout < 0) {
-                        Log.d(Config.LOGTAG, account.getJid() + ": time out during connect reconnecting (secondsSinceLast=" + secondsSinceLastConnect + ")");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": time out during connect reconnecting (secondsSinceLast=" + secondsSinceLastConnect + ")");
                         account.getXmppConnection().resetAttemptCount(false);
                         reconnectAccount(account, true, interactive);
                     } else if (discoTimeout < 0) {
@@ -847,7 +847,7 @@ public class XmppConnectionService extends Service {
                 Jid jid = conversation.getJid().asBareJid();
                 final String currentHash = CryptoHelper.getFingerprint(jid, androidId);
                 if (currentHash.equals(hash)) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received cloud push notification for MUC " + jid);
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": received cloud push notification for MUC " + jid);
                     return;
                 }
             }
@@ -997,7 +997,7 @@ public class XmppConnectionService extends Service {
     private void dismissErrorNotifications() {
         for (final Account account : this.accounts) {
             if (account.hasErrorStatus()) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": dismissing error notification");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": dismissing error notification");
                 if (account.setShowErrorNotification(false)) {
                     mDatabaseWriterExecutor.execute(() -> databaseBackend.updateAccount(account));
                 }
@@ -1374,7 +1374,7 @@ public class XmppConnectionService extends Service {
         if (QuickConversationsService.isQuicksy() && conversation.getMode() == Conversation.MODE_SINGLE) {
             final Contact contact = conversation.getContact();
             if (!contact.showInRoster() && contact.getOption(Contact.Options.SYNCED_VIA_OTHER)) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": adding " + contact.getJid() + " on sending message");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": adding " + contact.getJid() + " on sending message");
                 createContact(contact, true);
             }
         }
@@ -1531,7 +1531,7 @@ public class XmppConnectionService extends Service {
                 final boolean pending = account.pendingConferenceJoins.contains(conversation);
                 final boolean inProgressJoin = inProgress || pending;
                 if (inProgressJoin) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": holding back message to group. inProgress=" + inProgress + ", pending=" + pending);
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": holding back message to group. inProgress=" + inProgress + ", pending=" + pending);
                 }
                 return inProgressJoin;
             } else {
@@ -1551,10 +1551,10 @@ public class XmppConnectionService extends Service {
     public void fetchRosterFromServer(final Account account) {
         final IqPacket iqPacket = new IqPacket(IqPacket.TYPE.GET);
         if (!"".equals(account.getRosterVersion())) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid()
+            Log.d(Config.LOGTAG, account.getScrambledJid()
                     + ": fetching roster version " + account.getRosterVersion());
         } else {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetching roster");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": fetching roster");
         }
         iqPacket.query(Namespace.ROSTER).setAttribute("ver", account.getRosterVersion());
         sendIqPacket(account, iqPacket, mIqParser);
@@ -1599,7 +1599,7 @@ public class XmppConnectionService extends Service {
             processModifiedBookmark(bookmark, pep, synchronizeWithBookmarks);
         }
         if (pep && synchronizeWithBookmarks) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": " + previousBookmarks.size() + " bookmarks have been removed");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": " + previousBookmarks.size() + " bookmarks have been removed");
             for (Jid jid : previousBookmarks) {
                 processDeletedBookmark(account, jid);
             }
@@ -1610,7 +1610,7 @@ public class XmppConnectionService extends Service {
     public void processDeletedBookmark(Account account, Jid jid) {
         final Conversation conversation = find(account, jid);
         if (conversation != null && conversation.getMucOptions().getError() == MucOptions.Error.DESTROYED) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": archiving destroyed conference (" + conversation.getJid() + ") after receiving pep");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": archiving destroyed conference (" + conversation.getJid() + ") after receiving pep");
             archiveConversation(conversation, false);
         }
     }
@@ -1624,7 +1624,7 @@ public class XmppConnectionService extends Service {
             }
             bookmark.setConversation(conversation);
             if (pep && synchronizeWithBookmarks && !bookmark.autojoin()) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": archiving conference (" + conversation.getJid() + ") after receiving pep");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": archiving conference (" + conversation.getJid() + ") after receiving pep");
                 archiveConversation(conversation, false);
             } else {
                 final MucOptions mucOptions = conversation.getMucOptions();
@@ -1632,7 +1632,7 @@ public class XmppConnectionService extends Service {
                     final String current = mucOptions.getActualNick();
                     final String proposed = mucOptions.getProposedNick();
                     if (current != null && !current.equals(proposed)) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": proposed nick changed after bookmark push " + current + "->" + proposed);
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": proposed nick changed after bookmark push " + current + "->" + proposed);
                         joinMuc(conversation);
                     }
                 }
@@ -1679,7 +1679,7 @@ public class XmppConnectionService extends Service {
     }
 
     private void pushBookmarksPrivateXml(Account account) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": pushing bookmarks via private xml");
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": pushing bookmarks via private xml");
         IqPacket iqPacket = new IqPacket(IqPacket.TYPE.SET);
         Element query = iqPacket.query("jabber:iq:private");
         Element storage = query.addChild("storage", "storage:bookmarks");
@@ -1690,7 +1690,7 @@ public class XmppConnectionService extends Service {
     }
 
     private void pushBookmarksPep(Account account) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": pushing bookmarks via pep");
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": pushing bookmarks via pep");
         Element storage = new Element("storage", "storage:bookmarks");
         for (Bookmark bookmark : account.getBookmarks()) {
             storage.addChild(bookmark);
@@ -1724,11 +1724,11 @@ public class XmppConnectionService extends Service {
 
                     @Override
                     public void onPushFailed() {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to push node configuration (" + node + ")");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": unable to push node configuration (" + node + ")");
                     }
                 });
             } else {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": error publishing bookmarks (retry=" + Boolean.toString(retry) + ") " + response);
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": error publishing bookmarks (retry=" + Boolean.toString(retry) + ") " + response);
             }
         });
     }
@@ -2210,10 +2210,10 @@ public class XmppConnectionService extends Service {
     }
 
     public void updateKeyInAccount(final Account account, final String alias) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": update key in account " + alias);
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": update key in account " + alias);
         try {
             X509Certificate[] chain = KeyChain.getCertificateChain(XmppConnectionService.this, alias);
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + " loaded certificate chain");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + " loaded certificate chain");
             Pair<Jid, String> info = CryptoHelper.extractJidAndName(chain[0]);
             if (info == null) {
                 showErrorToastInUi(R.string.certificate_does_not_contain_jid);
@@ -2292,7 +2292,7 @@ public class XmppConnectionService extends Service {
             }
             final Runnable runnable = () -> {
                 if (!databaseBackend.deleteAccount(account)) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to delete account");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": unable to delete account");
                 }
             };
             mDatabaseWriterExecutor.execute(runnable);
@@ -2574,13 +2574,13 @@ public class XmppConnectionService extends Service {
         final Account account = conversation.getAccount();
         synchronized (account.inProgressConferenceJoins) {
             if (account.inProgressConferenceJoins.contains(conversation)) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": canceling muc self ping because join is already under way");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": canceling muc self ping because join is already under way");
                 return;
             }
         }
         synchronized (account.inProgressConferencePings) {
             if (!account.inProgressConferencePings.add(conversation)) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": canceling muc self ping because ping is already under way");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": canceling muc self ping because ping is already under way");
                 return;
             }
         }
@@ -2657,7 +2657,7 @@ public class XmppConnectionService extends Service {
                     }
 
                     final Jid joinJid = mucOptions.getSelf().getFullJid();
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid().toString() + ": joining conversation " + joinJid.toString());
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": joining conversation " + joinJid.toString());
                     PresencePacket packet = mPresenceGenerator.selfPresence(account, Presence.Status.ONLINE, mucOptions.nonanonymous() || onConferenceJoined != null);
                     packet.setTo(joinJid);
                     Element x = packet.addChild("x", "http://jabber.org/protocol/muc");
@@ -2711,7 +2711,7 @@ public class XmppConnectionService extends Service {
                 @Override
                 public void onConferenceConfigurationFetched(Conversation conversation) {
                     if (conversation.getStatus() == Conversation.STATUS_ARCHIVED) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": conversation (" + conversation.getJid() + ") got archived before IQ result");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": conversation (" + conversation.getJid() + ") got archived before IQ result");
                         return;
                     }
                     join(conversation);
@@ -2720,7 +2720,7 @@ public class XmppConnectionService extends Service {
                 @Override
                 public void onFetchFailed(final Conversation conversation, Element error) {
                     if (conversation.getStatus() == Conversation.STATUS_ARCHIVED) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": conversation (" + conversation.getJid() + ") got archived before IQ result");
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": conversation (" + conversation.getJid() + ") got archived before IQ result");
 
                         return;
                     }
@@ -2812,7 +2812,7 @@ public class XmppConnectionService extends Service {
                     }
                 } else {
                     success = false;
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": could not request affiliation " + affiliations[i] + " in " + conversation.getJid().asBareJid());
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": could not request affiliation " + affiliations[i] + " in " + conversation.getJid().asBareJid());
                 }
                 ++i;
                 if (i >= affiliations.length) {
@@ -2824,7 +2824,7 @@ public class XmppConnectionService extends Service {
                             Jid jid = iterator.next();
                             if (!members.contains(jid) && !members.contains(Jid.ofDomain(jid.getDomain()))) {
                                 iterator.remove();
-                                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": removed " + jid + " from crypto targets of " + conversation.getName());
+                                Log.d(Config.LOGTAG, account.getScrambledJid() + ": removed " + jid + " from crypto targets of " + conversation.getName());
                                 changed = true;
                             }
                         }
@@ -2842,7 +2842,7 @@ public class XmppConnectionService extends Service {
         for (String affiliation : affiliations) {
             sendIqPacket(account, mIqGenerator.queryAffiliation(conversation, affiliation), callback);
         }
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": fetching members for " + conversation.getName());
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": fetching members for " + conversation.getName());
     }
 
     public void providePasswordForMuc(Conversation conversation, String password) {
@@ -2902,10 +2902,10 @@ public class XmppConnectionService extends Service {
             final Account account = conversation.getAccount();
             final String defaultNick = MucOptions.defaultNick(account);
             if (TextUtils.isEmpty(bookmarkedNick) && full.getResource().equals(defaultNick)) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": do not overwrite empty bookmark nick with default nick for " + conversation.getJid().asBareJid());
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": do not overwrite empty bookmark nick with default nick for " + conversation.getJid().asBareJid());
                 return;
             }
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": persist nick '" + full.getResource() + "' into bookmark for " + conversation.getJid().asBareJid());
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": persist nick '" + full.getResource() + "' into bookmark for " + conversation.getJid().asBareJid());
             bookmark.setNick(full.getResource());
             createBookmark(bookmark.getAccount(), bookmark);
         }
@@ -3026,7 +3026,7 @@ public class XmppConnectionService extends Service {
                                          final String name,
                                          final Iterable<Jid> jids,
                                          final UiCallback<Conversation> callback) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid().toString() + ": creating adhoc conference with " + jids.toString());
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": creating adhoc conference with " + jids.toString());
         if (account.getStatus() == Account.State.ONLINE) {
             try {
                 String server = findConferenceServer(account);
@@ -3053,7 +3053,7 @@ public class XmppConnectionService extends Service {
                                 }
                                 for (String resource : account.getSelfContact().getPresences().toResourceArray()) {
                                     Jid other = account.getJid().withResource(resource);
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending direct invite to " + other);
+                                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": sending direct invite to " + other);
                                     directInvite(conversation, other);
                                 }
                                 saveConversationAsBookmark(conversation, name);
@@ -3102,7 +3102,7 @@ public class XmppConnectionService extends Service {
                     final boolean sameBefore = StringUtils.equals(bookmark == null ? null : bookmark.getBookmarkName(), mucOptions.getName());
 
                     if (mucOptions.updateConfiguration(new ServiceDiscoveryResult(packet))) {
-                        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": muc configuration changed for " + conversation.getJid().asBareJid());
+                        Log.d(Config.LOGTAG, account.getScrambledJid() + ": muc configuration changed for " + conversation.getJid().asBareJid());
                         updateConversation(conversation);
                     }
 
@@ -3120,7 +3120,7 @@ public class XmppConnectionService extends Service {
 
                     updateConversationUi();
                 } else if (packet.getType() == IqPacket.TYPE.TIMEOUT) {
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received timeout waiting for conference configuration fetch");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": received timeout waiting for conference configuration fetch");
                 } else {
                     if (callback != null) {
                         callback.onFetchFailed(conversation, packet.getError());
@@ -3150,7 +3150,7 @@ public class XmppConnectionService extends Service {
                             @Override
                             public void onIqPacketReceived(Account account, IqPacket packet) {
                                 if (packet.getType() == IqPacket.TYPE.RESULT && callback != null) {
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": successfully changed node configuration for node " + node);
+                                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": successfully changed node configuration for node " + node);
                                     callback.onPushSucceeded();
                                 } else if (packet.getType() == IqPacket.TYPE.ERROR && callback != null) {
                                     callback.onPushFailed();
@@ -3247,7 +3247,7 @@ public class XmppConnectionService extends Service {
         Log.d(Config.LOGTAG, request.toString());
         sendIqPacket(conference.getAccount(), request, (account, packet) -> {
             if (packet.getType() != IqPacket.TYPE.RESULT) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + " unable to change role of " + nick);
+                Log.d(Config.LOGTAG, account.getScrambledJid() + " unable to change role of " + nick);
             }
         });
     }
@@ -3436,7 +3436,7 @@ public class XmppConnectionService extends Service {
     }
 
     public void publishAvatar(Account account, final Avatar avatar, final Bundle options, final boolean retry, final OnAvatarPublication callback) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": publishing avatar. options=" + options);
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": publishing avatar. options=" + options);
         IqPacket packet = this.mIqGenerator.publishAvatar(avatar, options);
         this.sendIqPacket(account, packet, new OnIqPacketReceived() {
 
@@ -3448,19 +3448,19 @@ public class XmppConnectionService extends Service {
                     pushNodeConfiguration(account, "urn:xmpp:avatar:data", options, new OnConfigurationPushed() {
                         @Override
                         public void onPushSucceeded() {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": changed node configuration for avatar node");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": changed node configuration for avatar node");
                             publishAvatar(account, avatar, options, false, callback);
                         }
 
                         @Override
                         public void onPushFailed() {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to change node configuration for avatar node");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": unable to change node configuration for avatar node");
                             publishAvatar(account, avatar, null, false, callback);
                         }
                     });
                 } else {
                     Element error = result.findChild("error");
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": server rejected avatar " + (avatar.size / 1024) + "KiB " + (error != null ? error.toString() : ""));
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": server rejected avatar " + (avatar.size / 1024) + "KiB " + (error != null ? error.toString() : ""));
                     if (callback != null) {
                         callback.onAvatarPublicationFailed(R.string.error_publish_avatar_server_reject);
                     }
@@ -3480,7 +3480,7 @@ public class XmppConnectionService extends Service {
                         databaseBackend.updateAccount(account);
                         notifyAccountAvatarHasChanged(account);
                     }
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": published avatar " + (avatar.size / 1024) + "KiB");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": published avatar " + (avatar.size / 1024) + "KiB");
                     if (callback != null) {
                         callback.onAvatarPublicationSucceeded();
                     }
@@ -3488,13 +3488,13 @@ public class XmppConnectionService extends Service {
                     pushNodeConfiguration(account, "urn:xmpp:avatar:metadata", options, new OnConfigurationPushed() {
                         @Override
                         public void onPushSucceeded() {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": changed node configuration for avatar meta data node");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": changed node configuration for avatar meta data node");
                             publishAvatarMetadata(account, avatar, options, false, callback);
                         }
 
                         @Override
                         public void onPushFailed() {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": unable to change node configuration for avatar meta data node");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": unable to change node configuration for avatar meta data node");
                             publishAvatarMetadata(account, avatar, null, false, callback);
                         }
                     });
@@ -3509,7 +3509,7 @@ public class XmppConnectionService extends Service {
 
     public void republishAvatarIfNeeded(Account account) {
         if (account.getAxolotlService().isPepBroken()) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": skipping republication of avatar because pep is broken");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": skipping republication of avatar because pep is broken");
             return;
         }
         IqPacket packet = this.mIqGenerator.retrieveAvatarMetaData(null);
@@ -3540,7 +3540,7 @@ public class XmppConnectionService extends Service {
                     if (serverAvatar == null && account.getAvatar() != null) {
                         Avatar avatar = fileBackend.getStoredPepAvatar(account.getAvatar());
                         if (avatar != null) {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": avatar on server was null. republishing");
+                            Log.d(Config.LOGTAG, account.getScrambledJid() + ": avatar on server was null. republishing");
                             publishAvatar(account, fileBackend.getStoredPepAvatar(account.getAvatar()), null);
                         } else {
                             Log.e(Config.LOGTAG, account.getJid().asBareJid() + ": error rereading avatar");
@@ -3572,7 +3572,7 @@ public class XmppConnectionService extends Service {
             } else if (avatar.origin == Avatar.Origin.PEP) {
                 mOmittedPepAvatarFetches.add(KEY);
             } else {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": already fetching " + avatar.origin + " avatar for " + avatar.owner);
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": already fetching " + avatar.origin + " avatar for " + avatar.owner);
             }
         }
     }
@@ -3648,11 +3648,11 @@ public class XmppConnectionService extends Service {
                     if (image != null) {
                         avatar.image = image;
                         if (getFileBackend().save(avatar)) {
-                            Log.d(Config.LOGTAG, account.getJid().asBareJid()
+                            Log.d(Config.LOGTAG, account.getScrambledJid()
                                     + ": successfully fetched vCard avatar for " + avatar.owner + " omittedPep=" + previouslyOmittedPepFetch);
                             if (avatar.owner.isBareJid()) {
                                 if (account.getJid().asBareJid().equals(avatar.owner) && account.getAvatar() == null) {
-                                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": had no avatar. replacing with vcard");
+                                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": had no avatar. replacing with vcard");
                                     account.setAvatar(avatar.getFilename());
                                     databaseBackend.updateAccount(account);
                                     getAvatarService().clear(account);
@@ -3730,7 +3730,7 @@ public class XmppConnectionService extends Service {
     public void notifyAccountAvatarHasChanged(final Account account) {
         final XmppConnection connection = account.getXmppConnection();
         if (connection != null && connection.getFeatures().bookmarksConversion()) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": avatar changed. resending presence to online group chats");
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": avatar changed. resending presence to online group chats");
             for (Conversation conversation : conversations) {
                 if (conversation.getAccount() == account && conversation.getMode() == Conversational.MODE_MULTI) {
                     final MucOptions mucOptions = conversation.getMucOptions();
@@ -4235,7 +4235,7 @@ public class XmppConnectionService extends Service {
     }
 
     private void sendOfflinePresence(final Account account) {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending offline presence");
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": sending offline presence");
         sendPresencePacket(account, mPresenceGenerator.sendOfflinePresence(account));
     }
 
@@ -4376,7 +4376,7 @@ public class XmppConnectionService extends Service {
                     this.conversations.remove(conversation);
                     markRead(conversation);
                     conversation.setStatus(Conversation.STATUS_ARCHIVED);
-                    Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": archiving conversation " + conversation.getJid().asBareJid() + " because jid was blocked");
+                    Log.d(Config.LOGTAG, account.getScrambledJid() + ": archiving conversation " + conversation.getJid().asBareJid() + " because jid was blocked");
                     updateConversation(conversation);
                     removed = true;
                 }
@@ -4445,7 +4445,7 @@ public class XmppConnectionService extends Service {
                 if (node != null && ver != null) {
                     query.setAttribute("node", node + "#" + ver);
                 }
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": making disco request for " + key.second + " to " + jid);
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": making disco request for " + key.second + " to " + jid);
                 sendIqPacket(account, request, (a, response) -> {
                     if (response.getType() == IqPacket.TYPE.RESULT) {
                         ServiceDiscoveryResult discoveryResult = new ServiceDiscoveryResult(response);

@@ -69,7 +69,7 @@ public class JingleInBandTransport extends JingleTransport {
     }
 
     private void sendClose() {
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sending ibb close");
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": sending ibb close");
         IqPacket iq = new IqPacket(IqPacket.TYPE.SET);
         iq.setTo(this.counterpart);
         Element close = iq.addChild("close", "http://jabber.org/protocol/ibb");
@@ -103,13 +103,13 @@ public class JingleInBandTransport extends JingleTransport {
             digest.reset();
             this.fileOutputStream = connection.getFileOutputStream();
             if (this.fileOutputStream == null) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": could not create output stream");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": could not create output stream");
                 callback.onFileTransferAborted();
                 return;
             }
             this.remainingSize = this.fileSize = file.getExpectedSize();
         } catch (final NoSuchAlgorithmException | IOException e) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + " " + e.getMessage());
+            Log.d(Config.LOGTAG, account.getScrambledJid() + " " + e.getMessage());
             callback.onFileTransferAborted();
         }
     }
@@ -125,7 +125,7 @@ public class JingleInBandTransport extends JingleTransport {
             this.digest.reset();
             fileInputStream = connection.getFileInputStream();
             if (fileInputStream == null) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": could no create input stream");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": could no create input stream");
                 callback.onFileTransferAborted();
                 return;
             }
@@ -135,7 +135,7 @@ public class JingleInBandTransport extends JingleTransport {
             }
         } catch (Exception e) {
             callback.onFileTransferAborted();
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": " + e.getMessage());
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": " + e.getMessage());
         }
     }
 
@@ -153,7 +153,7 @@ public class JingleInBandTransport extends JingleTransport {
             if (count == -1) {
                 sendClose();
                 file.setSha1Sum(digest.digest());
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": sendNextBlock() count was -1");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": sendNextBlock() count was -1");
                 this.onFileTransmissionStatusChanged.onFileTransmitted(file);
                 fileInputStream.close();
                 return;
@@ -184,7 +184,7 @@ public class JingleInBandTransport extends JingleTransport {
                 fileInputStream.close();
             }
         } catch (IOException e) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": io exception during sendNextBlock() " + e.getMessage());
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": io exception during sendNextBlock() " + e.getMessage());
             FileBackend.close(fileInputStream);
             this.onFileTransmissionStatusChanged.onFileTransferAborted();
         }
@@ -200,12 +200,12 @@ public class JingleInBandTransport extends JingleTransport {
             this.fileOutputStream.write(buffer);
             this.digest.update(buffer);
             if (this.remainingSize <= 0) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received last block. waiting for close");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": received last block. waiting for close");
             } else {
                 connection.updateProgress((int) ((((double) (this.fileSize - this.remainingSize)) / this.fileSize) * 100));
             }
         } catch (Exception e) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": " + e.getMessage());
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": " + e.getMessage());
             FileBackend.close(fileOutputStream);
             this.onFileTransmissionStatusChanged.onFileTransferAborted();
         }
@@ -218,7 +218,7 @@ public class JingleInBandTransport extends JingleTransport {
             fileOutputStream.close();
             this.onFileTransmissionStatusChanged.onFileTransmitted(file);
         } catch (Exception e) {
-            Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": " + e.getMessage());
+            Log.d(Config.LOGTAG, account.getScrambledJid() + ": " + e.getMessage());
             FileBackend.close(fileOutputStream);
             this.onFileTransmissionStatusChanged.onFileTransferAborted();
         }
@@ -245,10 +245,10 @@ public class JingleInBandTransport extends JingleTransport {
             this.account.getXmppConnection().sendIqPacket(
                     packet.generateResponse(IqPacket.TYPE.RESULT), null);
             if (this.remainingSize <= 0) {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received ibb close. done");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": received ibb close. done");
                 done();
             } else {
-                Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": received ibb close with " + this.remainingSize + " remaining");
+                Log.d(Config.LOGTAG, account.getScrambledJid() + ": received ibb close with " + this.remainingSize + " remaining");
                 FileBackend.close(fileOutputStream);
                 this.onFileTransmissionStatusChanged.onFileTransferAborted();
             }

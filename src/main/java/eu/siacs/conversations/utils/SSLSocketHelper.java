@@ -98,6 +98,6 @@ public class SSLSocketHelper {
 
     public static void log(Account account, SSLSocket socket) {
         SSLSession session = socket.getSession();
-        Log.d(Config.LOGTAG, account.getJid().asBareJid() + ": protocol=" + session.getProtocol() + " cipher=" + session.getCipherSuite());
+        Log.d(Config.LOGTAG, account.getScrambledJid() + ": protocol=" + session.getProtocol() + " cipher=" + session.getCipherSuite());
     }
 }
