@@ -8,7 +8,7 @@ import android.graphics.Paint;
 import android.graphics.Point;
 import android.location.Location;
 import android.os.Build;
-import android.support.v4.content.ContextCompat;
+import androidx.core.content.ContextCompat;
 
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.util.TileSystem;

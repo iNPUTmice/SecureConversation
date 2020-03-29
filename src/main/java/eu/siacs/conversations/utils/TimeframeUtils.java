@@ -30,7 +30,7 @@
 package eu.siacs.conversations.utils;
 
 import android.content.Context;
-import android.support.annotation.PluralsRes;
+import androidx.annotation.PluralsRes;
 
 import eu.siacs.conversations.R;
 

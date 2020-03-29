@@ -18,9 +18,9 @@ package eu.siacs.conversations.ui.widget;
 
 import android.content.Context;
 import android.os.Bundle;
-import android.support.v4.app.ListFragment;
-import android.support.v4.view.ViewCompat;
-import android.support.v4.widget.SwipeRefreshLayout;
+import androidx.fragment.app.ListFragment;
+import androidx.core.view.ViewCompat;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,9 +30,9 @@ import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 
 /**
- * Subclass of {@link android.support.v4.app.ListFragment} which provides automatic support for
+ * Subclass of {@link androidx.fragment.app.ListFragment} which provides automatic support for
  * providing the 'swipe-to-refresh' UX gesture by wrapping the the content view in a
- * {@link android.support.v4.widget.SwipeRefreshLayout}.
+ * {@link androidx.swiperefreshlayout.widget.SwipeRefreshLayout}.
  */
 public class SwipeRefreshListFragment extends ListFragment {
 
@@ -80,10 +80,10 @@ public class SwipeRefreshListFragment extends ListFragment {
     }
 
     /**
-     * Set the {@link android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener} to listen for
+     * Set the {@link androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener} to listen for
      * initiated refreshes.
      *
-     * @see android.support.v4.widget.SwipeRefreshLayout#setOnRefreshListener(android.support.v4.widget.SwipeRefreshLayout.OnRefreshListener)
+     * @see androidx.swiperefreshlayout.widget.SwipeRefreshLayout#setOnRefreshListener(androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener)
      */
     public void setOnRefreshListener(SwipeRefreshLayout.OnRefreshListener listener) {
         onRefreshListener = listener;
@@ -95,10 +95,10 @@ public class SwipeRefreshListFragment extends ListFragment {
     }
 
     /**
-     * Set whether the {@link android.support.v4.widget.SwipeRefreshLayout} should be displaying
+     * Set whether the {@link androidx.swiperefreshlayout.widget.SwipeRefreshLayout} should be displaying
      * that it is refreshing or not.
      *
-     * @see android.support.v4.widget.SwipeRefreshLayout#setRefreshing(boolean)
+     * @see androidx.swiperefreshlayout.widget.SwipeRefreshLayout#setRefreshing(boolean)
      */
     public void setRefreshing(boolean refreshing) {
         this.refreshing = refreshing;
@@ -109,12 +109,12 @@ public class SwipeRefreshListFragment extends ListFragment {
 
 
     /**
-     * Sub-class of {@link android.support.v4.widget.SwipeRefreshLayout} for use in this
-     * {@link android.support.v4.app.ListFragment}. The reason that this is needed is because
-     * {@link android.support.v4.widget.SwipeRefreshLayout} only supports a single child, which it
+     * Sub-class of {@link androidx.swiperefreshlayout.widget.SwipeRefreshLayout} for use in this
+     * {@link androidx.fragment.app.ListFragment}. The reason that this is needed is because
+     * {@link androidx.swiperefreshlayout.widget.SwipeRefreshLayout} only supports a single child, which it
      * expects to be the one which triggers refreshes. In our case the layout's child is the content
      * view returned from
-     * {@link android.support.v4.app.ListFragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)}
+     * {@link androidx.fragment.app.ListFragment#onCreateView(android.view.LayoutInflater, android.view.ViewGroup, android.os.Bundle)}
      * which is a {@link android.view.ViewGroup}.
      *
      * <p>To enable 'swipe-to-refresh' support via the {@link android.widget.ListView} we need to

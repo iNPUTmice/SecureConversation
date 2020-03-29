@@ -3,7 +3,7 @@ package eu.siacs.conversations.ui.widget;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.support.v7.widget.AppCompatTextView;
+import androidx.appcompat.widget.AppCompatTextView;
 import android.util.AttributeSet;
 
 public class CopyTextView extends AppCompatTextView {

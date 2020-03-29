@@ -2,7 +2,7 @@ package eu.siacs.conversations.ui.adapter;
 
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.databinding.DataBindingUtil;
+import androidx.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;

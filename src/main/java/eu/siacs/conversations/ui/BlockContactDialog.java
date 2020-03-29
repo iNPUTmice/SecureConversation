@@ -1,8 +1,8 @@
 package eu.siacs.conversations.ui;
 
-import android.databinding.DataBindingUtil;
-import android.support.annotation.StringRes;
-import android.support.v7.app.AlertDialog;
+import androidx.databinding.DataBindingUtil;
+import androidx.annotation.StringRes;
+import androidx.appcompat.app.AlertDialog;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.TypefaceSpan;
