@@ -300,6 +300,10 @@ In the vast, vast majority of cases you won’t have to manually delete OMEMO ke
 **WARNING**: Be sure to know your accounts passwords or find ways to reset them **before** doing the backup as the files are encrypted using those passwords and the Restore process will ask for them.  
 **WARNING**: Do not use the restore backup feature in an attempt to clone (run simultaneously) an installation. Restoring a backup is only meant for migrations or in case you’ve lost the original device.
 
+#### A/V calls can not be established
+
+When Conversation fails to establish the A/V call you might have an app running that intercepts your network traffic (e.g. [Blokada](https://github.com/blokadaorg/blokada)) and should add Conversations to the whitelist (if possible) or disable the app.
+
 #### Conversations is missing a certain feature
 
 I'm open for new feature suggestions. You can use the [issue tracker][issues] on
