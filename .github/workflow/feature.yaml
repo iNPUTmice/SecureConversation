@@ -19,4 +19,6 @@ jobs:
       with:
         java-version: 1.8
     - name: Unit tests
-      run: bash ./gradlew test --stacktrace
+      run: >
+      # bash ./gradlew test --stacktrace
+      bash ./gradlew assembleConversationsFreeSystemDebug
