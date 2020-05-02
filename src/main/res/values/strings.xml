@@ -269,7 +269,7 @@
     <string name="enable">Enable</string>
     <string name="conference_requires_password">Group chat requires password</string>
     <string name="enter_password">Enter password</string>
-    <string name="request_presence_updates">Please request presence updates from your contact first.\n\n<small>This will be used to determine what chat app your contact is using.</string>
+    <string name="request_presence_updates">Please request presence updates from your contact first.\n\n<small>This will be used to determine what chat app your contact is using</small>.</string>
     <string name="request_now">Request now</string>
     <string name="ignore">Ignore</string>
     <string name="without_mutual_presence_updates"><b>Warning:</b> Sending this without mutual presence updates could cause unexpected problems.\n\n<small>Go to “Contact details” to verify your presence subscriptions.</small></string>
