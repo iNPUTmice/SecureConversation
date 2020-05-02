@@ -800,7 +800,7 @@
     <string name="pin_expired">The pin we have sent you has expired.</string>
     <string name="unknown_api_error_network">Unknown network error.</string>
     <string name="unknown_api_error_response">Unknown response from server.</string>
-    <string name="unable_to_connect_to_server">Couldn not connect to server.</string>
+    <string name="unable_to_connect_to_server">Could not connect to server.</string>
     <string name="unable_to_establish_secure_connection">Could not establish secure connection.</string>
     <string name="unable_to_find_server">Could not find server.</string>
     <string name="something_went_wrong_processing_your_request">Something went wrong processing your request.</string>
