@@ -312,7 +312,6 @@ public class AppRTCAudioManager {
      */
     private void setAudioDeviceInternal(AudioDevice device) {
         Log.d(Config.LOGTAG, "setAudioDeviceInternal(device=" + device + ")");
-        AppRTCUtils.assertIsTrue(audioDevices.contains(device));
         switch (device) {
             case SPEAKER_PHONE:
                 setSpeakerphoneOn(true);
