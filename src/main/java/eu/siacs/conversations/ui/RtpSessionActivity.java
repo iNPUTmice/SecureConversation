@@ -407,8 +407,15 @@ public class RtpSessionActivity extends XmppActivity implements XmppConnectionSe
                 retractSessionProposal();
             }
         }
-        releaseProximityWakeLock();
         super.onStop();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if(!hasFocus){
+            releaseProximityWakeLock();
+        }
     }
 
     private void releaseVideoTracks(final JingleRtpConnection jingleRtpConnection) {
