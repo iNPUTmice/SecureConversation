@@ -456,12 +456,6 @@ public class RtpSessionActivity extends XmppActivity implements XmppConnectionSe
     }
 
     @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        endCall();
-    }
-
-    @Override
     public void onUserLeaveHint() {
         super.onUserLeaveHint();
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && deviceSupportsPictureInPicture()) {
