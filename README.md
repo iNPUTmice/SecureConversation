@@ -15,9 +15,16 @@
 
 <p align="center">
     <a href="https://play.google.com/store/apps/details?id=eu.siacs.conversations&amp;referrer=utm_source%3Dgithub">
-       <img src="https://conversations.im/images/en-play-badge.png" alt="Google Play">
+       <img src="https://conversations.im/images/en-play-badge.png" alt="Google Play" style="height:65px;width:219px">
     </a>
 </p>
+
+<p align="center">
+    <a href="https://f-droid.org/en/packages/eu.siacs.conversations/">
+       <img src="./art/badge_get-it-on-en-us.png" alt="FDroid" style="height:65px;width:219px">
+    </a>
+</p>
+
 
 ![screenshots](https://raw.githubusercontent.com/inputmice/Conversations/master/screenshots.png)
 
