@@ -13,6 +13,7 @@
     <bool name="vibrate_on_notification">true</bool>
     <bool name="led">true</bool>
     <bool name="enable_quiet_hours">false</bool>
+    <bool name="enable_private_notifications">false</bool>
     <string name="notification_ringtone">content://settings/system/notification_sound</string>
     <string name="incoming_call_ringtone">content://settings/system/ringtone</string>
     <integer name="grace_period">144</integer>

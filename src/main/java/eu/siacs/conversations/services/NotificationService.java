@@ -272,6 +272,10 @@ public class NotificationService {
         }
     }
 
+    public boolean privateNotificationsEnabled() {
+        return mXmppConnectionService.getBooleanPreference("enable_private_notifications", R.bool.enable_private_notifications);
+    }
+
     private AtomicInteger getBacklogMessageCounter(Conversation conversation) {
         synchronized (mBacklogMessageCounter) {
             if (!mBacklogMessageCounter.containsKey(conversation)) {
@@ -670,7 +674,7 @@ public class NotificationService {
                 conversation = (Conversation) messages.get(0).getConversation();
                 final String name = conversation.getName().toString();
                 SpannableString styledString;
-                if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
+                if (privateNotificationsEnabled()) {
                     int count = messages.size();
                     styledString = new SpannableString(name + ": " + mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages, count, count));
                     styledString.setSpan(new StyleSpan(Typeface.BOLD), 0, name.length(), 0);
@@ -708,7 +712,7 @@ public class NotificationService {
             mBuilder.setLargeIcon(mXmppConnectionService.getAvatarService()
                     .get(conversation, AvatarService.getSystemUiAvatarSize(mXmppConnectionService)));
             mBuilder.setContentTitle(conversation.getName());
-            if (Config.HIDE_MESSAGE_TEXT_IN_NOTIFICATION) {
+            if (privateNotificationsEnabled()) {
                 int count = messages.size();
                 mBuilder.setContentText(mXmppConnectionService.getResources().getQuantityString(R.plurals.x_messages, count, count));
             } else {

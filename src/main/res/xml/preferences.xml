@@ -138,6 +138,11 @@
             android:ringtoneType="ringtone"
             android:summary="@string/pref_call_ringtone_summary"
             android:title="@string/pref_ringtone" />
+        <CheckBoxPreference
+            android:defaultValue="@bool/enable_private_notifications"
+            android:key="enable_private_notifications"
+            android:summary="@string/pref_private_notifications_summary"
+            android:title="Private Notifications" />
     </PreferenceCategory>
     <PreferenceCategory
         android:key="attachments"
