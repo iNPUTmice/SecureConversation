@@ -33,8 +33,11 @@ import android.annotation.SuppressLint;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Build;
+import android.preference.PreferenceManager;
+import android.provider.Browser;
 import android.text.Editable;
 import android.text.Spanned;
 import android.text.style.URLSpan;
@@ -42,11 +45,15 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.browser.customtabs.CustomTabColorSchemeParams;
+import androidx.browser.customtabs.CustomTabsIntent;
+
 import java.util.Arrays;
 
 import eu.siacs.conversations.Config;
 import eu.siacs.conversations.R;
 import eu.siacs.conversations.ui.ConversationsActivity;
+import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.XmppUri;
 
 
@@ -66,6 +73,36 @@ public class FixedURLSpan extends URLSpan {
 		}
 	}
 
+	private static void openExtTryCustomTab(Context context, final Uri uri) throws ActivityNotFoundException {
+		CustomTabsIntent.Builder intentBuilder = new CustomTabsIntent.Builder();
+		intentBuilder.setShowTitle(true);
+		CustomTabColorSchemeParams.Builder colorschemeBuilder = new CustomTabColorSchemeParams.Builder();
+		colorschemeBuilder.setToolbarColor(StyledAttributes.getColor(context, R.attr.colorPrimary));
+		colorschemeBuilder.setSecondaryToolbarColor(StyledAttributes.getColor(context, R.attr.colorSecondary));
+		intentBuilder.setColorScheme(CustomTabsIntent.COLOR_SCHEME_SYSTEM);
+		intentBuilder.setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_LIGHT, colorschemeBuilder.build());
+		intentBuilder.setColorSchemeParams(CustomTabsIntent.COLOR_SCHEME_DARK, colorschemeBuilder.build());
+		intentBuilder.setShareState(CustomTabsIntent.SHARE_STATE_ON);
+
+		CustomTabsIntent intent = intentBuilder.build();
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			intent.intent.setFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+		}
+		intent.intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+
+		intent.launchUrl(context, uri);
+	}
+
+	private static void openExt(Context context, final Uri uri) throws ActivityNotFoundException {
+		final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
+		}
+		intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+
+		context.startActivity(intent);
+	}
+
 	@Override
 	public void onClick(View widget) {
 		final Uri uri = Uri.parse(getURL());
@@ -77,13 +114,14 @@ public class FixedURLSpan extends URLSpan {
 				return;
 			}
 		}
-		final Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-			intent.setFlags(Intent.FLAG_ACTIVITY_NEW_DOCUMENT);
-		}
-		//intent.putExtra(Browser.EXTRA_APPLICATION_ID, context.getPackageName());
+
+		SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(context);
 		try {
-			context.startActivity(intent);
+			if (p.getBoolean("use_custom_browser_tabs", context.getResources().getBoolean(R.bool.use_custom_browser_tabs))) {
+				openExtTryCustomTab(context, uri);
+			} else {
+				openExt(context, uri);
+			}
 			widget.playSoundEffect(0);
 		} catch (ActivityNotFoundException e) {
 			Toast.makeText(context, R.string.no_application_found_to_open_link, Toast.LENGTH_SHORT).show();
