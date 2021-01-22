@@ -202,6 +202,11 @@
             android:key="font_size"
             android:summary="@string/pref_font_size_summary"
             android:title="@string/pref_font_size" />
+        <CheckBoxPreference
+            android:defaultValue="@bool/use_custom_browser_tabs"
+            android:key="use_custom_browser_tabs"
+            android:summary="@string/pref_use_custom_browser_tabs_summary"
+            android:title="@string/pref_use_custom_browser_tabs" />
     </PreferenceCategory>
     <PreferenceCategory
         android:key="backup_category"

@@ -80,6 +80,7 @@ dependencies {
     implementation 'com.google.guava:guava:27.1-android'
     quicksyImplementation 'io.michaelrocks:libphonenumber-android:8.12.16'
     implementation fileTree(include: ['libwebrtc-m87.aar'], dir: 'libs')
+    implementation "androidx.browser:browser:1.3.0"
 }
 
 ext {
