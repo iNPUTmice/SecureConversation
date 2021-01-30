@@ -48,17 +48,18 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
     private final SensorManager sensorManager;
     private final Sensor proximitySensor;
     private final PendingItem<WeakReference<ImageButton>> pendingOnClickView = new PendingItem<>();
+    private final Context context;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private final Handler handler = new Handler();
 
-    public AudioPlayer(MessageAdapter adapter) {
-        final Context context = adapter.getContext();
+    public AudioPlayer(MessageAdapter adapter, Context ctx) {
         this.messageAdapter = adapter;
-        this.sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        this.sensorManager = (SensorManager) ctx.getSystemService(Context.SENSOR_SERVICE);
         this.proximitySensor = this.sensorManager == null ? null : this.sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
-        initializeProximityWakeLock(context);
+        this.context = ctx;
+        initializeProximityWakeLock(ctx);
         synchronized (AudioPlayer.LOCK) {
             if (AudioPlayer.player != null) {
                 AudioPlayer.player.setOnCompletionListener(this);
@@ -101,13 +102,13 @@ public class AudioPlayer implements View.OnClickListener, MediaPlayer.OnCompleti
 
     private boolean init(ViewHolder viewHolder, Message message) {
         if (viewHolder.darkBackground) {
-            viewHolder.runtime.setTextAppearance(this.messageAdapter.getContext(), R.style.TextAppearance_Conversations_Caption_OnDark);
+            viewHolder.runtime.setTextAppearance(context, R.style.TextAppearance_Conversations_Caption_OnDark);
         } else {
-            viewHolder.runtime.setTextAppearance(this.messageAdapter.getContext(), R.style.TextAppearance_Conversations_Caption);
+            viewHolder.runtime.setTextAppearance(context, R.style.TextAppearance_Conversations_Caption);
         }
         viewHolder.progress.setOnSeekBarChangeListener(this);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            ColorStateList color = ContextCompat.getColorStateList(messageAdapter.getContext(), viewHolder.darkBackground ? R.color.white70 : R.color.green700_desaturated);
+            ColorStateList color = ContextCompat.getColorStateList(context, viewHolder.darkBackground ? R.color.white70 : R.color.green700_desaturated);
             viewHolder.progress.setThumbTintList(color);
             viewHolder.progress.setProgressTintList(color);
         }

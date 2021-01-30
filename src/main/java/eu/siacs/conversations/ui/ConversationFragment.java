@@ -12,18 +12,18 @@ import android.content.Intent;
 import android.content.IntentSender.SendIntentException;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.os.Vibrator;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -35,12 +35,8 @@ import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.AbsListView;
-import android.widget.AbsListView.OnScrollListener;
-import android.widget.AdapterView;
-import android.widget.AdapterView.AdapterContextMenuInfo;
+import androidx.recyclerview.widget.RecyclerView.OnScrollListener;
 import android.widget.CheckBox;
-import android.widget.ListView;
 import android.widget.PopupMenu;
 import android.widget.TextView.OnEditorActionListener;
 import android.widget.Toast;
@@ -52,6 +48,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.core.view.inputmethod.InputConnectionCompat;
 import androidx.core.view.inputmethod.InputContentInfoCompat;
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.ItemTouchHelper;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.common.base.Optional;
 
@@ -84,7 +83,6 @@ import eu.siacs.conversations.entities.Presence;
 import eu.siacs.conversations.entities.ReadByMarker;
 import eu.siacs.conversations.entities.Transferable;
 import eu.siacs.conversations.entities.TransferablePlaceholder;
-import eu.siacs.conversations.http.HttpDownloadConnection;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.MessageArchiveService;
 import eu.siacs.conversations.services.QuickConversationsService;
@@ -96,15 +94,14 @@ import eu.siacs.conversations.ui.util.Attachment;
 import eu.siacs.conversations.ui.util.ConversationMenuConfigurator;
 import eu.siacs.conversations.ui.util.DateSeparator;
 import eu.siacs.conversations.ui.util.EditMessageActionModeCallback;
-import eu.siacs.conversations.ui.util.ListViewUtils;
 import eu.siacs.conversations.ui.util.MenuDoubleTabUtil;
 import eu.siacs.conversations.ui.util.MucDetailsContextMenuHelper;
 import eu.siacs.conversations.ui.util.PendingItem;
 import eu.siacs.conversations.ui.util.PresenceSelector;
+import eu.siacs.conversations.ui.util.RecyclerViewUtils;
 import eu.siacs.conversations.ui.util.ScrollState;
 import eu.siacs.conversations.ui.util.SendButtonAction;
 import eu.siacs.conversations.ui.util.SendButtonTool;
-import eu.siacs.conversations.ui.util.ShareUtil;
 import eu.siacs.conversations.ui.util.ViewUtil;
 import eu.siacs.conversations.ui.widget.EditMessage;
 import eu.siacs.conversations.utils.AccountUtils;
@@ -112,7 +109,6 @@ import eu.siacs.conversations.utils.Compatibility;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.MessageUtils;
 import eu.siacs.conversations.utils.NickValidityChecker;
-import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.QuickLoader;
 import eu.siacs.conversations.utils.StylingHelper;
 import eu.siacs.conversations.utils.TimeFrameUtils;
@@ -123,11 +119,12 @@ import eu.siacs.conversations.xmpp.XmppConnection;
 import eu.siacs.conversations.xmpp.chatstate.ChatState;
 import eu.siacs.conversations.xmpp.jingle.AbstractJingleConnection;
 import eu.siacs.conversations.xmpp.jingle.JingleConnectionManager;
-import eu.siacs.conversations.xmpp.jingle.JingleFileTransferConnection;
 import eu.siacs.conversations.xmpp.jingle.Media;
 import eu.siacs.conversations.xmpp.jingle.OngoingRtpSession;
 import eu.siacs.conversations.xmpp.jingle.RtpCapability;
 
+import static androidx.recyclerview.widget.ItemTouchHelper.LEFT;
+import static androidx.recyclerview.widget.ItemTouchHelper.RIGHT;
 import static eu.siacs.conversations.ui.XmppActivity.EXTRA_ACCOUNT;
 import static eu.siacs.conversations.ui.XmppActivity.REQUEST_INVITE_TO_CONVERSATION;
 import static eu.siacs.conversations.ui.util.SoftKeyboardUtils.hideSoftKeyboard;
@@ -135,9 +132,7 @@ import static eu.siacs.conversations.utils.PermissionUtils.allGranted;
 import static eu.siacs.conversations.utils.PermissionUtils.getFirstDenied;
 import static eu.siacs.conversations.utils.PermissionUtils.writeGranted;
 
-
 public class ConversationFragment extends XmppFragment implements EditMessage.KeyboardListener, MessageAdapter.OnContactPictureLongClicked, MessageAdapter.OnContactPictureClicked {
-
 
     public static final int REQUEST_SEND_MESSAGE = 0x0201;
     public static final int REQUEST_DECRYPT_PGP = 0x0202;
@@ -182,6 +177,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     private Toast messageLoaderToast;
     private ConversationsActivity activity;
     private boolean reInitRequiredOnStart = true;
+    private MessageSwipeHelper touchHelper;
     private final OnClickListener clickToMuc = new OnClickListener() {
 
         @Override
@@ -234,15 +230,16 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     private final OnScrollListener mOnScrollListener = new OnScrollListener() {
 
         @Override
-        public void onScrollStateChanged(AbsListView view, int scrollState) {
-            if (AbsListView.OnScrollListener.SCROLL_STATE_IDLE == scrollState) {
+        public void onScrollStateChanged(RecyclerView view, int scrollState) {
+            if (RecyclerView.SCROLL_STATE_IDLE == scrollState) {
                 fireReadEvent();
             }
         }
 
         @Override
-        public void onScroll(final AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
+        public void onScrolled(final RecyclerView view, int dx, int dy) {
             toggleScrollDownButton(view);
+            int firstVisibleItem = RecyclerViewUtils.getFirstVisiblePosition(binding.messagesView);
             synchronized (ConversationFragment.this.messageList) {
                 if (firstVisibleItem < 5 && conversation != null && conversation.messagesLoaded.compareAndSet(true, false) && messageList.size() > 0) {
                     long timestamp;
@@ -260,7 +257,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                             }
                             runOnUiThread(() -> {
                                 synchronized (messageList) {
-                                    final int oldPosition = binding.messagesView.getFirstVisiblePosition();
+                                    final int oldPosition = RecyclerViewUtils.getFirstVisiblePosition(binding.messagesView);
                                     Message message = null;
                                     int childPos;
                                     for (childPos = 0; childPos + oldPosition < messageList.size(); ++childPos) {
@@ -280,7 +277,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                                     }
                                     messageListAdapter.notifyDataSetChanged();
                                     int pos = Math.max(getIndexOf(uuid, messageList), 0);
-                                    binding.messagesView.setSelectionFromTop(pos, pxOffset);
+                                    RecyclerViewUtils.getLayoutManager(binding.messagesView).scrollToPositionWithOffset(pos, pxOffset);
                                     if (messageLoaderToast != null) {
                                         messageLoaderToast.cancel();
                                     }
@@ -418,7 +415,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         @Override
         public void onClick(View v) {
             stopScrolling();
-            setSelection(binding.messagesView.getCount() - 1, true);
+            binding.messagesView.scrollToPosition(messageListAdapter.getItemCount() - 1);
+            setSelection(messageListAdapter.getItemCount() - 1, true);
         }
     };
     private final OnClickListener mSendButtonListener = new OnClickListener() {
@@ -467,6 +465,70 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     private int lastCompletionCursor;
     private boolean firstWord = false;
     private Message mPendingDownloadableMessage;
+
+    private class MessageSwipeHelper extends ItemTouchHelper.Callback {
+
+        private RecyclerView mRecyclerView;
+
+        private int SWIPE_QUOTE_VIBRATION_DURATION = 20;
+
+        @Override
+        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+            return false;
+        }
+
+        public void attachToRecyclerView(RecyclerView view) {
+            mRecyclerView = view;
+            new ItemTouchHelper(this).attachToRecyclerView(view);
+        }
+
+        @Override
+        public float getSwipeEscapeVelocity (float defaultValue) {
+            return 0f;
+        }
+
+        @Override
+        public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
+                                float dX, float dY, int actionState, boolean isCurrentlyActive) {
+            super.onChildDraw(c, recyclerView, viewHolder, dX / 4, dY, actionState, isCurrentlyActive);
+        }
+
+        @Override
+        public int getMovementFlags(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+            if (!(viewHolder instanceof MessageAdapter.SentReceivedViewHolder))
+                return 0;
+
+            MessageAdapter.SentReceivedViewHolder holder = (MessageAdapter.SentReceivedViewHolder) viewHolder;
+            // Is the message even quotable?
+            if (!holder.isQuotable())
+                return 0;
+
+            if (holder.getType() == MessageAdapter.SENT)
+                return ItemTouchHelper.Callback.makeMovementFlags(ItemTouchHelper.ACTION_STATE_IDLE, LEFT);
+            else if (holder.getType() == MessageAdapter.RECEIVED)
+                return ItemTouchHelper.Callback.makeMovementFlags(ItemTouchHelper.ACTION_STATE_IDLE, RIGHT);
+
+            return 0;
+        }
+
+        @Override
+        public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            super.clearView(recyclerView, viewHolder);
+            viewHolder.itemView.setAlpha(1f);
+        }
+
+        @Override
+        public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            int pos = viewHolder.getAdapterPosition();
+            quoteMessage(messageList.get(pos));
+            messageListAdapter.notifyItemChanged(pos);
+
+            // Vibrate to indicate the quote
+            Vibrator vibrator = (Vibrator) viewHolder.itemView.getContext().getSystemService(Context.VIBRATOR_SERVICE);
+            if (vibrator != null)
+                vibrator.vibrate(SWIPE_QUOTE_VIBRATION_DURATION);
+        }
+    };
 
     private static ConversationFragment findConversationFragment(Activity activity) {
         Fragment fragment = activity.getFragmentManager().findFragmentById(R.id.main_fragment);
@@ -543,11 +605,11 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         return getConversation(activity, R.id.main_fragment);
     }
 
-    private static boolean scrolledToBottom(AbsListView listView) {
-        final int count = listView.getCount();
+    private boolean scrolledToBottom(RecyclerView listView) {
+        final int count = messageListAdapter.getItemCount();
         if (count == 0) {
             return true;
-        } else if (listView.getLastVisiblePosition() == count - 1) {
+        } else if (RecyclerViewUtils.getLastVisiblePosition(binding.messagesView) == count - 1) {
             final View lastChild = listView.getChildAt(listView.getChildCount() - 1);
             return lastChild != null && lastChild.getBottom() <= listView.getHeight();
         } else {
@@ -559,7 +621,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         toggleScrollDownButton(binding.messagesView);
     }
 
-    private void toggleScrollDownButton(AbsListView listView) {
+    private void toggleScrollDownButton(RecyclerView listView) {
         if (conversation == null) {
             return;
         }
@@ -600,12 +662,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     }
 
     private ScrollState getScrollPosition() {
-        final ListView listView = this.binding == null ? null : this.binding.messagesView;
-        if (listView == null || listView.getCount() == 0 || listView.getLastVisiblePosition() == listView.getCount() - 1) {
+        final LinearLayoutManager lm = RecyclerViewUtils.getLayoutManager(this.binding.messagesView);
+        if (lm == null || lm.getItemCount() == 0 || lm.findLastVisibleItemPosition() == lm.getItemCount()) {
             return null;
         } else {
-            final int pos = listView.getFirstVisiblePosition();
-            final View view = listView.getChildAt(0);
+            final int pos = lm.findFirstVisibleItemPosition();
+            final View view = this.binding.messagesView.getChildAt(pos);
             if (view == null) {
                 return null;
             } else {
@@ -622,7 +684,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                 binding.unreadCountCustomView.setUnreadCount(conversation.getReceivedMessagesCountSinceUuid(lastMessageUuid));
             }
             //TODO maybe this needs a 'post'
-            this.binding.messagesView.setSelectionFromTop(scrollPosition.position, scrollPosition.offset);
+            RecyclerViewUtils.getLayoutManager(binding.messagesView).scrollToPositionWithOffset(scrollPosition.position, scrollPosition.offset);
             toggleScrollDownButton();
         }
     }
@@ -1031,14 +1093,16 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
         binding.scrollToBottomButton.setOnClickListener(this.mScrollButtonListener);
         binding.messagesView.setOnScrollListener(mOnScrollListener);
-        binding.messagesView.setTranscriptMode(ListView.TRANSCRIPT_MODE_NORMAL);
         mediaPreviewAdapter = new MediaPreviewAdapter(this);
         binding.mediaPreview.setAdapter(mediaPreviewAdapter);
-        messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this.messageList);
+        messageListAdapter = new MessageAdapter((XmppActivity) getActivity(), this, this.messageList);
         messageListAdapter.setOnContactPictureClicked(this);
         messageListAdapter.setOnContactPictureLongClicked(this);
         messageListAdapter.setOnQuoteListener(this::quoteText);
         binding.messagesView.setAdapter(messageListAdapter);
+        binding.messagesView.setLayoutManager(new LinearLayoutManager(this.activity));
+        touchHelper = new MessageSwipeHelper();
+        touchHelper.attachToRecyclerView(this.binding.messagesView);
 
         registerForContextMenu(binding.messagesView);
 
@@ -1069,167 +1133,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         }
     }
 
-    private void quoteMessage(Message message) {
+    public void quoteMessage(Message message) {
         quoteText(MessageUtils.prepareQuote(message));
-    }
-
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
-        //This should cancel any remaining click events that would otherwise trigger links
-        v.dispatchTouchEvent(MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, 0f, 0f, 0));
-        synchronized (this.messageList) {
-            super.onCreateContextMenu(menu, v, menuInfo);
-            AdapterView.AdapterContextMenuInfo acmi = (AdapterContextMenuInfo) menuInfo;
-            this.selectedMessage = this.messageList.get(acmi.position);
-            populateContextMenu(menu);
-        }
-    }
-
-    private void populateContextMenu(ContextMenu menu) {
-        final Message m = this.selectedMessage;
-        final Transferable t = m.getTransferable();
-        Message relevantForCorrection = m;
-        while (relevantForCorrection.mergeable(relevantForCorrection.next())) {
-            relevantForCorrection = relevantForCorrection.next();
-        }
-        if (m.getType() != Message.TYPE_STATUS && m.getType() != Message.TYPE_RTP_SESSION) {
-
-            if (m.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE || m.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
-                return;
-            }
-
-            if (m.getStatus() == Message.STATUS_RECEIVED && t != null && (t.getStatus() == Transferable.STATUS_CANCELLED || t.getStatus() == Transferable.STATUS_FAILED)) {
-                return;
-            }
-
-            final boolean deleted = m.isDeleted();
-            final boolean encrypted = m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED
-                    || m.getEncryption() == Message.ENCRYPTION_PGP;
-            final boolean receiving = m.getStatus() == Message.STATUS_RECEIVED && (t instanceof JingleFileTransferConnection || t instanceof HttpDownloadConnection);
-            activity.getMenuInflater().inflate(R.menu.message_context, menu);
-            menu.setHeaderTitle(R.string.message_options);
-            MenuItem openWith = menu.findItem(R.id.open_with);
-            MenuItem copyMessage = menu.findItem(R.id.copy_message);
-            MenuItem copyLink = menu.findItem(R.id.copy_link);
-            MenuItem quoteMessage = menu.findItem(R.id.quote_message);
-            MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
-            MenuItem correctMessage = menu.findItem(R.id.correct_message);
-            MenuItem shareWith = menu.findItem(R.id.share_with);
-            MenuItem sendAgain = menu.findItem(R.id.send_again);
-            MenuItem copyUrl = menu.findItem(R.id.copy_url);
-            MenuItem downloadFile = menu.findItem(R.id.download_file);
-            MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
-            MenuItem deleteFile = menu.findItem(R.id.delete_file);
-            MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
-            final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
-            final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null && !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
-            if (!m.isFileOrImage() && !encrypted && !m.isGeoUri() && !m.treatAsDownloadable() && !unInitiatedButKnownSize && t == null) {
-                copyMessage.setVisible(true);
-                quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
-                String body = m.getMergedBody().toString();
-                if (ShareUtil.containsXmppUri(body)) {
-                    copyLink.setTitle(R.string.copy_jabber_id);
-                    copyLink.setVisible(true);
-                } else if (Patterns.AUTOLINK_WEB_URL.matcher(body).find()) {
-                    copyLink.setVisible(true);
-                }
-            }
-            if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED && !deleted) {
-                retryDecryption.setVisible(true);
-            }
-            if (!showError
-                    && relevantForCorrection.getType() == Message.TYPE_TEXT
-                    && !m.isGeoUri()
-                    && relevantForCorrection.isLastCorrectableMessage()
-                    && m.getConversation() instanceof Conversation) {
-                correctMessage.setVisible(true);
-            }
-            if ((m.isFileOrImage() && !deleted && !receiving) || (m.getType() == Message.TYPE_TEXT && !m.treatAsDownloadable()) && !unInitiatedButKnownSize && t == null) {
-                shareWith.setVisible(true);
-            }
-            if (m.getStatus() == Message.STATUS_SEND_FAILED) {
-                sendAgain.setVisible(true);
-            }
-            if (m.hasFileOnRemoteHost()
-                    || m.isGeoUri()
-                    || m.treatAsDownloadable()
-                    || unInitiatedButKnownSize
-                    || t instanceof HttpDownloadConnection) {
-                copyUrl.setVisible(true);
-            }
-            if (m.isFileOrImage() && deleted && m.hasFileOnRemoteHost()) {
-                downloadFile.setVisible(true);
-                downloadFile.setTitle(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, m)));
-            }
-            final boolean waitingOfferedSending = m.getStatus() == Message.STATUS_WAITING
-                    || m.getStatus() == Message.STATUS_UNSEND
-                    || m.getStatus() == Message.STATUS_OFFERED;
-            final boolean cancelable = (t != null && !deleted) || waitingOfferedSending && m.needsUploading();
-            if (cancelable) {
-                cancelTransmission.setVisible(true);
-            }
-            if (m.isFileOrImage() && !deleted && !cancelable) {
-                String path = m.getRelativeFilePath();
-                if (path == null || !path.startsWith("/") || FileBackend.isInDirectoryThatShouldNotBeScanned(getActivity(), path)) {
-                    deleteFile.setVisible(true);
-                    deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
-                }
-            }
-            if (showError) {
-                showErrorMessage.setVisible(true);
-            }
-            final String mime = m.isFileOrImage() ? m.getMimeType() : null;
-            if ((m.isGeoUri() && GeoHelper.openInOsmAnd(getActivity(), m)) || (mime != null && mime.startsWith("audio/"))) {
-                openWith.setVisible(true);
-            }
-        }
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.share_with:
-                ShareUtil.share(activity, selectedMessage);
-                return true;
-            case R.id.correct_message:
-                correctMessage(selectedMessage);
-                return true;
-            case R.id.copy_message:
-                ShareUtil.copyToClipboard(activity, selectedMessage);
-                return true;
-            case R.id.copy_link:
-                ShareUtil.copyLinkToClipboard(activity, selectedMessage);
-                return true;
-            case R.id.quote_message:
-                quoteMessage(selectedMessage);
-                return true;
-            case R.id.send_again:
-                resendMessage(selectedMessage);
-                return true;
-            case R.id.copy_url:
-                ShareUtil.copyUrlToClipboard(activity, selectedMessage);
-                return true;
-            case R.id.download_file:
-                startDownloadable(selectedMessage);
-                return true;
-            case R.id.cancel_transmission:
-                cancelTransmission(selectedMessage);
-                return true;
-            case R.id.retry_decryption:
-                retryDecryption(selectedMessage);
-                return true;
-            case R.id.delete_file:
-                deleteFile(selectedMessage);
-                return true;
-            case R.id.show_error_message:
-                showErrorMessage(selectedMessage);
-                return true;
-            case R.id.open_with:
-                openWith(selectedMessage);
-                return true;
-            default:
-                return super.onContextItemSelected(item);
-        }
     }
 
     @Override
@@ -1770,12 +1675,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
             return null;
         }
         synchronized (this.messageList) {
-            int pos = binding.messagesView.getLastVisiblePosition();
+            int pos = RecyclerViewUtils.getLayoutManager(binding.messagesView).findLastVisibleItemPosition();
             if (pos >= 0) {
                 Message message = null;
                 for (int i = pos; i >= 0; --i) {
                     try {
-                        message = (Message) binding.messagesView.getItemAtPosition(i);
+                        message = messageList.get(i);
                     } catch (IndexOutOfBoundsException e) {
                         //should not happen if we synchronize properly. however if that fails we just gonna try item -1
                         continue;
@@ -1795,7 +1700,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         return null;
     }
 
-    private void openWith(final Message message) {
+    public void openWith(final Message message) {
         if (message.isGeoUri()) {
             GeoHelper.view(getActivity(), message);
         } else {
@@ -1804,7 +1709,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         }
     }
 
-    private void showErrorMessage(final Message message) {
+    public void showErrorMessage(final Message message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setTitle(R.string.error_message);
         final String errorMessage = message.getErrorMessage();
@@ -1825,7 +1730,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     }
 
 
-    private void deleteFile(final Message message) {
+    public void deleteFile(final Message message) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setNegativeButton(R.string.cancel, null);
         builder.setTitle(R.string.delete_file_dialog);
@@ -1843,7 +1748,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
 
     }
 
-    private void resendMessage(final Message message) {
+    public void resendMessage(final Message message) {
         if (message.isFileOrImage()) {
             if (!(message.getConversation() instanceof Conversation)) {
                 return;
@@ -1860,8 +1765,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
                         message.setCounterpart(conversation.getNextCounterpart());
                         activity.xmppConnectionService.resendFailedMessages(message);
                         new Handler().post(() -> {
-                            int size = messageList.size();
-                            this.binding.messagesView.setSelection(size - 1);
+                            RecyclerViewUtils.scrollToBottom(binding.messagesView);
                         });
                     });
                     return;
@@ -1880,12 +1784,11 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         }
         activity.xmppConnectionService.resendFailedMessages(message);
         new Handler().post(() -> {
-            int size = messageList.size();
-            this.binding.messagesView.setSelection(size - 1);
+            RecyclerViewUtils.scrollToBottom(binding.messagesView);
         });
     }
 
-    private void cancelTransmission(Message message) {
+    public void cancelTransmission(Message message) {
         Transferable transferable = message.getTransferable();
         if (transferable != null) {
             transferable.cancel();
@@ -1894,7 +1797,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         }
     }
 
-    private void retryDecryption(Message message) {
+    public void retryDecryption(Message message) {
         message.setEncryption(Message.ENCRYPTION_PGP);
         activity.onConversationsListItemUpdated();
         refresh();
@@ -1912,7 +1815,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         updateEditablity();
     }
 
-    private void correctMessage(Message message) {
+    public void correctMessage(Message message) {
         while (message.mergeable(message.next())) {
             message = message.next();
         }
@@ -2167,8 +2070,8 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     }
 
     private void setSelection(int pos, boolean jumpToBottom) {
-        ListViewUtils.setSelection(this.binding.messagesView, pos, jumpToBottom);
-        this.binding.messagesView.post(() -> ListViewUtils.setSelection(this.binding.messagesView, pos, jumpToBottom));
+        RecyclerViewUtils.scrollToPosition(binding.messagesView, pos, jumpToBottom);
+        this.binding.messagesView.post(() -> RecyclerViewUtils.scrollToPosition(binding.messagesView, pos, jumpToBottom));
         this.binding.messagesView.post(this::fireReadEvent);
     }
 
@@ -2420,7 +2323,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         if (prefScrollToBottom || scrolledToBottom()) {
             new Handler().post(() -> {
                 int size = messageList.size();
-                this.binding.messagesView.setSelection(size - 1);
+                RecyclerViewUtils.scrollToBottom(binding.messagesView);
             });
         }
     }

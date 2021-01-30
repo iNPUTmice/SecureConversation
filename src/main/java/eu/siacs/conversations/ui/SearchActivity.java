@@ -43,6 +43,7 @@ import android.widget.AdapterView;
 import android.widget.EditText;
 
 import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.google.common.base.Strings;
 
@@ -61,8 +62,8 @@ import eu.siacs.conversations.ui.adapter.MessageAdapter;
 import eu.siacs.conversations.ui.interfaces.OnSearchResultsAvailable;
 import eu.siacs.conversations.ui.util.ChangeWatcher;
 import eu.siacs.conversations.ui.util.DateSeparator;
-import eu.siacs.conversations.ui.util.ListViewUtils;
 import eu.siacs.conversations.ui.util.PendingItem;
+import eu.siacs.conversations.ui.util.RecyclerViewUtils;
 import eu.siacs.conversations.ui.util.ShareUtil;
 import eu.siacs.conversations.ui.util.StyledAttributes;
 import eu.siacs.conversations.utils.FtsUtils;
@@ -97,9 +98,10 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
 		this.binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
 		setSupportActionBar(this.binding.toolbar);
 		configureActionBar(getSupportActionBar());
-		this.messageListAdapter = new MessageAdapter(this, this.messages);
+		this.messageListAdapter = new MessageAdapter(this, null, this.messages);
 		this.messageListAdapter.setOnContactPictureClicked(this);
 		this.binding.searchResults.setAdapter(messageListAdapter);
+		this.binding.searchResults.setLayoutManager(new LinearLayoutManager(this));
 		registerForContextMenu(this.binding.searchResults);
 	}
 
@@ -268,7 +270,7 @@ public class SearchActivity extends XmppActivity implements TextWatcher, OnSearc
 			this.messages.addAll(messages);
 			messageListAdapter.notifyDataSetChanged();
 			changeBackground(true, messages.size() > 0);
-			ListViewUtils.scrollToBottom(this.binding.searchResults);
+			RecyclerViewUtils.scrollToBottom(this.binding.searchResults);
 		});
 	}
 

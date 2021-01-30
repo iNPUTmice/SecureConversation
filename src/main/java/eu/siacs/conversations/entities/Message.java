@@ -624,6 +624,10 @@ public class Message extends AbstractEntity implements AvatarService.Avatarable 
 		return status != STATUS_RECEIVED && !isCarbon() && type != Message.TYPE_RTP_SESSION;
 	}
 
+	public boolean isQuotable() {
+		return !isFileOrImage() && !treatAsDownloadable() && getTransferable() == null && MessageUtils.prepareQuote(this).length() > 0;
+	}
+
 	public boolean mergeable(final Message message) {
 		return message != null &&
 				(message.getType() == Message.TYPE_TEXT &&

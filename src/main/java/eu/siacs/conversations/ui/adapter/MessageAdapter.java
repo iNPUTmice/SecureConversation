@@ -2,6 +2,7 @@ package eu.siacs.conversations.ui.adapter;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -15,10 +16,13 @@ import android.text.style.ForegroundColorSpan;
 import android.text.style.RelativeSizeSpan;
 import android.text.style.StyleSpan;
 import android.util.DisplayMetrics;
+import android.view.ContextMenu;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,8 +30,10 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.common.base.Strings;
 
@@ -48,6 +54,7 @@ import eu.siacs.conversations.entities.Message;
 import eu.siacs.conversations.entities.Message.FileParams;
 import eu.siacs.conversations.entities.RtpSessionStatus;
 import eu.siacs.conversations.entities.Transferable;
+import eu.siacs.conversations.http.HttpDownloadConnection;
 import eu.siacs.conversations.http.P1S3UrlStreamHandler;
 import eu.siacs.conversations.persistance.FileBackend;
 import eu.siacs.conversations.services.MessageArchiveService;
@@ -55,11 +62,13 @@ import eu.siacs.conversations.services.NotificationService;
 import eu.siacs.conversations.ui.ConversationFragment;
 import eu.siacs.conversations.ui.ConversationsActivity;
 import eu.siacs.conversations.ui.XmppActivity;
+import eu.siacs.conversations.ui.XmppFragment;
 import eu.siacs.conversations.ui.service.AudioPlayer;
 import eu.siacs.conversations.ui.text.DividerSpan;
 import eu.siacs.conversations.ui.text.QuoteSpan;
 import eu.siacs.conversations.ui.util.AvatarWorkerTask;
 import eu.siacs.conversations.ui.util.MyLinkify;
+import eu.siacs.conversations.ui.util.ShareUtil;
 import eu.siacs.conversations.ui.util.ViewUtil;
 import eu.siacs.conversations.ui.widget.ClickableMovementMethod;
 import eu.siacs.conversations.utils.CryptoHelper;
@@ -67,34 +76,40 @@ import eu.siacs.conversations.utils.EmojiWrapper;
 import eu.siacs.conversations.utils.Emoticons;
 import eu.siacs.conversations.utils.GeoHelper;
 import eu.siacs.conversations.utils.MessageUtils;
+import eu.siacs.conversations.utils.Patterns;
 import eu.siacs.conversations.utils.StylingHelper;
 import eu.siacs.conversations.utils.TimeFrameUtils;
 import eu.siacs.conversations.utils.UIHelper;
 import eu.siacs.conversations.xmpp.Jid;
+import eu.siacs.conversations.xmpp.jingle.JingleFileTransferConnection;
 import eu.siacs.conversations.xmpp.mam.MamReference;
 
-public class MessageAdapter extends ArrayAdapter<Message> {
+public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.ViewHolder> {
 
     public static final String DATE_SEPARATOR_BODY = "DATE_SEPARATOR";
-    private static final int SENT = 0;
-    private static final int RECEIVED = 1;
+    public static final int SENT = 0;
+    public static final int RECEIVED = 1;
     private static final int STATUS = 2;
     private static final int DATE_SEPARATOR = 3;
     private static final int RTP_SESSION = 4;
     private final XmppActivity activity;
     private final AudioPlayer audioPlayer;
+    private List<Message> mMessages;
     private List<String> highlightedTerm = null;
     private final DisplayMetrics metrics;
     private OnContactPictureClicked mOnContactPictureClickedListener;
     private OnContactPictureLongClicked mOnContactPictureLongClickedListener;
     private boolean mUseGreenBackground = false;
     private OnQuoteListener onQuoteListener;
+    private XmppFragment mFragment;
 
-    public MessageAdapter(XmppActivity activity, List<Message> messages) {
-        super(activity, 0, messages);
-        this.audioPlayer = new AudioPlayer(this);
+    public MessageAdapter(XmppActivity activity, XmppFragment fragment, List<Message> messages) {
+        super();
+        this.mMessages = messages;
+        this.audioPlayer = new AudioPlayer(this, activity);
         this.activity = activity;
-        metrics = getContext().getResources().getDisplayMetrics();
+        this.mFragment = fragment;
+        metrics = this.activity.getResources().getDisplayMetrics();
         updatePreferences();
     }
 
@@ -134,11 +149,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.onQuoteListener = listener;
     }
 
-    @Override
-    public int getViewTypeCount() {
-        return 5;
-    }
-
     private int getItemViewType(Message message) {
         if (message.getType() == Message.TYPE_STATUS) {
             if (DATE_SEPARATOR_BODY.equals(message.getBody())) {
@@ -155,9 +165,55 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
+    private int viewTypeToLayout(int viewType) {
+        switch (viewType) {
+            case DATE_SEPARATOR:
+                return R.layout.message_date_bubble;
+            case RTP_SESSION:
+                return R.layout.message_rtp_session;
+            case SENT:
+                return R.layout.message_sent;
+            case RECEIVED:
+                return R.layout.message_received;
+            case STATUS:
+                return R.layout.message_status;
+            default:
+                throw new AssertionError("Unknown view type");
+        }
+    }
+
+    @Override
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(viewTypeToLayout(viewType), parent, false);
+        switch(viewType) {
+            case SENT:
+            case RECEIVED:
+                return new SentReceivedViewHolder(view, viewType);
+            case RTP_SESSION:
+                return new RTPViewHolder(view);
+            case DATE_SEPARATOR:
+                return new DateSeparatorViewHolder(view);
+            case STATUS:
+                return new StatusViewHolder(view);
+            default:
+                throw new AssertionError("Unknown view type");
+        }
+    }
+
+    @Override
+    public void onBindViewHolder(ViewHolder viewHolder, int position) {
+        Message message = mMessages.get(position);
+        viewHolder.bind(message);
+    }
+
     @Override
     public int getItemViewType(int position) {
-        return this.getItemViewType(getItem(position));
+        return this.getItemViewType(mMessages.get(position));
+    }
+
+    @Override
+    public int getItemCount() {
+        return mMessages.size();
     }
 
     private int getMessageTextColor(boolean onDark, boolean primary) {
@@ -168,9 +224,10 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
-    private void displayStatus(ViewHolder viewHolder, Message message, int type, boolean darkBackground) {
+    private void displayStatus(SentReceivedViewHolder viewHolder, Message message, int type, boolean darkBackground) {
         String filesize = null;
         String info = null;
+        Context context = viewHolder.itemView.getContext();
         boolean error = false;
         if (viewHolder.indicatorReceived != null) {
             viewHolder.indicatorReceived.setVisibility(View.GONE);
@@ -197,17 +254,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
         switch (message.getMergedStatus()) {
             case Message.STATUS_WAITING:
-                info = getContext().getString(R.string.waiting);
+                info = context.getString(R.string.waiting);
                 break;
             case Message.STATUS_UNSEND:
                 if (transferable != null) {
-                    info = getContext().getString(R.string.sending_file, transferable.getProgress());
+                    info = context.getString(R.string.sending_file, transferable.getProgress());
                 } else {
-                    info = getContext().getString(R.string.sending);
+                    info = context.getString(R.string.sending);
                 }
                 break;
             case Message.STATUS_OFFERED:
-                info = getContext().getString(R.string.offering);
+                info = context.getString(R.string.offering);
                 break;
             case Message.STATUS_SEND_RECEIVED:
             case Message.STATUS_SEND_DISPLAYED:
@@ -218,23 +275,23 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             case Message.STATUS_SEND_FAILED:
                 final String errorMessage = message.getErrorMessage();
                 if (Message.ERROR_MESSAGE_CANCELLED.equals(errorMessage)) {
-                    info = getContext().getString(R.string.cancelled);
+                    info = context.getString(R.string.cancelled);
                 } else if (errorMessage != null) {
                     final String[] errorParts = errorMessage.split("\\u001f", 2);
                     if (errorParts.length == 2) {
                         switch (errorParts[0]) {
                             case "file-too-large":
-                                info = getContext().getString(R.string.file_too_large);
+                                info = context.getString(R.string.file_too_large);
                                 break;
                             default:
-                                info = getContext().getString(R.string.send_failed);
+                                info = context.getString(R.string.send_failed);
                                 break;
                         }
                     } else {
-                        info = getContext().getString(R.string.send_failed);
+                        info = context.getString(R.string.send_failed);
                     }
                 } else {
-                    info = getContext().getString(R.string.send_failed);
+                    info = context.getString(R.string.send_failed);
                 }
                 error = true;
                 break;
@@ -246,15 +303,15 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
         if (error && type == SENT) {
             if (darkBackground) {
-                viewHolder.time.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Caption_Warning_OnDark);
+                viewHolder.time.setTextAppearance(context, R.style.TextAppearance_Conversations_Caption_Warning_OnDark);
             } else {
-                viewHolder.time.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Caption_Warning);
+                viewHolder.time.setTextAppearance(context, R.style.TextAppearance_Conversations_Caption_Warning);
             }
         } else {
             if (darkBackground) {
-                viewHolder.time.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Caption_OnDark);
+                viewHolder.time.setTextAppearance(viewHolder.itemView.getContext(), R.style.TextAppearance_Conversations_Caption_OnDark);
             } else {
-                viewHolder.time.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Caption);
+                viewHolder.time.setTextAppearance(viewHolder.itemView.getContext(), R.style.TextAppearance_Conversations_Caption);
             }
             viewHolder.time.setTextColor(this.getMessageTextColor(darkBackground, false));
         }
@@ -283,7 +340,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             viewHolder.indicator.setVisibility(View.VISIBLE);
         }
 
-        final String formattedTime = UIHelper.readableTimeDifferenceFull(getContext(), message.getMergedTimeSent());
+        final String formattedTime = UIHelper.readableTimeDifferenceFull(context, message.getMergedTimeSent());
         final String bodyLanguage = message.getBodyLanguage();
         final String bodyLanguageInfo = bodyLanguage == null ? "" : String.format(" \u00B7 %s", bodyLanguage.toUpperCase(Locale.US));
         if (message.getStatus() <= Message.STATUS_RECEIVED) {
@@ -313,29 +370,31 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
-    private void displayInfoMessage(ViewHolder viewHolder, CharSequence text, boolean darkBackground) {
+    private void displayInfoMessage(SentReceivedViewHolder viewHolder, CharSequence text, boolean darkBackground) {
+        Context context = viewHolder.itemView.getContext();
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.messageBody.setVisibility(View.VISIBLE);
         viewHolder.messageBody.setText(text);
         if (darkBackground) {
-            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary_OnDark);
+            viewHolder.messageBody.setTextAppearance(context, R.style.TextAppearance_Conversations_Body1_Secondary_OnDark);
         } else {
-            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Secondary);
+            viewHolder.messageBody.setTextAppearance(context, R.style.TextAppearance_Conversations_Body1_Secondary);
         }
         viewHolder.messageBody.setTextIsSelectable(false);
     }
 
-    private void displayEmojiMessage(final ViewHolder viewHolder, final String body, final boolean darkBackground) {
+    private void displayEmojiMessage(final SentReceivedViewHolder viewHolder, final String body, final boolean darkBackground) {
+        Context context = viewHolder.itemView.getContext();
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.messageBody.setVisibility(View.VISIBLE);
         if (darkBackground) {
-            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Emoji_OnDark);
+            viewHolder.messageBody.setTextAppearance(context, R.style.TextAppearance_Conversations_Body1_Emoji_OnDark);
         } else {
-            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_Emoji);
+            viewHolder.messageBody.setTextAppearance(context, R.style.TextAppearance_Conversations_Body1_Emoji);
         }
         Spannable span = new SpannableString(body);
         float size = Emoticons.isEmoji(body) ? 3.0f : 2.0f;
@@ -355,7 +414,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
         int color = darkBackground ? this.getMessageTextColor(darkBackground, false)
                 : ContextCompat.getColor(activity, R.color.green700_desaturated);
-        DisplayMetrics metrics = getContext().getResources().getDisplayMetrics();
+        DisplayMetrics metrics = activity.getBaseContext().getResources().getDisplayMetrics();
         body.setSpan(new QuoteSpan(color, metrics), start, end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
     }
 
@@ -411,16 +470,17 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         return startsWithQuote;
     }
 
-    private void displayTextMessage(final ViewHolder viewHolder, final Message message, boolean darkBackground, int type) {
+    private void displayTextMessage(final SentReceivedViewHolder viewHolder, final Message message, boolean darkBackground, int type) {
+        Context context = viewHolder.itemView.getContext();
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
         viewHolder.messageBody.setVisibility(View.VISIBLE);
 
         if (darkBackground) {
-            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1_OnDark);
+            viewHolder.messageBody.setTextAppearance(context, R.style.TextAppearance_Conversations_Body1_OnDark);
         } else {
-            viewHolder.messageBody.setTextAppearance(getContext(), R.style.TextAppearance_Conversations_Body1);
+            viewHolder.messageBody.setTextAppearance(context, R.style.TextAppearance_Conversations_Body1);
         }
         viewHolder.messageBody.setHighlightColor(ContextCompat.getColor(activity, darkBackground
                 ? (type == SENT || !mUseGreenBackground ? R.color.black26 : R.color.grey800) : R.color.grey500));
@@ -504,7 +564,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         }
     }
 
-    private void displayDownloadableMessage(ViewHolder viewHolder, final Message message, String text, final boolean darkBackground) {
+    private void displayDownloadableMessage(SentReceivedViewHolder viewHolder, final Message message, String text, final boolean darkBackground) {
         toggleWhisperInfo(viewHolder, message, darkBackground);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
@@ -513,7 +573,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.download_button.setOnClickListener(v -> ConversationFragment.downloadFile(activity, message));
     }
 
-    private void displayOpenableMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
+    private void displayOpenableMessage(SentReceivedViewHolder viewHolder, final Message message, final boolean darkBackground) {
         toggleWhisperInfo(viewHolder, message, darkBackground);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
@@ -522,7 +582,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.download_button.setOnClickListener(v -> openDownloadable(message));
     }
 
-    private void displayLocationMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
+    private void displayLocationMessage(SentReceivedViewHolder viewHolder, final Message message, final boolean darkBackground) {
         toggleWhisperInfo(viewHolder, message, darkBackground);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
@@ -531,7 +591,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.download_button.setOnClickListener(v -> showLocation(message));
     }
 
-    private void displayAudioMessage(ViewHolder viewHolder, Message message, boolean darkBackground) {
+    private void displayAudioMessage(SentReceivedViewHolder viewHolder, Message message, boolean darkBackground) {
         toggleWhisperInfo(viewHolder, message, darkBackground);
         viewHolder.image.setVisibility(View.GONE);
         viewHolder.download_button.setVisibility(View.GONE);
@@ -541,7 +601,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         this.audioPlayer.init(audioPlayer, message);
     }
 
-    private void displayMediaPreviewMessage(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
+    private void displayMediaPreviewMessage(SentReceivedViewHolder viewHolder, final Message message, final boolean darkBackground) {
         toggleWhisperInfo(viewHolder, message, darkBackground);
         viewHolder.download_button.setVisibility(View.GONE);
         viewHolder.audioPlayer.setVisibility(View.GONE);
@@ -570,7 +630,7 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         viewHolder.image.setOnClickListener(v -> openDownloadable(message));
     }
 
-    private void toggleWhisperInfo(ViewHolder viewHolder, final Message message, final boolean darkBackground) {
+    private void toggleWhisperInfo(SentReceivedViewHolder viewHolder, final Message message, final boolean darkBackground) {
         if (message.isPrivateMessage()) {
             final String privateMarker;
             if (message.getStatus() <= Message.STATUS_RECEIVED) {
@@ -606,261 +666,6 @@ public class MessageAdapter extends ArrayAdapter<Message> {
             Toast.makeText(activity, R.string.not_fetching_history_retention_period, Toast.LENGTH_SHORT).show();
         }
     }
-
-    @Override
-    public View getView(int position, View view, ViewGroup parent) {
-        final Message message = getItem(position);
-        final boolean omemoEncryption = message.getEncryption() == Message.ENCRYPTION_AXOLOTL;
-        final boolean isInValidSession = message.isValidInSession() && (!omemoEncryption || message.isTrusted());
-        final Conversational conversation = message.getConversation();
-        final Account account = conversation.getAccount();
-        final int type = getItemViewType(position);
-        ViewHolder viewHolder;
-        if (view == null) {
-            viewHolder = new ViewHolder();
-            switch (type) {
-                case DATE_SEPARATOR:
-                    view = activity.getLayoutInflater().inflate(R.layout.message_date_bubble, parent, false);
-                    viewHolder.status_message = view.findViewById(R.id.message_body);
-                    viewHolder.message_box = view.findViewById(R.id.message_box);
-                    viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
-                    break;
-                case RTP_SESSION:
-                    view = activity.getLayoutInflater().inflate(R.layout.message_rtp_session, parent, false);
-                    viewHolder.status_message = view.findViewById(R.id.message_body);
-                    viewHolder.message_box = view.findViewById(R.id.message_box);
-                    viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
-                    break;
-                case SENT:
-                    view = activity.getLayoutInflater().inflate(R.layout.message_sent, parent, false);
-                    viewHolder.message_box = view.findViewById(R.id.message_box);
-                    viewHolder.contact_picture = view.findViewById(R.id.message_photo);
-                    viewHolder.download_button = view.findViewById(R.id.download_button);
-                    viewHolder.indicator = view.findViewById(R.id.security_indicator);
-                    viewHolder.edit_indicator = view.findViewById(R.id.edit_indicator);
-                    viewHolder.image = view.findViewById(R.id.message_image);
-                    viewHolder.messageBody = view.findViewById(R.id.message_body);
-                    viewHolder.time = view.findViewById(R.id.message_time);
-                    viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
-                    viewHolder.audioPlayer = view.findViewById(R.id.audio_player);
-                    break;
-                case RECEIVED:
-                    view = activity.getLayoutInflater().inflate(R.layout.message_received, parent, false);
-                    viewHolder.message_box = view.findViewById(R.id.message_box);
-                    viewHolder.contact_picture = view.findViewById(R.id.message_photo);
-                    viewHolder.download_button = view.findViewById(R.id.download_button);
-                    viewHolder.indicator = view.findViewById(R.id.security_indicator);
-                    viewHolder.edit_indicator = view.findViewById(R.id.edit_indicator);
-                    viewHolder.image = view.findViewById(R.id.message_image);
-                    viewHolder.messageBody = view.findViewById(R.id.message_body);
-                    viewHolder.time = view.findViewById(R.id.message_time);
-                    viewHolder.indicatorReceived = view.findViewById(R.id.indicator_received);
-                    viewHolder.encryption = view.findViewById(R.id.message_encryption);
-                    viewHolder.audioPlayer = view.findViewById(R.id.audio_player);
-                    break;
-                case STATUS:
-                    view = activity.getLayoutInflater().inflate(R.layout.message_status, parent, false);
-                    viewHolder.contact_picture = view.findViewById(R.id.message_photo);
-                    viewHolder.status_message = view.findViewById(R.id.status_message);
-                    viewHolder.load_more_messages = view.findViewById(R.id.load_more_messages);
-                    break;
-                default:
-                    throw new AssertionError("Unknown view type");
-            }
-            view.setTag(viewHolder);
-        } else {
-            viewHolder = (ViewHolder) view.getTag();
-            if (viewHolder == null) {
-                return view;
-            }
-        }
-
-        boolean darkBackground = type == RECEIVED && (!isInValidSession || mUseGreenBackground) || activity.isDarkTheme();
-
-        if (type == DATE_SEPARATOR) {
-            if (UIHelper.today(message.getTimeSent())) {
-                viewHolder.status_message.setText(R.string.today);
-            } else if (UIHelper.yesterday(message.getTimeSent())) {
-                viewHolder.status_message.setText(R.string.yesterday);
-            } else {
-                viewHolder.status_message.setText(DateUtils.formatDateTime(activity, message.getTimeSent(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR));
-            }
-            viewHolder.message_box.setBackgroundResource(activity.isDarkTheme() ? R.drawable.date_bubble_grey : R.drawable.date_bubble_white);
-            return view;
-        } else if (type == RTP_SESSION) {
-            final boolean isDarkTheme = activity.isDarkTheme();
-            final boolean received = message.getStatus() <= Message.STATUS_RECEIVED;
-            final RtpSessionStatus rtpSessionStatus = RtpSessionStatus.of(message.getBody());
-            final long duration = rtpSessionStatus.duration;
-            if (received) {
-                if (duration > 0) {
-                    viewHolder.status_message.setText(activity.getString(R.string.incoming_call_duration, TimeFrameUtils.resolve(activity, duration)));
-                } else if (rtpSessionStatus.successful) {
-                    viewHolder.status_message.setText(R.string.incoming_call);
-                } else {
-                    viewHolder.status_message.setText(activity.getString(R.string.incoming_call_duration, UIHelper.readableTimeDifferenceFull(activity, message.getTimeSent())));
-                }
-            } else {
-                if (duration > 0) {
-                    viewHolder.status_message.setText(activity.getString(R.string.outgoing_call_duration, TimeFrameUtils.resolve(activity, duration)));
-                } else {
-                    viewHolder.status_message.setText(R.string.outgoing_call);
-                }
-            }
-            viewHolder.indicatorReceived.setImageResource(RtpSessionStatus.getDrawable(received, rtpSessionStatus.successful, isDarkTheme));
-            viewHolder.indicatorReceived.setAlpha(isDarkTheme ? 0.7f : 0.57f);
-            viewHolder.message_box.setBackgroundResource(isDarkTheme ? R.drawable.date_bubble_grey : R.drawable.date_bubble_white);
-            return view;
-        } else if (type == STATUS) {
-            if ("LOAD_MORE".equals(message.getBody())) {
-                viewHolder.status_message.setVisibility(View.GONE);
-                viewHolder.contact_picture.setVisibility(View.GONE);
-                viewHolder.load_more_messages.setVisibility(View.VISIBLE);
-                viewHolder.load_more_messages.setOnClickListener(v -> loadMoreMessages((Conversation) message.getConversation()));
-            } else {
-                viewHolder.status_message.setVisibility(View.VISIBLE);
-                viewHolder.load_more_messages.setVisibility(View.GONE);
-                viewHolder.status_message.setText(message.getBody());
-                boolean showAvatar;
-                if (conversation.getMode() == Conversation.MODE_SINGLE) {
-                    showAvatar = true;
-                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar_on_status_message);
-                } else if (message.getCounterpart() != null || message.getTrueCounterpart() != null || (message.getCounterparts() != null && message.getCounterparts().size() > 0)) {
-                    showAvatar = true;
-                    AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar_on_status_message);
-                } else {
-                    showAvatar = false;
-                }
-                if (showAvatar) {
-                    viewHolder.contact_picture.setAlpha(0.5f);
-                    viewHolder.contact_picture.setVisibility(View.VISIBLE);
-                } else {
-                    viewHolder.contact_picture.setVisibility(View.GONE);
-                }
-            }
-            return view;
-        } else {
-            AvatarWorkerTask.loadAvatar(message, viewHolder.contact_picture, R.dimen.avatar);
-        }
-
-        resetClickListener(viewHolder.message_box, viewHolder.messageBody);
-
-        viewHolder.contact_picture.setOnClickListener(v -> {
-            if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
-                MessageAdapter.this.mOnContactPictureClickedListener
-                        .onContactPictureClicked(message);
-            }
-
-        });
-        viewHolder.contact_picture.setOnLongClickListener(v -> {
-            if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
-                MessageAdapter.this.mOnContactPictureLongClickedListener
-                        .onContactPictureLongClicked(v, message);
-                return true;
-            } else {
-                return false;
-            }
-        });
-
-        final Transferable transferable = message.getTransferable();
-        final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(message);
-        if (unInitiatedButKnownSize || message.isDeleted() || (transferable != null && transferable.getStatus() != Transferable.STATUS_UPLOADING)) {
-            if (unInitiatedButKnownSize || transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER) {
-                displayDownloadableMessage(viewHolder, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground);
-            } else if (transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER_CHECK_FILESIZE) {
-                displayDownloadableMessage(viewHolder, message, activity.getString(R.string.check_x_filesize, UIHelper.getFileDescriptionString(activity, message)), darkBackground);
-            } else {
-                displayInfoMessage(viewHolder, UIHelper.getMessagePreview(activity, message).first, darkBackground);
-            }
-        } else if (message.isFileOrImage() && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
-            if (message.getFileParams().width > 0 && message.getFileParams().height > 0) {
-                displayMediaPreviewMessage(viewHolder, message, darkBackground);
-            } else if (message.getFileParams().runtime > 0) {
-                displayAudioMessage(viewHolder, message, darkBackground);
-            } else {
-                displayOpenableMessage(viewHolder, message, darkBackground);
-            }
-        } else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
-            if (account.isPgpDecryptionServiceConnected()) {
-                if (conversation instanceof Conversation && !account.hasPendingPgpIntent((Conversation) conversation)) {
-                    displayInfoMessage(viewHolder, activity.getString(R.string.message_decrypting), darkBackground);
-                } else {
-                    displayInfoMessage(viewHolder, activity.getString(R.string.pgp_message), darkBackground);
-                }
-            } else {
-                displayInfoMessage(viewHolder, activity.getString(R.string.install_openkeychain), darkBackground);
-                viewHolder.message_box.setOnClickListener(this::promptOpenKeychainInstall);
-                viewHolder.messageBody.setOnClickListener(this::promptOpenKeychainInstall);
-            }
-        } else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
-            displayInfoMessage(viewHolder, activity.getString(R.string.decryption_failed), darkBackground);
-        } else if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE) {
-            displayInfoMessage(viewHolder, activity.getString(R.string.not_encrypted_for_this_device), darkBackground);
-        } else if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
-            displayInfoMessage(viewHolder, activity.getString(R.string.omemo_decryption_failed), darkBackground);
-        } else {
-            if (message.isGeoUri()) {
-                displayLocationMessage(viewHolder, message, darkBackground);
-            } else if (message.bodyIsOnlyEmojis() && message.getType() != Message.TYPE_PRIVATE) {
-                displayEmojiMessage(viewHolder, message.getBody().trim(), darkBackground);
-            } else if (message.treatAsDownloadable()) {
-                try {
-                    URL url = new URL(message.getBody());
-                    if (P1S3UrlStreamHandler.PROTOCOL_NAME.equalsIgnoreCase(url.getProtocol())) {
-                        displayDownloadableMessage(viewHolder,
-                                message,
-                                activity.getString(R.string.check_x_filesize,
-                                        UIHelper.getFileDescriptionString(activity, message)),
-                                darkBackground);
-                    } else {
-                        displayDownloadableMessage(viewHolder,
-                                message,
-                                activity.getString(R.string.check_x_filesize_on_host,
-                                        UIHelper.getFileDescriptionString(activity, message),
-                                        url.getHost()),
-                                darkBackground);
-                    }
-                } catch (Exception e) {
-                    displayDownloadableMessage(viewHolder,
-                            message,
-                            activity.getString(R.string.check_x_filesize,
-                                    UIHelper.getFileDescriptionString(activity, message)),
-                            darkBackground);
-                }
-            } else {
-                displayTextMessage(viewHolder, message, darkBackground, type);
-            }
-        }
-
-        if (type == RECEIVED) {
-            if (isInValidSession) {
-                int bubble;
-                if (!mUseGreenBackground) {
-                    bubble = activity.getThemeResource(R.attr.message_bubble_received_monochrome, R.drawable.message_bubble_received_white);
-                } else {
-                    bubble = activity.getThemeResource(R.attr.message_bubble_received_green, R.drawable.message_bubble_received);
-                }
-                viewHolder.message_box.setBackgroundResource(bubble);
-                viewHolder.encryption.setVisibility(View.GONE);
-            } else {
-                viewHolder.message_box.setBackgroundResource(R.drawable.message_bubble_received_warning);
-                viewHolder.encryption.setVisibility(View.VISIBLE);
-                if (omemoEncryption && !message.isTrusted()) {
-                    viewHolder.encryption.setText(R.string.not_trusted);
-                } else {
-                    viewHolder.encryption.setText(CryptoHelper.encryptionTypeToText(message.getEncryption()));
-                }
-            }
-        }
-
-        displayStatus(viewHolder, message, type, darkBackground);
-
-        return view;
-    }
-
-    private void promptOpenKeychainInstall(View view) {
-        activity.showInstallPgpDialog();
-    }
     
     public FileBackend getFileBackend() {
         return activity.xmppConnectionService.getFileBackend();
@@ -890,8 +695,8 @@ public class MessageAdapter extends ArrayAdapter<Message> {
 
     private void showLocation(Message message) {
         for (Intent intent : GeoHelper.createGeoIntentsFromMessage(activity, message)) {
-            if (intent.resolveActivity(getContext().getPackageManager()) != null) {
-                getContext().startActivity(intent);
+            if (intent.resolveActivity(activity.getBaseContext().getPackageManager()) != null) {
+                activity.getBaseContext().startActivity(intent);
                 return;
             }
         }
@@ -920,20 +725,444 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         void onContactPictureLongClicked(View v, Message message);
     }
 
-    private static class ViewHolder {
+    public abstract class ViewHolder extends RecyclerView.ViewHolder {
 
-        public Button load_more_messages;
-        public ImageView edit_indicator;
-        public RelativeLayout audioPlayer;
+        public ViewHolder(@NonNull View itemView) {
+            super(itemView);
+        }
+
+        abstract void bind(Message message);
+    }
+
+    public class SentReceivedViewHolder extends ViewHolder implements View.OnCreateContextMenuListener{
+
         protected LinearLayout message_box;
+        protected ImageView contact_picture;
         protected Button download_button;
-        protected ImageView image;
         protected ImageView indicator;
-        protected ImageView indicatorReceived;
-        protected TextView time;
+        public ImageView edit_indicator;
+        protected ImageView image;
         protected TextView messageBody;
+        protected TextView time;
+        protected ImageView indicatorReceived;
+        public RelativeLayout audioPlayer;
+
+        private int type;
+        private boolean quotable = false;
+
+        public SentReceivedViewHolder(@NonNull View view, int messageType) {
+            super(view);
+
+            message_box = view.findViewById(R.id.message_box);
+            contact_picture = view.findViewById(R.id.message_photo);
+            download_button = view.findViewById(R.id.download_button);
+            indicator = view.findViewById(R.id.security_indicator);
+            edit_indicator = view.findViewById(R.id.edit_indicator);
+            image = view.findViewById(R.id.message_image);
+            messageBody = view.findViewById(R.id.message_body);
+            time = view.findViewById(R.id.message_time);
+            indicatorReceived = view.findViewById(R.id.indicator_received);
+            audioPlayer = view.findViewById(R.id.audio_player);
+
+            type = messageType;
+
+            view.setOnCreateContextMenuListener(this);
+        }
+
+        public int getType() {
+            return type;
+        }
+        public boolean isQuotable() { return quotable; }
+
+        @Override
+        void bind(Message message) {
+            final boolean omemoEncryption = message.getEncryption() == Message.ENCRYPTION_AXOLOTL;
+            final boolean isInValidSession = message.isValidInSession() && (!omemoEncryption || message.isTrusted());
+            final Conversational conversation = message.getConversation();
+            final Account account = conversation.getAccount();
+            boolean darkBackground = type == RECEIVED && (!isInValidSession || mUseGreenBackground) || activity.isDarkTheme();
+
+            quotable = message.isQuotable();
+
+            AvatarWorkerTask.loadAvatar(message, contact_picture, R.dimen.avatar);
+            resetClickListener(message_box, messageBody);
+
+            contact_picture.setOnClickListener(v -> {
+                if (MessageAdapter.this.mOnContactPictureClickedListener != null) {
+                    MessageAdapter.this.mOnContactPictureClickedListener
+                            .onContactPictureClicked(message);
+                }
+
+            });
+            contact_picture.setOnLongClickListener(v -> {
+                if (MessageAdapter.this.mOnContactPictureLongClickedListener != null) {
+                    MessageAdapter.this.mOnContactPictureLongClickedListener
+                            .onContactPictureLongClicked(v, message);
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            final Transferable transferable = message.getTransferable();
+            final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(message);
+            if (unInitiatedButKnownSize || message.isDeleted() || (transferable != null && transferable.getStatus() != Transferable.STATUS_UPLOADING)) {
+                if (unInitiatedButKnownSize || transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER) {
+                    displayDownloadableMessage(this, message, activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, message)), darkBackground);
+                } else if (transferable != null && transferable.getStatus() == Transferable.STATUS_OFFER_CHECK_FILESIZE) {
+                    displayDownloadableMessage(this, message, activity.getString(R.string.check_x_filesize, UIHelper.getFileDescriptionString(activity, message)), darkBackground);
+                } else {
+                    displayInfoMessage(this, UIHelper.getMessagePreview(activity, message).first, darkBackground);
+                }
+            } else if (message.isFileOrImage() && message.getEncryption() != Message.ENCRYPTION_PGP && message.getEncryption() != Message.ENCRYPTION_DECRYPTION_FAILED) {
+                if (message.getFileParams().width > 0 && message.getFileParams().height > 0) {
+                    displayMediaPreviewMessage(this, message, darkBackground);
+                } else if (message.getFileParams().runtime > 0) {
+                    displayAudioMessage(this, message, darkBackground);
+                } else {
+                    displayOpenableMessage(this, message, darkBackground);
+                }
+            } else if (message.getEncryption() == Message.ENCRYPTION_PGP) {
+                if (account.isPgpDecryptionServiceConnected()) {
+                    if (conversation instanceof Conversation && !account.hasPendingPgpIntent((Conversation) conversation)) {
+                        displayInfoMessage(this, activity.getString(R.string.message_decrypting), darkBackground);
+                    } else {
+                        displayInfoMessage(this, activity.getString(R.string.pgp_message), darkBackground);
+                    }
+                } else {
+                    displayInfoMessage(this, activity.getString(R.string.install_openkeychain), darkBackground);
+                    message_box.setOnClickListener((view) -> { activity.showInstallPgpDialog(); });
+                    messageBody.setOnClickListener((view) -> { activity.showInstallPgpDialog(); });
+                }
+            } else if (message.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED) {
+                displayInfoMessage(this, activity.getString(R.string.decryption_failed), darkBackground);
+            } else if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE) {
+                displayInfoMessage(this, activity.getString(R.string.not_encrypted_for_this_device), darkBackground);
+            } else if (message.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
+                displayInfoMessage(this, activity.getString(R.string.omemo_decryption_failed), darkBackground);
+            } else {
+                if (message.isGeoUri()) {
+                    displayLocationMessage(this, message, darkBackground);
+                } else if (message.bodyIsOnlyEmojis() && message.getType() != Message.TYPE_PRIVATE) {
+                    displayEmojiMessage(this, message.getBody().trim(), darkBackground);
+                } else if (message.treatAsDownloadable()) {
+                    try {
+                        URL url = new URL(message.getBody());
+                        if (P1S3UrlStreamHandler.PROTOCOL_NAME.equalsIgnoreCase(url.getProtocol())) {
+                            displayDownloadableMessage(this,
+                                    message,
+                                    activity.getString(R.string.check_x_filesize,
+                                            UIHelper.getFileDescriptionString(activity, message)),
+                                    darkBackground);
+                        } else {
+                            displayDownloadableMessage(this,
+                                    message,
+                                    activity.getString(R.string.check_x_filesize_on_host,
+                                            UIHelper.getFileDescriptionString(activity, message),
+                                            url.getHost()),
+                                    darkBackground);
+                        }
+                    } catch (Exception e) {
+                        displayDownloadableMessage(this,
+                                message,
+                                activity.getString(R.string.check_x_filesize,
+                                        UIHelper.getFileDescriptionString(activity, message)),
+                                darkBackground);
+                    }
+                } else {
+                    displayTextMessage(this, message, darkBackground, type);
+                }
+            }
+
+            displayStatus(this, message, type, darkBackground);
+        }
+
+        @Override
+        public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+            v.dispatchTouchEvent(MotionEvent.obtain(0, 0, MotionEvent.ACTION_CANCEL, 0f, 0f, 0));
+            Message m = mMessages.get(getAdapterPosition());
+            final Transferable t = m.getTransferable();
+            Message relevantForCorrection = m;
+            while (relevantForCorrection.mergeable(relevantForCorrection.next())) {
+                relevantForCorrection = relevantForCorrection.next();
+            }
+            if (m.getType() != Message.TYPE_STATUS && m.getType() != Message.TYPE_RTP_SESSION) {
+
+                if (m.getEncryption() == Message.ENCRYPTION_AXOLOTL_NOT_FOR_THIS_DEVICE || m.getEncryption() == Message.ENCRYPTION_AXOLOTL_FAILED) {
+                    return;
+                }
+
+                if (m.getStatus() == Message.STATUS_RECEIVED && t != null && (t.getStatus() == Transferable.STATUS_CANCELLED || t.getStatus() == Transferable.STATUS_FAILED)) {
+                    return;
+                }
+
+                final boolean deleted = m.isDeleted();
+                final boolean encrypted = m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED
+                        || m.getEncryption() == Message.ENCRYPTION_PGP;
+                final boolean receiving = m.getStatus() == Message.STATUS_RECEIVED && (t instanceof JingleFileTransferConnection || t instanceof HttpDownloadConnection);
+                activity.getMenuInflater().inflate(R.menu.message_context, menu);
+                menu.setHeaderTitle(R.string.message_options);
+                MenuItem openWith = menu.findItem(R.id.open_with);
+                MenuItem copyMessage = menu.findItem(R.id.copy_message);
+                MenuItem copyLink = menu.findItem(R.id.copy_link);
+                MenuItem quoteMessage = menu.findItem(R.id.quote_message);
+                MenuItem retryDecryption = menu.findItem(R.id.retry_decryption);
+                MenuItem correctMessage = menu.findItem(R.id.correct_message);
+                MenuItem shareWith = menu.findItem(R.id.share_with);
+                MenuItem sendAgain = menu.findItem(R.id.send_again);
+                MenuItem copyUrl = menu.findItem(R.id.copy_url);
+                MenuItem downloadFile = menu.findItem(R.id.download_file);
+                MenuItem cancelTransmission = menu.findItem(R.id.cancel_transmission);
+                MenuItem deleteFile = menu.findItem(R.id.delete_file);
+                MenuItem showErrorMessage = menu.findItem(R.id.show_error_message);
+
+                // This way we can use a closure to have access to the message
+                shareWith.setOnMenuItemClickListener((menuItem) -> {
+                    ShareUtil.share(activity, m);
+                    return true;
+                });
+                copyLink.setOnMenuItemClickListener((menuItem) -> {
+                    ShareUtil.copyLinkToClipboard(activity, m);
+                    return true;
+                });
+                copyMessage.setOnMenuItemClickListener((menuItem) -> {
+                    ShareUtil.copyToClipboard(activity, m);
+                    return true;
+                });
+                copyUrl.setOnMenuItemClickListener((menuItem) -> {
+                    ShareUtil.copyUrlToClipboard(activity, m);
+                    return true;
+                });
+                correctMessage.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).correctMessage(m);
+                    }
+                    return true;
+                });
+                quoteMessage.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).quoteMessage(m);
+                    }
+                    return true;
+                });
+                sendAgain.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).resendMessage(m);
+                    }
+                    return true;
+                });
+                downloadFile.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).startDownloadable(m);
+                    }
+                    return true;
+                });
+                cancelTransmission.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).cancelTransmission(m);
+                    }
+                    return true;
+                });
+                retryDecryption.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).retryDecryption(m);
+                    }
+                    return true;
+                });
+                deleteFile.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).deleteFile(m);
+                    }
+                    return true;
+                });
+                showErrorMessage.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).showErrorMessage(m);
+                    }
+                    return true;
+                });
+                openWith.setOnMenuItemClickListener((menuItem) -> {
+                    if (mFragment != null && mFragment instanceof ConversationFragment) {
+                        ((ConversationFragment) mFragment).openWith(m);
+                    }
+                    return true;
+                });
+                final boolean unInitiatedButKnownSize = MessageUtils.unInitiatedButKnownSize(m);
+                final boolean showError = m.getStatus() == Message.STATUS_SEND_FAILED && m.getErrorMessage() != null && !Message.ERROR_MESSAGE_CANCELLED.equals(m.getErrorMessage());
+                if (!m.isFileOrImage() && !encrypted && !m.isGeoUri() && !m.treatAsDownloadable() && !unInitiatedButKnownSize && t == null) {
+                    copyMessage.setVisible(true);
+                    quoteMessage.setVisible(!showError && MessageUtils.prepareQuote(m).length() > 0);
+                    String body = m.getMergedBody().toString();
+                    if (ShareUtil.containsXmppUri(body)) {
+                        copyLink.setTitle(R.string.copy_jabber_id);
+                        copyLink.setVisible(true);
+                    } else if (Patterns.AUTOLINK_WEB_URL.matcher(body).find()) {
+                        copyLink.setVisible(true);
+                    }
+                }
+                if (m.getEncryption() == Message.ENCRYPTION_DECRYPTION_FAILED && !deleted) {
+                    retryDecryption.setVisible(true);
+                }
+                if (!showError
+                        && relevantForCorrection.getType() == Message.TYPE_TEXT
+                        && !m.isGeoUri()
+                        && relevantForCorrection.isLastCorrectableMessage()
+                        && m.getConversation() instanceof Conversation) {
+                    correctMessage.setVisible(true);
+                }
+                if ((m.isFileOrImage() && !deleted && !receiving) || (m.getType() == Message.TYPE_TEXT && !m.treatAsDownloadable()) && !unInitiatedButKnownSize && t == null) {
+                    shareWith.setVisible(true);
+                }
+                if (m.getStatus() == Message.STATUS_SEND_FAILED) {
+                    sendAgain.setVisible(true);
+                }
+                if (m.hasFileOnRemoteHost()
+                        || m.isGeoUri()
+                        || m.treatAsDownloadable()
+                        || unInitiatedButKnownSize
+                        || t instanceof HttpDownloadConnection) {
+                    copyUrl.setVisible(true);
+                }
+                if (m.isFileOrImage() && deleted && m.hasFileOnRemoteHost()) {
+                    downloadFile.setVisible(true);
+                    downloadFile.setTitle(activity.getString(R.string.download_x_file, UIHelper.getFileDescriptionString(activity, m)));
+                }
+                final boolean waitingOfferedSending = m.getStatus() == Message.STATUS_WAITING
+                        || m.getStatus() == Message.STATUS_UNSEND
+                        || m.getStatus() == Message.STATUS_OFFERED;
+                final boolean cancelable = (t != null && !deleted) || waitingOfferedSending && m.needsUploading();
+                if (cancelable) {
+                    cancelTransmission.setVisible(true);
+                }
+                if (m.isFileOrImage() && !deleted && !cancelable) {
+                    String path = m.getRelativeFilePath();
+                    if (path == null || !path.startsWith("/") || FileBackend.isInDirectoryThatShouldNotBeScanned(getActivity(), path)) {
+                        deleteFile.setVisible(true);
+                        deleteFile.setTitle(activity.getString(R.string.delete_x_file, UIHelper.getFileDescriptionString(activity, m)));
+                    }
+                }
+                if (showError) {
+                    showErrorMessage.setVisible(true);
+                }
+                final String mime = m.isFileOrImage() ? m.getMimeType() : null;
+                if ((m.isGeoUri() && GeoHelper.openInOsmAnd(getActivity(), m)) || (mime != null && mime.startsWith("audio/"))) {
+                    openWith.setVisible(true);
+                }
+            }
+        }
+    }
+
+    public class RTPViewHolder extends ViewHolder {
+
+        protected TextView status_message;
+        protected LinearLayout message_box;
+        protected ImageView indicatorReceived;
+
+        public RTPViewHolder(@NonNull View view) {
+            super(view);
+
+            status_message = view.findViewById(R.id.message_body);
+            message_box = view.findViewById(R.id.message_box);
+            indicatorReceived = view.findViewById(R.id.indicator_received);
+        }
+
+        @Override
+        void bind(Message message) {
+            final boolean isDarkTheme = activity.isDarkTheme();
+            final boolean received = message.getStatus() <= Message.STATUS_RECEIVED;
+            final RtpSessionStatus rtpSessionStatus = RtpSessionStatus.of(message.getBody());
+            final long duration = rtpSessionStatus.duration;
+            if (received) {
+                if (duration > 0) {
+                    status_message.setText(activity.getString(R.string.incoming_call_duration, TimeFrameUtils.resolve(activity, duration)));
+                } else if (rtpSessionStatus.successful) {
+                    status_message.setText(R.string.incoming_call);
+                } else {
+                    status_message.setText(activity.getString(R.string.incoming_call_duration, UIHelper.readableTimeDifferenceFull(activity, message.getTimeSent())));
+                }
+            } else {
+                if (duration > 0) {
+                    status_message.setText(activity.getString(R.string.outgoing_call_duration, TimeFrameUtils.resolve(activity, duration)));
+                } else {
+                    status_message.setText(R.string.outgoing_call);
+                }
+            }
+            indicatorReceived.setImageResource(RtpSessionStatus.getDrawable(received, rtpSessionStatus.successful, isDarkTheme));
+            indicatorReceived.setAlpha(isDarkTheme ? 0.7f : 0.57f);
+            message_box.setBackgroundResource(isDarkTheme ? R.drawable.date_bubble_grey : R.drawable.date_bubble_white);
+        }
+    }
+
+    public class DateSeparatorViewHolder extends ViewHolder {
+
+        protected TextView status_message;
+        protected LinearLayout message_box;
+        protected ImageView indicatorReceived;
+
+        public DateSeparatorViewHolder(@NonNull View view) {
+            super(view);
+
+            status_message = view.findViewById(R.id.message_body);
+            message_box = view.findViewById(R.id.message_box);
+            indicatorReceived = view.findViewById(R.id.indicator_received);
+        }
+
+        @Override
+        void bind(Message message) {
+            if (UIHelper.today(message.getTimeSent())) {
+                status_message.setText(R.string.today);
+            } else if (UIHelper.yesterday(message.getTimeSent())) {
+                status_message.setText(R.string.yesterday);
+            } else {
+                status_message.setText(DateUtils.formatDateTime(activity, message.getTimeSent(), DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_SHOW_YEAR));
+            }
+            message_box.setBackgroundResource(activity.isDarkTheme() ? R.drawable.date_bubble_grey : R.drawable.date_bubble_white);
+        }
+    }
+
+    public class StatusViewHolder extends ViewHolder {
+
         protected ImageView contact_picture;
         protected TextView status_message;
-        protected TextView encryption;
+        public Button load_more_messages;
+
+        public StatusViewHolder(@NonNull View view) {
+            super(view);
+
+            contact_picture = view.findViewById(R.id.message_photo);
+            status_message = view.findViewById(R.id.status_message);
+            load_more_messages = view.findViewById(R.id.load_more_messages);
+        }
+
+        @Override
+        void bind(Message message) {
+            final Conversational conversation = message.getConversation();
+            if ("LOAD_MORE".equals(message.getBody())) {
+                status_message.setVisibility(View.GONE);
+                contact_picture.setVisibility(View.GONE);
+                load_more_messages.setVisibility(View.VISIBLE);
+                load_more_messages.setOnClickListener(v -> loadMoreMessages((Conversation) message.getConversation()));
+            } else {
+                status_message.setVisibility(View.VISIBLE);
+                load_more_messages.setVisibility(View.GONE);
+                status_message.setText(message.getBody());
+                boolean showAvatar;
+                if (conversation.getMode() == Conversation.MODE_SINGLE) {
+                    showAvatar = true;
+                    AvatarWorkerTask.loadAvatar(message, contact_picture, R.dimen.avatar_on_status_message);
+                } else if (message.getCounterpart() != null || message.getTrueCounterpart() != null || (message.getCounterparts() != null && message.getCounterparts().size() > 0)) {
+                    showAvatar = true;
+                    AvatarWorkerTask.loadAvatar(message, contact_picture, R.dimen.avatar_on_status_message);
+                } else {
+                    showAvatar = false;
+                }
+                if (showAvatar) {
+                    contact_picture.setAlpha(0.5f);
+                    contact_picture.setVisibility(View.VISIBLE);
+                } else {
+                    contact_picture.setVisibility(View.GONE);
+                }
+            }
+        }
     }
 }
