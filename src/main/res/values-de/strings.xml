@@ -956,4 +956,6 @@
     <string name="unable_to_parse_invite">Einladung kann nicht gelesen werden</string>
     <string name="server_does_not_support_easy_onboarding_invites">Server unterstützt keine Generierung von Einladungen</string>
     <string name="no_active_accounts_support_this">Keine aktiven Konten unterstützen diese Funktion</string>
+    <string name="confirm_delete_attachment_summary">Soll das Löschen von Attachments immer bestätigt werden?</string>
+    <string name="pref_confirm_delete_attachment">Löschen von Attachments in Chats</string>
 </resources>
