@@ -1823,22 +1823,33 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     }
 
 
+    private void _deleteFile(final Message message) {
+        if (activity.xmppConnectionService.getFileBackend().deleteFile(message)) {
+            message.setDeleted(true);
+            activity.xmppConnectionService.evictPreview(message.getUuid());
+            activity.xmppConnectionService.updateMessage(message, false);
+            activity.onConversationsListItemUpdated();
+            refresh();
+        }
+    }
+
     private void deleteFile(final Message message) {
+
+        boolean prefConfirm = activity.xmppConnectionService.getBooleanPreference("confirm_delete_attachment", R.bool.confirm_delete_attachment);
+
+        if(!prefConfirm) {
+            _deleteFile(message);
+            return;
+        }
+
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         builder.setNegativeButton(R.string.cancel, null);
         builder.setTitle(R.string.delete_file_dialog);
         builder.setMessage(R.string.delete_file_dialog_msg);
         builder.setPositiveButton(R.string.confirm, (dialog, which) -> {
-            if (activity.xmppConnectionService.getFileBackend().deleteFile(message)) {
-                message.setDeleted(true);
-                activity.xmppConnectionService.evictPreview(message.getUuid());
-                activity.xmppConnectionService.updateMessage(message, false);
-                activity.onConversationsListItemUpdated();
-                refresh();
-            }
+            _deleteFile(message);
         });
         builder.create().show();
-
     }
 
     private void resendMessage(final Message message) {
