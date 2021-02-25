@@ -134,6 +134,11 @@
             android:key="use_share_location_plugin"
             android:summary="@string/pref_use_share_location_plugin_summary"
             android:title="@string/pref_use_share_location_plugin" />
+        <CheckBoxPreference
+            android:defaultValue="@bool/confirm_delete_attachment"
+            android:key="confirm_delete_attachment"
+            android:summary="@string/confirm_delete_attachment_summary"
+            android:title="@string/pref_confirm_delete_attachment" />
         <ListPreference
             android:defaultValue="@string/picture_compression"
             android:entries="@array/picture_compression_entries"
