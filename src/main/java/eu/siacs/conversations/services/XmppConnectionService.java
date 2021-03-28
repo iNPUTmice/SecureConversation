@@ -20,6 +20,7 @@ import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
+import android.net.NetworkCapabilities;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Binder;
@@ -162,6 +163,8 @@ import eu.siacs.conversations.xmpp.stanzas.IqPacket;
 import eu.siacs.conversations.xmpp.stanzas.MessagePacket;
 import eu.siacs.conversations.xmpp.stanzas.PresencePacket;
 import me.leolin.shortcutbadger.ShortcutBadger;
+
+import static android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET;
 
 public class XmppConnectionService extends Service {
 
@@ -1078,7 +1081,17 @@ public class XmppConnectionService extends Service {
         final ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         try {
             final NetworkInfo activeNetwork = cm == null ? null : cm.getActiveNetworkInfo();
-            return activeNetwork != null && (activeNetwork.isConnected() || activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET);
+            boolean hasInternetConnection = activeNetwork != null
+                    && (activeNetwork.isConnected() || activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET);
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                NetworkCapabilities capabilities = cm == null ? null : cm.getNetworkCapabilities(cm.getActiveNetwork());
+                boolean hasInternetCapability = capabilities != null && capabilities.hasCapability(NET_CAPABILITY_INTERNET);
+
+                return hasInternetConnection || hasInternetCapability;
+            } else {
+                return hasInternetConnection;
+            }
         } catch (RuntimeException e) {
             Log.d(Config.LOGTAG, "unable to check for internet connection", e);
             return true; //if internet connection can not be checked it is probably best to just try
