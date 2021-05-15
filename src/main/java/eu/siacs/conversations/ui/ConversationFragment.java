@@ -1092,7 +1092,7 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
     private void quoteMessage(Message message) {
         SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(activity);
         if (p.getBoolean("mention_user_in_quote", activity.getResources().getBoolean(R.bool.mention_user_in_quote))){
-            insertText("*" + UIHelper.getMessageDisplayName(message) + "*:");
+            insertText(UIHelper.getMessageDisplayName(message) + ":");
         }
         quoteText(MessageUtils.prepareQuote(message));
     }
