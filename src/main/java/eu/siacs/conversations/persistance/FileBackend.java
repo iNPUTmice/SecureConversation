@@ -150,6 +150,14 @@ public class FileBackend {
         }
     }
 
+    public static String getConversationsDirectory(Context context, final String type, boolean sent) {
+        if (Config.ONLY_INTERNAL_STORAGE) {
+            return context.getFilesDir().getAbsolutePath() + "/" + type + "/";
+        } else {
+            return getAppMediaDirectory(context) + context.getString(R.string.app_name) + " " + type + "/";
+        }
+    }
+
     public static String getAppMediaDirectory(Context context) {
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + context.getString(R.string.app_name) + "/Media/";
     }
@@ -515,23 +523,34 @@ public class FileBackend {
 
 
     public DownloadableFile getFileForPath(String path) {
-        return getFileForPath(path, MimeUtils.guessMimeTypeFromExtension(MimeUtils.extractRelevantExtension(path)));
+        return getFileForPath(path, MimeUtils.guessMimeTypeFromExtension(MimeUtils.extractRelevantExtension(path)), true);
     }
 
-    public DownloadableFile getFileForPath(String path, String mime) {
+    public DownloadableFile getFileForPath(String path, String mime, boolean isSent) {
+        /// if you want to just check that path is in /sent folder (maybe because
+        /// you don't know that file is sent or received) you can set isSent to true.
         final DownloadableFile file;
         if (path.startsWith("/")) {
             file = new DownloadableFile(path);
         } else {
+            String filePath;
             if (mime != null && mime.startsWith("image/")) {
-                file = new DownloadableFile(getConversationsDirectory("Images") + path);
+                filePath = getConversationsDirectory("Images");
             } else if (mime != null && mime.startsWith("video/")) {
-                file = new DownloadableFile(getConversationsDirectory("Videos") + path);
+                filePath = getConversationsDirectory("Videos");
             } else {
-                file = new DownloadableFile(getConversationsDirectory("Files") + path);
+                filePath = getConversationsDirectory("Files");
             }
+            /// file is not sent in old version
+            if (isSent && !new File(filePath+path).exists())
+                file = new DownloadableFile(filePath + "sent/" + path);
+            else
+                file = new DownloadableFile(filePath + path);
         }
         return file;
+    }
+    public DownloadableFile getFileForPath(String path, String mime) {
+        return getFileForPath(path, mime, false);
     }
 
     public boolean isInternalFile(final File file) {
@@ -547,7 +566,7 @@ public class FileBackend {
         if (path == null) {
             path = message.getUuid();
         }
-        final DownloadableFile file = getFileForPath(path, message.getMimeType());
+        final DownloadableFile file = getFileForPath(path, message.getMimeType(), message.getStatus() != Message.STATUS_RECEIVED);
         if (encrypted) {
             return new DownloadableFile(getConversationsDirectory("Files") + file.getName() + ".pgp");
         } else {
