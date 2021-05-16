@@ -150,14 +150,6 @@ public class FileBackend {
         }
     }
 
-    public static String getConversationsDirectory(Context context, final String type, boolean sent) {
-        if (Config.ONLY_INTERNAL_STORAGE) {
-            return context.getFilesDir().getAbsolutePath() + "/" + type + "/";
-        } else {
-            return getAppMediaDirectory(context) + context.getString(R.string.app_name) + " " + type + "/";
-        }
-    }
-
     public static String getAppMediaDirectory(Context context) {
         return Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + context.getString(R.string.app_name) + "/Media/";
     }
@@ -527,28 +519,32 @@ public class FileBackend {
     }
 
     public DownloadableFile getFileForPath(String path, String mime, boolean isSent) {
+
         /// if you want to just check that path is in /sent folder (maybe because
         /// you don't know that file is sent or received) you can set isSent to true.
         final DownloadableFile file;
         if (path.startsWith("/")) {
-            file = new DownloadableFile(path);
-        } else {
-            String filePath;
-            if (mime != null && mime.startsWith("image/")) {
-                filePath = getConversationsDirectory("Images");
-            } else if (mime != null && mime.startsWith("video/")) {
-                filePath = getConversationsDirectory("Videos");
-            } else {
-                filePath = getConversationsDirectory("Files");
+            if (!isSent || new File(path).exists()){
+                return new DownloadableFile(path);
             }
-            /// file is not sent in old version
-            if (isSent && !new File(filePath+path).exists())
-                file = new DownloadableFile(filePath + "sent/" + path);
-            else
-                file = new DownloadableFile(filePath + path);
+            /// else file has been deleted
         }
+        String filePath;
+        if (mime != null && mime.startsWith("image/")) {
+            filePath = getConversationsDirectory("Images");
+        } else if (mime != null && mime.startsWith("video/")) {
+            filePath = getConversationsDirectory("Videos");
+        } else {
+            filePath = getConversationsDirectory("Files");
+        }
+        /// file is not sent in old version
+        if (isSent && !new File(filePath+path).exists())
+            file = new DownloadableFile(filePath + "sent/" + path);
+        else
+            file = new DownloadableFile(filePath + path);
         return file;
     }
+
     public DownloadableFile getFileForPath(String path, String mime) {
         return getFileForPath(path, mime, false);
     }
