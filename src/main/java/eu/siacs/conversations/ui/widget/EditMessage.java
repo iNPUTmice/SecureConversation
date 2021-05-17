@@ -141,8 +141,7 @@ public class EditMessage extends EmojiWrapperEditText {
         this.mCommitContentListener = listener;
     }
 
-    public void insertAsQuote(String text) {
-        text = text.replaceAll("(\n *){2,}", "\n").replaceAll("(^|\n)", "$1> ").replaceAll("\n$", "");
+    public void insertText(String text) {
         Editable editable = getEditableText();
         int position = getSelectionEnd();
         if (position == -1) position = editable.length();
@@ -156,6 +155,11 @@ public class EditMessage extends EmojiWrapperEditText {
             editable.insert(position, "\n");
         }
         setSelection(position);
+    }
+
+    public void insertAsQuote(String text) {
+        text = text.replaceAll("(\n *){2,}", "\n").replaceAll("(^|\n)", "$1> ").replaceAll("\n$", "");
+        insertText(text);
     }
 
     @Override

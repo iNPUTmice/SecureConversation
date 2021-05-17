@@ -965,4 +965,7 @@
     <string name="no_active_accounts_support_this">No active accounts support this feature</string>
     <string name="backup_started_message">The backup has been started. You’ll get a notification once it has been completed.</string>
     <string name="unable_to_enable_video">Unable to enable video.</string>
+    <string name="chat">Chat</string>
+    <string name="pref_mention_user_in_quote">Add nickname in quote</string>
+    <string name="pref_mention_user_in_quote_summary">Add quoted users nickname when quoting messages</string>
 </resources>

@@ -1067,9 +1067,12 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         messageListAdapter.setOnContactPictureLongClicked(null);
     }
 
-    private void quoteText(String text) {
+    private void insertText(String text, boolean isQuote){
         if (binding.textinput.isEnabled()) {
-            binding.textinput.insertAsQuote(text);
+            if (isQuote)
+                binding.textinput.insertAsQuote(text);
+            else
+                binding.textinput.insertText(text);
             binding.textinput.requestFocus();
             InputMethodManager inputMethodManager = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             if (inputMethodManager != null) {
@@ -1078,7 +1081,19 @@ public class ConversationFragment extends XmppFragment implements EditMessage.Ke
         }
     }
 
+    private void insertText(String text){
+        insertText(text, false);
+    }
+
+    private void quoteText(String text) {
+        insertText(text, true);
+    }
+
     private void quoteMessage(Message message) {
+        SharedPreferences p = PreferenceManager.getDefaultSharedPreferences(activity);
+        if (p.getBoolean("mention_user_in_quote", activity.getResources().getBoolean(R.bool.mention_user_in_quote))){
+            insertText(UIHelper.getMessageDisplayName(message) + ":");
+        }
         quoteText(MessageUtils.prepareQuote(message));
     }
 

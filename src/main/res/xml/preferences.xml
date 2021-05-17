@@ -191,6 +191,15 @@
             android:title="@string/pref_font_size" />
     </PreferenceCategory>
     <PreferenceCategory
+        android:key="chat"
+        android:title="@string/chat">
+        <CheckBoxPreference
+            android:defaultValue="@bool/mention_user_in_quote"
+            android:key="mention_user_in_quote"
+            android:summary="@string/pref_mention_user_in_quote_summary"
+            android:title="@string/pref_mention_user_in_quote" />
+    </PreferenceCategory>
+    <PreferenceCategory
         android:key="backup_category"
         android:title="@string/backup">
         <Preference
