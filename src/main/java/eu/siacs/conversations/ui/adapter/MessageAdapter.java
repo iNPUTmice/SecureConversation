@@ -32,6 +32,7 @@ import androidx.core.content.ContextCompat;
 import com.google.common.base.Strings;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -363,12 +364,22 @@ public class MessageAdapter extends ArrayAdapter<Message> {
         int lineStart = -1;
         int lineTextStart = -1;
         int quoteStart = -1;
+        ArrayList<Integer> codeIndex = new ArrayList<Integer>();
+        for (int i = 0; i < body.length()-2; i++){
+            if (body.charAt(i) == '`' && body.charAt(i+1) == '`' && body.charAt(i+2) == '`' && (i+3 == body.length() || body.charAt(i+3) != '`'))
+                codeIndex.add(i);
+        }
+        boolean inCode = false;
         for (int i = 0; i <= body.length(); i++) {
+            if (codeIndex.size() > 0 && i == codeIndex.get(0)){
+                inCode = !inCode;
+                codeIndex.remove(0);
+            }
             char current = body.length() > i ? body.charAt(i) : '\n';
             if (lineStart == -1) {
                 if (previous == '\n') {
-                    if ((current == '>' && UIHelper.isPositionFollowedByQuoteableCharacter(body, i))
-                            || current == '\u00bb' && !UIHelper.isPositionFollowedByQuote(body, i)) {
+                    if ((!inCode || quoteStart != -1) && ((current == '>' && UIHelper.isPositionFollowedByQuoteableCharacter(body, i))
+                            || current == '\u00bb' && !UIHelper.isPositionFollowedByQuote(body, i))) {
                         // Line start with quote
                         lineStart = i;
                         if (quoteStart == -1) quoteStart = i;
