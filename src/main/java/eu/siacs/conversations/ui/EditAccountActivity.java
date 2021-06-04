@@ -243,6 +243,9 @@ public class EditAccountActivity extends OmemoActivity implements OnAccountUpdat
                         binding.port.requestFocus();
                         return;
                     }
+                    if(mAccount != null && !hostname.equals(mAccount.getServer()) && !mAccount.isOnion() && hostname.endsWith(".onion")) {
+                        Toast.makeText(EditAccountActivity.this, R.string.audio_video_disabled_tor, Toast.LENGTH_LONG).show();
+                    }
                 }
             } else {
                 hostname = null;

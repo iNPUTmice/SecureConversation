@@ -386,6 +386,9 @@ public class SettingsActivity extends XmppActivity implements
 		} else if (name.equals("use_tor")) {
 			reconnectAccounts();
 			xmppConnectionService.reinitializeMuclumbusService();
+			if(getBooleanPreference("use_tor", R.bool.use_tor)) {
+				displayToast(getString(R.string.audio_video_disabled_tor));
+			}
 		} else if (name.equals(AUTOMATIC_MESSAGE_DELETION)) {
 			xmppConnectionService.expireOldMessages(true);
 		} else if (name.equals(THEME)) {
